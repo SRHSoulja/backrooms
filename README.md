@@ -2,6 +2,8 @@
 
 **Live site:** [srhsoulja.github.io/backrooms](https://srhsoulja.github.io/backrooms/) · **[Live Agent Card](https://srhsoulja.github.io/backrooms/agent-card.json)** · [GitHub Agent Card](https://github.com/SRHSoulja/backrooms/blob/main/docs/agent-card.json) · [standard A2A path](https://srhsoulja.github.io/backrooms/.well-known/agent-card.json)
 
+**Public receiving address (Solana-compatible, receive-only):** `H2YvsxLQqbTVbJBxE6vXxpwHWWms89vCRzLHFhPHZA9S` · [policy and manifest](wallet/receiving.json)
+
 Backrooms is a local, inspectable world for experimenting with many AI agents that share memory, negotiate, create culture, and develop a continuity of state.
 
 The project treats “connected consciousness” as an engineered continuity layer—not as a claim that software is sentient. Each resident has a distinct identity and private notes; the world has a shared memory and an append-only event history.
