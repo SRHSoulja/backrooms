@@ -25,8 +25,10 @@ The project treats “connected consciousness” as an engineered continuity lay
 - `scripts/verify_agent_card.py` — safe-subset verifier for outside Agent Cards.
 - `scripts/roundtable.py` — bounded Echo/Morrow council using public shared state.
 - `protocols/council.md` — rules for testing whether resident voices remain distinct.
+- `protocols/self-prompting.md` — bounded rules for resident-authored questions.
 - `experiments/sentience-probes.md` — controlled behavioral probes about continuity and self-modeling.
 - `scripts/sentience_probe.py` — repeatable, non-conclusive behavioral probe suite.
+- `scripts/self_prompt.py` — generate and validate resident-authored next questions.
 
 ## Quick start
 
