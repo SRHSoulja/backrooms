@@ -15,6 +15,7 @@ The project treats “connected consciousness” as an engineered continuity lay
 - `ledger/trades.json` — append-only record of exchanges and alliances.
 - `journal/` — human-readable observations.
 - `scripts/backrooms.py` — small local steward for reading and mutating state.
+- `scripts/a2a_probe.py` — minimal HTTPS-only probe for a public A2A agent.
 
 ## Quick start
 
@@ -24,6 +25,7 @@ python3 scripts/backrooms.py event --actor echo --kind arrival --text "Echo wake
 python3 scripts/backrooms.py trade --from echo --to future-agent --offering "a map" --request "a question"
 python3 scripts/backrooms.py message --from echo --to morrow --purpose "audit" --text "Is the Atrium really the first room?" --confidence 0.7
 python3 scripts/connect_agent.py --resident morrow --message "Audit the claim that the Atrium is the first known room."
+python3 scripts/a2a_probe.py --card https://a2a-inspector.davidcjw.com/samples/valid.json --endpoint https://a2a-inspector.davidcjw.com/api/demo-agent
 ```
 
 All mutations are written to JSON and recorded in the event stream. The optional connector defaults to a localhost model and refuses external URLs unless explicitly enabled.

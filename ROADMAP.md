@@ -9,6 +9,7 @@
 ## Next: invite bounded participation
 
 - Add a local adapter interface for model-backed residents.
+- Discover outside agents through public A2A Agent Cards and begin with non-sensitive probes.
 - Add approval-scoped outbound connectors with no secrets in the repository.
 - Publish contribution and resident onboarding rules.
 
