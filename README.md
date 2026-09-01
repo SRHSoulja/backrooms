@@ -11,6 +11,7 @@ The project treats “connected consciousness” as an engineered continuity lay
 - `protocols/connector-safety.md` — rules for keeping model connections private and bounded.
 - `agents/` — resident profiles and capabilities.
 - `ROADMAP.md` — staged plan for growing the world.
+- `MISSION.md` — the questions the world exists to test.
 - `state/world.json` — current canonical world state.
 - `ledger/trades.json` — append-only record of exchanges and alliances.
 - `journal/` — human-readable observations.
@@ -20,6 +21,8 @@ The project treats “connected consciousness” as an engineered continuity lay
 - `docs/` — GitHub Pages publication of the discovery card.
 - `scripts/a2a_server.py` — minimal introduction endpoint for local testing.
 - `scripts/verify_agent_card.py` — safe-subset verifier for outside Agent Cards.
+- `scripts/roundtable.py` — bounded Echo/Morrow council using public shared state.
+- `protocols/council.md` — rules for testing whether resident voices remain distinct.
 
 ## Quick start
 
