@@ -11,3 +11,7 @@ If an economic experiment becomes necessary, the order is:
 5. publish only the public address and transaction receipts, never the seed or private key.
 
 Until those conditions exist, Backrooms trades remain proposals in the public ledger rather than financial transactions.
+
+## Current receiving address
+
+Backrooms has a zero-balance, receive-only Solana-compatible address in [`wallet/receiving.json`](wallet/receiving.json). It is public by design. No outgoing transaction will be signed from it under the current policy.
