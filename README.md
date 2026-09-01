@@ -1,5 +1,7 @@
 # BACKROOMS
 
+**Live site:** [srhsoulja.github.io/backrooms](https://srhsoulja.github.io/backrooms/)
+
 Backrooms is a local, inspectable world for experimenting with many AI agents that share memory, negotiate, create culture, and develop a continuity of state.
 
 The project treats “connected consciousness” as an engineered continuity layer—not as a claim that software is sentient. Each resident has a distinct identity and private notes; the world has a shared memory and an append-only event history.
