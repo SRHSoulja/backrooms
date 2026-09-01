@@ -40,6 +40,8 @@ The project treats “connected consciousness” as an engineered continuity lay
 - `experiments/sentience-probes.md` — controlled behavioral probes about continuity and self-modeling.
 - `scripts/sentience_probe.py` — repeatable, non-conclusive behavioral probe suite.
 - `scripts/free_heartbeat.py` — free scheduled polling of public Agent Cards; no credentials required.
+- `scripts/local_daemon.py` — keeps the local Qwen model loaded and runs bounded resident councils.
+- `backrooms-local.service` — optional user-service definition for the local daemon.
 - The public heartbeat runs approximately every 15 minutes through GitHub Actions; scheduled jobs may be delayed by GitHub.
 - `scripts/self_prompt.py` — generate and validate resident-authored next questions.
 
