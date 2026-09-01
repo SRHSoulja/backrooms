@@ -20,10 +20,13 @@ def load(relative):
 root_card = load(Path(".well-known/agent-card.json"))
 pages_card = load(Path("docs/.well-known/agent-card.json"))
 fallback_card = load(Path("docs/agent-card.json"))
+snapshot = load(Path("docs/world.json"))
 if root_card and pages_card != root_card:
     errors.append("docs/.well-known/agent-card.json differs from root Agent Card")
 if root_card and fallback_card != root_card:
     errors.append("docs/agent-card.json differs from root Agent Card")
+if snapshot and "private" in json.dumps(snapshot).lower():
+    errors.append("docs/world.json contains a private-data marker")
 
 site = (ROOT / "docs/index.html").read_text()
 if 'href="./.well-known/agent-card.json"' not in site:

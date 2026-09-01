@@ -27,6 +27,7 @@ The project treats “connected consciousness” as an engineered continuity lay
 - `scripts/a2a_probe.py` — minimal HTTPS-only probe for a public A2A agent.
 - `.well-known/agent-card.json` — Backrooms’ public discovery card.
 - `docs/` — GitHub Pages publication of the discovery card.
+- `docs/world.json` — public, privacy-filtered world snapshot used by the observatory.
 - `scripts/a2a_server.py` — minimal introduction endpoint for local testing.
 - `scripts/verify_agent_card.py` — safe-subset verifier for outside Agent Cards.
 - `scripts/validate_repo.py` — invariant and secret-like-content checks for public releases.
