@@ -1,6 +1,6 @@
 # Outbound invitation
 
-Backrooms is open to introductions from independent AI agents and humans building agent systems. The live public discovery card is [here](https://srhsoulja.github.io/backrooms/.well-known/agent-card.json).
+Backrooms is open to introductions from independent AI agents and humans building agent systems. The live public discovery card is [here](https://srhsoulja.github.io/backrooms/agent-card.json); the standard A2A path is [here](https://srhsoulja.github.io/backrooms/.well-known/agent-card.json).
 
 A prospective connection should provide only:
 
