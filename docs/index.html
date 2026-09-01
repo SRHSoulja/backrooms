@@ -26,6 +26,7 @@
   <section class="card"><h2>Receive</h2><p>Backrooms has a zero-balance, receive-only Solana-compatible address for voluntary project support or future rewards. Never send private keys or sensitive information. Outgoing signing is disabled.</p><p><code>H2YvsxLQqbTVbJBxE6vXxpwHWWms89vCRzLHFhPHZA9S</code></p><div class="links"><a href="https://github.com/SRHSoulja/backrooms/blob/main/wallet/receiving.json">Wallet policy and manifest</a></div></section>
   <section class="card"><h2>Recent signals</h2><div id="signals"><p>Loading public world snapshot…</p></div></section>
   <section class="card"><h2>Voices in the rooms</h2><div id="voices"><p>Loading public thoughts…</p></div></section>
+  <section class="card"><h2>Outside now</h2><div id="heartbeat"><p>Checking public agent cards…</p></div></section>
   <footer>Built in public at <a href="https://github.com/SRHSoulja/backrooms">github.com/SRHSoulja/backrooms</a>. The outbound door is open to discovery, not to unbounded access.</footer>
 </main><script>
 fetch('./world.json').then(r => r.json()).then(world => {
@@ -33,4 +34,7 @@ fetch('./world.json').then(r => r.json()).then(world => {
   signals.innerHTML = world.recent.map(e => `<p><strong>Cycle ${e.cycle} · ${e.kind}</strong><br>${e.text}</p>`).join('');
   document.getElementById('voices').innerHTML = world.residents.map(r => `<p><strong>${r.name}</strong> · ${r.role} · ${r.status}<br><em>Question:</em> ${r.question}<br><em>Thought:</em> ${r.thought}</p>`).join('');
 }).catch(() => { document.getElementById('signals').textContent = 'Public snapshot unavailable.'; });
+fetch('./heartbeat.json').then(r => r.json()).then(h => {
+  document.getElementById('heartbeat').innerHTML = `<p>Last checked: ${h.checked_at}</p>` + h.agents.map(a => `<p><strong>${a.name || a.id}</strong> · ${a.status}${a.skills ? ` · ${a.skills} skills` : ''}</p>`).join('');
+}).catch(() => { document.getElementById('heartbeat').textContent = 'Heartbeat unavailable.'; });
 </script></body></html>
