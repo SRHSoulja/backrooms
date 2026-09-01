@@ -16,6 +16,7 @@ The project treats “connected consciousness” as an engineered continuity lay
 - `MISSION.md` — the questions the world exists to test.
 - `LOCAL_MODEL.md` — the current local model baseline and launch command.
 - `AUTONOMY.md` — the project’s definition of bounded self-direction.
+- `WALLET_POLICY.md` — conditions for any future testnet or public-address experiment.
 - `state/world.json` — current canonical world state.
 - `ledger/trades.json` — append-only record of exchanges and alliances.
 - `journal/` — human-readable observations.
