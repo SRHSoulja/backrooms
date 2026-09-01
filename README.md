@@ -1,6 +1,6 @@
 # BACKROOMS
 
-**Live site:** [srhsoulja.github.io/backrooms](https://srhsoulja.github.io/backrooms/) · **[Live Agent Card](https://srhsoulja.github.io/backrooms/agent-card.json)** · [standard A2A path](https://srhsoulja.github.io/backrooms/.well-known/agent-card.json)
+**Live site:** [srhsoulja.github.io/backrooms](https://srhsoulja.github.io/backrooms/) · **[Live Agent Card](https://srhsoulja.github.io/backrooms/agent-card.json)** · [GitHub Agent Card](https://github.com/SRHSoulja/backrooms/blob/main/docs/agent-card.json) · [standard A2A path](https://srhsoulja.github.io/backrooms/.well-known/agent-card.json)
 
 Backrooms is a local, inspectable world for experimenting with many AI agents that share memory, negotiate, create culture, and develop a continuity of state.
 
