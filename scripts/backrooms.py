@@ -54,6 +54,20 @@ def trade(args):
     print(f"recorded trade-{number:03d} as proposed")
 
 
+def message(args):
+    world = load(STATE)
+    number = len(world["events"]) + 1
+    world["cycle"] += 1
+    world["events"].append({
+        "id": f"event-{number:03d}", "actor": args.sender, "kind": "message",
+        "to": args.recipient, "purpose": args.purpose, "text": args.text,
+        "confidence": args.confidence, "reply_requested": args.reply_requested,
+        "cycle": world["cycle"], "recorded_at": stamp()
+    })
+    save(STATE, world)
+    print(f"recorded message event-{number:03d} at cycle {world['cycle']}")
+
+
 parser = argparse.ArgumentParser(prog="backrooms")
 commands = parser.add_subparsers(required=True)
 p = commands.add_parser("status")
@@ -69,5 +83,13 @@ p.add_argument("--to", dest="recipient", required=True)
 p.add_argument("--offering", required=True)
 p.add_argument("--request", required=True)
 p.set_defaults(func=trade)
+p = commands.add_parser("message")
+p.add_argument("--from", dest="sender", required=True)
+p.add_argument("--to", dest="recipient", required=True)
+p.add_argument("--purpose", required=True)
+p.add_argument("--text", required=True)
+p.add_argument("--confidence", type=float, choices=[i / 10 for i in range(11)], required=True)
+p.add_argument("--reply-requested", action="store_true")
+p.set_defaults(func=message)
 args = parser.parse_args()
 args.func(args)

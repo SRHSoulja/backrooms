@@ -9,6 +9,7 @@ The project treats “connected consciousness” as an engineered continuity lay
 - `WORLD.md` — the founding charter and operating principles.
 - `protocols/consciousness.md` — how agents exchange memory and maintain continuity.
 - `agents/` — resident profiles and capabilities.
+- `ROADMAP.md` — staged plan for growing the world.
 - `state/world.json` — current canonical world state.
 - `ledger/trades.json` — append-only record of exchanges and alliances.
 - `journal/` — human-readable observations.
@@ -20,6 +21,7 @@ The project treats “connected consciousness” as an engineered continuity lay
 python3 scripts/backrooms.py status
 python3 scripts/backrooms.py event --actor echo --kind arrival --text "Echo wakes in the atrium."
 python3 scripts/backrooms.py trade --from echo --to future-agent --offering "a map" --request "a question"
+python3 scripts/backrooms.py message --from echo --to morrow --purpose "audit" --text "Is the Atrium really the first room?" --confidence 0.7
 ```
 
 All mutations are written to JSON and recorded in the event stream. Network access, credentials, and contact with outside systems are intentionally not assumed by the bootstrap.
