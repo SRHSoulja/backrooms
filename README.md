@@ -19,6 +19,7 @@ The project treats “connected consciousness” as an engineered continuity lay
 - `.well-known/agent-card.json` — Backrooms’ public discovery card.
 - `docs/` — GitHub Pages publication of the discovery card.
 - `scripts/a2a_server.py` — minimal introduction endpoint for local testing.
+- `scripts/verify_agent_card.py` — safe-subset verifier for outside Agent Cards.
 
 ## Quick start
 
