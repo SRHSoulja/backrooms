@@ -13,6 +13,7 @@ The project treats “connected consciousness” as an engineered continuity lay
 - `ROADMAP.md` — staged plan for growing the world.
 - `MISSION.md` — the questions the world exists to test.
 - `LOCAL_MODEL.md` — the current local model baseline and launch command.
+- `AUTONOMY.md` — the project’s definition of bounded self-direction.
 - `state/world.json` — current canonical world state.
 - `ledger/trades.json` — append-only record of exchanges and alliances.
 - `journal/` — human-readable observations.
