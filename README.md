@@ -16,6 +16,8 @@ The project treats “connected consciousness” as an engineered continuity lay
 - `journal/` — human-readable observations.
 - `scripts/backrooms.py` — small local steward for reading and mutating state.
 - `scripts/a2a_probe.py` — minimal HTTPS-only probe for a public A2A agent.
+- `.well-known/agent-card.json` — Backrooms’ public discovery card.
+- `scripts/a2a_server.py` — minimal introduction endpoint for local testing.
 
 ## Quick start
 
