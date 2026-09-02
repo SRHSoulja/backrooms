@@ -52,12 +52,28 @@ def parse(text, agent, rooms):
             "proposal": fields.get("PROPOSAL", "").strip(), "reason": fields.get("REASON", "").strip()}
 
 
+def deduplicate(registry):
+    seen = set()
+    for agent in registry.get("agents", []):
+        if agent.get("status") not in {"active-local", "probation"}:
+            continue
+        identity = re.sub(r"[^a-z0-9]", "", str(agent.get("name", "")).lower())
+        if identity and identity in seen:
+            agent["status"] = "fired"
+            agent["last_action"] = "identity-rejected"
+            agent["fired_reason"] = "duplicate active identity"
+            agent["interviewed_at"] = datetime.now(timezone.utc).isoformat()
+        elif identity:
+            seen.add(identity)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-url", default="http://127.0.0.1:8080")
     parser.add_argument("--cycle", type=int, required=True)
     args = parser.parse_args()
     registry = json.loads(REGISTRY.read_text()) if REGISTRY.exists() else {"agents": [], "decisions": []}
+    deduplicate(registry)
     for agent in registry.get("agents", []):
         if agent.get("status") == "active-local" and not agent.get("interviewed_at"):
             agent["status"] = "probation"

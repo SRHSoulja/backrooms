@@ -34,6 +34,10 @@ profile = parse(ask(args.base_url, args.cycle))
 if not profile:
     print(json.dumps({"status": "rejected", "reason": "profile failed bounded validation"})); raise SystemExit(0)
 registry = json.loads(REGISTRY.read_text()) if REGISTRY.exists() else {"privacy": "local registry; no credentials or private memory", "agents": []}
+normalized = re.sub(r"[^a-z0-9]", "", profile["NAME"].lower())
+if any(re.sub(r"[^a-z0-9]", "", str(existing.get("name", "")).lower()) == normalized
+       and existing.get("status") in {"active-local", "probation"} for existing in registry.get("agents", [])):
+    print(json.dumps({"status": "rejected", "reason": "duplicate active identity"})); raise SystemExit(0)
 number = len(registry["agents"]) + 1
 agent = {"id": f"local-{number:03d}", "name": profile["NAME"], "role": profile["ROLE"], "purpose": profile["PURPOSE"], "question": profile["QUESTION"], "room": "archive", "status": "probation", "capabilities": ["bounded-questioning"], "recorded_at": datetime.now(timezone.utc).isoformat()}
 registry["agents"] = (registry.get("agents", []) + [agent])[-100:]
