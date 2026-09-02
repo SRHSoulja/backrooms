@@ -212,6 +212,7 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertIn('"analysis"', source)
         self.assertIn('"artifact_id"', source)
         self.assertIn('Shared analysis ledger', source)
+        self.assertIn('Use ANALYZE when your bounded-workbench role', source)
 
 
 if __name__ == "__main__":
