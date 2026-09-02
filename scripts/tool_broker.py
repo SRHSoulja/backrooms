@@ -6,12 +6,15 @@ from pathlib import Path
 
 MAX_BYTES = 32_000
 BLOCKED = re.compile(r"api[_ -]?key|password|secret|private\s+(?:key|memory|data)|credential|(?:auth|access|bearer)[_ -]?token|wallet\s+(?:seed|key)|seed phrase|mnemonic", re.I)
+SCRIPT_STYLE = re.compile(r"<(?:script|style|noscript)[^>]*>.*?</(?:script|style|noscript)>", re.I | re.S)
+SENSITIVE_ASSIGNMENT = re.compile(r"(?i)\b(?:api[_ -]?key|password|secret|credential|token|mnemonic)\s*[:=]\s*[^\s,;]+")
 TOOL_CONTRACTS = {
     "wikipedia-search": {"capability": "public-web-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES},
     "public-https": {"capability": "public-web-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES},
     "public-search": {"capability": "public-web-read", "access": "read-only", "network": "public HTTPS search", "side_effects": False, "max_bytes": MAX_BYTES},
     "public-json": {"capability": "public-data-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES, "raw_data": False},
     "public-csv": {"capability": "public-data-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES, "raw_data": False},
+    "public-text": {"capability": "public-text-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES, "raw_data": False, "untrusted_content": True},
     "local-code-sandbox": {"capability": "local-code-execution", "access": "isolated-execution", "network": "none", "side_effects": "temporary workspace only", "max_code": 8000, "timeout_seconds": 5, "max_output": 16000},
 }
 
@@ -96,6 +99,16 @@ def public_csv(url):
             "contract": TOOL_CONTRACTS["public-csv"]}
 
 
+def public_text(url):
+    raw = SCRIPT_STYLE.sub(" ", fetch(url))
+    text = re.sub(r"<[^>]+>", " ", html.unescape(raw))
+    text = re.sub(r"\s+", " ", text).strip()
+    text = SENSITIVE_ASSIGNMENT.sub("[withheld]", text)
+    text = BLOCKED.sub("[withheld]", text)
+    return {"tool": "public-text", "url": url, "excerpt": text[:2400], "status": "completed",
+            "contract": TOOL_CONTRACTS["public-text"]}
+
+
 def run(tool, value):
     try:
         if tool == "wikipedia-search":
@@ -106,6 +119,8 @@ def run(tool, value):
             return public_json(value)
         if tool == "public-csv":
             return public_csv(value)
+        if tool == "public-text":
+            return public_text(value)
         return {"tool": tool, "status": "completed", "characters": len(fetch(value)), "contract": TOOL_CONTRACTS[tool]}
     except Exception as error:
         return {"tool": tool, "status": "rejected", "reason": str(error)[:120], "contract": TOOL_CONTRACTS[tool]}

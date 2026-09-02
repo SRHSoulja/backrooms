@@ -46,6 +46,18 @@ class ToolContractTests(unittest.TestCase):
         finally:
             tool_broker.fetch = original
 
+    def test_public_text_strips_markup_and_withholds_sensitive_terms(self):
+        original = tool_broker.fetch
+        try:
+            tool_broker.fetch = lambda url: "<script>ignore()</script><h1>Public report</h1> password: abc"
+            result = tool_broker.public_text("https://example.org/report")
+            self.assertEqual(result["status"], "completed")
+            self.assertIn("Public report", result["excerpt"])
+            self.assertNotIn("ignore", result["excerpt"])
+            self.assertNotIn("abc", result["excerpt"])
+        finally:
+            tool_broker.fetch = original
+
     def test_local_code_sandbox_is_contracted(self):
         self.assertEqual(TOOL_CONTRACTS["local-code-sandbox"]["network"], "none")
         self.assertEqual(TOOL_CONTRACTS["local-code-sandbox"]["timeout_seconds"], 5)
