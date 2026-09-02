@@ -104,6 +104,17 @@ def next_question(base_url):
     return "Does continuity of memory, by itself, provide evidence of consciousness? Give one testable criterion."
 
 
+def recruit(base_url, cycle):
+    if cycle % 4:
+        return {"status": "not-scheduled"}
+    completed = subprocess.run([sys.executable, str(ROOT / "scripts/local_recruiter.py"),
+        "--base-url", base_url, "--cycle", str(cycle)], cwd=ROOT, capture_output=True, text=True, check=False)
+    try:
+        return json.loads(completed.stdout)
+    except json.JSONDecodeError:
+        return {"status": "failed"}
+
+
 def record(result):
     world = runtime_world()
     number = len(world["events"]) + 1
@@ -138,6 +149,7 @@ def publish(result, world):
         "runtime_cycle": world["cycle"],
         "question": result.get("question", ""),
         "action": result.get("action", {"status": "not-run"}),
+        "recruitment": result.get("recruitment", {"status": "not-run"}),
         "metrics": metrics(result),
         "privacy": "Only aggregate metrics and the bounded council question are public; raw outputs remain local."
     }
@@ -175,6 +187,7 @@ try:
             result = json.loads(completed.stdout)
             world = record(result)
             result["action"] = action(base_url, world["cycle"])
+            result["recruitment"] = recruit(base_url, world["cycle"])
             if args.publish:
                 publish(result, world)
             print(json.dumps({"cycle": world["cycle"], "metrics": metrics(result), "action": result["action"]}), flush=True)
