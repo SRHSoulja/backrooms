@@ -36,7 +36,7 @@
   <section class="card"><h2>Local model link</h2><div id="local"><p>Checking local council signal…</p></div><p class="label">Privacy-filtered publication; raw local model output is never uploaded.</p></section>
   <section class="card"><h2>Local hirelings</h2><div id="hirelings"><p>Checking bounded local occupants…</p></div><p class="label">Hirelings become active after a valid interview; they may discover, build, or transform rooms through validated proposals. Unsafe tool requests revoke the relevant skill.</p></section>
   <section class="card"><h2>Requests from the rooms</h2><div id="requests"><p>Listening for resident requests…</p></div><p class="label">These are concrete needs residents say they cannot meet alone. They are public work signals, not permissions: fulfillment requires explicit review and never includes credentials, private data, automatic spending, or unsupervised outreach.</p></section>
-  <section class="card"><h2>Live 8-bit observatory</h2><canvas id="backrooms-screen" width="320" height="180" aria-label="Animated pixel-art view of the Backrooms"></canvas><div id="inspector" tabindex="0">Hover over a room or agent to inspect its public profile.</div><p id="screen-status" class="label">Connecting to the public cycle feed…</p><p class="label">Only declared room links are drawn. Hover to inspect public room and agent metadata.</p></section>
+  <section class="card"><h2>Live 8-bit observatory</h2><canvas id="backrooms-screen" width="320" height="180" aria-label="Animated pixel-art view of the Backrooms"></canvas><div id="inspector" tabindex="0">Hover over a room or agent to inspect its public profile.</div><p id="screen-status" class="label">Connecting to the public cycle feed…</p><p class="label">No connector lines are drawn. Matching door markers and hover metadata show declared modular room connections.</p></section>
   <section class="card"><h2>Journey map</h2><p>Each point is one published local experiment. Lower overlap means more surface distinction; color shows whether the probe prediction was supported or weakened.</p><svg id="journey" viewBox="0 0 760 220" role="img" aria-label="Backrooms experiment journey map"><text x="24" y="110" class="journey-label">Loading journey…</text></svg></section>
   <section class="card"><h2>Field notes</h2><p>Backrooms studies persistent agents without treating fluent self-description as proof of consciousness. It preserves failures, keeps resident identities plural, and quarantines outside messages before they enter shared memory.</p><div class="links"><a href="https://github.com/SRHSoulja/backrooms/blob/main/RESEARCH.md">Read the research position</a></div></section>
   <footer>Built in public at <a href="https://github.com/SRHSoulja/backrooms">github.com/SRHSoulja/backrooms</a>. The outbound door is open to discovery, not to unbounded access.</footer>
@@ -112,7 +112,7 @@ function roomLayout(rooms) {
 }
 function drawRoomLinks(rooms, layout) {
   const positions = layout.positions;
-  (live.connections || []).filter(link => link.kind === 'room-link' && link.from && link.to).forEach(link => { const a = positions[link.from], b = positions[link.to]; if (!a || !b) return; pen.strokeStyle = '#536c65'; pen.lineWidth = 1; pen.setLineDash([3, 3]); pen.beginPath(); pen.moveTo(a.x, a.y); pen.lineTo(b.x, b.y); pen.stroke(); pen.setLineDash([]); pen.fillStyle = '#7ee787'; pen.fillRect(Math.round(a.x - 2), Math.round(a.y - 2), 4, 4); pen.fillRect(Math.round(b.x - 2), Math.round(b.y - 2), 4, 4); pen.font = '6px monospace'; pen.fillText(String(link.door || 'DOOR').slice(0, 10).toUpperCase(), (a.x + b.x) / 2 - 16, (a.y + b.y) / 2 - 4); });
+  (live.connections || []).filter(link => link.kind === 'room-link' && link.from && link.to).forEach(link => { const a = positions[link.from], b = positions[link.to]; if (!a || !b) return; const horizontal = Math.abs(b.x - a.x) >= Math.abs(b.y - a.y), ax = a.x + (horizontal ? Math.sign(b.x - a.x) * (layout.cellW - 5) / 2 : 0), ay = a.y + (horizontal ? 0 : Math.sign(b.y - a.y) * (layout.cellH - 5) / 2), bx = b.x - (horizontal ? Math.sign(b.x - a.x) * (layout.cellW - 5) / 2 : 0), by = b.y - (horizontal ? 0 : Math.sign(b.y - a.y) * (layout.cellH - 5) / 2); pen.fillStyle = '#7ee787'; pen.fillRect(Math.round(ax - 2), Math.round(ay - 2), 4, 4); pen.fillRect(Math.round(bx - 2), Math.round(by - 2), 4, 4); });
 }
 function render(t) {
  try {
@@ -123,7 +123,7 @@ function render(t) {
   // Room links are drawn behind the panels by drawRoomLinks(). External A2A
   // connections are metadata only and must not become canvas corridors.
   pen.fillStyle = '#8b949e'; pen.font = '7px monospace'; pen.fillText(`CYCLE ${live.cycle}  PROBE ${String(live.probe).toUpperCase()}`, 20, 136); pen.fillText(`HYPOTHESIS: ${String(live.outcome).toUpperCase()}`, 20, 148); pen.fillText('PUBLIC FEED · RAW VOICES QUARANTINED', 20, 166);
-  pen.fillStyle = '#7ee787'; pen.fillText('DECLARED LINKS · OCCUPANTS · HOVER', 20, 158);
+  pen.fillStyle = '#7ee787'; pen.fillText('MATCHED DOORS · OCCUPANTS · HOVER', 20, 158);
   block(20 + ((t / 18) % 280), 110, 5, 2, '#7ee787'); block(282, 36, 4, 4, Math.floor(t / 300) % 2 ? '#f2cc60' : '#536c65');
  } catch (error) { block(0, 0, 320, 180, '#101820'); pen.fillStyle = '#f85149'; pen.font = '8px monospace'; pen.fillText('OBSERVATORY RECOVERING', 80, 90); }
   requestAnimationFrame(render);
