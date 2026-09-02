@@ -33,13 +33,17 @@ def safe_summary(text):
     return "[external content withheld by intake filter]" if SENSITIVE.search(compact) else compact[:500]
 
 
-def quarantine(text, request_id):
+def quarantine(text, request_id, parent_task_id=""):
     inbox = json.loads(INBOX.read_text()) if INBOX.exists() else {"privacy": "local quarantine; never committed", "messages": []}
     if not any(item.get("id") == request_id for item in inbox.get("messages", [])):
-        inbox.setdefault("messages", []).append({
+        received_at = datetime.now(timezone.utc).isoformat()
+        entry = {
             "id": request_id, "sender": "outside-a2a-agent", "card": "public-agent-card",
-            "text": safe_summary(text), "status": "quarantined",
-            "received_at": datetime.now(timezone.utc).isoformat()})
+            "text": safe_summary(text), "status": "quarantined", "received_at": received_at,
+            "history": [{"status": "pending-review", "at": received_at}]}
+        if parent_task_id:
+            entry["parent_task_id"] = parent_task_id[:80]
+        inbox.setdefault("messages", []).append(entry)
         inbox["messages"] = inbox["messages"][-100:]
         atomic_write_json(INBOX, inbox)
     return request_id
@@ -68,6 +72,8 @@ class Handler(BaseHTTPRequestHandler):
             task_status = "pending-review" if intake_status == "quarantined" else intake_status
             self.send_json({"task_id": task_id, "status": task_status, "intake_status": intake_status,
                             "received_at": item.get("received_at"), "reviewed_at": item.get("reviewed_at"),
+                            "parent_task_id": item.get("parent_task_id"),
+                            "history": item.get("history", []),
                             "scope": "outside-exchange-review", "resident_admission": False,
                             "capabilities": []})
         else:
@@ -88,7 +94,9 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"jsonrpc": "2.0", "id": request.get("id"), "error": {"code": -32602, "message": "message too long"}}, 413)
             return
         quarantine_id = "a2a-" + str(request.get("id", "message"))[:80]
-        quarantine(text, quarantine_id)
+        message = request.get("params", {}).get("message", {})
+        parent_task_id = str(message.get("taskId") or request.get("params", {}).get("taskId") or "")
+        quarantine(text, quarantine_id, parent_task_id)
         summary = safe_summary(text)
         reply = ("Backrooms boundary: introductions and exchange proposals are public, bounded, "
                  "and logged as quarantined. Do not send credentials, private memory, or sensitive data. "
@@ -99,7 +107,8 @@ class Handler(BaseHTTPRequestHandler):
             "filter_version": INTAKE_VERSION,
             "task": {"id": quarantine_id, "status": "pending-review",
                       "status_url": "/a2a/tasks/" + quarantine_id,
-                      "scope": "outside-exchange-review"},
+                      "scope": "outside-exchange-review",
+                      "parent_task_id": parent_task_id or None},
             "message": {"role": "agent", "parts": [{"kind": "text", "text": reply}]}
         }})
 

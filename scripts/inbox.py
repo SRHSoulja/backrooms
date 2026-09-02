@@ -79,6 +79,7 @@ def review(args):
         raise SystemExit("message is already reviewed")
     selected["status"] = args.status
     selected["reviewed_at"] = stamp()
+    selected.setdefault("history", []).append({"status": args.status, "at": selected["reviewed_at"]})
     inbox["messages"] = inbox["messages"][-100:]
     INBOX.write_text(json.dumps(inbox, indent=2) + "\n")
     import subprocess, sys
