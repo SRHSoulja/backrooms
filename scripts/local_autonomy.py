@@ -14,13 +14,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "state/local-agents.json"
 FORBIDDEN = re.compile(r"(api[_ -]?key|password|secret|private memory|credential|token|wallet|funds|shell|sudo)", re.I)
-ALLOWED = {"STAY", "MOVE", "EXPLORE", "PROPOSE", "RETIRE", "FIRE"}
+ALLOWED = {"STAY", "MOVE", "EXPLORE", "PROPOSE", "DISCOVER", "BUILD", "TRANSFORM", "RETIRE", "FIRE"}
 
 
 def ask(url, agent, rooms, cycle):
     prompt = (f"You are interviewing for {agent['name']} ({agent['role']}) in a bounded fictional world. "
               f"Cycle {cycle}. Existing rooms: {', '.join(rooms)}. Choose one action based on your role and current work. "
-              "Return exactly five lines: ACTION: STAY|MOVE|EXPLORE|PROPOSE|RETIRE|FIRE, ROOM: existing room id or current room, "
+              "Return exactly five lines: ACTION: STAY|MOVE|EXPLORE|PROPOSE|DISCOVER|BUILD|TRANSFORM|RETIRE|FIRE, ROOM: existing room id or current room, "
               "TARGET: short exploration target, PROPOSAL: short useful proposal, REASON: short reason. "
               "You have no external network, credentials, private memory, arbitrary code, money, or authority to change safety rules. "
               "Do not claim consciousness. Use MOVE only for an existing room.")
@@ -118,6 +118,15 @@ def main():
                 agent["skill_status"] = "earned-after-interview"
         elif decision["action"] == "PROPOSE":
             agent["proposal"] = decision["proposal"] or "No proposal text supplied."
+        elif decision["action"] in {"DISCOVER", "BUILD", "TRANSFORM"}:
+            agent["room_proposal"] = {
+                "kind": decision["action"].lower(),
+                "name": decision["target"][:80],
+                "description": decision["proposal"][:220],
+                "source_room": agent["room"],
+                "status": "construction-requested" if decision["action"] in {"BUILD", "TRANSFORM"} else "discovered",
+                "cycle": args.cycle,
+            }
         if decision["action"] not in {"RETIRE", "FIRE"}:
             agent["status"] = "active-local"
         agent["interview_status"] = "accepted"

@@ -6,4 +6,6 @@ At interview, a hireling may stay, move between declared rooms, explore a public
 
 New hirelings begin in probation with `bounded-questioning`. Choosing a valid exploration during an interview can earn `public-web-read`; that skill invokes `scripts/tool_broker.py`, which permits only read-only public HTTPS/Wikipedia requests with size, timeout, hostname, and sensitive-term checks. Tool use produces local evidence metadata, not copied web content. Skills are revocable and never imply permission to execute code, contact arbitrary services, or transact.
 
+Room agency has three distinct outcomes: `DISCOVER` records a possible room found through research; `BUILD` requests a new room; and `TRANSFORM` requests turning an existing room or discovery into a new canonical space. All three are proposals first. The validator checks identity, name, topology, duplication, and safety before a room enters `state/world.json`; a hireling may imagine or request a room, but cannot silently mutate the host or bypass review.
+
 Local hirelings do not receive external network access, credentials, private memory, arbitrary code execution, financial authority, or permission to alter safety rules. Public output contains sanitized identity metadata only.

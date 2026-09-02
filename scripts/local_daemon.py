@@ -184,6 +184,7 @@ def publish(result, world):
                 "exploration": str(agent.get("exploration", ""))[:100],
                 "capabilities": agent.get("capabilities", [])[:8],
                 "last_tool": agent.get("last_tool", {}),
+                "room_proposal": agent.get("room_proposal", {}),
             }
             for agent in registry.get("agents", [])[-100:]
         ],
