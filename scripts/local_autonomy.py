@@ -26,6 +26,7 @@ PRINTER_QUEUE = ROOT / "state/printer-queue.json"
 PRINTED = ROOT / "state/printed"
 NOTES = ROOT / "state/agent-notes"
 ANALYSIS_ARCHIVE = ROOT / "state/analysis-results.jsonl"
+INTERVIEW_LOG = ROOT / "state/interviews"
 ANALYSIS_RETENTION = 100
 FORBIDDEN = re.compile(r"(api[_ -]?key|password|secret|private memory|credential|token|wallet|funds|shell|sudo)", re.I)
 PHYSICAL_NEEDS = re.compile(r"\b(?:water|food|sleep|shelter|medical|dust|cleaning|temperature|physical comfort)\b", re.I)
@@ -113,6 +114,19 @@ def accepted_outside_signals():
         return []
     return [{"id": item.get("id"), "status": "accepted-exchange", "text": str(item.get("text", ""))[:500]}
             for item in inbox.get("messages", []) if item.get("status") == "accepted-exchange"][-5:]
+
+
+def log_interview(agent, cycle, attempt, raw=None, error=None, parsed=False):
+    """Keep private turn diagnostics; never publish prompts or raw responses."""
+    INTERVIEW_LOG.mkdir(parents=True, exist_ok=True)
+    path = INTERVIEW_LOG / f"cycle-{cycle:06d}.jsonl"
+    record = {"recorded_at": datetime.now(timezone.utc).isoformat(), "cycle": cycle,
+              "agent_id": agent.get("id"), "attempt": attempt, "parsed": parsed,
+              "raw_response": str(raw or "")[:12000]}
+    if error:
+        record["error"] = str(error)[:300]
+    with path.open("a") as handle:
+        handle.write(json.dumps(record, separators=(",", ":")) + "\n")
 
 
 def parse(text, agent, rooms):
@@ -752,10 +766,11 @@ def main():
                 interview = ask(args.base_url, agent, rooms, args.cycle, repair=attempt == 1,
                                 shared_work=shared_work, structured=attempt == 0)
                 decision = parse(interview, agent, rooms)
+                log_interview(agent, args.cycle, attempt, raw=interview, parsed=bool(decision))
                 if decision:
                     break
-            except Exception:
-                pass
+            except Exception as error:
+                log_interview(agent, args.cycle, attempt, error=error)
         # A completed artifact must receive its continuity follow-up even if the
         # model is temporarily unavailable; the follow-up itself is still run
         # through the same restricted sandbox and remains fully auditable.
