@@ -88,7 +88,8 @@ fetch(`./local-hirelings.json?t=${Date.now()}`).then(r => r.json()).then(feed =>
     const tool = agent.last_tool, target = tool.source || tool.query || '';
     const count = tool.result_count ?? tool.summary?.items ?? tool.summary?.rows ?? '—';
     const excerpt = tool.excerpt ? `<br>${escapeHtml(tool.excerpt.slice(0, 420))}` : '';
-    return `<p><strong>${escapeHtml(agent.name || agent.id || 'Unnamed resident')}</strong> · ${escapeHtml(tool.tool)} · ${escapeHtml(count)} result units<br><a href="${safeHref(target)}" rel="noreferrer">${escapeHtml(target || 'source not recorded')}</a>${excerpt}</p>`;
+    const leads = (tool.results || []).slice(0, 3).map(item => `<br>Lead: <a href="${safeHref(item.url)}" rel="noreferrer">${escapeHtml(item.title || item.url)}</a>`).join('');
+    return `<p><strong>${escapeHtml(agent.name || agent.id || 'Unnamed resident')}</strong> · ${escapeHtml(tool.tool)} · ${escapeHtml(count)} result units<br><a href="${safeHref(target)}" rel="noreferrer">${escapeHtml(target || 'source not recorded')}</a>${leads}${excerpt}</p>`;
   });
   document.getElementById('research-log').innerHTML = rows.join('') || '<p>No resident research recorded yet.</p>';
 }).catch(() => { document.getElementById('research-log').textContent = 'Public research log unavailable.'; });

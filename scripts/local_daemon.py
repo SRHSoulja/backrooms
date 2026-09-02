@@ -50,6 +50,7 @@ LOCAL_NOTES = ROOT / "state/agent-notes"
 LOCAL_CORE_NOTES = ROOT / "state/core-notes.jsonl"
 LOCAL_ANALYSIS = ROOT / "state/analysis-results.jsonl"
 PUBLIC_ANALYSIS = ROOT / "docs/analysis.json"
+PUBLIC_RESEARCH = ROOT / "docs/research.json"
 PUBLIC_VOICE_BLOCKED = BLOCKED
 ARCHIVE = ROOT / "state/archive/events.jsonl"
 LOCAL_REGISTRY = ROOT / "state/local-agents.json"
@@ -330,6 +331,27 @@ def sync_analysis():
             "analysis_feed": "docs/analysis.json"}
 
 
+def sync_research(registry):
+    """Project bounded source leads; raw fetched pages never enter this feed."""
+    records = []
+    for agent in registry.get("agents", []):
+        tool = agent.get("last_tool") or {}
+        if not tool.get("tool") or tool.get("tool") not in {"public-search", "public-text", "public-json", "public-csv"}:
+            continue
+        records.append({"id": f"research-{agent.get('id', 'resident')}-{agent.get('request_cycle', agent.get('last_action', 'latest'))}",
+                        "agent": agent.get("id"), "cycle": agent.get("request_cycle"), "tool": tool.get("tool"),
+                        "query": public_event_text(tool.get("query", "")), "source": tool.get("source", ""),
+                        "result_count": tool.get("result_count", 0),
+                        "results": [{"title": public_event_text(item.get("title", "")), "url": item.get("url", "")}
+                                    for item in tool.get("results", [])[:5] if isinstance(item, dict) and str(item.get("url", "")).startswith("https://")],
+                        "summary": tool.get("summary", {}), "excerpt": public_event_text(tool.get("excerpt", ""))[:420]})
+    public = {"schema_version": 1, "generated_at": datetime.now(timezone.utc).isoformat(),
+              "privacy": "Bounded source leads and sanitized excerpts only; raw fetched pages remain local.",
+              "records": records[-100:]}
+    atomic_write_json(PUBLIC_RESEARCH, public)
+    return {"research_records": len(records), "research_feed": "docs/research.json"}
+
+
 def skill_progress(agent, registry):
     capabilities = list(dict.fromkeys(agent.get("capabilities", [])))
     decisions = [item for item in registry.get("decisions", []) if item.get("agent") == agent.get("id")]
@@ -428,6 +450,7 @@ def publish(result, world):
     work_orders = sync_work_orders(registry, world["cycle"])
     resource_health = sync_digital_resources(world, registry, result)
     analysis_health = sync_analysis()
+    research_health = sync_research(registry)
     audit = continuity_audit(world, registry)
     public_roster = json.loads(PUBLIC_WORLD.read_text()).get("residents", []) if PUBLIC_WORLD.exists() else []
     core_residents = len([resident for resident in public_roster if isinstance(resident, dict) and resident.get("status") not in {"fired", "retired"}])
@@ -443,7 +466,7 @@ def publish(result, world):
         "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
         "activity_feed": "docs/activity.json",
         "feed_freshness_seconds": 0
-        ,**resource_health, **analysis_health,
+        ,**resource_health, **analysis_health, **research_health,
         "dropped_events": 0
     }
     safe = {
@@ -561,10 +584,10 @@ def publish(result, world):
     atomic_write_json(PUBLIC_HEALTH, health)
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}
-    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json"}:
+    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json"}:
         print(json.dumps({"publish": "skipped", "reason": "other local changes present"}), flush=True)
         return
-    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json"], cwd=ROOT, check=True)
+    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json"], cwd=ROOT, check=True)
     commit = subprocess.run(["git", "commit", "-m", "chore: publish local council signal"], cwd=ROOT, capture_output=True)
     if commit.returncode == 0:
         pushed = subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=ROOT, capture_output=True)
