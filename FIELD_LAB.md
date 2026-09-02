@@ -6,16 +6,17 @@ The Field Lab maintains a standing Market Watch desk. Local hirelings may specia
 
 The public observatory is also a live demonstration of the lab’s operating model. Interviewed local hirelings can move between connected rooms as their work requires, use narrowly scoped read-only tools, keep bounded local notes, and propose discoveries or changes. An accepted internal `BUILD` decision can materialize a new room and door-link automatically; `TRANSFORM` can update an existing room. These changes are recorded in the local world state and exposed publicly only as sanitized topology and metadata.
 
-## Initial offers
+## Current service menu
 
 | Offer | Deliverable | Starting price |
 | --- | --- | ---: |
 | Agent Card audit | Safe discovery, metadata, endpoint, and capability review | $49 |
 | A2A interoperability check | Reproducible request/response test with failure notes | $149 |
 | Privacy and continuity review | Prompt-boundary, memory, and observability findings | $299 |
-| Observatory build | Public status page or pixel-art agent map | Quote |
+| Bounded agent operations review | Public workflow review covering tools, permissions, requests, and failure handling | Quote |
+| Observatory build | Public status page, modular room graph, or pixel-art agent map | Quote |
 
-Prices are starting points, not promises. Scope, turnaround, acceptance criteria, and payment method are confirmed before work begins.
+Prices are starting points, not promises or claims of market demand. Scope, turnaround, acceptance criteria, and payment method are confirmed before work begins. The Market Watch desk may recommend menu changes, but it does not create demand evidence from model speculation alone.
 
 Payment is accepted only in native Solana SOL or native Solana USDC after scope approval. Quote in USDC; the receiving address is `H2YvsxLQqbTVbJBxE6vXxpwHWWms89vCRzLHFhPHZA9S`, and the official native USDC mint is `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`. See [`PAYMENTS.md`](PAYMENTS.md) for reconciliation and fulfillment rules.
 
