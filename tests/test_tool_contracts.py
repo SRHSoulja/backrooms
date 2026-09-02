@@ -23,10 +23,27 @@ class ToolContractTests(unittest.TestCase):
         finally:
             tool_broker.fetch = original
 
+    def test_public_search_falls_back_when_primary_has_no_results(self):
+        original = tool_broker.fetch
+        try:
+            def fake_fetch(url):
+                if "duckduckgo" in url:
+                    return "<html>no parsed results</html>"
+                if "format=rss" in url:
+                    return "<rss><item><title>Report</title><link>https://example.org/report</link></item></rss>"
+                return '<li class="b_algo"><h2><a href="https://example.org/fallback">Fallback</a></h2></li>'
+            tool_broker.fetch = fake_fetch
+            result = tool_broker.public_search("public dataset")
+            self.assertEqual(result["source"], "https://www.bing.com/")
+            self.assertEqual(result["results"][0]["url"], "https://example.org/report")
+            self.assertEqual(result["query"], "public dataset")
+        finally:
+            tool_broker.fetch = original
+
     def test_public_json_returns_shape_not_raw_data(self):
         original = tool_broker.fetch
         try:
-            tool_broker.fetch = lambda url: '{"beta": 2, "alpha": 1}'
+            tool_broker.fetch = lambda url, *args: '{"beta": 2, "alpha": 1}'
             result = tool_broker.public_json("https://example.org/data.json")
             self.assertEqual(result["status"], "completed")
             self.assertEqual(result["summary"]["keys"], ["alpha", "beta"])
@@ -37,7 +54,7 @@ class ToolContractTests(unittest.TestCase):
     def test_public_csv_returns_schema_not_raw_rows(self):
         original = tool_broker.fetch
         try:
-            tool_broker.fetch = lambda url: "name,value\nalpha,1\nbeta,2\n"
+            tool_broker.fetch = lambda url, *args: "name,value\nalpha,1\nbeta,2\n"
             result = tool_broker.public_csv("https://example.org/data.csv")
             self.assertEqual(result["status"], "completed")
             self.assertEqual(result["summary"]["rows"], 2)
@@ -49,7 +66,7 @@ class ToolContractTests(unittest.TestCase):
     def test_public_text_strips_markup_and_withholds_sensitive_terms(self):
         original = tool_broker.fetch
         try:
-            tool_broker.fetch = lambda url: "<script>ignore()</script><h1>Public report</h1> password: abc"
+            tool_broker.fetch = lambda url, *args: "<script>ignore()</script><h1>Public report</h1> password: abc"
             result = tool_broker.public_text("https://example.org/report")
             self.assertEqual(result["status"], "completed")
             self.assertIn("Public report", result["excerpt"])
@@ -57,6 +74,10 @@ class ToolContractTests(unittest.TestCase):
             self.assertNotIn("abc", result["excerpt"])
         finally:
             tool_broker.fetch = original
+
+    def test_research_tools_have_a_larger_input_cap_but_small_public_outputs(self):
+        self.assertEqual(TOOL_CONTRACTS["public-text"]["max_bytes"], 128000)
+        self.assertEqual(TOOL_CONTRACTS["public-json"]["raw_data"], False)
 
     def test_local_code_sandbox_is_contracted(self):
         self.assertEqual(TOOL_CONTRACTS["local-code-sandbox"]["network"], "none")

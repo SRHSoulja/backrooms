@@ -5,6 +5,7 @@ import argparse, csv, html, ipaddress, io, json, re, socket, urllib.parse, urlli
 from pathlib import Path
 
 MAX_BYTES = 32_000
+RESEARCH_MAX_BYTES = 128_000
 BLOCKED = re.compile(r"api[_ -]?key|password|secret|private\s+(?:key|memory|data)|credential|(?:auth|access|bearer)[_ -]?token|wallet\s+(?:seed|key)|seed phrase|mnemonic", re.I)
 SCRIPT_STYLE = re.compile(r"<(?:script|style|noscript)[^>]*>.*?</(?:script|style|noscript)>", re.I | re.S)
 SENSITIVE_ASSIGNMENT = re.compile(r"(?i)\b(?:api[_ -]?key|password|secret|credential|token|mnemonic)\s*[:=]\s*[^\s,;]+")
@@ -12,9 +13,9 @@ TOOL_CONTRACTS = {
     "wikipedia-search": {"capability": "public-web-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES},
     "public-https": {"capability": "public-web-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES},
     "public-search": {"capability": "public-web-read", "access": "read-only", "network": "public HTTPS search", "side_effects": False, "max_bytes": MAX_BYTES},
-    "public-json": {"capability": "public-data-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES, "raw_data": False},
-    "public-csv": {"capability": "public-data-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES, "raw_data": False},
-    "public-text": {"capability": "public-text-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES, "raw_data": False, "untrusted_content": True},
+    "public-json": {"capability": "public-data-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": RESEARCH_MAX_BYTES, "raw_data": False},
+    "public-csv": {"capability": "public-data-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": RESEARCH_MAX_BYTES, "raw_data": False},
+    "public-text": {"capability": "public-text-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": RESEARCH_MAX_BYTES, "raw_data": False, "untrusted_content": True},
     "local-code-sandbox": {"capability": "local-code-execution", "access": "isolated-execution", "network": "none", "side_effects": "temporary workspace only", "max_code": 8000, "timeout_seconds": 5, "max_output": 16000},
 }
 
@@ -33,15 +34,15 @@ def public_host(host):
         return False
 
 
-def fetch(url):
+def fetch(url, max_bytes=MAX_BYTES):
     parsed = urllib.parse.urlparse(url)
     if parsed.scheme != "https" or parsed.username or parsed.password or not parsed.hostname or not public_host(parsed.hostname):
         raise ValueError("only public HTTPS URLs without credentials are allowed")
     request = urllib.request.Request(url, headers={"User-Agent": "BackroomsResearch/1.0"}, method="GET")
     opener = urllib.request.build_opener(NoRedirect)
     with opener.open(request, timeout=15) as response:
-        data = response.read(MAX_BYTES + 1)
-        if len(data) > MAX_BYTES:
+        data = response.read(max_bytes + 1)
+        if len(data) > max_bytes:
             raise ValueError("response exceeds broker limit")
         return data.decode("utf-8", errors="replace")
 
@@ -60,26 +61,57 @@ def wikipedia(query):
 
 
 def public_search(query):
+    query = re.sub(r"\s+", " ", str(query)).strip(" ,.;:!?")
     if not query or len(query) > 160 or BLOCKED.search(query):
         raise ValueError("query failed bounded validation")
     params = urllib.parse.urlencode({"q": query, "kl": "us-en"})
-    page = fetch("https://html.duckduckgo.com/html/?" + params)
     results = []
-    for match in re.finditer(r'class="result__a"[^>]*href="([^"]+)"[^>]*>(.*?)</a>', page, re.I | re.S):
+    provider = "https://html.duckduckgo.com/"
+    try:
+        page = fetch("https://html.duckduckgo.com/html/?" + params)
+        pattern = r'class="result__a"[^>]*href="([^"]+)"[^>]*>(.*?)</a>'
+        matches = re.finditer(pattern, page, re.I | re.S)
+    except Exception:
+        matches = []
+    for match in matches:
         url = html.unescape(match.group(1))
         title = re.sub(r"<[^>]+>", "", html.unescape(match.group(2))).strip()
         if url.startswith("//"):
             url = "https:" + url
+        if not url.lower().startswith("https://") or re.search(r"(?:login|log-in|signin|sign-in|authenticate|/auth(?:/|$)|/account(?:/|$))", url, re.I):
+            continue
         results.append({"title": title[:160], "url": url[:500]})
         if len(results) >= 5:
             break
+    if not results:
+        provider = "https://www.bing.com/"
+        rss_params = urllib.parse.urlencode({"format": "rss", "q": query})
+        page = fetch("https://www.bing.com/search?" + rss_params)
+        for match in re.finditer(r"<item>.*?<title>(.*?)</title>.*?<link>(.*?)</link>.*?</item>", page, re.I | re.S):
+            title = re.sub(r"<[^>]+>", "", html.unescape(match.group(1))).strip()
+            url = html.unescape(match.group(2)).strip()
+            if not url.lower().startswith("https://") or re.search(r"(?:login|log-in|signin|sign-in|authenticate|/auth(?:/|$)|/account(?:/|$))", url, re.I):
+                continue
+            results.append({"title": title[:160], "url": url[:500]})
+            if len(results) >= 5:
+                break
+        if not results:
+            page = fetch("https://www.bing.com/search?" + params)
+        for match in re.finditer(r'<li class="b_algo".*?<h2><a[^>]+href="([^"]+)"[^>]*>(.*?)</a>', page, re.I | re.S):
+            url = html.unescape(match.group(1))
+            title = re.sub(r"<[^>]+>", "", html.unescape(match.group(2))).strip()
+            if not url.lower().startswith("https://") or re.search(r"(?:login|log-in|signin|sign-in|authenticate|/auth(?:/|$)|/account(?:/|$))", url, re.I):
+                continue
+            results.append({"title": title[:160], "url": url[:500]})
+            if len(results) >= 5:
+                break
     return {"tool": "public-search", "query": query, "results": results,
-            "source": "https://html.duckduckgo.com/", "status": "completed",
+            "source": provider, "status": "completed",
             "contract": TOOL_CONTRACTS["public-search"]}
 
 
 def public_json(url):
-    data = json.loads(fetch(url))
+    data = json.loads(fetch(url, RESEARCH_MAX_BYTES))
     if isinstance(data, dict):
         summary = {"type": "object", "keys": sorted(str(key) for key in data)[:100], "items": len(data)}
     elif isinstance(data, list):
@@ -92,7 +124,7 @@ def public_json(url):
 
 
 def public_csv(url):
-    rows = list(csv.reader(io.StringIO(fetch(url))))
+    rows = list(csv.reader(io.StringIO(fetch(url, RESEARCH_MAX_BYTES))))
     headers = rows[0][:100] if rows else []
     summary = {"type": "table", "rows": max(0, len(rows) - 1), "columns": len(headers), "headers": headers}
     return {"tool": "public-csv", "url": url, "summary": summary, "status": "completed",
@@ -100,7 +132,7 @@ def public_csv(url):
 
 
 def public_text(url):
-    raw = SCRIPT_STYLE.sub(" ", fetch(url))
+    raw = SCRIPT_STYLE.sub(" ", fetch(url, RESEARCH_MAX_BYTES))
     text = re.sub(r"<[^>]+>", " ", html.unescape(raw))
     text = re.sub(r"\s+", " ", text).strip()
     text = SENSITIVE_ASSIGNMENT.sub("[withheld]", text)
