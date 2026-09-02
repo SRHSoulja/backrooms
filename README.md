@@ -50,6 +50,7 @@ For the complete interaction model—including what is visible to the audience a
 - `docs/local-cycle.json` — privacy-filtered signal from the local council daemon.
 - `docs/action-history.json` — rolling public history of aggregate local actions.
 - `docs/agent-requests.json` — sanitized requests from local residents for capabilities or work they cannot complete alone.
+- `docs/voices.json` — bounded filtered excerpts from the latest public council; full model output remains local.
 - `ARCHIVES.md` — retention policy for rolling snapshots and append-only local archives.
 - The observatory’s “Voices in the rooms” section contains only public questions and thoughts derived from recorded events; resident private memory remains excluded.
 - `scripts/a2a_server.py` — minimal introduction endpoint for local testing.

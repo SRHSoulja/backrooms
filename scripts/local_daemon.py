@@ -24,6 +24,8 @@ PUBLIC_CYCLE = ROOT / "docs/local-cycle.json"
 PUBLIC_HISTORY = ROOT / "docs/action-history.json"
 PUBLIC_HIRELINGS = ROOT / "docs/local-hirelings.json"
 PUBLIC_REQUESTS = ROOT / "docs/agent-requests.json"
+PUBLIC_VOICES = ROOT / "docs/voices.json"
+PUBLIC_VOICE_BLOCKED = re.compile(r"api[_ -]?key|password|secret|private|credential|token|wallet|seed phrase", re.I)
 ARCHIVE = ROOT / "state/archive/events.jsonl"
 LOCAL_REGISTRY = ROOT / "state/local-agents.json"
 LOCK = ROOT / "state/local-daemon.lock"
@@ -83,6 +85,14 @@ def metrics(result):
     markers = [word for word in ("counterexample", "confound", "assumption", "missing control") if word in lower]
     return {"jaccard_overlap": round(overlap, 3), "morrow_audit_markers": markers,
             "distinction_status": "distinct" if overlap <= 0.75 and markers else "needs-audit"}
+
+
+def public_voice(text):
+    """Expose a short, filtered council excerpt; retain full output locally."""
+    compact = re.sub(r"\s+", " ", str(text or "")).strip()
+    if not compact or PUBLIC_VOICE_BLOCKED.search(compact):
+        return "[excerpt withheld by publication filter]"
+    return compact[:360]
 
 
 def action(base_url, cycle):
@@ -240,16 +250,26 @@ def publish(result, world):
         requests["requests"].append(item)
     requests["requests"] = requests.get("requests", [])[-100:]
     requests["generated_at"] = datetime.now(timezone.utc).isoformat()
+    voices = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "cycle": world["cycle"],
+        "privacy": "Bounded filtered excerpts only; full prompts, responses, and private runtime remain local.",
+        "voices": [
+            {"name": "Echo", "role": "first cartographer", "excerpt": public_voice(result.get("echo"))},
+            {"name": "Morrow", "role": "adversarial archivist", "excerpt": public_voice(result.get("morrow"))}
+        ]
+    }
     PUBLIC_CYCLE.write_text(json.dumps(safe, indent=2) + "\n")
     PUBLIC_HISTORY.write_text(json.dumps(history, indent=2) + "\n")
     PUBLIC_HIRELINGS.write_text(json.dumps(public_hirelings, indent=2) + "\n")
     PUBLIC_REQUESTS.write_text(json.dumps(requests, indent=2) + "\n")
+    PUBLIC_VOICES.write_text(json.dumps(voices, indent=2) + "\n")
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}
-    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json"}:
+    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json"}:
         print(json.dumps({"publish": "skipped", "reason": "other local changes present"}), flush=True)
         return
-    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json"], cwd=ROOT, check=True)
+    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json"], cwd=ROOT, check=True)
     commit = subprocess.run(["git", "commit", "-m", "chore: publish local council signal"], cwd=ROOT, capture_output=True)
     if commit.returncode == 0:
         pushed = subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=ROOT, capture_output=True)

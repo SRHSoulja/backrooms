@@ -46,6 +46,10 @@ fetch('./world.json').then(r => r.json()).then(world => {
   signals.innerHTML = world.recent.map(e => `<p><strong>Cycle ${e.cycle} · ${e.kind}</strong><br>${e.text}</p>`).join('');
   document.getElementById('voices').innerHTML = world.residents.map(r => `<p><strong>${r.name}</strong> · ${r.role} · ${r.status}<br><em>Question:</em> ${r.question}<br><em>Thought:</em> ${r.thought}</p>`).join('');
 }).catch(() => { document.getElementById('signals').textContent = 'Public snapshot unavailable.'; });
+fetch(`./voices.json?t=${Date.now()}`).then(r => r.json()).then(feed => {
+  const voices = feed.voices || [];
+  document.getElementById('voices').innerHTML = voices.length ? `<p><span class="label">Latest public council · cycle ${escapeHtml(feed.cycle ?? 'unknown')} · ${escapeHtml(feed.generated_at || 'unknown')}</span></p>` + voices.map(v => `<p><strong>${escapeHtml(v.name || 'Unnamed')}</strong> · ${escapeHtml(v.role || 'resident')}<br>${escapeHtml(v.excerpt || '[no excerpt published]')}</p>`).join('') : '<p>No current voice excerpts published yet. Founding voices remain in the world archive.</p>';
+}).catch(() => { document.getElementById('voices').innerHTML = '<p>Current council excerpts unavailable. Founding voices remain in the world archive.</p>'; });
 fetch(`./heartbeat.json?t=${Date.now()}`).then(r => r.json()).then(h => {
   const agents = h.agents || [], online = agents.filter(a => a.status === 'online').length;
   document.getElementById('heartbeat').innerHTML = `<p><strong>${online}/${agents.length} public cards reachable</strong><br>Last checked: ${escapeHtml(h.checked_at || 'unknown')}</p>` + agents.map(a => `<p><a href="${escapeHtml(a.card || '#')}"><strong>${escapeHtml(a.name || a.id || 'Unnamed agent')}</strong></a> · ${escapeHtml(a.status || 'unknown')}${a.skills ? ` · ${escapeHtml(a.skills)} skills` : ''}</p>`).join('');
