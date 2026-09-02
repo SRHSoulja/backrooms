@@ -57,6 +57,8 @@ LOCAL_CORE_NOTES = ROOT / "state/core-notes.jsonl"
 LOCAL_ANALYSIS = ROOT / "state/analysis-results.jsonl"
 PUBLIC_ANALYSIS = ROOT / "docs/analysis.json"
 PUBLIC_RESEARCH = ROOT / "docs/research.json"
+PUBLIC_CODE_PROPOSALS = ROOT / "docs/code-proposals.json"
+LOCAL_CODE_PROPOSALS = ROOT / "state/code-proposals.json"
 PUBLIC_VOICE_BLOCKED = BLOCKED
 ARCHIVE = ROOT / "state/archive/events.jsonl"
 LOCAL_REGISTRY = ROOT / "state/local-agents.json"
@@ -390,6 +392,19 @@ def sync_research(registry):
             "research_feed": "docs/research.json"}
 
 
+def sync_code_proposals():
+    local = json.loads(LOCAL_CODE_PROPOSALS.read_text()) if LOCAL_CODE_PROPOSALS.exists() else {"proposals": []}
+    records = [{key: item.get(key) for key in
+                ("id", "resident", "status", "reason", "files", "changed_lines", "sha256", "recorded_at")}
+               for item in local.get("proposals", [])[-100:]]
+    public = {"schema_version": 1, "generated_at": datetime.now(timezone.utc).isoformat(),
+              "privacy": "Proposal metadata only; raw diffs remain local and are never auto-applied.",
+              "records": records}
+    atomic_write_json(PUBLIC_CODE_PROPOSALS, public)
+    return {"code_proposals": len(records), "code_proposals_ready": sum(item.get("status") == "ready-for-review" for item in records),
+            "code_proposals_feed": "docs/code-proposals.json"}
+
+
 def skill_progress(agent, registry):
     capabilities = list(dict.fromkeys(agent.get("capabilities", [])))
     decisions = [item for item in registry.get("decisions", []) if item.get("agent") == agent.get("id")]
@@ -515,7 +530,7 @@ def publish(result, world):
         "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
         "activity_feed": "docs/activity.json",
         "feed_freshness_seconds": 0
-        ,**resource_health, **analysis_health, **research_health,
+        ,**resource_health, **analysis_health, **research_health, **sync_code_proposals(),
         "dropped_events": 0
     }
     safe = {
@@ -656,12 +671,13 @@ def publish(result, world):
     atomic_write_json(PUBLIC_WORLD, public_world)
     atomic_write_json(PUBLIC_AUDIT, safe["continuity_audit"])
     atomic_write_json(PUBLIC_HEALTH, health)
+    sync_code_proposals()
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}
-    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json"}:
+    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/code-proposals.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json"}:
         print(json.dumps({"publish": "skipped", "reason": "other local changes present"}), flush=True)
         return
-    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json"], cwd=ROOT, check=True)
+    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/code-proposals.json"], cwd=ROOT, check=True)
     commit = subprocess.run(["git", "commit", "-m", "chore: publish local council signal"], cwd=ROOT, capture_output=True)
     if commit.returncode == 0:
         pushed = subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=ROOT, capture_output=True)
