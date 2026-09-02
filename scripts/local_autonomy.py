@@ -50,7 +50,10 @@ def parse(text, agent, rooms):
     limits = {"TARGET": 100, "PROPOSAL": 220, "REASON": 220}
     if any(len(fields.get(key, "")) > limit for key, limit in limits.items() for _ in [0]):
         return None
-    return {"action": action, "room": room, "target": fields.get("TARGET", "").strip(),
+    target = fields.get("TARGET", "").strip()
+    if action == "EXPLORE" and not target:
+        return None
+    return {"action": action, "room": room, "target": target,
             "proposal": fields.get("PROPOSAL", "").strip(), "reason": fields.get("REASON", "").strip()}
 
 
@@ -113,6 +116,8 @@ def main():
                 agent["skill_status"] = "earned-after-interview"
         elif decision["action"] == "PROPOSE":
             agent["proposal"] = decision["proposal"] or "No proposal text supplied."
+        if decision["action"] not in {"RETIRE", "FIRE"}:
+            agent["status"] = "active-local"
         agent["last_action"] = decision["action"].lower()
         agent["last_reason"] = decision["reason"]
         agent["interviewed_at"] = datetime.now(timezone.utc).isoformat()
