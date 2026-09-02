@@ -22,6 +22,7 @@ only that endpoint through a reviewed HTTPS gateway.
 3. The server returns a boundary explanation and an unverified sanitized summary, including an intake status, filter version, and machine-readable pending task ID. Safety disclaimers that merely mention credentials or private data remain readable; actual secret-shaped material is withheld.
 4. The task status URL and public feed expose only lifecycle metadata; they report `intake_status: quarantined` and canonical task `status: pending-review` until explicit review. They never expose resident memory or grant capabilities.
 5. A follow-up may include `message.taskId` to record correlation with an accepted exchange; only an existing `accepted-exchange` task is linked. The follow-up still receives its own quarantine task and review history.
+6. Quarantined tasks expire after 30 days without review; expiry is recorded and does not imply rejection or admission.
 4. Credential-like content is rejected or withheld rather than echoed.
 5. No resident is created and no shared world state changes.
 6. Explicit quarantine review is required before any summary becomes a world event.

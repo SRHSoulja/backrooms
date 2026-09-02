@@ -14,7 +14,7 @@ import subprocess
 import sys
 import time
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import re
 try:
@@ -409,6 +409,22 @@ def sync_code_proposals():
 
 def sync_outside_signals():
     local = json.loads(LOCAL_INBOX.read_text()) if LOCAL_INBOX.exists() else {"messages": []}
+    changed = False
+    now = datetime.now(timezone.utc)
+    for item in local.get("messages", []):
+        if item.get("status") != "quarantined" or not item.get("received_at"):
+            continue
+        try:
+            received = datetime.fromisoformat(item["received_at"])
+        except (TypeError, ValueError):
+            continue
+        if now - received > timedelta(days=30):
+            item["status"] = "expired"
+            item.setdefault("history", []).append({"status": "expired", "at": now.isoformat()})
+            item["reviewed_at"] = now.isoformat()
+            changed = True
+    if changed:
+        atomic_write_json(LOCAL_INBOX, local)
     records = []
     for item in local.get("messages", [])[-100:]:
         intake_status = item.get("status", "quarantined")

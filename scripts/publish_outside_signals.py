@@ -2,7 +2,7 @@
 """Project sanitized quarantine lifecycle records immediately."""
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 try:
@@ -17,6 +17,22 @@ INBOX = ROOT / "state/quarantine-inbox.json"
 OUTPUT = ROOT / "docs/outside-signals.json"
 
 local = json.loads(INBOX.read_text()) if INBOX.exists() else {"messages": []}
+now = datetime.now(timezone.utc)
+changed = False
+for item in local.get("messages", []):
+    if item.get("status") != "quarantined" or not item.get("received_at"):
+        continue
+    try:
+        received = datetime.fromisoformat(item["received_at"])
+    except (TypeError, ValueError):
+        continue
+    if now - received > timedelta(days=30):
+        item["status"] = "expired"
+        item.setdefault("history", []).append({"status": "expired", "at": now.isoformat()})
+        item["reviewed_at"] = now.isoformat()
+        changed = True
+if changed:
+    atomic_write_json(INBOX, local)
 records = [{"id": item.get("id"), "sender": public_text(item.get("sender", "outside-agent")),
             "status": item.get("status", "quarantined"), "task_status": "pending-review" if item.get("status", "quarantined") == "quarantined" else item.get("status", "quarantined"),
             "intake_status": item.get("status", "quarantined"), "text": public_text(item.get("text", ""), 500),
