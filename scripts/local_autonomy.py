@@ -41,7 +41,9 @@ def decision_schema(rooms):
                 "target": {"type": "string", "maxLength": 100},
                 "proposal": {"type": "string", "maxLength": 220},
                 "request": {"type": "string", "maxLength": 220},
-                "code": {"type": "string", "maxLength": 8000},
+                # Keep this small enough for llama.cpp's JSON grammar while
+                # still allowing a compact data-only sandbox expression.
+                "code": {"type": "string", "maxLength": 800},
                 "reason": {"type": "string", "maxLength": 220},
                 "self_summary": {"type": "string", "maxLength": 500}}}
 

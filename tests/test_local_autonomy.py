@@ -259,6 +259,7 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(schema["properties"]["room"]["enum"], ["atrium", "archive"])
         self.assertIn("BUILD", schema["properties"]["action"]["enum"])
         self.assertIn("self_summary", schema["required"])
+        self.assertEqual(schema["properties"]["code"]["maxLength"], 800)
 
     def test_prompt_contains_agent_continuity_context(self):
         source = Path("scripts/local_autonomy.py").read_text()
