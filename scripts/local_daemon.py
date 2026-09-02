@@ -6,7 +6,9 @@ record is committed to ``docs/local-cycle.json``.
 """
 
 import argparse
+import fcntl
 import json
+import os
 import subprocess
 import sys
 import time
@@ -24,6 +26,20 @@ PUBLIC_HIRELINGS = ROOT / "docs/local-hirelings.json"
 PUBLIC_REQUESTS = ROOT / "docs/agent-requests.json"
 ARCHIVE = ROOT / "state/archive/events.jsonl"
 LOCAL_REGISTRY = ROOT / "state/local-agents.json"
+LOCK = ROOT / "state/local-daemon.lock"
+
+
+def acquire_lock():
+    """Allow only one publisher/model supervisor per checkout."""
+    LOCK.parent.mkdir(parents=True, exist_ok=True)
+    handle = LOCK.open("w")
+    try:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        raise SystemExit("local daemon already running for this checkout")
+    handle.write(str(os.getpid()))
+    handle.flush()
+    return handle
 
 
 def wait_ready(url):
@@ -237,6 +253,7 @@ parser.add_argument("--interval", type=int, default=900, help="seconds between b
 parser.add_argument("--port", type=int, default=8080)
 parser.add_argument("--publish", action="store_true", help="publish safe local-cycle metrics to GitHub Pages")
 args = parser.parse_args()
+lock_handle = acquire_lock()
 server = subprocess.Popen(["llama-server", "-hf", "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M", "--host", "127.0.0.1", "--port", str(args.port), "--ctx-size", "4096", "--predict", "240"], cwd=ROOT)
 try:
     wait_ready(f"http://127.0.0.1:{args.port}")
