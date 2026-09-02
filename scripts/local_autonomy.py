@@ -60,8 +60,10 @@ def parse(text, agent, rooms):
     if action == "EXPLORE" and not target:
         return None
     request = fields.get("REQUEST", "").strip()
-    if request.upper() == "NONE":
+    if re.fullmatch(r"(?:NONE|N/A|NO REQUEST)[\s,.;:!?]*", request, re.I):
         request = ""
+    else:
+        request = request.rstrip(" ,.;:!?")
     return {"action": action, "room": room, "target": target,
             "proposal": fields.get("PROPOSAL", "").strip(), "request": request,
             "reason": fields.get("REASON", "").strip()}
@@ -157,6 +159,8 @@ def main():
             agent["request"] = decision["request"]
             agent["request_status"] = "open"
             agent["request_cycle"] = args.cycle
+        elif decision["action"] not in {"RETIRE", "FIRE"}:
+            agent["request_status"] = "closed"
         elif decision.get("action") in {"RETIRE", "FIRE"}:
             agent["request_status"] = "closed"
         agent["interviewed_at"] = datetime.now(timezone.utc).isoformat()

@@ -217,6 +217,11 @@ def publish(result, world):
         "privacy": "Sanitized non-sensitive requests only; raw interviews and private context stay local.",
         "requests": []
     }
+    registry_by_id = {agent.get("id"): agent for agent in registry.get("agents", [])}
+    for old in requests.get("requests", []):
+        current = registry_by_id.get(old.get("agent_id"))
+        if current and current.get("request_status") != "open" and old.get("status") == "open":
+            old["status"] = "closed"
     for agent in registry.get("agents", []):
         request = str(agent.get("request", "")).strip()
         if not request or agent.get("request_status") != "open":
@@ -228,6 +233,9 @@ def publish(result, world):
             "request": request[:220], "cycle": agent.get("request_cycle", world["cycle"]),
             "status": "open", "fulfillment": "Requires explicit review; no automatic access, spending, or outreach."
         }
+        for old in requests.get("requests", []):
+            if old.get("agent_id") == item["agent_id"] and old.get("status") == "open":
+                old["status"] = "superseded"
         requests["requests"] = [old for old in requests.get("requests", []) if old.get("id") != item["id"]]
         requests["requests"].append(item)
     requests["requests"] = requests.get("requests", [])[-100:]
