@@ -18,6 +18,7 @@ TOOL_CONTRACTS = {
     "public-csv": {"capability": "public-data-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": RESEARCH_MAX_BYTES, "max_rows": CSV_MAX_ROWS, "raw_data": False},
     "public-text": {"capability": "public-text-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": RESEARCH_MAX_BYTES, "raw_data": False, "untrusted_content": True},
     "local-code-sandbox": {"capability": "local-code-execution", "access": "isolated-execution", "network": "none", "side_effects": "temporary workspace only", "max_code": 8000, "timeout_seconds": 5, "max_output": 16000},
+    "local-code-read": {"capability": "public-source-read", "access": "read-only", "network": "none", "side_effects": False, "max_file_bytes": 120000, "max_inventory_bytes": 400000, "write_access": False, "secrets": "redacted"},
 }
 
 
@@ -169,6 +170,11 @@ def public_text(url):
 
 def run(tool, value):
     try:
+        if tool == "local-code-read":
+            # The broker is normally invoked as a script from this directory,
+            # so import the sibling module without changing process paths.
+            from code_view import run as read_source
+            return {"tool": tool, **read_source(value or None), "contract": TOOL_CONTRACTS[tool]}
         if tool == "wikipedia-search":
             return wikipedia(value)
         if tool == "public-search":

@@ -756,12 +756,17 @@ def main():
         tool = {"status": "not-requested"}
         if decision["action"] == "EXPLORE" and "public-web-read" in agent.get("capabilities", []):
             target = agent.get("exploration", "")
-            if re.match(r"https://", target, re.I):
+            if target.lower().startswith(("code:", "source:")):
+                tool_name = "local-code-read"
+                query_target = re.sub(r"^(?:code|source):\s*", "", target, flags=re.I).strip()
+                agent.setdefault("capabilities", []).append("public-source-read")
+            elif re.match(r"https://", target, re.I):
                 path = target.lower().split("?", 1)[0]
                 tool_name = "public-json" if path.endswith(".json") else "public-csv" if path.endswith(".csv") else "public-text"
+                query_target = target
             else:
                 tool_name = "public-search"
-            query_target = target
+                query_target = target
             if tool_name == "public-search":
                 role = re.sub(r"[^a-zA-Z0-9 ]", " ", str(agent.get("role", "research resident"))).strip()
                 query_target = f"{target} {role} AI agent research"[:160].strip()
