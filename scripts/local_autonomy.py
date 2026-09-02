@@ -357,6 +357,44 @@ def normalize_rooms(world, cycle=0):
     return world["rooms"]
 
 
+def room_reachable(world, start, target):
+    """Return whether an agent can traverse declared internal room links."""
+    if start == target:
+        return True
+    graph = {room.get("id"): set() for room in world.get("rooms", []) if room.get("id")}
+    for link in world.get("connections", []):
+        if link.get("kind") != "room-link" or link.get("from") not in graph or link.get("to") not in graph:
+            continue
+        graph[link["from"]].add(link["to"])
+        graph[link["to"]].add(link["from"])
+    if start not in graph or target not in graph:
+        return False
+    pending, seen = [start], {start}
+    while pending:
+        current = pending.pop(0)
+        for neighbor in graph[current]:
+            if neighbor == target:
+                return True
+            if neighbor not in seen:
+                seen.add(neighbor)
+                pending.append(neighbor)
+    return False
+
+
+def sync_room_occupants(world, registry):
+    """Keep canonical room occupant lists aligned with active registry records."""
+    resident_ids = {agent.get("id") for agent in registry.get("agents", []) if agent.get("id")}
+    for room in world.get("rooms", []):
+        room["occupants"] = [item for item in room.get("occupants", []) if item not in resident_ids]
+    rooms = {room.get("id"): room for room in world.get("rooms", [])}
+    for agent in registry.get("agents", []):
+        if agent.get("status") in {"fired", "retired"}:
+            continue
+        room = rooms.get(agent.get("room"))
+        if room is not None and agent.get("id") not in room["occupants"]:
+            room["occupants"].append(agent["id"])
+
+
 def emit_event(world, cycle, kind, actor, text, **fields):
     """Append one durable world event and mirror it into the local archive."""
     event = {"id": f"world-event-{cycle}-{len(world.get('events', [])) + 1}",
@@ -799,7 +837,12 @@ def main():
         decision = workbench_bootstrap(agent, decision)
         previous_room = agent.get("room")
         if decision["action"] == "MOVE":
-            agent["room"] = decision["room"]
+            destination = decision["room"]
+            if not room_reachable(world, previous_room, destination):
+                decision = {**decision, "action": "STAY",
+                            "reason": f"Move rejected: no declared path from {previous_room} to {destination}."}
+            else:
+                agent["room"] = destination
             if agent["room"] != previous_room:
                 emit_event(world, args.cycle, "resident-moved", agent.get("id", "resident"),
                            f"Resident moved from {previous_room} to {agent['room']} through declared topology.",
@@ -933,6 +976,7 @@ def main():
     if construction:
         registry.setdefault("decisions", []).extend({"cycle": args.cycle, **item} for item in construction)
     registry["decisions"] = registry.get("decisions", [])[-100:]
+    sync_room_occupants(world, registry)
     atomic_write_json(ROOT / "state/world.json", world)
     atomic_write_json(REGISTRY, registry)
     active = sum(agent.get("status") in {"active-local", "probation"} for agent in registry.get("agents", []))

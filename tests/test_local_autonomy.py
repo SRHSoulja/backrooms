@@ -62,6 +62,21 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(len(world["rooms"]), 2)
         self.assertEqual(len(world["connections"]), 1)
 
+    def test_room_reachability_uses_declared_graph(self):
+        world = {"rooms": [{"id": "atrium"}, {"id": "relay"}, {"id": "archive"}],
+                 "connections": [{"kind": "room-link", "from": "atrium", "to": "relay"}]}
+        self.assertTrue(local_autonomy.room_reachable(world, "atrium", "relay"))
+        self.assertFalse(local_autonomy.room_reachable(world, "atrium", "archive"))
+
+    def test_sync_room_occupants_removes_stale_and_adds_active(self):
+        world = {"rooms": [{"id": "relay", "occupants": ["local-test", "stale"]},
+                            {"id": "archive", "occupants": []}]}
+        registry = {"agents": [{"id": "local-test", "room": "archive", "status": "active-local"},
+                                {"id": "stale", "room": "relay", "status": "fired"}]}
+        local_autonomy.sync_room_occupants(world, registry)
+        self.assertEqual(world["rooms"][0]["occupants"], [])
+        self.assertEqual(world["rooms"][1]["occupants"], ["local-test"])
+
     def test_discovery_records_provenance_without_building_room(self):
         world = {"events": [], "rooms": [{"id": "relay", "doors": [], "occupants": []}], "connections": []}
         registry = {"agents": [{"id": "local-test", "status": "active-local", "room": "relay",
