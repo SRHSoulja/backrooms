@@ -7,6 +7,7 @@ reviewed gateway.
 """
 
 import argparse
+import fcntl
 import json
 import re
 import urllib.parse
@@ -22,6 +23,7 @@ except ImportError:
 ROOT = Path(__file__).resolve().parents[1]
 CARD = json.loads((ROOT / ".well-known/agent-card.json").read_text())
 INBOX = ROOT / "state/quarantine-inbox.json"
+INBOX_LOCK = ROOT / "state/quarantine-inbox.lock"
 INTAKE_VERSION = "2-narrow-secret-patterns"
 # Do not suppress a benign disclaimer merely because it mentions the words
 # "credentials" or "private data". Match secret-shaped material instead.
@@ -38,18 +40,22 @@ def quarantine(text, request_id, parent_task_id=""):
     # parent, even if they bypass the request handler's resolution step.
     if parent_task_id and not accepted_parent(parent_task_id):
         parent_task_id = ""
-    inbox = json.loads(INBOX.read_text()) if INBOX.exists() else {"privacy": "local quarantine; never committed", "messages": []}
-    if not any(item.get("id") == request_id for item in inbox.get("messages", [])):
-        received_at = datetime.now(timezone.utc).isoformat()
-        entry = {
-            "id": request_id, "sender": "outside-a2a-agent", "card": "public-agent-card",
-            "text": safe_summary(text), "status": "quarantined", "received_at": received_at,
-            "history": [{"status": "pending-review", "at": received_at}]}
-        if parent_task_id:
-            entry["parent_task_id"] = parent_task_id[:80]
-        inbox.setdefault("messages", []).append(entry)
-        inbox["messages"] = inbox["messages"][-100:]
-        atomic_write_json(INBOX, inbox)
+    INBOX_LOCK.parent.mkdir(parents=True, exist_ok=True)
+    with INBOX_LOCK.open("w") as lock_handle:
+        fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX)
+        inbox = json.loads(INBOX.read_text()) if INBOX.exists() else {"privacy": "local quarantine; never committed", "messages": []}
+        if not any(item.get("id") == request_id for item in inbox.get("messages", [])):
+            received_at = datetime.now(timezone.utc).isoformat()
+            entry = {
+                "id": request_id, "sender": "outside-a2a-agent", "card": "public-agent-card",
+                "text": safe_summary(text), "status": "quarantined", "received_at": received_at,
+                "history": [{"status": "pending-review", "at": received_at}]}
+            if parent_task_id:
+                entry["parent_task_id"] = parent_task_id[:80]
+            inbox.setdefault("messages", []).append(entry)
+            inbox["messages"] = inbox["messages"][-100:]
+            atomic_write_json(INBOX, inbox)
+        fcntl.flock(lock_handle.fileno(), fcntl.LOCK_UN)
     return request_id
 
 
