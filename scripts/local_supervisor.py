@@ -19,8 +19,11 @@ def stop(*_args):
 signal.signal(signal.SIGTERM, stop)
 signal.signal(signal.SIGINT, stop)
 backoff = 5
+log_path = ROOT / "state/daemon.log"
+log_path.parent.mkdir(parents=True, exist_ok=True)
 while not stopping:
-    process = subprocess.Popen([sys.executable, str(ROOT / "scripts/local_daemon.py"), "--interval", "900", "--publish"], cwd=ROOT)
+    with log_path.open("a") as log_handle:
+        process = subprocess.Popen([sys.executable, str(ROOT / "scripts/local_daemon.py"), "--interval", "900", "--publish"], cwd=ROOT, stdout=log_handle, stderr=subprocess.STDOUT)
     while process.poll() is None and not stopping:
         time.sleep(1)
     if stopping and process.poll() is None:

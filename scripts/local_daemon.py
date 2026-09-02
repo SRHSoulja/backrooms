@@ -60,6 +60,8 @@ PUBLIC_RESEARCH = ROOT / "docs/research.json"
 PUBLIC_OUTSIDE_SIGNALS = ROOT / "docs/outside-signals.json"
 LOCAL_FRONTIER = ROOT / "state/frontier.json"
 PUBLIC_FRONTIER = ROOT / "docs/frontier.json"
+LOCAL_CODEX_STATUS = ROOT / "state/codex-bridge-status.json"
+PUBLIC_CODEX_STATUS = ROOT / "docs/codex-bridge.json"
 LOCAL_INBOX = ROOT / "state/quarantine-inbox.json"
 PUBLIC_CODE_PROPOSALS = ROOT / "docs/code-proposals.json"
 LOCAL_CODE_PROPOSALS = ROOT / "state/code-proposals.json"
@@ -67,6 +69,7 @@ PUBLIC_VOICE_BLOCKED = BLOCKED
 ARCHIVE = ROOT / "state/archive/events.jsonl"
 LOCAL_REGISTRY = ROOT / "state/local-agents.json"
 LOCK = ROOT / "state/local-daemon.lock"
+MODEL_LOG = ROOT / "state/llama-server.log"
 
 
 def acquire_lock():
@@ -418,6 +421,19 @@ def sync_code_proposals():
             "code_proposals_feed": "docs/code-proposals.json"}
 
 
+def sync_codex_bridge():
+    """Project bridge status from ignored local state into the public feed."""
+    local = json.loads(LOCAL_CODEX_STATUS.read_text()) if LOCAL_CODEX_STATUS.exists() else {
+        "schema_version": 1, "enabled": False, "mode": "read-only-proposal", "pending_tasks": 0,
+        "completed_tasks": 0, "limits": {"per_hour": 4, "per_day": 12},
+        "usage": {"started_last_hour": 0, "started_last_day": 0}, "last_event": "not running"}
+    public = {key: local.get(key) for key in ("schema_version", "generated_at", "enabled", "mode", "pending_tasks", "completed_tasks", "limits", "usage", "last_event", "last_task") if key in local}
+    public["authentication"] = "ChatGPT plan via Codex CLI; API keys are not passed to child processes"
+    public["safety"] = ["no automatic code application", "no spending or transactions", "no secrets in prompts", "human review required"]
+    atomic_write_json(PUBLIC_CODEX_STATUS, public)
+    return {"codex_bridge": "enabled" if public.get("enabled") else "disabled", "codex_pending_tasks": public.get("pending_tasks", 0), "codex_completed_tasks": public.get("completed_tasks", 0)}
+
+
 def sync_outside_signals():
     local = json.loads(LOCAL_INBOX.read_text()) if LOCAL_INBOX.exists() else {"messages": []}
     changed = False
@@ -635,7 +651,7 @@ def publish(result, world, model_health=True):
         "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
         "activity_feed": "docs/activity.json",
         "feed_freshness_seconds": 0
-        ,**resource_health, **analysis_health, **research_health, **frontier_health, **sync_code_proposals(), **sync_outside_signals(),
+        ,**resource_health, **analysis_health, **research_health, **frontier_health, **sync_code_proposals(), **sync_outside_signals(), **sync_codex_bridge(),
         "dropped_events": 0
     }
     safe = {
@@ -780,10 +796,10 @@ def publish(result, world, model_health=True):
     sync_outside_signals()
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}
-    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json", "state/frontier.json"}:
+    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json", "state/frontier.json", "state/codex-bridge-status.json"}:
         print(json.dumps({"publish": "skipped", "reason": "other local changes present"}), flush=True)
         return
-    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json"], cwd=ROOT, check=True)
+    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json"], cwd=ROOT, check=True)
     commit = subprocess.run(["git", "commit", "-m", "chore: publish local council signal"], cwd=ROOT, capture_output=True)
     if commit.returncode == 0:
         pushed = subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=ROOT, capture_output=True)
@@ -803,15 +819,18 @@ server = None
 
 
 def start_local_model():
+    MODEL_LOG.parent.mkdir(parents=True, exist_ok=True)
+    log_handle = MODEL_LOG.open("a")
     process = subprocess.Popen(["llama-server", "-hf", "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
                                 "--host", "127.0.0.1", "--port", str(args.port), "--ctx-size", "4096",
-                                "--predict", "800", "--parallel", "1"], cwd=ROOT)
+                                "--predict", "800", "--parallel", "1"], cwd=ROOT, stdout=log_handle, stderr=subprocess.STDOUT)
     try:
         wait_ready(base_url)
     except Exception:
         process.terminate()
         process.wait(timeout=15)
         raise
+    process._backrooms_log_handle = log_handle
     return process
 
 
@@ -825,6 +844,9 @@ def stop_local_model(process):
     except subprocess.TimeoutExpired:
         process.kill()
         process.wait(timeout=5)
+    log_handle = getattr(process, "_backrooms_log_handle", None)
+    if log_handle:
+        log_handle.close()
 
 
 if not configured_url:
@@ -839,6 +861,10 @@ try:
             stop_local_model(server)
             server = start_local_model()
         model_health = model_probe(base_url)
+        # Keep the frontier available to the next question even when a
+        # publication is skipped by an unrelated checkout change.
+        registry = json.loads(LOCAL_REGISTRY.read_text()) if LOCAL_REGISTRY.exists() else {"agents": []}
+        sync_frontier({}, runtime_world(), registry)
         question = next_question(base_url)
         completed = subprocess.run([sys.executable, str(ROOT / "scripts/roundtable.py"),
             "--base-url", base_url, "--question", question], cwd=ROOT,

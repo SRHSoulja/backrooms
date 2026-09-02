@@ -11,6 +11,7 @@ import json
 import os
 import re
 import subprocess
+import tempfile
 import time
 import uuid
 from datetime import datetime, timezone
@@ -24,13 +25,14 @@ except ImportError:
 ROOT = Path(__file__).resolve().parents[1]
 INBOX = ROOT / "state/codex-inbox"
 OUTBOX = ROOT / "state/codex-outbox"
-PUBLIC = ROOT / "docs/codex-bridge.json"
+LOCAL_STATUS = ROOT / "state/codex-bridge-status.json"
+PUBLIC_STATUS = ROOT / "docs/codex-bridge.json"
 LOG = ROOT / "state/codex-bridge-log.jsonl"
 MAX_TASK_BYTES = 24_000
 MAX_TASKS_PER_HOUR = 4
 MAX_TASKS_PER_DAY = 12
 SENSITIVE = re.compile(r"(?i)(api[_-]?key|secret|private[_-]?key|mnemonic|seed phrase|password|token|authorization)\s*[:=]")
-SENSITIVE_PATH = re.compile(r"(?i)(^|/)(\.env|.*secret.*|.*credential.*|.*private.*|wallet/.*\.json)$")
+SENSITIVE_PATH = re.compile(r"(?i)(^|/)(state|wallet|\.env|.*secret.*|.*credential.*|.*private.*|.*\.key|.*\.pem)(/|$)")
 
 
 def now():
@@ -101,7 +103,10 @@ def status(extra=None):
     }
     if extra:
         payload.update(extra)
-    atomic_write_json(PUBLIC, payload)
+    atomic_write_json(LOCAL_STATUS, payload)
+    # This is an allowlisted, aggregate-only projection. Keeping it live
+    # makes the observatory useful between 15-minute daemon publications.
+    atomic_write_json(PUBLIC_STATUS, payload)
     return payload
 
 
@@ -129,19 +134,26 @@ def run_task(path, codex_bin):
         "\nContext: " + (task["context"] or "none")
     )
     environment = {key: value for key, value in os.environ.items() if not any(word in key.upper() for word in ("KEY", "SECRET", "TOKEN", "PASSWORD", "MNEMONIC", "PRIVATE"))}
-    command = [codex_bin, "exec", "--ephemeral", "--json", "--sandbox", "read-only", "--ask-for-approval", "never", "-C", str(ROOT), "-"]
     log({"event": "started", "task_id": task["id"]})
-    try:
-        result = subprocess.run(command, input=prompt, text=True, capture_output=True, timeout=900, env=environment, cwd=ROOT)
-        output = result.stdout[-20000:]
-        error = result.stderr[-4000:]
-        state = "completed" if result.returncode == 0 else "failed"
-        record = {"task_id": task["id"], "status": state, "returncode": result.returncode, "output": output, "stderr": error, "completed_at": now()}
-        log({"event": state, "task_id": task["id"], "returncode": result.returncode})
-        return record
-    except subprocess.TimeoutExpired:
-        log({"event": "timed_out", "task_id": task["id"]})
-        return {"task_id": task["id"], "status": "timed_out", "completed_at": now()}
+    with tempfile.TemporaryDirectory(prefix="backrooms-codex-public-") as directory:
+        public_root = Path(directory) / "repo"
+        def ignore(_directory, names):
+            blocked = {".git", "state", "wallet", "__pycache__", ".codex"}
+            return {name for name in names if name in blocked or name.startswith(".env") or name.endswith((".key", ".pem"))}
+        import shutil
+        shutil.copytree(ROOT, public_root, ignore=ignore)
+        command = [codex_bin, "exec", "--ephemeral", "--json", "--sandbox", "read-only", "--ask-for-approval", "never", "--skip-git-repo-check", "-C", str(public_root), "-"]
+        try:
+            result = subprocess.run(command, input=prompt, text=True, capture_output=True, timeout=900, env=environment, cwd=public_root)
+            output = result.stdout[-20000:]
+            error = result.stderr[-4000:]
+            state = "completed" if result.returncode == 0 else "failed"
+            record = {"task_id": task["id"], "status": state, "returncode": result.returncode, "output": output, "stderr": error, "workspace": "sanitized-temporary-copy", "completed_at": now()}
+            log({"event": state, "task_id": task["id"], "returncode": result.returncode})
+            return record
+        except subprocess.TimeoutExpired:
+            log({"event": "timed_out", "task_id": task["id"]})
+            return {"task_id": task["id"], "status": "timed_out", "workspace": "sanitized-temporary-copy", "completed_at": now()}
 
 
 def process_once(codex_bin):
