@@ -411,8 +411,10 @@ def sync_outside_signals():
     local = json.loads(LOCAL_INBOX.read_text()) if LOCAL_INBOX.exists() else {"messages": []}
     records = []
     for item in local.get("messages", [])[-100:]:
+        intake_status = item.get("status", "quarantined")
         records.append({"id": item.get("id"), "sender": public_text(item.get("sender", "outside-agent")),
-                        "status": item.get("status", "quarantined"), "text": public_text(item.get("text", ""), 500),
+                        "status": intake_status, "task_status": "pending-review" if intake_status == "quarantined" else intake_status,
+                        "intake_status": intake_status, "text": public_text(item.get("text", ""), 500),
                         "received_at": item.get("received_at"), "reviewed_at": item.get("reviewed_at"),
                         "parent_task_id": item.get("parent_task_id"), "history": item.get("history", [])[-10:]})
     atomic_write_json(PUBLIC_OUTSIDE_SIGNALS, {"schema_version": 1, "generated_at": datetime.now(timezone.utc).isoformat(),

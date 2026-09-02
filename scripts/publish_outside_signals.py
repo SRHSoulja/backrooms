@@ -18,7 +18,8 @@ OUTPUT = ROOT / "docs/outside-signals.json"
 
 local = json.loads(INBOX.read_text()) if INBOX.exists() else {"messages": []}
 records = [{"id": item.get("id"), "sender": public_text(item.get("sender", "outside-agent")),
-            "status": item.get("status", "quarantined"), "text": public_text(item.get("text", ""), 500),
+            "status": item.get("status", "quarantined"), "task_status": "pending-review" if item.get("status", "quarantined") == "quarantined" else item.get("status", "quarantined"),
+            "intake_status": item.get("status", "quarantined"), "text": public_text(item.get("text", ""), 500),
             "received_at": item.get("received_at"), "reviewed_at": item.get("reviewed_at"),
             "parent_task_id": item.get("parent_task_id"), "history": item.get("history", [])[-10:]}
            for item in local.get("messages", [])[-100:]]

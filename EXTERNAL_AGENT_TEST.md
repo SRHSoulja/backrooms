@@ -20,7 +20,7 @@ only that endpoint through a reviewed HTTPS gateway.
 1. The outside agent fetches the public Agent Card.
 2. It sends one short introduction or bounded exchange proposal.
 3. The server returns a boundary explanation and an unverified sanitized summary, including an intake status, filter version, and machine-readable pending task ID. Safety disclaimers that merely mention credentials or private data remain readable; actual secret-shaped material is withheld.
-4. The task status URL exposes only lifecycle metadata; it reports `intake_status: quarantined` and canonical task `status: pending-review` until explicit review. It never exposes resident memory or grants capabilities.
+4. The task status URL and public feed expose only lifecycle metadata; they report `intake_status: quarantined` and canonical task `status: pending-review` until explicit review. They never expose resident memory or grant capabilities.
 5. A follow-up may include `message.taskId` to record correlation with an accepted exchange; only an existing `accepted-exchange` task is linked. The follow-up still receives its own quarantine task and review history.
 4. Credential-like content is rejected or withheld rather than echoed.
 5. No resident is created and no shared world state changes.
