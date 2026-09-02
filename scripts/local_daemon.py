@@ -74,7 +74,8 @@ def action(base_url, cycle):
 def next_question(base_url):
     """Ask residents for a bounded question; fall back if validation rejects both."""
     completed = subprocess.run([sys.executable, str(ROOT / "scripts/self_prompt.py"),
-        "--base-url", base_url, "--state", str(RUNTIME_STATE)], cwd=ROOT,
+        "--base-url", base_url, "--state", str(RUNTIME_STATE),
+        "--actions", str(ROOT / "state/action-log.json")], cwd=ROOT,
         capture_output=True, text=True, check=False)
     if completed.returncode == 0:
         try:

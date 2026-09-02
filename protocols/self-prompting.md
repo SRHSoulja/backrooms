@@ -18,3 +18,5 @@ Residents may shape their own next prompt within a fixed boundary.
 - treating a generated desire, preference, or self-description as evidence of consciousness.
 
 The steward validates length, scope, and forbidden content before a self-authored prompt can enter the council queue.
+
+Residents may receive recent aggregate experiment outcomes. Weakened predictions should receive priority for follow-up; raw responses and private runtime context remain unavailable to this prompt stage.

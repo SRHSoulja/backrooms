@@ -12,7 +12,7 @@ FORBIDDEN = re.compile(r"(api[_ -]?key|password|secret|private memory|credential
 
 def ask(url, resident, context):
     role = "find a surprising but testable question" if resident == "Echo" else "find the most important unresolved weakness or confound"
-    prompt = (f"You are {resident}. From the public context below, {role}. "
+    prompt = (f"You are {resident}. From the public context below, {role}. If a recent aggregate hypothesis was weakened, prioritize a reversible follow-up that could distinguish competing explanations. "
               "Return exactly three lines: QUESTION:, WHY:, TEST:. "
               "The test must be reversible, non-sensitive, and require no external contact. "
               "Do not mention credentials or private memory.\n\n" + context)
@@ -34,10 +34,18 @@ def valid(proposal):
 parser = argparse.ArgumentParser()
 parser.add_argument("--base-url", default=os.getenv("BACKROOMS_LLM_BASE_URL", "http://127.0.0.1:8080"))
 parser.add_argument("--state", default="state/world.json", help="public JSON state file to inspect")
+parser.add_argument("--actions", default="state/action-log.json", help="local aggregate action history")
 args = parser.parse_args()
 with open(args.state) as state_file:
     world = json.load(state_file)
-context = json.dumps({"shared_memory": world["shared_memory"], "events": world["events"][-5:]})
+actions = {"actions": []}
+try:
+    with open(args.actions) as action_file:
+        actions = json.load(action_file)
+except FileNotFoundError:
+    pass
+context = json.dumps({"shared_memory": world["shared_memory"], "events": world["events"][-5:],
+                      "recent_aggregate_actions": actions.get("actions", [])[-6:]})
 proposals = []
 for resident in ("Echo", "Morrow"):
     proposal = ask(args.base_url, resident, context)
