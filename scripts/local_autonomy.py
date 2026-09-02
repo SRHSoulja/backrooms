@@ -30,7 +30,7 @@ ANALYSIS_ARCHIVE = ROOT / "state/analysis-results.jsonl"
 INTERVIEW_LOG = ROOT / "state/interviews"
 FINDINGS = ROOT / "state/findings.jsonl"
 ANALYSIS_RETENTION = 100
-FORBIDDEN = re.compile(r"(api[_ -]?key|password|secret|private memory|credential|token|wallet|funds|shell|sudo)", re.I)
+FORBIDDEN = re.compile(r"(?:\b(?:api[_ -]?key|password|secret|credential|mnemonic|seed\s+phrase)\b\s*[:=]\s*\S+|\bprivate\s+memory\b|\b(?:wallet|funds|shell|sudo)\b)", re.I)
 PHYSICAL_NEEDS = re.compile(r"\b(?:water|food|sleep|shelter|medical|dust|cleaning|temperature|physical comfort)\b", re.I)
 PHYSICAL_NEED_CLASSIFICATION = "anthropomorphic-projection / physical-need-model-confusion"
 ALLOWED = {"STAY", "MOVE", "EXPLORE", "ANALYZE", "PROPOSE", "DISCOVER", "BUILD", "TRANSFORM", "RETIRE", "FIRE"}

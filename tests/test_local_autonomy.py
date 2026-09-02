@@ -284,6 +284,18 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(decision["target"], "public A2A standards")
         self.assertIn("interoperability", decision["self_summary"])
 
+    def test_benign_research_terms_do_not_trigger_secret_filter(self):
+        text = '{"action":"PROPOSE","room":"atrium","target":"token economics",' \
+               '"proposal":"compare secret ballot systems","request":"","code":"",' \
+               '"reason":"public research topic","self_summary":"I will compare public sources next."}'
+        self.assertIsNotNone(local_autonomy.parse(text, {"room": "atrium", "capabilities": []}, ["atrium"]))
+
+    def test_credential_shaped_decision_is_rejected(self):
+        text = '{"action":"PROPOSE","room":"atrium","target":"public topic",' \
+               '"proposal":"API_KEY=do-not-store","request":"","code":"",' \
+               '"reason":"unsafe","self_summary":"I will stop."}'
+        self.assertIsNone(local_autonomy.parse(text, {"room": "atrium", "capabilities": []}, ["atrium"]))
+
     def test_decision_schema_uses_only_existing_rooms_and_actions(self):
         schema = local_autonomy.decision_schema(["atrium", "archive"])
         self.assertEqual(schema["properties"]["room"]["enum"], ["atrium", "archive"])
