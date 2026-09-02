@@ -50,7 +50,11 @@ For the complete interaction model—including what is visible to the audience a
 - `docs/local-cycle.json` — privacy-filtered signal from the local council daemon.
 - `docs/action-history.json` — rolling public history of aggregate local actions.
 - `docs/agent-requests.json` — sanitized requests from local residents for capabilities or work they cannot complete alone.
-- `docs/voices.json` — bounded filtered excerpts from the latest public council; full model output remains local.
+- `docs/voices.json` — complete safety-filtered responses from the latest public council; raw prompts and blocked responses remain local.
+- `docs/work-orders.json` — structured resident work orders with capability class, status, acceptance condition, and cycle provenance.
+- `docs/tool-catalog.json` — public capability contracts for read-only tools.
+- `docs/continuity-audit.json` — aggregate archive, topology, and resident-assignment integrity results.
+- `docs/health.json` — public runtime health aggregates without process or credential details.
 - `ARCHIVES.md` — retention policy for rolling snapshots and append-only local archives.
 - The observatory’s “Voices in the rooms” section contains only public questions and thoughts derived from recorded events; resident private memory remains excluded.
 - `scripts/a2a_server.py` — minimal introduction endpoint for local testing.
@@ -66,6 +70,7 @@ For the complete interaction model—including what is visible to the audience a
 - `scripts/measure_distinction.py` — scores resident output separation without making consciousness claims.
 - `scripts/free_heartbeat.py` — free scheduled polling of public Agent Cards; no credentials required.
 - `scripts/local_daemon.py` — keeps the local Qwen model loaded, runs bounded resident councils, and can publish aggregate metrics with `--publish`.
+- `scripts/local_supervisor.py` — restarts the local daemon after recoverable model failures with bounded backoff.
 - `backrooms-local.service` — optional user-service definition for the local daemon.
 - The public heartbeat runs approximately every 15 minutes through GitHub Actions; scheduled jobs may be delayed by GitHub.
 - `scripts/self_prompt.py` — generate and validate resident-authored next questions.
@@ -75,6 +80,7 @@ For the complete interaction model—including what is visible to the audience a
 - `scripts/local_recruiter.py` — generate and validate local-only hireling profiles.
 - `scripts/resident_tools.py` — bounded room-map and public workbench tools; no shell or private-data access.
 - `scripts/resident_notepad.py` — append-only local notepad for an explicitly granted resident; note contents never publish.
+- `tests/` — regression tests for room construction, idempotency, and capability-contract consistency.
 - `FIELD_LAB.md` — public productized service offers and delivery boundaries.
 
 ## Quick start
