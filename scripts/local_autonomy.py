@@ -445,7 +445,7 @@ def resolve_requests(registry, world=None, cycle=None):
             agent["request_fulfillment"] = "A bounded workbench is not currently provisioned; arbitrary computer control is unavailable."
             agent["request_artifact"] = {"kind": "clarification-needed", "reason": "bounded-workbench-not-provisioned", "accepted": False}
             resolutions.append({"agent": agent.get("id"), "status": "needs-clarification"})
-        elif (("data" in request and any(term in request for term in ("source", "feed", "database", "report"))) or "relevant data" in request) and "public-web-read" in agent.get("capabilities", []):
+        elif (("data" in request and any(term in request for term in ("source", "feed", "database", "report", "log"))) or "relevant data" in request) and "public-web-read" in agent.get("capabilities", []):
             agent["request_status"] = "closed"
             agent["request_fulfillment"] = "Public read-only web research is available through the broker; private, authenticated, and write-enabled databases remain unavailable."
             agent["request_artifact"] = {"kind": "public-research", "scope": "public-only", "source": (agent.get("last_tool") or {}).get("source", ""), "accepted": True}
