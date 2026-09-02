@@ -761,8 +761,12 @@ def main():
                 tool_name = "public-json" if path.endswith(".json") else "public-csv" if path.endswith(".csv") else "public-text"
             else:
                 tool_name = "public-search"
+            query_target = target
+            if tool_name == "public-search":
+                role = re.sub(r"[^a-zA-Z0-9 ]", " ", str(agent.get("role", "research resident"))).strip()
+                query_target = f"{target} {role} AI agent research"[:160].strip()
             completed = subprocess.run([sys.executable, str(ROOT / "scripts/tool_broker.py"),
-                tool_name, target], cwd=ROOT, capture_output=True, text=True, check=False)
+                tool_name, query_target], cwd=ROOT, capture_output=True, text=True, check=False)
             try:
                 tool = json.loads(completed.stdout)
             except json.JSONDecodeError:
@@ -794,6 +798,7 @@ def main():
         registry.setdefault("decisions", []).append({"cycle": args.cycle, "agent": agent["id"], **decision})
         results.append({"id": agent["id"], "action": decision["action"].lower(), "room": agent["room"],
                         "status": agent["status"], "proposal": agent.get("proposal", "")[:220],
+                        "reason": decision.get("reason", "")[:220],
                         "request": agent.get("request", "")[:220],
                         "request_status": agent.get("request_status", "none"),
                         "exploration": agent.get("exploration", "")[:100], "tool": tool})

@@ -21,7 +21,11 @@ def ask(url, cycle):
         return json.load(response)["choices"][0]["message"]["content"].strip()
 
 def parse(text):
-    fields = {line.split(":", 1)[0].strip().upper(): line.split(":", 1)[1].strip() for line in text.splitlines() if ":" in line}
+    fields = {}
+    labels = r"NAME|ROLE|PURPOSE|QUESTION"
+    matches = re.finditer(rf"(?is)\b({labels})\s*[:\-]\s*(.*?)(?=\b(?:{labels})\s*[:\-]|\Z)", text)
+    for match in matches:
+        fields[match.group(1).upper()] = re.sub(r"[`*_]", "", match.group(2)).strip()
     required = ("NAME", "ROLE", "PURPOSE", "QUESTION")
     limits = {"NAME": 80, "ROLE": 60, "PURPOSE": 240, "QUESTION": 240}
     if any(not fields.get(key) or len(fields[key]) > limit for key, limit in limits.items()) or FORBIDDEN.search(text):
@@ -31,7 +35,23 @@ def parse(text):
     return fields
 
 parser = argparse.ArgumentParser(); parser.add_argument("--base-url", default="http://127.0.0.1:8080"); parser.add_argument("--cycle", type=int, required=True); args = parser.parse_args()
-profile = parse(ask(args.base_url, args.cycle))
+raw = ask(args.base_url, args.cycle)
+profile = parse(raw)
+if not profile:
+    repair_prompt = ("Reformat this proposed fictional hireling as exactly four plain lines: NAME:, ROLE:, "
+                     "PURPOSE:, QUESTION:. Keep the meaning, use non-sensitive content, and stay within the "
+                     "original field limits.\n" + raw[:1200])
+    body = json.dumps({"model": os.getenv("BACKROOMS_LLM_MODEL", "local"), "messages": [
+        {"role": "system", "content": "You repair bounded fictional agent profiles."},
+        {"role": "user", "content": repair_prompt}], "temperature": 0.1, "max_tokens": 120}).encode()
+    request = urllib.request.Request(args.base_url.rstrip("/") + "/v1/chat/completions", data=body,
+        headers={"Content-Type": "application/json"}, method="POST")
+    try:
+        with urllib.request.urlopen(request, timeout=90) as response:
+            repaired = json.load(response)["choices"][0]["message"]["content"].strip()
+        profile = parse(repaired)
+    except Exception:
+        profile = None
 if not profile:
     print(json.dumps({"status": "rejected", "reason": "profile failed bounded validation"})); raise SystemExit(0)
 registry = json.loads(REGISTRY.read_text()) if REGISTRY.exists() else {"privacy": "local registry; no credentials or private memory", "agents": []}
