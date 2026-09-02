@@ -26,6 +26,7 @@ PUBLIC_HIRELINGS = ROOT / "docs/local-hirelings.json"
 PUBLIC_REQUESTS = ROOT / "docs/agent-requests.json"
 PUBLIC_VOICES = ROOT / "docs/voices.json"
 PUBLIC_WORLD = ROOT / "docs/world.json"
+PUBLIC_AUDIT = ROOT / "docs/continuity-audit.json"
 PUBLIC_VOICE_BLOCKED = re.compile(r"api[_ -]?key|password|secret|private|credential|token|wallet|seed phrase", re.I)
 ARCHIVE = ROOT / "state/archive/events.jsonl"
 LOCAL_REGISTRY = ROOT / "state/local-agents.json"
@@ -95,6 +96,48 @@ def public_voice(text):
     if not compact or PUBLIC_VOICE_BLOCKED.search(compact):
         return "[excerpt withheld by publication filter]"
     return compact
+
+
+def continuity_audit(world, registry):
+    """Check archive/projection continuity without exposing raw resident output."""
+    records, malformed, raw_fields = [], 0, 0
+    if ARCHIVE.exists():
+        for line in ARCHIVE.read_text().splitlines():
+            try:
+                record = json.loads(line)
+                records.append(record)
+                raw_fields += sum(key in record for key in ("echo", "morrow", "prompt", "response", "raw_output"))
+            except json.JSONDecodeError:
+                malformed += 1
+    state_events = world.get("events", [])
+    state_ids = {event.get("id") for event in state_events if event.get("id")}
+    archive_ids = {event.get("id") for event in records if event.get("id")}
+    rooms = {room.get("id"): room for room in world.get("rooms", []) if room.get("id")}
+    links = [link for link in world.get("connections", []) if link.get("kind") == "room-link"]
+    invalid_links = [link.get("id") for link in links if link.get("from") not in rooms or link.get("to") not in rooms]
+    invalid_residents = [agent.get("id") for agent in registry.get("agents", [])
+                         if agent.get("status") not in {"fired", "retired"}
+                         and agent.get("room") not in rooms]
+    checks = {
+        "archive_parse": malformed == 0,
+        "archive_event_overlap": bool(state_ids) and bool(state_ids & archive_ids),
+        "raw_output_exclusion": raw_fields == 0,
+        "room_link_integrity": not invalid_links,
+        "resident_room_integrity": not invalid_residents,
+    }
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "cycle": world.get("cycle"),
+        "status": "pass" if all(checks.values()) else "needs-review",
+        "checks": checks,
+        "archive_records": len(records),
+        "malformed_archive_records": malformed,
+        "raw_output_fields_found": raw_fields,
+        "linked_rooms_checked": len(links),
+        "invalid_room_links": invalid_links,
+        "invalid_resident_assignments": invalid_residents,
+        "privacy": "Aggregate integrity metadata only; resident prompts and raw responses are not published."
+    }
 
 
 def action(base_url, cycle):
@@ -185,6 +228,7 @@ def publish(result, world):
     if sync.returncode:
         print(json.dumps({"publish": "skipped", "reason": "checkout not fast-forwardable"}), flush=True)
         return
+    registry = json.loads(LOCAL_REGISTRY.read_text()) if LOCAL_REGISTRY.exists() else {"agents": []}
     safe = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
@@ -194,11 +238,11 @@ def publish(result, world):
         "recruitment": result.get("recruitment", {"status": "not-run"}),
         "autonomy": result.get("autonomy", {"status": "not-run"}),
         "metrics": metrics(result),
+        "continuity_audit": continuity_audit(world, registry),
         "privacy": "Only aggregate metrics and the bounded council question are public; raw outputs remain local."
     }
     history = json.loads(PUBLIC_HISTORY.read_text()) if PUBLIC_HISTORY.exists() else {"privacy": "Aggregate action metadata only; raw local outputs are excluded.", "cycles": []}
     history["cycles"] = (history.get("cycles", []) + [safe])[-24:]
-    registry = json.loads(LOCAL_REGISTRY.read_text()) if LOCAL_REGISTRY.exists() else {"agents": []}
     public_hirelings = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "privacy": "Sanitized local identity metadata only; purposes, questions, raw outputs, and private registry stay local.",
@@ -293,12 +337,13 @@ def publish(result, world):
     PUBLIC_REQUESTS.write_text(json.dumps(requests, indent=2) + "\n")
     PUBLIC_VOICES.write_text(json.dumps(voices, indent=2) + "\n")
     PUBLIC_WORLD.write_text(json.dumps(public_world, indent=2) + "\n")
+    PUBLIC_AUDIT.write_text(json.dumps(safe["continuity_audit"], indent=2) + "\n")
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}
-    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "state/world.json"}:
+    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "state/world.json"}:
         print(json.dumps({"publish": "skipped", "reason": "other local changes present"}), flush=True)
         return
-    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json"], cwd=ROOT, check=True)
+    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json"], cwd=ROOT, check=True)
     commit = subprocess.run(["git", "commit", "-m", "chore: publish local council signal"], cwd=ROOT, capture_output=True)
     if commit.returncode == 0:
         pushed = subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=ROOT, capture_output=True)
