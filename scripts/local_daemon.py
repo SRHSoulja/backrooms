@@ -49,6 +49,7 @@ LOCAL_WORK_ORDERS = ROOT / "state/work-orders.json"
 # threshold without starting one process per hireling.
 MAX_LOCAL_HIRELINGS = 256
 MAX_PENDING_INTERVIEWS = 4
+LOCAL_RESIDENTS_PER_ROOM = 4
 LOCAL_WHITEBOARD = ROOT / "state/whiteboard.json"
 LOCAL_PRINTER = ROOT / "state/printer-queue.json"
 LOCAL_NOTES = ROOT / "state/agent-notes"
@@ -439,6 +440,12 @@ def next_question(base_url):
 def recruit(base_url, cycle):
     registry = json.loads(LOCAL_REGISTRY.read_text()) if LOCAL_REGISTRY.exists() else {"agents": []}
     active = sum(agent.get("status") in {"active-local", "probation"} for agent in registry.get("agents", []))
+    world = json.loads((ROOT / "state/world.json").read_text()) if (ROOT / "state/world.json").exists() else {"rooms": []}
+    room_capacity = max(8, len(world.get("rooms", [])) * LOCAL_RESIDENTS_PER_ROOM)
+    if active >= room_capacity:
+        return {"status": "room-capacity-backpressure", "active": active,
+                "room_capacity": room_capacity, "rooms": len(world.get("rooms", [])),
+                "capacity": MAX_LOCAL_HIRELINGS}
     pending = sum(agent.get("status") == "probation" or agent.get("interview_status") == "awaiting-retry"
                   for agent in registry.get("agents", []))
     if pending >= MAX_PENDING_INTERVIEWS:
