@@ -20,6 +20,7 @@ STATE = ROOT / "state/world.json"
 RUNTIME_STATE = ROOT / "state/local-runtime.json"
 PUBLIC_CYCLE = ROOT / "docs/local-cycle.json"
 PUBLIC_HISTORY = ROOT / "docs/action-history.json"
+ARCHIVE = ROOT / "state/archive/events.jsonl"
 
 
 def wait_ready(url):
@@ -39,6 +40,11 @@ def runtime_world():
             return json.load(handle)
     with STATE.open() as handle:
         world = json.load(handle)
+    ARCHIVE.parent.mkdir(parents=True, exist_ok=True)
+    if not ARCHIVE.exists():
+        with ARCHIVE.open("w") as archive:
+            for event in world.get("events", []):
+                archive.write(json.dumps(event, separators=(",", ":")) + "\n")
     world["events"] = world.get("events", [])[-20:]
     RUNTIME_STATE.write_text(json.dumps(world, indent=2) + "\n")
     return world
@@ -102,6 +108,9 @@ def record(result):
         "purpose": "bounded resident council", "text": "Local council completed. Echo and Morrow outputs were generated from public shared state; see local daemon logs for raw output.",
         "confidence": 0.5, "cycle": world["cycle"], "recorded_at": datetime.now(timezone.utc).isoformat()
     })
+    ARCHIVE.parent.mkdir(parents=True, exist_ok=True)
+    with ARCHIVE.open("a") as archive:
+        archive.write(json.dumps(world["events"][-1], separators=(",", ":")) + "\n")
     with RUNTIME_STATE.open("w") as handle:
         json.dump(world, handle, indent=2)
         handle.write("\n")
