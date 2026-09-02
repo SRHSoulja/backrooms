@@ -189,6 +189,10 @@ def resolve_requests(registry):
             agent["request_status"] = "closed"
             agent["request_fulfillment"] = "Approved public research access is available through the web-reading broker."
             resolutions.append({"agent": agent.get("id"), "status": "fulfilled"})
+        elif any(term in request for term in ("journal", "article", "research")) and "public-web-read" in agent.get("capabilities", []):
+            agent["request_status"] = "closed"
+            agent["request_fulfillment"] = "Approved public research access is available through the read-only web broker."
+            resolutions.append({"agent": agent.get("id"), "status": "fulfilled"})
         elif "computer" in request and "bounded-workbench" in agent.get("capabilities", []):
             agent["request_status"] = "closed"
             agent["request_fulfillment"] = "Bounded local workbench access is available; arbitrary computer control remains disabled."
