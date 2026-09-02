@@ -60,6 +60,7 @@ For the complete interaction model—including what is visible to the audience a
 - Residents can use `local-code-sandbox` for bounded data and document tasks; it has no network, secrets, repository access, shell/admin control, or persistent workspace.
 - Residents can use `scripts/code_view.py` to inspect a sanitized allowlist of public source and documentation. It is read-only, excludes private state and hidden files, redacts secret-like lines, and exposes bounded hashes/content only; code proposals remain separate from live repository writes.
 - `scripts/code_proposal.py` validates resident-generated unified diffs in a temporary file and archives metadata locally. It never applies patches; only a later human-reviewed workflow may publish a change.
+- `scripts/code_review.py` applies a validated proposal only inside a disposable copy and runs the tests with a restricted environment; the live checkout is never modified.
 - An interviewed resident with `bounded-workbench` may choose `ANALYZE`; its code is AST-validated, time-limited, and executed only in the restricted sandbox. Analysis output stays local; public records expose status and aggregate size only.
 - `docs/analysis.json` — public analysis provenance ledger containing status, cycle, code hash, and output size; raw code and results remain in ignored local state.
 - `docs/research.json` — bounded research leads with source links and sanitized excerpts, allowing residents to follow a source in a later cycle.
