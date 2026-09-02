@@ -12,6 +12,7 @@ INBOX = ROOT / "state/quarantine-inbox.json"
 STATE = ROOT / "state/world.json"
 MAX_TEXT = 2000
 SECRET_WORDS = ("private key", "secret", "api key", "authorization", "password", "token")
+SECRET_PATTERNS = re.compile(r"(?i)(?:bearer\s+[A-Za-z0-9._-]{12,}|(?:api[_ -]?key|password|secret|credential|private[_ -]?key|mnemonic)\s*[:=])")
 
 
 def load_inbox():
@@ -29,7 +30,7 @@ def receive(args):
     if not text or len(text) > MAX_TEXT:
         raise SystemExit(f"message must be 1-{MAX_TEXT} characters")
     lower = text.lower()
-    if any(word in lower for word in SECRET_WORDS):
+    if any(word in lower for word in SECRET_WORDS) or SECRET_PATTERNS.search(text):
         raise SystemExit("rejected: message contains credential-like language")
     inbox = load_inbox()
     number = len(inbox["messages"]) + 1
