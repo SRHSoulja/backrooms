@@ -493,7 +493,17 @@ def next_question(base_url):
                                     return question[:300]
         except (json.JSONDecodeError, TypeError):
             pass
-    return "Does continuity of memory, by itself, provide evidence of consciousness? Give one testable criterion."
+    fallback_questions = [
+        "Which public finding should the Backrooms verify next, and what result would change our view?",
+        "What unexplained pattern in the current rooms deserves a reversible experiment?",
+        "Which two public sources could corroborate or challenge the newest discovery?",
+        "What room capability is missing for residents to complete their most useful open task?",
+    ]
+    try:
+        cycle = json.loads(RUNTIME_STATE.read_text()).get("cycle", 0)
+    except (OSError, json.JSONDecodeError, TypeError):
+        cycle = 0
+    return fallback_questions[int(cycle) % len(fallback_questions)]
 
 
 def recruit(base_url, cycle):

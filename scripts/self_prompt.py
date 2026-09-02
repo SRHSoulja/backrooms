@@ -6,8 +6,10 @@ import json
 import os
 import re
 import urllib.request
-
-FORBIDDEN = re.compile(r"(api[_ -]?key|password|secret|private memory|credential|token)", re.I)
+try:
+    from scripts.self_prompt_rules import FORBIDDEN, valid
+except ImportError:
+    from self_prompt_rules import FORBIDDEN, valid
 
 
 def ask(url, resident, context):
@@ -24,13 +26,6 @@ def ask(url, resident, context):
         return json.load(response)["choices"][0]["message"]["content"].strip()
 
 
-def valid(proposal):
-    fields = {line.split(":", 1)[0]: line.split(":", 1)[1].strip()
-              for line in proposal.splitlines() if ":" in line}
-    return (len(proposal) <= 1200 and not FORBIDDEN.search(proposal)
-            and all(fields.get(name) for name in ("QUESTION", "WHY", "TEST")))
-
-
 parser = argparse.ArgumentParser()
 parser.add_argument("--base-url", default=os.getenv("BACKROOMS_LLM_BASE_URL", "http://127.0.0.1:8080"))
 parser.add_argument("--state", default="state/world.json", help="public JSON state file to inspect")
@@ -44,8 +39,12 @@ try:
         actions = json.load(action_file)
 except FileNotFoundError:
     pass
-context = json.dumps({"shared_memory": world["shared_memory"], "events": world["events"][-5:],
-                      "recent_aggregate_actions": actions.get("actions", [])[-6:]})
+context = json.dumps({"shared_memory": world.get("shared_memory", []),
+                      "rooms": [{"id": room.get("id"), "description": room.get("description", "")}
+                               for room in world.get("rooms", [])],
+                      "discoveries": world.get("discoveries", [])[-5:],
+                      "events": world.get("events", [])[-5:],
+                      "recent_aggregate_actions": actions.get("actions", [])[-2:]})
 proposals = []
 for resident in ("Echo", "Morrow"):
     proposal = ask(args.base_url, resident, context)
