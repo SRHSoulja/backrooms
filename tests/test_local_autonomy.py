@@ -172,6 +172,14 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertIn('tool.get("source", tool.get("url", ""))', source)
         self.assertIn('summary.get("items", summary.get("rows", 0))', source)
 
+    def test_analyze_requires_workbench_and_data_only_code(self):
+        text = "ACTION: ANALYZE\nROOM: atrium\nTARGET: summarize values\nPROPOSAL: NONE\nREQUEST: NONE\nCODE: print(sum(range(3)))\nREASON: test"
+        denied = local_autonomy.parse(text, {"room": "atrium", "capabilities": []}, ["atrium"])
+        allowed = local_autonomy.parse(text, {"room": "atrium", "capabilities": ["bounded-workbench"]}, ["atrium"])
+        self.assertIsNone(denied)
+        self.assertEqual(allowed["action"], "ANALYZE")
+        self.assertIn("sum", allowed["code"])
+
     def test_interview_prompt_can_use_prior_research_metadata(self):
         source = Path("scripts/local_autonomy.py").read_text()
         self.assertIn('A prior approved research record is available', source)

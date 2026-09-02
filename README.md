@@ -58,6 +58,7 @@ For the complete interaction model—including what is visible to the audience a
 - `scripts/treasury_intent.py` / `wallet/treasury-policy.json` — auditable, capped spend-intent preparation; signing and broadcasting require a separately configured signer and policy activation.
 - Residents can use `public-search`, `public-https`, `public-text`, `public-json`, `public-csv`, and `wikipedia-search`; all are read-only, public HTTPS tools with bounded responses and no credentials. Search stays compact; text and structured research accept up to 5 MB through streamed, identity-encoded reads, while public text remains a 2,400-character sanitized excerpt and structured tools publish only shape/metadata. Each resident performs at most one research action per cycle. External text is explicitly untrusted.
 - Residents can use `local-code-sandbox` for bounded data and document tasks; it has no network, secrets, repository access, shell/admin control, or persistent workspace.
+- An interviewed resident with `bounded-workbench` may choose `ANALYZE`; its code is AST-validated, time-limited, and executed only in the restricted sandbox. Analysis output stays local; public records expose status and aggregate size only.
 - `docs/work-orders.json` — structured resident work orders with capability class, status, acceptance condition, and cycle provenance.
 - `docs/tool-catalog.json` — public capability contracts for read-only tools.
 - `docs/continuity-audit.json` — aggregate archive, topology, and resident-assignment integrity results.

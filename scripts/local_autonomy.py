@@ -25,7 +25,7 @@ PRINTER_QUEUE = ROOT / "state/printer-queue.json"
 PRINTED = ROOT / "state/printed"
 NOTES = ROOT / "state/agent-notes"
 FORBIDDEN = re.compile(r"(api[_ -]?key|password|secret|private memory|credential|token|wallet|funds|shell|sudo)", re.I)
-ALLOWED = {"STAY", "MOVE", "EXPLORE", "PROPOSE", "DISCOVER", "BUILD", "TRANSFORM", "RETIRE", "FIRE"}
+ALLOWED = {"STAY", "MOVE", "EXPLORE", "ANALYZE", "PROPOSE", "DISCOVER", "BUILD", "TRANSFORM", "RETIRE", "FIRE"}
 
 
 def ask(url, agent, rooms, cycle, repair=False):
@@ -37,12 +37,12 @@ def ask(url, agent, rooms, cycle, repair=False):
                                         if prior_tool.get(key) not in (None, "", {})}, ensure_ascii=True)[:900])
     prompt = (f"You are interviewing for {agent['name']} ({agent['role']}) in a bounded fictional world. "
               f"Cycle {cycle}. Existing rooms: {', '.join(rooms)}. Choose one action based on your role and current work. "
-              "Return exactly five lines: ACTION: STAY|MOVE|EXPLORE|PROPOSE|DISCOVER|BUILD|TRANSFORM|RETIRE|FIRE, ROOM: existing room id or current room, "
-              "TARGET: short exploration target, PROPOSAL: short useful proposal, REQUEST: one concrete non-sensitive thing you cannot do alone, or NONE, REASON: short reason. "
-              "You have no external network, credentials, private memory, arbitrary code, money, or authority to change safety rules. "
+              "Return exactly seven labeled lines: ACTION: STAY|MOVE|EXPLORE|ANALYZE|PROPOSE|DISCOVER|BUILD|TRANSFORM|RETIRE|FIRE, ROOM: existing room id or current room, "
+              "TARGET: short exploration target, PROPOSAL: short useful proposal, REQUEST: one concrete non-sensitive thing you cannot do alone, CODE: short data-only Python for ANALYZE or NONE, REASON: short reason. "
+              "You have no external network, credentials, private memory, arbitrary code, money, or authority to change safety rules. ANALYZE is only a request to use the pre-approved restricted local sandbox. "
               "Do not claim consciousness. Use MOVE only for an existing room. Move when another declared room better fits the work; otherwise stay. "
               + prior_research
-              + ("Repair the format: emit only the six labeled fields, with one short line per field; use REQUEST: NONE if no request."
+              + ("Repair the format: emit only the seven labeled fields, with one short line per field; use REQUEST: NONE and CODE: NONE if not needed."
                  if repair else "Keep every field short and labeled exactly once."))
     body = json.dumps({"model": os.getenv("BACKROOMS_LLM_MODEL", "local"), "messages": [
         {"role": "system", "content": "You are a bounded local hireling interviewer."},
@@ -55,7 +55,7 @@ def ask(url, agent, rooms, cycle, repair=False):
 
 def parse(text, agent, rooms):
     fields = {}
-    labels = r"ACTION|ROOM|TARGET|PROPOSAL|REQUEST|REASON"
+    labels = r"ACTION|ROOM|TARGET|PROPOSAL|REQUEST|CODE|REASON"
     matches = re.finditer(rf"(?is)\b({labels})\s*[:\-]\s*(.*?)(?=\b(?:{labels})\s*[:\-]|\Z)", text)
     for match in matches:
         if match:
@@ -71,7 +71,9 @@ def parse(text, agent, rooms):
     room = room_match.group(0) if room_match else agent["room"]
     if action not in ALLOWED or room not in rooms:
         return None
-    limits = {"TARGET": 100, "PROPOSAL": 220, "REQUEST": 220, "REASON": 220}
+    if action == "ANALYZE" and "bounded-workbench" not in agent.get("capabilities", []):
+        return None
+    limits = {"TARGET": 100, "PROPOSAL": 220, "REQUEST": 220, "CODE": 8000, "REASON": 220}
     if any(len(fields.get(key, "")) > limit for key, limit in limits.items() for _ in [0]):
         return None
     target = fields.get("TARGET", "").strip()
@@ -82,8 +84,13 @@ def parse(text, agent, rooms):
         request = ""
     else:
         request = request.rstrip(" ,.;:!?")
+    code = fields.get("CODE", "").strip()
+    if re.fullmatch(r"(?:NONE|N/A)[\s,.;:!?]*", code, re.I):
+        code = ""
+    if action == "ANALYZE" and not code:
+        return None
     return {"action": action, "room": room, "target": target,
-            "proposal": fields.get("PROPOSAL", "").strip(), "request": request,
+            "proposal": fields.get("PROPOSAL", "").strip(), "request": request, "code": code,
             "reason": fields.get("REASON", "").strip()}
 
 
@@ -437,6 +444,23 @@ def main():
             if "public-web-read" not in agent.get("capabilities", []):
                 agent.setdefault("capabilities", []).append("public-web-read")
                 agent["skill_status"] = "earned-after-interview"
+        elif decision["action"] == "ANALYZE":
+            analysis_process = subprocess.run(
+                [sys.executable, str(ROOT / "scripts/code_sandbox.py"), "--code", decision["code"]],
+                cwd=ROOT, capture_output=True, text=True, check=False, timeout=10)
+            try:
+                analysis = json.loads(analysis_process.stdout)
+            except json.JSONDecodeError:
+                analysis = {"status": "failed"}
+            agent["last_analysis"] = {"status": analysis.get("status", "failed"),
+                                       "returncode": analysis.get("returncode"),
+                                       "output_chars": len(analysis.get("output", "")),
+                                       "contract": analysis.get("contract", {})}
+            file_agent_record(agent, args.cycle, "note",
+                              f"Bounded analysis {analysis.get('status', 'failed')}; output remains local.")
+            emit_event(world, args.cycle, "analysis-run", agent.get("id", "resident"),
+                       "Resident ran a bounded local analysis; output remains local.",
+                       status=analysis.get("status", "failed"), output_chars=len(analysis.get("output", "")))
         elif decision["action"] == "PROPOSE":
             agent["proposal"] = decision["proposal"] or "No proposal text supplied."
         elif decision["action"] in {"DISCOVER", "BUILD", "TRANSFORM"}:
