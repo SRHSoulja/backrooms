@@ -52,12 +52,16 @@ def wikipedia(query):
             "contract": TOOL_CONTRACTS["wikipedia-search"]}
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument("tool", choices=("wikipedia-search", "public-https"))
-parser.add_argument("value")
-args = parser.parse_args()
-try:
-    result = wikipedia(args.value) if args.tool == "wikipedia-search" else {"tool": args.tool, "status": "completed", "characters": len(fetch(args.value)), "contract": TOOL_CONTRACTS[args.tool]}
-except Exception as error:
-    result = {"tool": args.tool, "status": "rejected", "reason": str(error)[:120], "contract": TOOL_CONTRACTS[args.tool]}
-print(json.dumps(result))
+def run(tool, value):
+    try:
+        return wikipedia(value) if tool == "wikipedia-search" else {"tool": tool, "status": "completed", "characters": len(fetch(value)), "contract": TOOL_CONTRACTS[tool]}
+    except Exception as error:
+        return {"tool": tool, "status": "rejected", "reason": str(error)[:120], "contract": TOOL_CONTRACTS[tool]}
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("tool", choices=tuple(TOOL_CONTRACTS))
+    parser.add_argument("value")
+    args = parser.parse_args()
+    print(json.dumps(run(args.tool, args.value)))
