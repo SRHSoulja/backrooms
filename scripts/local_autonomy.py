@@ -476,13 +476,16 @@ def main():
             except json.JSONDecodeError:
                 tool = {"status": "failed"}
             if tool.get("status") == "completed":
-                agent["last_tool"] = {"tool": tool["tool"], "query": tool["query"],
-                                       "result_count": len(tool.get("results", [])), "source": tool["source"],
-                                       "contract": tool.get("contract", {})}
+                summary = tool.get("summary", {})
+                result_count = len(tool.get("results", [])) if isinstance(tool.get("results"), list) else (
+                    summary.get("items", summary.get("rows", 0)) if isinstance(summary, dict) else 0)
+                agent["last_tool"] = {"tool": tool["tool"], "query": tool.get("query", tool.get("url", "")),
+                                       "result_count": result_count, "source": tool.get("source", tool.get("url", "")),
+                                       "summary": summary, "contract": tool.get("contract", {})}
                 emit_event(world, args.cycle, "tool-used", agent.get("id", "resident"),
                            f"Resident used the approved {tool['tool']} capability.",
                            tool=tool["tool"], capability=tool.get("contract", {}).get("capability", "unknown"),
-                           result_count=len(tool.get("results", [])))
+                           result_count=result_count)
             elif tool.get("status") == "rejected" and any(marker in tool.get("reason", "") for marker in ("bounded validation", "public HTTPS", "credentials")):
                 revoke(agent, "public-web-read", "broker policy rejection: " + tool.get("reason", "unknown"))
                 emit_event(world, args.cycle, "tool-rejected", agent.get("id", "resident"),

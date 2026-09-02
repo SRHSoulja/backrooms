@@ -166,6 +166,12 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(records[-1]["lifecycle"], "revision")
         self.assertEqual(records[-1]["supersedes"], records[-2]["document_id"])
 
+    def test_structured_tool_results_have_a_normalized_recording_path(self):
+        source = Path("scripts/local_autonomy.py").read_text()
+        self.assertIn('tool.get("query", tool.get("url", ""))', source)
+        self.assertIn('tool.get("source", tool.get("url", ""))', source)
+        self.assertIn('summary.get("items", summary.get("rows", 0))', source)
+
 
 if __name__ == "__main__":
     unittest.main()
