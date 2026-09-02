@@ -85,7 +85,7 @@ fetch(`./agent-requests.json?t=${Date.now()}`).then(r => r.json()).then(board =>
 }).catch(() => { document.getElementById('requests').textContent = 'Request board unavailable.'; });
 fetch(`./work-orders.json?t=${Date.now()}`).then(r => r.json()).then(board => {
   const orders = board.orders || [];
-  document.getElementById('work-orders').innerHTML = orders.length ? orders.slice().reverse().slice(0, 8).map(item => `<p><strong>${escapeHtml(item.agent || 'Unnamed resident')}</strong> · ${escapeHtml(item.status || 'unknown')} · ${escapeHtml(item.capability || 'review-required')}<br>${escapeHtml(item.request || '[request withheld]')}<br><span class="label">Cycle ${escapeHtml(item.cycle ?? 'unknown')} · acceptance: ${escapeHtml(item.acceptance || 'unreported')}</span></p>`).join('') : '<p>No resident work orders recorded yet.</p>';
+  document.getElementById('work-orders').innerHTML = orders.length ? orders.slice().reverse().slice(0, 8).map(item => `<p><strong>${escapeHtml(item.agent || 'Unnamed resident')}</strong> · ${escapeHtml(item.status || 'unknown')} · ${escapeHtml(item.capability || 'review-required')}<br>${escapeHtml(item.request || '[request withheld]')}<br><span class="label">Cycle ${escapeHtml(item.cycle ?? 'unknown')} · acceptance: ${escapeHtml(item.acceptance || 'unreported')}${item.outcome ? `<br>Outcome: ${escapeHtml(item.outcome)}` : ''}${item.evidence_source ? `<br>Evidence: ${escapeHtml(item.evidence_source)}` : ''}</span></p>`).join('') : '<p>No resident work orders recorded yet.</p>';
 }).catch(() => { document.getElementById('work-orders').textContent = 'Work-order feed unavailable.'; });
 fetch(`./tool-catalog.json?t=${Date.now()}`).then(r => r.json()).then(catalog => {
   const tools = catalog.tools || [];

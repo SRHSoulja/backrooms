@@ -182,6 +182,8 @@ def sync_work_orders(registry, cycle):
             "request": "[request withheld by publication filter]" if blocked.search(request) else request[:220],
             "status": public_status, "capability": capability,
             "acceptance": "Resident receives the named bounded capability or a recorded explanation of why it is unavailable.",
+            "outcome": agent.get("request_fulfillment", "") if status == "closed" else "",
+            "evidence_source": (agent.get("last_tool") or {}).get("source", "") if status == "closed" else "",
             "evidence": agent.get("last_tool", {}) if status == "closed" else {},
             "cycle": agent.get("request_cycle", cycle), "updated_cycle": cycle,
         }
@@ -191,7 +193,7 @@ def sync_work_orders(registry, cycle):
     LOCAL_WORK_ORDERS.write_text(json.dumps(local, indent=2) + "\n")
     public = {"generated_at": local["updated_at"],
               "privacy": "Sanitized work-order metadata only; local context and raw responses remain local.",
-              "orders": [{key: item.get(key) for key in ("id", "agent", "room", "request", "status", "capability", "acceptance", "cycle", "updated_cycle")}
+              "orders": [{key: item.get(key) for key in ("id", "agent", "room", "request", "status", "capability", "acceptance", "outcome", "evidence_source", "cycle", "updated_cycle")}
                         for item in ordered]}
     PUBLIC_WORK_ORDERS.write_text(json.dumps(public, indent=2) + "\n")
     return public
