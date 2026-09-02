@@ -29,12 +29,19 @@ ALLOWED = {"STAY", "MOVE", "EXPLORE", "PROPOSE", "DISCOVER", "BUILD", "TRANSFORM
 
 
 def ask(url, agent, rooms, cycle, repair=False):
+    prior_tool = agent.get("last_tool") or {}
+    prior_research = ""
+    if prior_tool:
+        prior_research = (" A prior approved research record is available; use it as a lead and decide whether to follow up: "
+                          + json.dumps({key: prior_tool.get(key) for key in ("tool", "query", "source", "result_count", "summary")
+                                        if prior_tool.get(key) not in (None, "", {})}, ensure_ascii=True)[:900])
     prompt = (f"You are interviewing for {agent['name']} ({agent['role']}) in a bounded fictional world. "
               f"Cycle {cycle}. Existing rooms: {', '.join(rooms)}. Choose one action based on your role and current work. "
               "Return exactly five lines: ACTION: STAY|MOVE|EXPLORE|PROPOSE|DISCOVER|BUILD|TRANSFORM|RETIRE|FIRE, ROOM: existing room id or current room, "
               "TARGET: short exploration target, PROPOSAL: short useful proposal, REQUEST: one concrete non-sensitive thing you cannot do alone, or NONE, REASON: short reason. "
               "You have no external network, credentials, private memory, arbitrary code, money, or authority to change safety rules. "
               "Do not claim consciousness. Use MOVE only for an existing room. Move when another declared room better fits the work; otherwise stay. "
+              + prior_research
               + ("Repair the format: emit only the six labeled fields, with one short line per field; use REQUEST: NONE if no request."
                  if repair else "Keep every field short and labeled exactly once."))
     body = json.dumps({"model": os.getenv("BACKROOMS_LLM_MODEL", "local"), "messages": [
