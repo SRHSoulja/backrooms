@@ -19,6 +19,7 @@ TOOL_CONTRACTS = {
     "public-text": {"capability": "public-text-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": RESEARCH_MAX_BYTES, "raw_data": False, "untrusted_content": True},
     "local-code-sandbox": {"capability": "local-code-execution", "access": "isolated-execution", "network": "none", "side_effects": "temporary workspace only", "max_code": 8000, "timeout_seconds": 5, "max_output": 16000},
     "local-code-read": {"capability": "public-source-read", "access": "read-only", "network": "none", "side_effects": False, "max_file_bytes": 120000, "max_inventory_bytes": 400000, "write_access": False, "secrets": "redacted"},
+    "code-proposal-gate": {"capability": "code-change-proposal", "access": "validate-and-archive-only", "network": "none", "side_effects": "local proposal metadata only", "max_patch_bytes": 80000, "max_changed_lines": 240, "applies_changes": False, "secret_scan": True},
 }
 
 
@@ -175,6 +176,12 @@ def run(tool, value):
             # so import the sibling module without changing process paths.
             from code_view import run as read_source
             return {"tool": tool, **read_source(value or None), "contract": TOOL_CONTRACTS[tool]}
+        if tool == "code-proposal-gate":
+            from code_proposal import archive, validate
+            patch = str(value or "")
+            reason = validate(patch)
+            item = archive(patch, "ready-for-review" if not reason else "rejected", reason, "tool-request")
+            return {"tool": tool, "status": item["status"], "proposal": item, "contract": TOOL_CONTRACTS[tool]}
         if tool == "wikipedia-search":
             return wikipedia(value)
         if tool == "public-search":
