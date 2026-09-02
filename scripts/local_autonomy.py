@@ -233,6 +233,22 @@ def run_analysis(code):
         return {"status": "failed", "output": ""}
 
 
+def workbench_bootstrap(agent, decision):
+    """Give a new workbench resident one transparent starter check."""
+    if (decision.get("action") in {"EXPLORE", "STAY"} and
+            "bounded-workbench" in agent.get("capabilities", []) and
+            not agent.get("last_analysis")):
+        starter = dict(decision)
+        starter["requested_action"] = decision.get("action")
+        starter["action"] = "ANALYZE"
+        starter["code"] = "print(sum(range(3)))"
+        starter["reason"] = "One-time workbench bootstrap health check before larger tasks."
+        starter["target"] = "local workbench health check"
+        starter["proposal"] = ""
+        return starter
+    return decision
+
+
 def safe_room_id(target, existing):
     base = re.sub(r"[^a-z0-9]+", "-", str(target or "new-room").lower()).strip("-") or "new-room"
     candidate = base[:42]
@@ -489,6 +505,7 @@ def main():
                                                            "action": "interview-retry"})
             results.append({"id": agent["id"], "status": "awaiting-retry", "attempts": agent["interview_attempts"]})
             continue
+        decision = workbench_bootstrap(agent, decision)
         previous_room = agent.get("room")
         if decision["action"] == "MOVE":
             agent["room"] = decision["room"]

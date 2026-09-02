@@ -205,6 +205,16 @@ class LocalAutonomyTests(unittest.TestCase):
         result = local_autonomy.run_analysis("import os")
         self.assertEqual(result["status"], "rejected")
 
+    def test_workbench_bootstrap_is_one_time_and_preserves_requested_action(self):
+        agent = {"capabilities": ["bounded-workbench"]}
+        decision = {"action": "EXPLORE", "code": "", "target": "data"}
+        starter = local_autonomy.workbench_bootstrap(agent, decision)
+        self.assertEqual(starter["action"], "ANALYZE")
+        self.assertEqual(starter["requested_action"], "EXPLORE")
+        self.assertEqual(starter["code"], "print(sum(range(3)))")
+        agent["last_analysis"] = {"artifact_id": "analysis-local-test-1"}
+        self.assertEqual(local_autonomy.workbench_bootstrap(agent, decision), decision)
+
     def test_interview_prompt_can_use_prior_research_metadata(self):
         source = Path("scripts/local_autonomy.py").read_text()
         self.assertIn('A prior approved work record is available', source)
