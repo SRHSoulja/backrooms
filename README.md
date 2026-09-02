@@ -74,6 +74,7 @@ For the complete interaction model—including what is visible to the audience a
 - `scripts/recruitment.py` — propose, list, and review potential residents without auto-activation.
 - `scripts/local_recruiter.py` — generate and validate local-only hireling profiles.
 - `scripts/resident_tools.py` — bounded room-map and public workbench tools; no shell or private-data access.
+- `scripts/resident_notepad.py` — append-only local notepad for an explicitly granted resident; note contents never publish.
 - `FIELD_LAB.md` — public productized service offers and delivery boundaries.
 
 ## Quick start
