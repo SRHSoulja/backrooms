@@ -223,7 +223,7 @@ def sync_work_orders(registry, cycle):
     return public
 
 
-def sync_digital_resources(world=None, registry=None):
+def sync_digital_resources(world=None, registry=None, result=None):
     board = json.loads(LOCAL_WHITEBOARD.read_text()) if LOCAL_WHITEBOARD.exists() else {"entries": []}
     jobs = json.loads(LOCAL_PRINTER.read_text()) if LOCAL_PRINTER.exists() else {"jobs": []}
     atomic_write_json(PUBLIC_WHITEBOARD, {
@@ -253,6 +253,15 @@ def sync_digital_resources(world=None, registry=None):
                             "entry": public_event_text(item.get("entry", "")), "content_hash": item.get("content_hash"),
                             "document_id": item.get("document_id"), "lifecycle": item.get("lifecycle"),
                             "supersedes": item.get("supersedes")})
+    if result:
+        for agent_id, label in (("echo", "Echo council contribution"), ("morrow", "Morrow council contribution")):
+            text = public_voice(result.get(agent_id, ""))
+            if text and not text.startswith("["):
+                records.append({"agent": agent_id, "recorded_at": datetime.now(timezone.utc).isoformat(),
+                                "cycle": world.get("cycle") if isinstance(world, dict) else None,
+                                "kind": "conversation", "title": label, "entry": text,
+                                "content_hash": hashlib.sha256(text.encode()).hexdigest(),
+                                "document_id": None, "lifecycle": "published", "supersedes": None})
     notes_public = {
         "schema_version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -374,7 +383,7 @@ def publish(result, world):
         return
     registry = json.loads(LOCAL_REGISTRY.read_text()) if LOCAL_REGISTRY.exists() else {"agents": []}
     work_orders = sync_work_orders(registry, world["cycle"])
-    sync_digital_resources(world, registry)
+    sync_digital_resources(world, registry, result)
     audit = continuity_audit(world, registry)
     public_roster = json.loads(PUBLIC_WORLD.read_text()).get("residents", []) if PUBLIC_WORLD.exists() else []
     core_residents = len([resident for resident in public_roster if isinstance(resident, dict) and resident.get("status") not in {"fired", "retired"}])

@@ -12,6 +12,9 @@ class PublicationSafetyTests(unittest.TestCase):
         self.assertEqual(public_text("  hello\n world  "), "hello world")
         self.assertEqual(len(public_text("x" * 500)), 240)
 
+    def test_core_contribution_is_eligible_for_public_projection(self):
+        self.assertEqual(public_text("A bounded council contribution."), "A bounded council contribution.")
+
 
 if __name__ == "__main__":
     unittest.main()
