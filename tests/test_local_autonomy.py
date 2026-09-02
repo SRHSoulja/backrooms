@@ -214,6 +214,10 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(starter["code"], "print(sum(range(3)))")
         agent["last_analysis"] = {"artifact_id": "analysis-local-test-1"}
         self.assertEqual(local_autonomy.workbench_bootstrap(agent, decision), decision)
+        agent.pop("last_analysis")
+        moved = local_autonomy.workbench_bootstrap(agent, {"action": "MOVE", "code": "", "target": "archive"})
+        self.assertEqual(moved["action"], "ANALYZE")
+        self.assertEqual(moved["requested_action"], "MOVE")
 
     def test_interview_prompt_can_use_prior_research_metadata(self):
         source = Path("scripts/local_autonomy.py").read_text()

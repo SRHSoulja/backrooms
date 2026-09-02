@@ -235,7 +235,7 @@ def run_analysis(code):
 
 def workbench_bootstrap(agent, decision):
     """Give a new workbench resident one transparent starter check."""
-    if (decision.get("action") in {"EXPLORE", "STAY"} and
+    if (decision.get("action") in {"EXPLORE", "STAY", "MOVE"} and
             "bounded-workbench" in agent.get("capabilities", []) and
             not agent.get("last_analysis")):
         starter = dict(decision)
