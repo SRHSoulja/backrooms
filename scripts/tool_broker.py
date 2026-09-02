@@ -5,7 +5,7 @@ import argparse, csv, html, ipaddress, io, json, re, socket, urllib.parse, urlli
 from pathlib import Path
 
 MAX_BYTES = 32_000
-RESEARCH_MAX_BYTES = 128_000
+RESEARCH_MAX_BYTES = 5_000_000
 BLOCKED = re.compile(r"api[_ -]?key|password|secret|private\s+(?:key|memory|data)|credential|(?:auth|access|bearer)[_ -]?token|wallet\s+(?:seed|key)|seed phrase|mnemonic", re.I)
 SCRIPT_STYLE = re.compile(r"<(?:script|style|noscript)[^>]*>.*?</(?:script|style|noscript)>", re.I | re.S)
 SENSITIVE_ASSIGNMENT = re.compile(r"(?i)\b(?:api[_ -]?key|password|secret|credential|token|mnemonic)\s*[:=]\s*[^\s,;]+")
@@ -38,12 +38,23 @@ def fetch(url, max_bytes=MAX_BYTES):
     parsed = urllib.parse.urlparse(url)
     if parsed.scheme != "https" or parsed.username or parsed.password or not parsed.hostname or not public_host(parsed.hostname):
         raise ValueError("only public HTTPS URLs without credentials are allowed")
-    request = urllib.request.Request(url, headers={"User-Agent": "BackroomsResearch/1.0"}, method="GET")
+    request = urllib.request.Request(url, headers={"User-Agent": "BackroomsResearch/1.0", "Accept-Encoding": "identity"}, method="GET")
     opener = urllib.request.build_opener(NoRedirect)
     with opener.open(request, timeout=15) as response:
-        data = response.read(max_bytes + 1)
-        if len(data) > max_bytes:
+        declared_length = response.headers.get("Content-Length")
+        if declared_length and int(declared_length) > max_bytes:
             raise ValueError("response exceeds broker limit")
+        chunks = []
+        total = 0
+        while True:
+            chunk = response.read(min(64 * 1024, max_bytes - total + 1))
+            if not chunk:
+                break
+            chunks.append(chunk)
+            total += len(chunk)
+            if total > max_bytes:
+                raise ValueError("response exceeds broker limit")
+        data = b"".join(chunks)
         return data.decode("utf-8", errors="replace")
 
 

@@ -76,7 +76,7 @@ class ToolContractTests(unittest.TestCase):
             tool_broker.fetch = original
 
     def test_research_tools_have_a_larger_input_cap_but_small_public_outputs(self):
-        self.assertEqual(TOOL_CONTRACTS["public-text"]["max_bytes"], 128000)
+        self.assertEqual(TOOL_CONTRACTS["public-text"]["max_bytes"], 5000000)
         self.assertEqual(TOOL_CONTRACTS["public-json"]["raw_data"], False)
 
     def test_local_code_sandbox_is_contracted(self):
