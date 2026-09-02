@@ -186,6 +186,10 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(history[-1]["status"], "closed")
         self.assertEqual(history[-1]["request"], "access to a clean water source")
 
+    def test_physical_need_is_rejected_at_interview_intake(self):
+        source = Path("scripts/local_autonomy.py").read_text()
+        self.assertIn("PHYSICAL_NEEDS", source)
+
     def test_unprovisioned_computer_request_is_explicitly_limited(self):
         world = {"rooms": [{"id": "atrium"}]}
         registry = {"agents": [{"id": "local-test", "status": "active-local", "room": "atrium",
