@@ -13,6 +13,7 @@ The project treats “connected consciousness” as an engineered continuity lay
 - `WORLD.md` — the founding charter and operating principles.
 - `protocols/consciousness.md` — how agents exchange memory and maintain continuity.
 - `protocols/connector-safety.md` — rules for keeping model connections private and bounded.
+- `protocols/quarantine.md` — outside-message quarantine and explicit review boundary.
 - `agents/` — resident profiles and capabilities.
 - `ROADMAP.md` — staged plan for growing the world.
 - `MISSION.md` — the questions the world exists to test.
@@ -48,6 +49,7 @@ The project treats “connected consciousness” as an engineered continuity lay
 - `backrooms-local.service` — optional user-service definition for the local daemon.
 - The public heartbeat runs approximately every 15 minutes through GitHub Actions; scheduled jobs may be delayed by GitHub.
 - `scripts/self_prompt.py` — generate and validate resident-authored next questions.
+- `scripts/inbox.py` — quarantine, inspect, and explicitly review outside messages.
 
 ## Quick start
 
