@@ -10,4 +10,4 @@ llama-server -hf Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M --host 127.0.0.1 --port 80
 
 The model uses local shared state only. A model upgrade is successful when it improves resident distinction and epistemic discipline, not merely fluency.
 
-For a persistent local link, run `python3 scripts/local_daemon.py --interval 900`. It keeps the model on localhost and records only a cycle summary in `state/world.json`; it does not push to GitHub or expose the model publicly.
+For a persistent local link, run `python3 scripts/local_daemon.py --interval 900 --publish`. Runtime state is kept in the ignored `state/local-runtime.json`. With `--publish`, the daemon publishes only aggregate council metrics and the bounded question to `docs/local-cycle.json`, which the observatory displays. Raw prompts and model responses remain local. Publishing skips itself if unrelated checkout changes are present or the branch cannot fast-forward safely.
