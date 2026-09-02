@@ -19,6 +19,9 @@ except ImportError:
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "state/local-agents.json"
 ARCHIVE = ROOT / "state/archive/events.jsonl"
+WHITEBOARD = ROOT / "state/whiteboard.json"
+PRINTER_QUEUE = ROOT / "state/printer-queue.json"
+PRINTED = ROOT / "state/printed"
 FORBIDDEN = re.compile(r"(api[_ -]?key|password|secret|private memory|credential|token|wallet|funds|shell|sudo)", re.I)
 ALLOWED = {"STAY", "MOVE", "EXPLORE", "PROPOSE", "DISCOVER", "BUILD", "TRANSFORM", "RETIRE", "FIRE"}
 
@@ -97,6 +100,34 @@ def revoke(agent, capability, reason):
     agent["last_action"] = "skill-revoked"
     agent["last_reason"] = reason[:220]
     agent["status"] = "probation"
+
+
+def digital_whiteboard_entry(agent, cycle):
+    board = json.loads(WHITEBOARD.read_text()) if WHITEBOARD.exists() else {"entries": []}
+    entries = board.setdefault("entries", [])
+    entry_id = f"whiteboard-{agent.get('id', 'resident')}-{cycle}"
+    if not any(item.get("id") == entry_id for item in entries):
+        entries.append({"id": entry_id, "cycle": cycle, "author": agent.get("id", "resident"),
+                        "title": "Shared workspace note", "body": str(agent.get("request", ""))[:220],
+                        "status": "available"})
+    board["entries"] = entries[-200:]
+    atomic_write_json(WHITEBOARD, board)
+    return entry_id
+
+
+def digital_print_job(agent, cycle):
+    queue = json.loads(PRINTER_QUEUE.read_text()) if PRINTER_QUEUE.exists() else {"jobs": []}
+    jobs = queue.setdefault("jobs", [])
+    job_id = f"print-{agent.get('id', 'resident')}-{cycle}"
+    if not any(item.get("id") == job_id for item in jobs):
+        PRINTED.mkdir(parents=True, exist_ok=True)
+        output = PRINTED / f"{job_id}.txt"
+        output.write_text(f"BACKROOMS DIGITAL PRINT\nResident: {agent.get('id', 'resident')}\nCycle: {cycle}\nRequest: {str(agent.get('request', ''))[:220]}\n")
+        jobs.append({"id": job_id, "cycle": cycle, "requester": agent.get("id", "resident"),
+                     "format": "text", "status": "printed", "output": f"state/printed/{output.name}"})
+    queue["jobs"] = jobs[-200:]
+    atomic_write_json(PRINTER_QUEUE, queue)
+    return job_id
 
 
 def safe_room_id(target, existing):
@@ -251,6 +282,18 @@ def resolve_requests(registry, world=None, cycle=None):
             agent["request_fulfillment"] = "Public read-only web research is available through the broker; private, authenticated, and write-enabled databases remain unavailable."
             agent["request_artifact"] = {"kind": "public-research", "scope": "public-only", "source": (agent.get("last_tool") or {}).get("source", ""), "accepted": True}
             resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "scope": "public-only"})
+        elif "whiteboard" in request:
+            entry_id = digital_whiteboard_entry(agent, cycle or 0)
+            agent["request_status"] = "closed"
+            agent["request_fulfillment"] = "Shared digital whiteboard created; entries persist locally and are bounded to resident notes."
+            agent["request_artifact"] = {"kind": "shared-whiteboard", "entry_id": entry_id, "accepted": True}
+            resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "artifact": entry_id})
+        elif "printer" in request:
+            job_id = digital_print_job(agent, cycle or 0)
+            agent["request_status"] = "closed"
+            agent["request_fulfillment"] = "Digital print job rendered to a local text artifact; no physical printer or external delivery is implied."
+            agent["request_artifact"] = {"kind": "digital-printer", "job_id": job_id, "format": "text", "accepted": True}
+            resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "artifact": job_id})
         elif "city" in request and "map" in request:
             agent["request_status"] = "needs-clarification"
             agent["request_fulfillment"] = "A city or region must be named before a public map can be selected."

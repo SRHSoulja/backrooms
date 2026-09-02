@@ -11,9 +11,18 @@ class LocalAutonomyTests(unittest.TestCase):
         self.archive_dir = tempfile.TemporaryDirectory()
         self.original_archive = local_autonomy.ARCHIVE
         local_autonomy.ARCHIVE = Path(self.archive_dir.name) / "events.jsonl"
+        self.original_whiteboard = local_autonomy.WHITEBOARD
+        self.original_printer_queue = local_autonomy.PRINTER_QUEUE
+        self.original_printed = local_autonomy.PRINTED
+        local_autonomy.WHITEBOARD = Path(self.archive_dir.name) / "whiteboard.json"
+        local_autonomy.PRINTER_QUEUE = Path(self.archive_dir.name) / "printer-queue.json"
+        local_autonomy.PRINTED = Path(self.archive_dir.name) / "printed"
 
     def tearDown(self):
         local_autonomy.ARCHIVE = self.original_archive
+        local_autonomy.WHITEBOARD = self.original_whiteboard
+        local_autonomy.PRINTER_QUEUE = self.original_printer_queue
+        local_autonomy.PRINTED = self.original_printed
         self.archive_dir.cleanup()
 
     def test_build_creates_one_connected_room_and_event(self):
@@ -94,6 +103,21 @@ class LocalAutonomyTests(unittest.TestCase):
         agent = registry["agents"][0]
         self.assertEqual(resolutions[0]["status"], "needs-clarification")
         self.assertFalse(agent["request_artifact"]["accepted"])
+
+    def test_whiteboard_request_creates_persistent_shared_note(self):
+        registry = {"agents": [{"id": "local-test", "request": "access to a shared whiteboard",
+                                 "request_status": "open"}]}
+        local_autonomy.resolve_requests(registry, world={"rooms": []}, cycle=90)
+        self.assertEqual(registry["agents"][0]["request_artifact"]["kind"], "shared-whiteboard")
+        self.assertTrue(local_autonomy.WHITEBOARD.exists())
+
+    def test_printer_request_creates_local_digital_job(self):
+        registry = {"agents": [{"id": "local-test", "request": "access to a printer",
+                                 "request_status": "open"}]}
+        local_autonomy.resolve_requests(registry, world={"rooms": []}, cycle=91)
+        artifact = registry["agents"][0]["request_artifact"]
+        self.assertEqual(artifact["kind"], "digital-printer")
+        self.assertTrue((local_autonomy.PRINTED / "print-local-test-91.txt").exists())
 
 
 if __name__ == "__main__":

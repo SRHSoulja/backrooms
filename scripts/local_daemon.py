@@ -34,7 +34,11 @@ PUBLIC_WORLD = ROOT / "docs/world.json"
 PUBLIC_AUDIT = ROOT / "docs/continuity-audit.json"
 PUBLIC_WORK_ORDERS = ROOT / "docs/work-orders.json"
 PUBLIC_HEALTH = ROOT / "docs/health.json"
+PUBLIC_WHITEBOARD = ROOT / "docs/whiteboard.json"
+PUBLIC_PRINTER = ROOT / "docs/printer.json"
 LOCAL_WORK_ORDERS = ROOT / "state/work-orders.json"
+LOCAL_WHITEBOARD = ROOT / "state/whiteboard.json"
+LOCAL_PRINTER = ROOT / "state/printer-queue.json"
 PUBLIC_VOICE_BLOCKED = re.compile(r"api[_ -]?key|password|secret|private|credential|token|wallet|seed phrase", re.I)
 ARCHIVE = ROOT / "state/archive/events.jsonl"
 LOCAL_REGISTRY = ROOT / "state/local-agents.json"
@@ -217,6 +221,21 @@ def sync_work_orders(registry, cycle):
     return public
 
 
+def sync_digital_resources():
+    board = json.loads(LOCAL_WHITEBOARD.read_text()) if LOCAL_WHITEBOARD.exists() else {"entries": []}
+    jobs = json.loads(LOCAL_PRINTER.read_text()) if LOCAL_PRINTER.exists() else {"jobs": []}
+    atomic_write_json(PUBLIC_WHITEBOARD, {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "privacy": "Public note metadata only; local resident context is not published.",
+        "entries": [{key: item.get(key) for key in ("id", "cycle", "author", "title", "status")} for item in board.get("entries", [])[-50:]],
+    })
+    atomic_write_json(PUBLIC_PRINTER, {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "privacy": "Public job metadata only; rendered local artifacts are not uploaded.",
+        "jobs": [{key: item.get(key) for key in ("id", "cycle", "requester", "format", "status")} for item in jobs.get("jobs", [])[-50:]],
+    })
+
+
 def action(base_url, cycle):
     """Run the closed-vocabulary local probe and retain aggregate evidence only."""
     completed = subprocess.run([sys.executable, str(ROOT / "scripts/action_engine.py"),
@@ -304,6 +323,7 @@ def publish(result, world):
         return
     registry = json.loads(LOCAL_REGISTRY.read_text()) if LOCAL_REGISTRY.exists() else {"agents": []}
     work_orders = sync_work_orders(registry, world["cycle"])
+    sync_digital_resources()
     audit = continuity_audit(world, registry)
     health = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -429,10 +449,10 @@ def publish(result, world):
     atomic_write_json(PUBLIC_HEALTH, health)
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}
-    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "state/world.json", "state/work-orders.json"}:
+    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json"}:
         print(json.dumps({"publish": "skipped", "reason": "other local changes present"}), flush=True)
         return
-    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json"], cwd=ROOT, check=True)
+    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json"], cwd=ROOT, check=True)
     commit = subprocess.run(["git", "commit", "-m", "chore: publish local council signal"], cwd=ROOT, capture_output=True)
     if commit.returncode == 0:
         pushed = subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=ROOT, capture_output=True)
