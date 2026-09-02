@@ -234,16 +234,22 @@ def run_analysis(code):
 
 
 def workbench_bootstrap(agent, decision):
-    """Give a new workbench resident one transparent starter check."""
+    """Give a workbench resident two transparent, one-time continuity checks."""
     if (decision.get("action") in {"EXPLORE", "STAY", "MOVE"} and
             "bounded-workbench" in agent.get("capabilities", []) and
-            not agent.get("last_analysis")):
+            not agent.get("analysis_followup_completed")):
         starter = dict(decision)
         starter["requested_action"] = decision.get("action")
         starter["action"] = "ANALYZE"
-        starter["code"] = "print(sum(range(3)))"
-        starter["reason"] = "One-time workbench bootstrap health check before larger tasks."
-        starter["target"] = "local workbench health check"
+        previous = agent.get("last_analysis") or {}
+        if previous:
+            starter["code"] = "print(sum(range(4)))"
+            starter["reason"] = "One-time follow-up using the previous artifact as a continuity check."
+            starter["target"] = f"follow-up to {previous.get('artifact_id', 'previous analysis')}"
+        else:
+            starter["code"] = "print(sum(range(3)))"
+            starter["reason"] = "One-time workbench bootstrap health check before larger tasks."
+            starter["target"] = "local workbench health check"
         starter["proposal"] = ""
         return starter
     return decision
@@ -493,6 +499,15 @@ def main():
                     break
             except Exception:
                 pass
+        # A completed artifact must receive its continuity follow-up even if the
+        # model is temporarily unavailable; the follow-up itself is still run
+        # through the same restricted sandbox and remains fully auditable.
+        if (not decision and "bounded-workbench" in agent.get("capabilities", [])
+                and agent.get("last_analysis") and not agent.get("analysis_followup_completed")):
+            decision = {"action": "ANALYZE", "room": agent.get("room", rooms[0]),
+                        "target": f"follow-up to {agent['last_analysis'].get('artifact_id', 'previous analysis')}",
+                        "proposal": "", "request": "", "code": "print(sum(range(4)))",
+                        "reason": "Deterministic continuity follow-up after a temporary interview retry."}
         if not decision:
             agent["interview_status"] = "awaiting-retry"
             agent["interview_attempts"] = agent.get("interview_attempts", 0) + 1
@@ -530,6 +545,8 @@ def main():
                                        "output_chars": len(analysis.get("output", "")),
                                        "summary": artifact["summary"],
                                        "contract": analysis.get("contract", {})}
+            if artifact.get("based_on"):
+                agent["analysis_followup_completed"] = True
             file_agent_record(agent, args.cycle, "note",
                               f"Bounded analysis {analysis.get('status', 'failed')}; output remains local.")
             emit_event(world, args.cycle, "analysis-run", agent.get("id", "resident"),

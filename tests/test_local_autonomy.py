@@ -213,11 +213,24 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(starter["requested_action"], "EXPLORE")
         self.assertEqual(starter["code"], "print(sum(range(3)))")
         agent["last_analysis"] = {"artifact_id": "analysis-local-test-1"}
+        followup = local_autonomy.workbench_bootstrap(agent, decision)
+        self.assertEqual(followup["action"], "ANALYZE")
+        self.assertEqual(followup["code"], "print(sum(range(4)))")
+        self.assertIn("analysis-local-test-1", followup["target"])
+        agent["analysis_followup_completed"] = True
         self.assertEqual(local_autonomy.workbench_bootstrap(agent, decision), decision)
         agent.pop("last_analysis")
+        agent.pop("analysis_followup_completed")
         moved = local_autonomy.workbench_bootstrap(agent, {"action": "MOVE", "code": "", "target": "archive"})
         self.assertEqual(moved["action"], "ANALYZE")
         self.assertEqual(moved["requested_action"], "MOVE")
+
+    def test_analysis_artifact_links_to_previous_artifact(self):
+        local_autonomy.ANALYSIS_ARCHIVE = Path(self.archive_dir.name) / "analysis.jsonl"
+        agent = {"id": "local-test", "last_analysis": {"artifact_id": "analysis-local-test-1"}}
+        artifact = local_autonomy.record_analysis(agent, 96, "print(sum(range(4)))",
+                                                   {"status": "completed", "returncode": 0, "output": "6"})
+        self.assertEqual(artifact["based_on"], "analysis-local-test-1")
 
     def test_interview_prompt_can_use_prior_research_metadata(self):
         source = Path("scripts/local_autonomy.py").read_text()
