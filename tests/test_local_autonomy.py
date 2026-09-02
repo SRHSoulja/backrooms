@@ -46,6 +46,8 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(registry["agents"][0]["room_proposal"]["status"], "constructed")
         self.assertEqual(world["events"][0]["kind"], "room-built")
         self.assertTrue(local_autonomy.ARCHIVE.exists())
+        self.assertIn("charter", world["rooms"][0])
+        self.assertIn("board", world["rooms"][1])
 
     def test_duplicate_build_proposal_is_idempotent(self):
         world = {"events": [], "rooms": [{"id": "relay", "doors": [], "occupants": []}], "connections": []}
@@ -72,6 +74,7 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(world["discoveries"][0]["status"], "candidate")
         self.assertEqual(registry["agents"][0]["room_proposal"]["status"], "recorded")
         self.assertEqual(changes[0]["action"], "discover")
+        self.assertIn(changes[0]["discovery"], world["rooms"][0]["artifacts"])
 
     def test_safe_request_creates_typed_artifact(self):
         world = {"rooms": [{"id": "atrium"}]}

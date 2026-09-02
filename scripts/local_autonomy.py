@@ -320,6 +320,20 @@ def safe_room_id(target, existing):
     return candidate
 
 
+def normalize_rooms(world, cycle=0):
+    """Backfill durable room surfaces while preserving the existing topology."""
+    for room in world.setdefault("rooms", []):
+        room.setdefault("charter", room.get("description", "A bounded internal workspace."))
+        room.setdefault("artifacts", [])
+        room.setdefault("board", [])
+        room.setdefault("activity", {})
+        room["activity"].setdefault("last_cycle", cycle)
+        room["activity"].setdefault("score", 0)
+        room.setdefault("doors", [])
+        room.setdefault("occupants", [])
+    return world["rooms"]
+
+
 def emit_event(world, cycle, kind, actor, text, **fields):
     """Append one durable world event and mirror it into the local archive."""
     event = {"id": f"world-event-{cycle}-{len(world.get('events', [])) + 1}",
@@ -334,7 +348,7 @@ def emit_event(world, cycle, kind, actor, text, **fields):
 
 def apply_construction(world, registry, cycle):
     """Materialize only resident proposals that pass the internal-room policy."""
-    rooms = world.setdefault("rooms", [])
+    rooms = normalize_rooms(world, cycle)
     connections = world.setdefault("connections", [])
     room_by_id = {room.get("id"): room for room in rooms}
     room_ids = set(room_by_id)
@@ -361,12 +375,18 @@ def apply_construction(world, registry, cycle):
                 sort_keys=True).encode()).hexdigest()[:16]
             discoveries = world.setdefault("discoveries", [])
             if not any(item.get("id") == f"discovery-{fingerprint}" for item in discoveries):
-                discoveries.append({"id": f"discovery-{fingerprint}", "agent": agent.get("id"),
+                discovery_id = f"discovery-{fingerprint}"
+                discoveries.append({"id": discovery_id, "agent": agent.get("id"),
                                     "name": str(proposal.get("name", ""))[:80],
                                     "description": str(proposal.get("description", ""))[:220],
                                     "source": source[:300], "analysis_artifact": artifact,
                                     "source_hash": (agent.get("last_tool") or {}).get("source_hash", ""),
                                     "cycle": proposal.get("cycle", cycle), "status": "candidate"})
+                source_room = room_by_id.get(agent.get("room"))
+                if source_room is not None:
+                    source_room.setdefault("artifacts", []).append(discovery_id)
+                    source_room["activity"]["last_cycle"] = cycle
+                    source_room["activity"]["score"] = source_room["activity"].get("score", 0) + 1
                 emit_event(world, cycle, "room-discovered", agent.get("id", "resident"),
                            "Resident recorded a provenance-backed room candidate; no room was built.",
                            discovery_id=f"discovery-{fingerprint}", status="candidate")
@@ -398,6 +418,9 @@ def apply_construction(world, registry, cycle):
         room_id = safe_room_id(proposal["name"], room_ids)
         room = {"id": room_id, "name": str(proposal["name"])[:60],
                 "description": str(proposal.get("description") or "Resident-built internal room")[:220],
+                "charter": str(proposal.get("description") or "Resident-built internal room")[:220],
+                "founded_by": agent.get("id"), "founded_cycle": cycle,
+                "artifacts": [], "board": [], "activity": {"last_cycle": cycle, "score": 1},
                 "doors": [f"{room_id}-gate"], "occupants": []}
         rooms.append(room)
         room_by_id[room_id] = room
