@@ -94,6 +94,7 @@ def runtime_world():
         world["rooms"] = canonical.get("rooms", world.get("rooms", []))
         world["shared_memory"] = canonical.get("shared_memory", world.get("shared_memory", []))
         world["connections"] = canonical.get("connections", world.get("connections", []))
+        world["discoveries"] = canonical.get("discoveries", world.get("discoveries", []))
         merged_events = {event.get("id"): event for event in world.get("events", []) if event.get("id")}
         merged_events.update({event.get("id"): event for event in canonical.get("events", []) if event.get("id")})
         world["events"] = list(merged_events.values())[-20:]
