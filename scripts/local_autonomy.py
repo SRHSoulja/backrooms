@@ -8,6 +8,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
@@ -206,7 +207,12 @@ def record_analysis(agent, cycle, code, analysis):
                 continue
     existing = [item for item in existing if item.get("id") != record["id"]][-ANALYSIS_RETENTION + 1:]
     existing.append(record)
-    ANALYSIS_ARCHIVE.write_text("\n".join(json.dumps(item, separators=(",", ":")) for item in existing) + "\n")
+    payload = "\n".join(json.dumps(item, separators=(",", ":")) for item in existing) + "\n"
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=ANALYSIS_ARCHIVE.parent,
+                                     prefix="analysis-", suffix=".tmp", delete=False) as temporary:
+        temporary.write(payload)
+        temporary_path = temporary.name
+    os.replace(temporary_path, ANALYSIS_ARCHIVE)
     return record
 
 

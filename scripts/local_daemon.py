@@ -324,7 +324,9 @@ def sync_analysis():
     atomic_write_json(PUBLIC_ANALYSIS, public)
     return {"analysis_runs": len(records),
             "analysis_completed": sum(item.get("status") == "completed" for item in records),
-            "analysis_failed": sum(item.get("status") in {"failed", "rejected", "timed-out"} for item in records),
+            "analysis_failed": sum(item.get("status") == "failed" for item in records),
+            "analysis_rejected": sum(item.get("status") == "rejected" for item in records),
+            "analysis_timed_out": sum(item.get("status") == "timed-out" for item in records),
             "analysis_feed": "docs/analysis.json"}
 
 

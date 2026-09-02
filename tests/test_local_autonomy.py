@@ -191,6 +191,15 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(stored["output"], "42\n")
         self.assertEqual(stored["code_hash"], artifact["code_hash"])
 
+    def test_analysis_artifact_retention_is_bounded(self):
+        local_autonomy.ANALYSIS_ARCHIVE = Path(self.archive_dir.name) / "analysis.jsonl"
+        for cycle in range(100, 205):
+            local_autonomy.record_analysis({"id": "local-test"}, cycle, "print(1)",
+                                           {"status": "completed", "output": "1"})
+        records = local_autonomy.ANALYSIS_ARCHIVE.read_text().splitlines()
+        self.assertEqual(len(records), local_autonomy.ANALYSIS_RETENTION)
+        self.assertIn('"cycle":204', records[-1])
+
     def test_interview_prompt_can_use_prior_research_metadata(self):
         source = Path("scripts/local_autonomy.py").read_text()
         self.assertIn('A prior approved work record is available', source)
