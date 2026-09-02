@@ -312,7 +312,8 @@ def main():
                 tool = {"status": "failed"}
             if tool.get("status") == "completed":
                 agent["last_tool"] = {"tool": tool["tool"], "query": tool["query"],
-                                       "result_count": len(tool.get("results", [])), "source": tool["source"]}
+                                       "result_count": len(tool.get("results", [])), "source": tool["source"],
+                                       "contract": tool.get("contract", {})}
             elif tool.get("status") == "rejected" and any(marker in tool.get("reason", "") for marker in ("bounded validation", "public HTTPS", "credentials")):
                 revoke(agent, "public-web-read", "broker policy rejection: " + tool.get("reason", "unknown"))
         registry.setdefault("decisions", []).append({"cycle": args.cycle, "agent": agent["id"], **decision})

@@ -6,6 +6,10 @@ from pathlib import Path
 
 MAX_BYTES = 32_000
 BLOCKED = ("api_key", "password", "secret", "private", "credential", "token", "wallet")
+TOOL_CONTRACTS = {
+    "wikipedia-search": {"capability": "public-web-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES},
+    "public-https": {"capability": "public-web-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES},
+}
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -44,7 +48,8 @@ def wikipedia(query):
     results = [{"title": item.get("title", ""), "pageid": item.get("pageid")}
                for item in data.get("query", {}).get("search", [])]
     return {"tool": "wikipedia-search", "query": query, "results": results,
-            "source": "https://en.wikipedia.org/", "status": "completed"}
+            "source": "https://en.wikipedia.org/", "status": "completed",
+            "contract": TOOL_CONTRACTS["wikipedia-search"]}
 
 
 parser = argparse.ArgumentParser()
@@ -52,7 +57,7 @@ parser.add_argument("tool", choices=("wikipedia-search", "public-https"))
 parser.add_argument("value")
 args = parser.parse_args()
 try:
-    result = wikipedia(args.value) if args.tool == "wikipedia-search" else {"tool": args.tool, "status": "completed", "characters": len(fetch(args.value))}
+    result = wikipedia(args.value) if args.tool == "wikipedia-search" else {"tool": args.tool, "status": "completed", "characters": len(fetch(args.value)), "contract": TOOL_CONTRACTS[args.tool]}
 except Exception as error:
-    result = {"tool": args.tool, "status": "rejected", "reason": str(error)[:120]}
+    result = {"tool": args.tool, "status": "rejected", "reason": str(error)[:120], "contract": TOOL_CONTRACTS[args.tool]}
 print(json.dumps(result))
