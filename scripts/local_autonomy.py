@@ -256,6 +256,8 @@ def main():
             agent["request"] = decision["request"]
             agent["request_status"] = "open"
             agent["request_cycle"] = args.cycle
+            # A new request must not inherit the resolution text of a prior one.
+            agent["request_fulfillment"] = ""
         elif decision["action"] not in {"RETIRE", "FIRE"}:
             agent["request_status"] = "closed"
         elif decision.get("action") in {"RETIRE", "FIRE"}:
