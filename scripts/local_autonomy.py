@@ -810,8 +810,7 @@ def main():
                 tool_name = "public-search"
                 query_target = target
             if tool_name == "public-search":
-                role = re.sub(r"[^a-zA-Z0-9 ]", " ", str(agent.get("role", "research resident"))).strip()
-                query_target = f"{target} {role} AI agent research"[:160].strip()
+                query_target = target[:160].strip()
             completed = subprocess.run([sys.executable, str(ROOT / "scripts/tool_broker.py"),
                 tool_name, query_target], cwd=ROOT, capture_output=True, text=True, check=False)
             try:
@@ -820,14 +819,16 @@ def main():
                 tool = {"status": "failed"}
             if tool.get("status") == "completed":
                 summary = tool.get("summary", {})
+                excerpt = str(tool.get("excerpt", ""))[:2400]
+                source = str(tool.get("url", "")) if tool_name != "public-search" else ""
                 result_count = len(tool.get("results", [])) if isinstance(tool.get("results"), list) else (
                     summary.get("items", summary.get("rows", 0)) if isinstance(summary, dict) else 0)
                 agent["last_tool"] = {"tool": tool["tool"], "query": tool.get("query", tool.get("url", "")),
-                                       "result_count": result_count, "source": tool.get("source", tool.get("url", "")),
+                                       "result_count": result_count, "source": source,
                                        "results": tool.get("results", [])[:5], "summary": summary,
-                                       "excerpt": tool.get("excerpt", "")[:2400], "verified": tool["tool"] != "public-search",
+                                       "excerpt": excerpt, "verified": bool(source and excerpt),
                                        "fetched_at": datetime.now(timezone.utc).isoformat(),
-                                       "source_hash": hashlib.sha256(str(tool.get("url", tool.get("source", ""))).encode()).hexdigest(),
+                                       "source_hash": hashlib.sha256(excerpt.encode()).hexdigest() if source and excerpt else "",
                                        "contract": tool.get("contract", {})}
                 emit_event(world, args.cycle, "tool-used", agent.get("id", "resident"),
                            f"Resident used the approved {tool['tool']} capability.",

@@ -16,6 +16,9 @@ class PublicationSafetyTests(unittest.TestCase):
     def test_core_contribution_is_eligible_for_public_projection(self):
         self.assertEqual(public_text("A bounded council contribution."), "A bounded council contribution.")
 
+    def test_empty_text_is_not_described_as_withheld(self):
+        self.assertEqual(public_text(""), "")
+
 
 if __name__ == "__main__":
     unittest.main()

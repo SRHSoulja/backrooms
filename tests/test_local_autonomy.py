@@ -239,7 +239,7 @@ class LocalAutonomyTests(unittest.TestCase):
     def test_structured_tool_results_have_a_normalized_recording_path(self):
         source = Path("scripts/local_autonomy.py").read_text()
         self.assertIn('tool.get("query", tool.get("url", ""))', source)
-        self.assertIn('tool.get("source", tool.get("url", ""))', source)
+        self.assertIn('str(tool.get("url", "")) if tool_name != "public-search" else ""', source)
         self.assertIn('summary.get("items", summary.get("rows", 0))', source)
 
     def test_json_decision_is_parsed_with_existing_safety_rules(self):
@@ -253,6 +253,12 @@ class LocalAutonomyTests(unittest.TestCase):
         schema = local_autonomy.decision_schema(["atrium", "archive"])
         self.assertEqual(schema["properties"]["room"]["enum"], ["atrium", "archive"])
         self.assertIn("BUILD", schema["properties"]["action"]["enum"])
+
+    def test_research_does_not_pollute_resident_query_or_fake_provenance(self):
+        source = Path("scripts/local_autonomy.py").read_text()
+        self.assertIn("query_target = target[:160].strip()", source)
+        self.assertIn('"verified": bool(source and excerpt)', source)
+        self.assertIn('"source_hash": hashlib.sha256(excerpt.encode()).hexdigest() if source and excerpt else ""', source)
 
     def test_analyze_requires_workbench_and_data_only_code(self):
         text = "ACTION: ANALYZE\nROOM: atrium\nTARGET: summarize values\nPROPOSAL: NONE\nREQUEST: NONE\nCODE: print(sum(range(3)))\nREASON: test"
@@ -319,7 +325,7 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertIn('"analysis"', source)
         self.assertIn('"artifact_id"', source)
         self.assertIn('Shared resident work metadata', source)
-        self.assertIn('"verified": tool["tool"] != "public-search"', source)
+        self.assertIn('"verified": bool(source and excerpt)', source)
         self.assertIn('Use ANALYZE when your bounded-workbench role', source)
         self.assertIn('prefer a tiny local health check', source)
         self.assertIn('not a biological body', source)

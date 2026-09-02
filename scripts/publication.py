@@ -9,6 +9,8 @@ BLOCKED = re.compile(
 
 def public_text(value, limit=240):
     compact = re.sub(r"\s+", " ", str(value or "")).strip()
-    if not compact or BLOCKED.search(compact):
+    if not compact:
+        return ""
+    if BLOCKED.search(compact):
         return "[content withheld by publication filter]"
     return compact[:limit]
