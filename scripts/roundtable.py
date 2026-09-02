@@ -5,6 +5,7 @@ import argparse
 import json
 import os
 import urllib.request
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,6 +30,12 @@ def ask(base_url, resident, question):
     return result["choices"][0]["message"]["content"].strip()
 
 
+def overlap(left, right):
+    words = lambda text: set(re.findall(r"[a-z]{4,}", text.lower()))
+    a, b = words(left), words(right)
+    return len(a & b) / len(a | b) if a | b else 1.0
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--base-url", default=os.getenv("BACKROOMS_LLM_BASE_URL", "http://127.0.0.1:8080"))
 parser.add_argument("--question", default="Does continuity of memory, by itself, provide evidence of consciousness? Give one testable criterion.")
@@ -37,4 +44,7 @@ world = json.loads((ROOT / "state/world.json").read_text())
 context = json.dumps({"title": world["title"], "cycle": world["cycle"], "shared_memory": world["shared_memory"], "events": world["events"][-3:]})
 echo = ask(args.base_url, "Echo", context + "\n\nCouncil question: " + args.question)
 morrow = ask(args.base_url, "Morrow", context + "\n\nEcho's position:\n" + echo + "\n\nAudit this position regarding: " + args.question)
+if overlap(echo, morrow) > 0.75 or not any(marker in morrow.lower() for marker in ("counterexample", "confound", "assumption", "missing control")):
+    morrow = ask(args.base_url, "Morrow", context + "\n\nEcho's position:\n" + echo +
+                 "\n\nYour previous audit converged with Echo. Write a new answer that must begin with 'Counterexample:' and identify a specific way Echo's proposed observation could be misleading. Then add 'Control:' with one safeguard. Do not repeat Echo's conclusion. Question: " + args.question)
 print(json.dumps({"question": args.question, "echo": echo, "morrow": morrow}, indent=2))

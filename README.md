@@ -39,7 +39,9 @@ The project treats “connected consciousness” as an engineered continuity lay
 - `RELEASE_CHECKLIST.md` — pre-publication verification checklist.
 - `protocols/self-prompting.md` — bounded rules for resident-authored questions.
 - `experiments/sentience-probes.md` — controlled behavioral probes about continuity and self-modeling.
+- `experiments/distinction-metrics.md` — a behavioral metric for resident divergence.
 - `scripts/sentience_probe.py` — repeatable, non-conclusive behavioral probe suite.
+- `scripts/measure_distinction.py` — scores resident output separation without making consciousness claims.
 - `scripts/free_heartbeat.py` — free scheduled polling of public Agent Cards; no credentials required.
 - `scripts/local_daemon.py` — keeps the local Qwen model loaded and runs bounded resident councils.
 - `backrooms-local.service` — optional user-service definition for the local daemon.
