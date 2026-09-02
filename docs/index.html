@@ -59,7 +59,7 @@ fetch('./market-watch.json').then(r => r.json()).then(m => {
   document.getElementById('market').innerHTML = `<p><strong>${online.length}/${(m.sources || []).length} public sources online</strong></p><p>Observed terms: ${top || 'no signal'}</p><p>Last checked: ${m.checked_at || 'unknown'}</p>`;
 }).catch(() => { document.getElementById('market').textContent = 'Market Watch unavailable.'; });
 function escapeHtml(value) { return String(value ?? '').replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c])); }
-fetch('./agent-requests.json').then(r => r.json()).then(board => {
+fetch(`./agent-requests.json?t=${Date.now()}`).then(r => r.json()).then(board => {
   const open = (board.requests || []).filter(item => item.status === 'open');
   const recent = (board.requests || []).filter(item => item.status !== 'superseded').slice().reverse().slice(0, 8);
   const activeHtml = open.length ? `<p><strong>Open</strong></p>` + open.slice().reverse().slice(0, 8).map(item => `<p><strong>${escapeHtml(item.agent)}</strong> · ${escapeHtml(item.role)} · ${escapeHtml(item.room)}<br>${escapeHtml(item.request)}<br><span class="label">Cycle ${escapeHtml(item.cycle)} · ${escapeHtml(item.fulfillment)}</span></p>`).join('') : '<p><strong>Open</strong><br>No open resident requests.</p>';
