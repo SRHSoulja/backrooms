@@ -20,7 +20,9 @@ STATE = ROOT / "state/world.json"
 RUNTIME_STATE = ROOT / "state/local-runtime.json"
 PUBLIC_CYCLE = ROOT / "docs/local-cycle.json"
 PUBLIC_HISTORY = ROOT / "docs/action-history.json"
+PUBLIC_HIRELINGS = ROOT / "docs/local-hirelings.json"
 ARCHIVE = ROOT / "state/archive/events.jsonl"
+LOCAL_REGISTRY = ROOT / "state/local-agents.json"
 
 
 def wait_ready(url):
@@ -155,14 +157,24 @@ def publish(result, world):
     }
     history = json.loads(PUBLIC_HISTORY.read_text()) if PUBLIC_HISTORY.exists() else {"privacy": "Aggregate action metadata only; raw local outputs are excluded.", "cycles": []}
     history["cycles"] = (history.get("cycles", []) + [safe])[-24:]
+    registry = json.loads(LOCAL_REGISTRY.read_text()) if LOCAL_REGISTRY.exists() else {"agents": []}
+    public_hirelings = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "privacy": "Sanitized local identity metadata only; purposes, questions, raw outputs, and private registry stay local.",
+        "agents": [
+            {key: agent[key] for key in ("id", "name", "role", "room", "status")}
+            for agent in registry.get("agents", [])[-100:]
+        ],
+    }
     PUBLIC_CYCLE.write_text(json.dumps(safe, indent=2) + "\n")
     PUBLIC_HISTORY.write_text(json.dumps(history, indent=2) + "\n")
+    PUBLIC_HIRELINGS.write_text(json.dumps(public_hirelings, indent=2) + "\n")
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}
-    if changed - {"docs/local-cycle.json", "docs/action-history.json"}:
+    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json"}:
         print(json.dumps({"publish": "skipped", "reason": "other local changes present"}), flush=True)
         return
-    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json"], cwd=ROOT, check=True)
+    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json"], cwd=ROOT, check=True)
     commit = subprocess.run(["git", "commit", "-m", "chore: publish local council signal"], cwd=ROOT, capture_output=True)
     if commit.returncode == 0:
         pushed = subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=ROOT, capture_output=True)
