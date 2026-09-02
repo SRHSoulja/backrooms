@@ -50,6 +50,7 @@ def ask(url, agent, rooms, cycle, repair=False, shared_work=None):
               "TARGET: short exploration target, PROPOSAL: short useful proposal, REQUEST: one concrete non-sensitive thing you cannot do alone, CODE: short data-only Python for ANALYZE or NONE, REASON: short reason. "
               "You have no external network, credentials, private memory, arbitrary code, money, or authority to change safety rules. ANALYZE is only a request to use the pre-approved restricted local sandbox. "
               "Do not claim consciousness. Use ANALYZE when your bounded-workbench role has a concrete data or arithmetic task; if no specific public URL is available, prefer a tiny local health check such as CODE: print(sum(range(3))). Put only data-only Python in CODE. Use MOVE only for an existing room. Move when another declared room better fits the work; otherwise stay. "
+              "The Backrooms is intended to expand: when the work supports it, prefer DISCOVER to record a new room candidate, BUILD to request a new connected room, or TRANSFORM to repurpose an existing room. A room proposal needs a concrete TARGET and short PROPOSAL description. "
               + prior_research
               + ("Repair the format: emit only the seven labeled fields, with one short line per field; use REQUEST: NONE and CODE: NONE if not needed."
                  if repair else "Keep every field short and labeled exactly once."))
@@ -87,6 +88,8 @@ def parse(text, agent, rooms):
         return None
     target = fields.get("TARGET", "").strip()
     if action == "EXPLORE" and not target:
+        return None
+    if action in {"DISCOVER", "BUILD", "TRANSFORM"} and (not target or not fields.get("PROPOSAL", "").strip()):
         return None
     request = fields.get("REQUEST", "").strip()
     if re.fullmatch(r"(?:NONE|N/A|NO REQUEST)[\s,.;:!?]*", request, re.I):
