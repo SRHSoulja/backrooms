@@ -756,7 +756,7 @@ server = None
 def start_local_model():
     process = subprocess.Popen(["llama-server", "-hf", "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
                                 "--host", "127.0.0.1", "--port", str(args.port), "--ctx-size", "4096",
-                                "--predict", "800"], cwd=ROOT)
+                                "--predict", "800", "--parallel", "1"], cwd=ROOT)
     try:
         wait_ready(base_url)
     except Exception:
