@@ -58,6 +58,8 @@ LOCAL_ANALYSIS = ROOT / "state/analysis-results.jsonl"
 PUBLIC_ANALYSIS = ROOT / "docs/analysis.json"
 PUBLIC_RESEARCH = ROOT / "docs/research.json"
 PUBLIC_OUTSIDE_SIGNALS = ROOT / "docs/outside-signals.json"
+LOCAL_FRONTIER = ROOT / "state/frontier.json"
+PUBLIC_FRONTIER = ROOT / "docs/frontier.json"
 LOCAL_INBOX = ROOT / "state/quarantine-inbox.json"
 PUBLIC_CODE_PROPOSALS = ROOT / "docs/code-proposals.json"
 LOCAL_CODE_PROPOSALS = ROOT / "state/code-proposals.json"
@@ -539,6 +541,52 @@ def govern(base_url, cycle):
         return {"status": "failed", "active": 0, "decisions": []}
 
 
+def sync_frontier(result, world, registry):
+    """Persist the bounded work exchange between council, rooms, and residents."""
+    frontier = json.loads(LOCAL_FRONTIER.read_text()) if LOCAL_FRONTIER.exists() else {
+        "schema_version": 1, "open_questions": [], "findings": [], "tasks": [], "activity": []}
+    cycle = world.get("cycle")
+    question = str(result.get("question", "")).strip()[:300]
+    if question and not any(item.get("id") == f"frontier-question-{cycle}" for item in frontier["open_questions"]):
+        frontier["open_questions"].append({"id": f"frontier-question-{cycle}", "cycle": cycle,
+                                           "source": "council", "question": question, "status": "open"})
+    known = {item.get("id") for item in frontier["findings"]}
+    for discovery in world.get("discoveries", [])[-20:]:
+        if discovery.get("id") in known:
+            continue
+        frontier["findings"].append({"id": discovery.get("id"), "cycle": discovery.get("cycle", cycle),
+                                     "source": discovery.get("agent", "resident"),
+                                     "room": next((room.get("id") for room in world.get("rooms", [])
+                                                   if discovery.get("id") in room.get("artifacts", [])), None),
+                                     "claim": discovery.get("name", "Unresolved room candidate"),
+                                     "status": discovery.get("status", "candidate"),
+                                     "source_url": discovery.get("source", "")[:300],
+                                     "source_hash": discovery.get("source_hash", "")})
+    frontier["tasks"] = [{"id": f"task-{agent.get('id')}", "agent": agent.get("id"),
+                           "room": agent.get("room"), "request": str(agent.get("request", ""))[:220],
+                           "status": agent.get("request_status", "none")}
+                          for agent in registry.get("agents", [])
+                          if agent.get("request") and agent.get("request_status") == "open"]
+    frontier["activity"].append({"cycle": cycle, "question": bool(question),
+                                  "resident_actions": len(result.get("autonomy", {}).get("decisions", [])),
+                                  "findings": len(frontier["findings"])})
+    for key in ("open_questions", "findings", "activity"):
+        frontier[key] = frontier.get(key, [])[-100:]
+    frontier["updated_at"] = datetime.now(timezone.utc).isoformat()
+    atomic_write_json(LOCAL_FRONTIER, frontier)
+    public = {"schema_version": 1, "updated_at": frontier["updated_at"],
+              "privacy": "Sanitized frontier questions, finding metadata, and open task summaries only.",
+              "open_questions": [{key: item.get(key) for key in ("id", "cycle", "source", "question", "status")}
+                                 for item in frontier["open_questions"][-50:]],
+              "findings": [{key: item.get(key) for key in ("id", "cycle", "source", "room", "claim", "status", "source_url", "source_hash")}
+                           for item in frontier["findings"][-50:]],
+              "tasks": frontier["tasks"][-50:], "activity": frontier["activity"][-50:]}
+    atomic_write_json(PUBLIC_FRONTIER, public)
+    return {"frontier_questions": len(frontier["open_questions"]),
+            "frontier_findings": len(frontier["findings"]), "frontier_tasks": len(frontier["tasks"]),
+            "frontier_feed": "docs/frontier.json"}
+
+
 def record(result):
     world = runtime_world()
     world["cycle"] += 1
@@ -569,6 +617,7 @@ def publish(result, world, model_health=True):
     resource_health = sync_digital_resources(world, registry, result)
     analysis_health = sync_analysis()
     research_health = sync_research(registry)
+    frontier_health = sync_frontier(result, world, registry)
     audit = continuity_audit(world, registry)
     public_roster = json.loads(PUBLIC_WORLD.read_text()).get("residents", []) if PUBLIC_WORLD.exists() else []
     core_residents = len([resident for resident in public_roster if isinstance(resident, dict) and resident.get("status") not in {"fired", "retired"}])
@@ -586,7 +635,7 @@ def publish(result, world, model_health=True):
         "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
         "activity_feed": "docs/activity.json",
         "feed_freshness_seconds": 0
-        ,**resource_health, **analysis_health, **research_health, **sync_code_proposals(), **sync_outside_signals(),
+        ,**resource_health, **analysis_health, **research_health, **frontier_health, **sync_code_proposals(), **sync_outside_signals(),
         "dropped_events": 0
     }
     safe = {
@@ -731,10 +780,10 @@ def publish(result, world, model_health=True):
     sync_outside_signals()
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}
-    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/code-proposals.json", "docs/outside-signals.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json"}:
+    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json", "state/frontier.json"}:
         print(json.dumps({"publish": "skipped", "reason": "other local changes present"}), flush=True)
         return
-    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/code-proposals.json", "docs/outside-signals.json"], cwd=ROOT, check=True)
+    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json"], cwd=ROOT, check=True)
     commit = subprocess.run(["git", "commit", "-m", "chore: publish local council signal"], cwd=ROOT, capture_output=True)
     if commit.returncode == 0:
         pushed = subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=ROOT, capture_output=True)

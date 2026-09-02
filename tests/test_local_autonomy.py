@@ -270,6 +270,11 @@ class LocalAutonomyTests(unittest.TestCase):
         source = Path("scripts/local_autonomy.py").read_text()
         self.assertIn('world["cycle"] = args.cycle', source)
 
+    def test_frontier_context_is_available_to_hirelings(self):
+        source = Path("scripts/local_autonomy.py").read_text()
+        self.assertIn('"type": "frontier"', source)
+        self.assertIn('frontier.get("open_questions"', source)
+
     def test_research_does_not_pollute_resident_query_or_fake_provenance(self):
         source = Path("scripts/local_autonomy.py").read_text()
         self.assertIn("query_target = target[:160].strip()", source)

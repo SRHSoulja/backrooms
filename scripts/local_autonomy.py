@@ -20,6 +20,7 @@ except ImportError:
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "state/local-agents.json"
 ARCHIVE = ROOT / "state/archive/events.jsonl"
+FRONTIER = ROOT / "state/frontier.json"
 WHITEBOARD = ROOT / "state/whiteboard.json"
 PRINTER_QUEUE = ROOT / "state/printer-queue.json"
 PRINTED = ROOT / "state/printed"
@@ -726,6 +727,14 @@ def main():
                                for other in registry.get("agents", [])
                                if other.get("id") != agent.get("id") and other.get("last_analysis")] + [
                                {"type": "outside-signal", **signal} for signal in accepted_outside_signals()]
+                if FRONTIER.exists():
+                    try:
+                        frontier = json.loads(FRONTIER.read_text())
+                        shared_work.append({"type": "frontier", "open_questions": frontier.get("open_questions", [])[-3:],
+                                            "findings": frontier.get("findings", [])[-3:],
+                                            "tasks": frontier.get("tasks", [])[-3:]})
+                    except json.JSONDecodeError:
+                        pass
                 interview = ask(args.base_url, agent, rooms, args.cycle, repair=attempt == 1,
                                 shared_work=shared_work, structured=attempt == 0)
                 decision = parse(interview, agent, rooms)
