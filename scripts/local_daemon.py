@@ -47,6 +47,7 @@ LOCAL_WORK_ORDERS = ROOT / "state/work-orders.json"
 LOCAL_WHITEBOARD = ROOT / "state/whiteboard.json"
 LOCAL_PRINTER = ROOT / "state/printer-queue.json"
 LOCAL_NOTES = ROOT / "state/agent-notes"
+LOCAL_CORE_NOTES = ROOT / "state/core-notes.jsonl"
 PUBLIC_VOICE_BLOCKED = BLOCKED
 ARCHIVE = ROOT / "state/archive/events.jsonl"
 LOCAL_REGISTRY = ROOT / "state/local-agents.json"
@@ -248,11 +249,26 @@ def sync_digital_resources(world=None, registry=None, result=None):
                 item = json.loads(line)
             except json.JSONDecodeError:
                 continue
+            entry_hash = item.get("content_hash") or hashlib.sha256(str(item.get("entry", "")).encode()).hexdigest()
+            kind = item.get("kind", "note")
             records.append({"agent": path.stem, "recorded_at": item.get("recorded_at"), "cycle": item.get("cycle"),
-                            "kind": item.get("kind", "note"), "title": public_event_text(item.get("title", "Resident note")),
-                            "entry": public_event_text(item.get("entry", "")), "content_hash": item.get("content_hash"),
-                            "document_id": item.get("document_id"), "lifecycle": item.get("lifecycle"),
+                            "kind": kind, "title": public_event_text(item.get("title", "Resident note")),
+                            "entry": public_event_text(item.get("entry", "")), "content_hash": entry_hash,
+                            "document_id": item.get("document_id") or (f"legacy-{path.stem}-{entry_hash[:12]}" if kind == "document" else None),
+                            "lifecycle": item.get("lifecycle") or ("filed" if kind == "document" else "recorded"),
                             "supersedes": item.get("supersedes")})
+    if LOCAL_CORE_NOTES.exists():
+        for line in LOCAL_CORE_NOTES.read_text().splitlines()[-100:]:
+            try:
+                item = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            records.append({"agent": item.get("agent", "core-resident"), "recorded_at": item.get("recorded_at"),
+                            "cycle": item.get("cycle"), "kind": item.get("kind", "note"),
+                            "title": public_event_text(item.get("title", "Core resident record")),
+                            "entry": public_event_text(item.get("entry", "")),
+                            "content_hash": item.get("content_hash"), "document_id": item.get("document_id"),
+                            "lifecycle": item.get("lifecycle", "filed"), "supersedes": item.get("supersedes")})
     if result:
         for agent_id, label in (("echo", "Echo council contribution"), ("morrow", "Morrow council contribution")):
             text = public_voice(result.get(agent_id, ""))
@@ -285,6 +301,8 @@ def sync_digital_resources(world=None, registry=None, result=None):
     atomic_write_json(PUBLIC_ACTIVITY, {"schema_version": 1, "generated_at": datetime.now(timezone.utc).isoformat(),
                                         "privacy": "Unified sanitized activity projection; raw prompts and local files remain private.",
                                         "activity": sorted(activity, key=lambda item: (item.get("cycle") or 0), reverse=True)[:100]})
+    return {"activity_records": len(activity), "note_records": len(records), "print_jobs": len(jobs.get("jobs", [])),
+            "failed_print_jobs": sum(item.get("status") == "failed" for item in jobs.get("jobs", []))}
 
 
 def skill_progress(agent, registry):
@@ -383,7 +401,7 @@ def publish(result, world):
         return
     registry = json.loads(LOCAL_REGISTRY.read_text()) if LOCAL_REGISTRY.exists() else {"agents": []}
     work_orders = sync_work_orders(registry, world["cycle"])
-    sync_digital_resources(world, registry, result)
+    resource_health = sync_digital_resources(world, registry, result)
     audit = continuity_audit(world, registry)
     public_roster = json.loads(PUBLIC_WORLD.read_text()).get("residents", []) if PUBLIC_WORLD.exists() else []
     core_residents = len([resident for resident in public_roster if isinstance(resident, dict) and resident.get("status") not in {"fired", "retired"}])
@@ -399,6 +417,8 @@ def publish(result, world):
         "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
         "activity_feed": "docs/activity.json",
         "feed_freshness_seconds": 0
+        ,**resource_health,
+        "dropped_events": 0
     }
     safe = {
         "generated_at": datetime.now(timezone.utc).isoformat(),

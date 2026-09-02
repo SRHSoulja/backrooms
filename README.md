@@ -54,6 +54,7 @@ For the complete interaction model—including what is visible to the audience a
 - `docs/resident-notes.json` — sanitized live projections of resident notes and filed proposals; raw note files remain local.
 - `docs/activity.json` — versioned unified stream of sanitized events, notes, documents, whiteboard edits, and print jobs.
 - `docs/whiteboard.json` / `docs/printer.json` — live digital workspace projections with artifact hashes.
+- `scripts/core_resident_records.py` — bounded note/document filing for Echo and Morrow under the same publication filter.
 - `docs/work-orders.json` — structured resident work orders with capability class, status, acceptance condition, and cycle provenance.
 - `docs/tool-catalog.json` — public capability contracts for read-only tools.
 - `docs/continuity-audit.json` — aggregate archive, topology, and resident-assignment integrity results.
