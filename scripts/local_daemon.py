@@ -176,11 +176,14 @@ def publish(result, world):
         "privacy": "Sanitized local identity metadata only; purposes, questions, raw outputs, and private registry stay local.",
         "agents": [
             {
-                **{key: agent[key] for key in ("id", "room", "status")},
+                "id": agent.get("id", "unknown-agent"),
+                "room": agent.get("room") or "archive",
+                "status": agent.get("status", "probation"),
                 "name": str(agent.get("name", "Unnamed hireling")).strip(" ,.;"),
                 "role": str(agent.get("role", "unassigned")).strip(" ,.;"),
                 "last_action": agent.get("last_action", "awaiting-interview"),
-                "interview_status": agent.get("interview_status", "not-recorded"),
+                "interview_status": agent.get("interview_status", "awaiting-interview"),
+                "interview_attempts": agent.get("interview_attempts", 0),
                 "proposal": str(agent.get("proposal", ""))[:220],
                 "request": str(agent.get("request", ""))[:220],
                 "request_status": agent.get("request_status", "none"),

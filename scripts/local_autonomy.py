@@ -39,7 +39,10 @@ def parse(text, agent, rooms):
         match = re.match(r"\s*(ACTION|ROOM|TARGET|PROPOSAL|REQUEST|REASON)\s*[:\-]\s*(.*?)\s*$", line, re.I)
         if match:
             fields[match.group(1).upper()] = match.group(2).strip().strip("`*")
-    if FORBIDDEN.search(text):
+    # Models often echo the interviewer’s boundary sentence. Inspect only
+    # parsed decision fields so that safe decisions are not rejected merely
+    # because the model repeated a forbidden word in an unstructured preface.
+    if FORBIDDEN.search(" ".join(fields.values())):
         return None
     action = re.match(r"[A-Z]+", fields.get("ACTION", "").upper().strip())
     action = action.group(0) if action else ""
@@ -110,16 +113,17 @@ def main():
             except Exception:
                 pass
         if not decision:
-            agent["interview_status"] = "rejected"
+            agent["interview_status"] = "awaiting-retry"
+            agent["interview_attempts"] = agent.get("interview_attempts", 0) + 1
             if "public-web-read" not in agent.get("capabilities", []):
                 agent["status"] = "probation"
-                agent["last_action"] = "interview-rejected"
+                agent["last_action"] = "interview-retry"
             else:
                 agent["status"] = "active-local"
             agent["interviewed_at"] = datetime.now(timezone.utc).isoformat()
             registry.setdefault("decisions", []).append({"cycle": args.cycle, "agent": agent["id"],
-                                                           "action": "interview-rejected"})
-            results.append({"id": agent["id"], "status": "interview-rejected"})
+                                                           "action": "interview-retry"})
+            results.append({"id": agent["id"], "status": "awaiting-retry", "attempts": agent["interview_attempts"]})
             continue
         if decision["action"] == "MOVE":
             agent["room"] = decision["room"]
