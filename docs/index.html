@@ -41,6 +41,7 @@ fetch('./heartbeat.json').then(r => r.json()).then(h => {
 }).catch(() => { document.getElementById('heartbeat').textContent = 'Heartbeat unavailable.'; });
 fetch('./local-cycle.json').then(r => r.json()).then(c => {
   const m = c.metrics || {};
-  document.getElementById('local').innerHTML = `<p>Last local cycle: ${c.generated_at}</p><p><strong>Runtime cycle ${c.runtime_cycle}</strong> · ${m.distinction_status || 'unreported'} · overlap ${m.jaccard_overlap ?? '—'}</p><p>Question: ${c.question}</p>`;
+  const a = c.action || {};
+  document.getElementById('local').innerHTML = `<p>Last local cycle: ${c.generated_at}</p><p><strong>Runtime cycle ${c.runtime_cycle}</strong> · ${m.distinction_status || 'unreported'} · overlap ${m.jaccard_overlap ?? '—'}</p><p>Action: ${a.action || 'unreported'} · ${a.probe || a.status || 'unknown'}</p><p>Question: ${c.question}</p>`;
 }).catch(() => { document.getElementById('local').textContent = 'Local signal unavailable.'; });
 </script></body></html>

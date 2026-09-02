@@ -54,6 +54,21 @@ def metrics(result):
             "distinction_status": "distinct" if overlap <= 0.75 and markers else "needs-audit"}
 
 
+def action(base_url, cycle):
+    """Run the closed-vocabulary local probe and retain aggregate evidence only."""
+    completed = subprocess.run([sys.executable, str(ROOT / "scripts/action_engine.py"),
+        "--base-url", base_url, "--state", str(RUNTIME_STATE), "--cycle", str(cycle)],
+        cwd=ROOT, capture_output=True, text=True, check=False)
+    if completed.returncode != 0:
+        return {"action": "local-behavioral-probe", "status": "failed"}
+    try:
+        result = json.loads(completed.stdout)
+        return {"action": result.get("action"), "probe": result.get("probe"),
+                "status": result.get("status"), "responses": result.get("responses")}
+    except json.JSONDecodeError:
+        return {"action": "local-behavioral-probe", "status": "invalid-result"}
+
+
 def next_question(base_url):
     """Ask residents for a bounded question; fall back if validation rejects both."""
     completed = subprocess.run([sys.executable, str(ROOT / "scripts/self_prompt.py"),
@@ -105,6 +120,7 @@ def publish(result, world):
         "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
         "runtime_cycle": world["cycle"],
         "question": result.get("question", ""),
+        "action": result.get("action", {"status": "not-run"}),
         "metrics": metrics(result),
         "privacy": "Only aggregate metrics and the bounded council question are public; raw outputs remain local."
     }
@@ -138,9 +154,10 @@ try:
         if completed.returncode == 0:
             result = json.loads(completed.stdout)
             world = record(result)
+            result["action"] = action(base_url, world["cycle"])
             if args.publish:
                 publish(result, world)
-            print(json.dumps({"cycle": world["cycle"], "metrics": metrics(result)}), flush=True)
+            print(json.dumps({"cycle": world["cycle"], "metrics": metrics(result), "action": result["action"]}), flush=True)
         else:
             print(json.dumps({"error": "roundtable failed", "returncode": completed.returncode}), flush=True)
         time.sleep(args.interval)

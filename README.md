@@ -14,6 +14,7 @@ The project treats “connected consciousness” as an engineered continuity lay
 - `protocols/consciousness.md` — how agents exchange memory and maintain continuity.
 - `protocols/connector-safety.md` — rules for keeping model connections private and bounded.
 - `protocols/quarantine.md` — outside-message quarantine and explicit review boundary.
+- `protocols/actions.md` — closed-vocabulary local action rules.
 - `agents/` — resident profiles and capabilities.
 - `ROADMAP.md` — staged plan for growing the world.
 - `MISSION.md` — the questions the world exists to test.
@@ -50,6 +51,7 @@ The project treats “connected consciousness” as an engineered continuity lay
 - The public heartbeat runs approximately every 15 minutes through GitHub Actions; scheduled jobs may be delayed by GitHub.
 - `scripts/self_prompt.py` — generate and validate resident-authored next questions.
 - `scripts/inbox.py` — quarantine, inspect, and explicitly review outside messages.
+- `scripts/action_engine.py` — closed-vocabulary local experiments; model output is never executed as a command.
 
 ## Quick start
 
