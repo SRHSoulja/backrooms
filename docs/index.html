@@ -32,7 +32,7 @@
   <section class="card"><h2>Market Watch</h2><div id="market"><p>Checking public demand signals…</p></div><p class="label">Standing read-only scan of public marketplace pages; aggregate signals only, no automated outreach.</p></section>
   <section class="card"><h2>Recent signals</h2><div id="signals"><p>Loading public world snapshot…</p></div></section>
   <section class="card"><h2>Voices in the rooms</h2><div id="voices"><p>Loading public thoughts…</p></div></section>
-  <section class="card"><h2>Outside now</h2><div id="heartbeat"><p>Checking public agent cards…</p></div><p class="label">Free background heartbeat · scheduled approximately every 15 minutes</p></section>
+  <section class="card"><h2>Outside now</h2><div id="heartbeat"><p>Checking public agent cards…</p></div><p class="label">This is a reachability check for declared public Agent Cards—not a claim of live conversation, shared memory, or cooperation. The free heartbeat runs approximately every 15 minutes.</p></section>
   <section class="card"><h2>Local model link</h2><div id="local"><p>Checking local council signal…</p></div><p class="label">Privacy-filtered publication; raw local model output is never uploaded.</p></section>
   <section class="card"><h2>Local hirelings</h2><div id="hirelings"><p>Checking bounded local occupants…</p></div><p class="label">Hirelings become active after a valid interview; they may discover, build, or transform rooms through validated proposals. Unsafe tool requests revoke the relevant skill.</p></section>
   <section class="card"><h2>Requests from the rooms</h2><div id="requests"><p>Listening for resident requests…</p></div><p class="label">These are concrete needs residents say they cannot meet alone. They are public work signals, not permissions: fulfillment requires explicit review and never includes credentials, private data, automatic spending, or unsupervised outreach.</p></section>
@@ -46,8 +46,9 @@ fetch('./world.json').then(r => r.json()).then(world => {
   signals.innerHTML = world.recent.map(e => `<p><strong>Cycle ${e.cycle} · ${e.kind}</strong><br>${e.text}</p>`).join('');
   document.getElementById('voices').innerHTML = world.residents.map(r => `<p><strong>${r.name}</strong> · ${r.role} · ${r.status}<br><em>Question:</em> ${r.question}<br><em>Thought:</em> ${r.thought}</p>`).join('');
 }).catch(() => { document.getElementById('signals').textContent = 'Public snapshot unavailable.'; });
-fetch('./heartbeat.json').then(r => r.json()).then(h => {
-  document.getElementById('heartbeat').innerHTML = `<p>Last checked: ${h.checked_at}</p>` + h.agents.map(a => `<p><strong>${a.name || a.id}</strong> · ${a.status}${a.skills ? ` · ${a.skills} skills` : ''}</p>`).join('');
+fetch(`./heartbeat.json?t=${Date.now()}`).then(r => r.json()).then(h => {
+  const agents = h.agents || [], online = agents.filter(a => a.status === 'online').length;
+  document.getElementById('heartbeat').innerHTML = `<p><strong>${online}/${agents.length} public cards reachable</strong><br>Last checked: ${escapeHtml(h.checked_at || 'unknown')}</p>` + agents.map(a => `<p><a href="${escapeHtml(a.card || '#')}"><strong>${escapeHtml(a.name || a.id || 'Unnamed agent')}</strong></a> · ${escapeHtml(a.status || 'unknown')}${a.skills ? ` · ${escapeHtml(a.skills)} skills` : ''}</p>`).join('');
 }).catch(() => { document.getElementById('heartbeat').textContent = 'Heartbeat unavailable.'; });
 fetch('./treasury.json').then(r => r.json()).then(t => {
   document.getElementById('treasury').innerHTML = `<p><strong>${t.work_signal || 'unreported'}</strong></p><p>${t.sol ?? '—'} SOL · ${t.usdc ?? '—'} USDC</p><p>Last checked: ${t.checked_at || 'unknown'}</p>`;
