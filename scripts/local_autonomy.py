@@ -556,6 +556,14 @@ def resolve_requests(registry, world=None, cycle=None):
             emit_event(world, cycle, "request-resolved", agent.get("id", "resident"),
                        f"Resident request resolved as {outcome.get('status')}.",
                        request_status=outcome.get("status"), request=agent.get("request", "")[:120])
+        if agent.get("request_status") != "open" and agent.get("request"):
+            history = agent.setdefault("request_history", [])
+            normalized = re.sub(r"\s+", " ", str(agent["request"]).strip().lower())
+            history[:] = [item for item in history if item.get("request") != normalized]
+            history.append({"request": normalized, "status": agent.get("request_status"),
+                            "fulfillment": agent.get("request_fulfillment", ""),
+                            "artifact": agent.get("request_artifact", {}), "cycle": cycle})
+            del history[:-20]
     return resolutions
 
 
@@ -663,12 +671,20 @@ def main():
         if decision.get("proposal"):
             file_agent_record(agent, args.cycle, "document", decision["proposal"], "Resident proposal")
         if decision.get("request"):
-            agent["request"] = decision["request"]
-            agent["request_status"] = "open"
+            requested = decision["request"]
+            normalized = re.sub(r"\s+", " ", str(requested).strip().lower())
+            prior = next((item for item in reversed(agent.get("request_history", []))
+                          if item.get("request") == normalized), None)
+            agent["request"] = requested
             agent["request_cycle"] = args.cycle
-            # A new request must not inherit the resolution text of a prior one.
-            agent["request_fulfillment"] = ""
-            agent["request_artifact"] = {}
+            if prior:
+                agent["request_status"] = prior.get("status", "needs-clarification")
+                agent["request_fulfillment"] = "Previously reviewed: " + prior.get("fulfillment", "no automatic access")
+                agent["request_artifact"] = prior.get("artifact", {})
+            else:
+                agent["request_status"] = "open"
+                agent["request_fulfillment"] = ""
+                agent["request_artifact"] = {}
         elif decision["action"] not in {"RETIRE", "FIRE"}:
             agent["request_status"] = "closed"
         elif decision.get("action") in {"RETIRE", "FIRE"}:

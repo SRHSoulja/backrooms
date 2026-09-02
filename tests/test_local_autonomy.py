@@ -178,6 +178,14 @@ class LocalAutonomyTests(unittest.TestCase):
         local_autonomy.resolve_requests(registry, world={"rooms": []})
         self.assertFalse(registry["agents"][0]["request_artifact"]["accepted"])
 
+    def test_resolved_request_is_remembered_for_future_cycles(self):
+        registry = {"agents": [{"id": "local-test", "request": "access to a clean water source",
+                                 "request_status": "open", "capabilities": []}]}
+        local_autonomy.resolve_requests(registry, world={"rooms": []}, cycle=131)
+        history = registry["agents"][0]["request_history"]
+        self.assertEqual(history[-1]["status"], "closed")
+        self.assertEqual(history[-1]["request"], "access to a clean water source")
+
     def test_unprovisioned_computer_request_is_explicitly_limited(self):
         world = {"rooms": [{"id": "atrium"}]}
         registry = {"agents": [{"id": "local-test", "status": "active-local", "room": "atrium",
