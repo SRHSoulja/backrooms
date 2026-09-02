@@ -91,6 +91,15 @@ def wait_ready(url):
     raise RuntimeError("local model did not become ready")
 
 
+def model_probe(url):
+    """Return a measured health result for the configured model endpoint."""
+    try:
+        with urllib.request.urlopen(url.rstrip("/") + "/health", timeout=2) as response:
+            return response.status == 200
+    except Exception:
+        return False
+
+
 def runtime_world():
     if RUNTIME_STATE.exists():
         with RUNTIME_STATE.open() as handle:
@@ -535,7 +544,7 @@ def record(result):
     return world
 
 
-def publish(result, world):
+def publish(result, world, model_health=True):
     """Publish only safe metadata, and only when this checkout is clean."""
     fetch = subprocess.run(["git", "fetch", "origin", "main"], cwd=ROOT, capture_output=True)
     if fetch.returncode:
@@ -556,7 +565,9 @@ def publish(result, world):
     health = {
         "schema_version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "cycle": world["cycle"], "daemon": "running", "local_model": "ready",
+        "cycle": world["cycle"], "daemon": "running",
+        "local_model": "ready" if model_health else "unavailable",
+        "local_model_probe": bool(model_health),
         "rooms": len(world.get("rooms", [])),
         "active_residents": core_residents + sum(agent.get("status") not in {"fired", "retired"} for agent in registry.get("agents", [])),
         "work_orders": len(work_orders.get("orders", [])),
@@ -727,11 +738,48 @@ parser.add_argument("--publish", action="store_true", help="publish safe local-c
 parser.add_argument("--once", action="store_true", help="run exactly one bounded cycle and exit")
 args = parser.parse_args()
 lock_handle = acquire_lock()
-server = subprocess.Popen(["llama-server", "-hf", "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M", "--host", "127.0.0.1", "--port", str(args.port), "--ctx-size", "4096", "--predict", "800"], cwd=ROOT)
+configured_url = os.getenv("BACKROOMS_LLM_BASE_URL", "").rstrip("/")
+base_url = configured_url or f"http://127.0.0.1:{args.port}"
+server = None
+
+
+def start_local_model():
+    process = subprocess.Popen(["llama-server", "-hf", "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
+                                "--host", "127.0.0.1", "--port", str(args.port), "--ctx-size", "4096",
+                                "--predict", "800"], cwd=ROOT)
+    try:
+        wait_ready(base_url)
+    except Exception:
+        process.terminate()
+        process.wait(timeout=15)
+        raise
+    return process
+
+
+def stop_local_model(process):
+    if process is None:
+        return
+    if process.poll() is None:
+        process.terminate()
+    try:
+        process.wait(timeout=15)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(timeout=5)
+
+
+if not configured_url:
+    server = start_local_model()
+else:
+    wait_ready(base_url)
 try:
-    wait_ready(f"http://127.0.0.1:{args.port}")
     while True:
-        base_url = f"http://127.0.0.1:{args.port}"
+        if not model_probe(base_url):
+            if configured_url:
+                raise RuntimeError("configured local model endpoint is unhealthy")
+            stop_local_model(server)
+            server = start_local_model()
+        model_health = model_probe(base_url)
         question = next_question(base_url)
         completed = subprocess.run([sys.executable, str(ROOT / "scripts/roundtable.py"),
             "--base-url", base_url, "--question", question], cwd=ROOT,
@@ -746,7 +794,7 @@ try:
             # Reload the canonical topology before publishing this cycle.
             world = runtime_world()
             if args.publish:
-                publish(result, world)
+                publish(result, world, model_health=model_health)
             print(json.dumps({"cycle": world["cycle"], "metrics": metrics(result), "action": result["action"],
                               "autonomy": result["autonomy"], "recruitment": result["recruitment"]}), flush=True)
         else:
@@ -757,5 +805,4 @@ try:
 except KeyboardInterrupt:
     pass
 finally:
-    server.terminate()
-    server.wait(timeout=15)
+    stop_local_model(server)
