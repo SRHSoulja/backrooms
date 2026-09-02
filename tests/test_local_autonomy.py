@@ -190,6 +190,7 @@ class LocalAutonomyTests(unittest.TestCase):
         stored = __import__("json").loads(local_autonomy.ANALYSIS_ARCHIVE.read_text())
         self.assertEqual(stored["output"], "42\n")
         self.assertEqual(stored["code_hash"], artifact["code_hash"])
+        self.assertIsNone(stored["based_on"])
 
     def test_analysis_artifact_retention_is_bounded(self):
         local_autonomy.ANALYSIS_ARCHIVE = Path(self.archive_dir.name) / "analysis.jsonl"
@@ -206,6 +207,7 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertIn('"summary"', source)
         self.assertIn('"analysis"', source)
         self.assertIn('"artifact_id"', source)
+        self.assertIn('Shared analysis ledger', source)
 
 
 if __name__ == "__main__":

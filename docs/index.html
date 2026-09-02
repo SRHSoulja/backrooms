@@ -93,7 +93,7 @@ fetch(`./local-hirelings.json?t=${Date.now()}`).then(r => r.json()).then(feed =>
   document.getElementById('research-log').innerHTML = rows.join('') || '<p>No resident research recorded yet.</p>';
 }).catch(() => { document.getElementById('research-log').textContent = 'Public research log unavailable.'; });
 fetch(`./analysis.json?t=${Date.now()}`).then(r => r.json()).then(feed => {
-  const rows = (feed.records || []).slice().reverse().slice(0, 12).map(item => `<p><strong>${escapeHtml(item.agent || 'resident')}</strong> · ${escapeHtml(item.status || 'unknown')} · cycle ${escapeHtml(item.cycle ?? 'unknown')}<br>${escapeHtml(item.summary || '[summary unavailable]')}<br><span class="label">${escapeHtml(item.id || 'analysis')} · ${escapeHtml(item.output_chars ?? 0)} output characters · sha256 ${escapeHtml(String(item.code_hash || '').slice(0, 16))}</span></p>`);
+  const rows = (feed.records || []).slice().reverse().slice(0, 12).map(item => `<p><strong>${escapeHtml(item.agent || 'resident')}</strong> · ${escapeHtml(item.status || 'unknown')} · cycle ${escapeHtml(item.cycle ?? 'unknown')}<br>${escapeHtml(item.summary || '[summary unavailable]')}<br><span class="label">${escapeHtml(item.id || 'analysis')} · ${item.based_on ? `based on ${escapeHtml(item.based_on)} · ` : ''}${escapeHtml(item.output_chars ?? 0)} output characters · sha256 ${escapeHtml(String(item.code_hash || '').slice(0, 16))}</span></p>`);
   document.getElementById('analysis-log').innerHTML = rows.join('') || '<p>No bounded analyses recorded yet.</p>';
 }).catch(() => { document.getElementById('analysis-log').textContent = 'Analysis ledger unavailable.'; });
 fetch(`./agent-requests.json?t=${Date.now()}`).then(r => r.json()).then(board => {
