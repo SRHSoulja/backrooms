@@ -44,4 +44,8 @@ fetch('./local-cycle.json').then(r => r.json()).then(c => {
   const a = c.action || {};
   document.getElementById('local').innerHTML = `<p>Last local cycle: ${c.generated_at}</p><p><strong>Runtime cycle ${c.runtime_cycle}</strong> · ${m.distinction_status || 'unreported'} · overlap ${m.jaccard_overlap ?? '—'}</p><p>Action: ${a.action || 'unreported'} · ${a.probe || a.status || 'unknown'}</p><p>Question: ${c.question}</p>`;
 }).catch(() => { document.getElementById('local').textContent = 'Local signal unavailable.'; });
+fetch('./action-history.json').then(r => r.json()).then(h => {
+  const cycles = h.cycles || [];
+  if (cycles.length) document.getElementById('local').innerHTML += `<p>Rolling record: ${cycles.length} published action cycles · earliest runtime cycle ${cycles[0].runtime_cycle} · latest ${cycles[cycles.length - 1].runtime_cycle}</p>`;
+}).catch(() => {});
 </script></body></html>

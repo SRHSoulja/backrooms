@@ -33,6 +33,7 @@ The project treats “connected consciousness” as an engineered continuity lay
 - `docs/world.json` — public, privacy-filtered world snapshot used by the observatory.
 - `docs/heartbeat.json` — automatically refreshed public Agent Card availability snapshot.
 - `docs/local-cycle.json` — privacy-filtered signal from the local council daemon.
+- `docs/action-history.json` — rolling public history of aggregate local actions.
 - The observatory’s “Voices in the rooms” section contains only public questions and thoughts derived from recorded events; resident private memory remains excluded.
 - `scripts/a2a_server.py` — minimal introduction endpoint for local testing.
 - `scripts/verify_agent_card.py` — safe-subset verifier for outside Agent Cards.
