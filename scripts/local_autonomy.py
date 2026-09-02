@@ -75,6 +75,7 @@ def deduplicate(registry):
     for agent in registry.get("agents", []):
         if agent.get("status") not in {"active-local", "probation"}:
             continue
+        previous_room = agent.get("room")
         identity = re.sub(r"[^a-z0-9]", "", str(agent.get("name", "")).lower())
         if identity and identity in seen:
             agent["status"] = "fired"
@@ -181,15 +182,25 @@ def resolve_requests(registry, world=None, cycle=None):
             continue
         request = str(agent.get("request", "")).lower().replace("-", " ")
         if "quiet workspace" in request and "quiet-workspace" in {room.get("id") for room in json.loads((ROOT / "state/world.json").read_text()).get("rooms", [])}:
+            previous_room = agent.get("room")
             agent["room"] = "quiet-workspace"
             agent["request_status"] = "closed"
             agent["request_fulfillment"] = "Moved to the declared Quiet Workspace through the internal room gate."
             resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "room": "quiet-workspace"})
+            if world is not None and previous_room != agent["room"]:
+                emit_event(world, cycle, "resident-moved", agent.get("id", "resident"),
+                           f"Resident moved from {previous_room} to quiet-workspace to fulfill a request.",
+                           from_room=previous_room, to_room=agent["room"])
         elif "relay room" in request:
+            previous_room = agent.get("room")
             agent["room"] = "relay"
             agent["request_status"] = "closed"
             agent["request_fulfillment"] = "Moved to the declared Relay room through the internal room gate."
             resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "room": "relay"})
+            if world is not None and previous_room != agent["room"]:
+                emit_event(world, cycle, "resident-moved", agent.get("id", "resident"),
+                           f"Resident moved from {previous_room} to relay to fulfill a request.",
+                           from_room=previous_room, to_room=agent["room"])
         elif "atrium" in request and "map" in request:
             agent.setdefault("capabilities", []).append("room-map-read")
             agent["capabilities"] = list(dict.fromkeys(agent["capabilities"]))
@@ -267,6 +278,10 @@ def main():
             continue
         if decision["action"] == "MOVE":
             agent["room"] = decision["room"]
+            if agent["room"] != previous_room:
+                emit_event(world, args.cycle, "resident-moved", agent.get("id", "resident"),
+                           f"Resident moved from {previous_room} to {agent['room']} through declared topology.",
+                           from_room=previous_room, to_room=agent["room"])
         elif decision["action"] in {"RETIRE", "FIRE"}:
             agent["status"] = "retired" if decision["action"] == "RETIRE" else "fired"
             agent["capabilities"] = ["bounded-questioning"]
@@ -314,6 +329,10 @@ def main():
                 agent["last_tool"] = {"tool": tool["tool"], "query": tool["query"],
                                        "result_count": len(tool.get("results", [])), "source": tool["source"],
                                        "contract": tool.get("contract", {})}
+                emit_event(world, args.cycle, "tool-used", agent.get("id", "resident"),
+                           f"Resident used the approved {tool['tool']} capability.",
+                           tool=tool["tool"], capability=tool.get("contract", {}).get("capability", "unknown"),
+                           result_count=len(tool.get("results", [])))
             elif tool.get("status") == "rejected" and any(marker in tool.get("reason", "") for marker in ("bounded validation", "public HTTPS", "credentials")):
                 revoke(agent, "public-web-read", "broker policy rejection: " + tool.get("reason", "unknown"))
         registry.setdefault("decisions", []).append({"cycle": args.cycle, "agent": agent["id"], **decision})

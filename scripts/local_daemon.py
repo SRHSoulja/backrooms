@@ -163,6 +163,7 @@ def sync_work_orders(registry, cycle):
         if not request or request.lower() == "none" or agent.get("status") in {"fired", "retired"}:
             continue
         status = agent.get("request_status", "open")
+        public_status = {"closed": "completed"}.get(status, status)
         capability = "review-required"
         lower = request.lower()
         if "internet" in lower or "network" in lower:
@@ -179,7 +180,7 @@ def sync_work_orders(registry, cycle):
             "agent": str(agent.get("name", "Unnamed hireling"))[:80],
             "room": agent.get("room", "unknown"),
             "request": "[request withheld by publication filter]" if blocked.search(request) else request[:220],
-            "status": status, "capability": capability,
+            "status": public_status, "capability": capability,
             "acceptance": "Resident receives the named bounded capability or a recorded explanation of why it is unavailable.",
             "evidence": agent.get("last_tool", {}) if status == "closed" else {},
             "cycle": agent.get("request_cycle", cycle), "updated_cycle": cycle,
