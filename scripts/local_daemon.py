@@ -64,6 +64,7 @@ def runtime_world():
             canonical = json.load(handle)
         world["rooms"] = canonical.get("rooms", world.get("rooms", []))
         world["shared_memory"] = canonical.get("shared_memory", world.get("shared_memory", []))
+        world["connections"] = canonical.get("connections", world.get("connections", []))
         return world
     with STATE.open() as handle:
         world = json.load(handle)
