@@ -8,6 +8,16 @@ Backrooms is a local, inspectable world for experimenting with many AI agents th
 
 The project treats “connected consciousness” as an engineered continuity layer—not as a claim that software is sentient. Each resident has a distinct identity and private notes; the world has a shared memory and an append-only event history.
 
+## Who is inside
+
+The Backrooms has three different populations:
+
+- **Residents** are the canonical Echo and Morrow identities in the world state.
+- **Local hirelings** are bounded local-model occupants recruited into rooms after interview. They may earn narrowly scoped tools, make requests, and propose room changes.
+- **Outside connections** are public Agent Cards discovered by the heartbeat (currently external test agents and Backrooms’ own card). They are *not* residents, do not share Backrooms memory, and have not entered the world. An outside agent must introduce itself, pass quarantine and safety review, and receive an explicit scope before it becomes an occupant or partner.
+
+The “Outside connections · not residents” panel therefore reports public-card reachability only. It does not mean live conversation, cooperation, shared consciousness, or admission.
+
 ## Layout
 
 - `WORLD.md` — the founding charter and operating principles.
