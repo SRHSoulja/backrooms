@@ -99,7 +99,9 @@ def main():
                 pass
         if not decision:
             agent["status"] = "probation"
-            agent["last_action"] = "interview-rejected"
+            agent["interview_status"] = "rejected"
+            if "public-web-read" not in agent.get("capabilities", []):
+                agent["last_action"] = "interview-rejected"
             agent["interviewed_at"] = datetime.now(timezone.utc).isoformat()
             registry.setdefault("decisions", []).append({"cycle": args.cycle, "agent": agent["id"],
                                                            "action": "interview-rejected"})
@@ -118,6 +120,7 @@ def main():
             agent["proposal"] = decision["proposal"] or "No proposal text supplied."
         if decision["action"] not in {"RETIRE", "FIRE"}:
             agent["status"] = "active-local"
+        agent["interview_status"] = "accepted"
         agent["last_action"] = decision["action"].lower()
         agent["last_reason"] = decision["reason"]
         agent["interviewed_at"] = datetime.now(timezone.utc).isoformat()

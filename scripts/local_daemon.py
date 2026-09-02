@@ -179,6 +179,7 @@ def publish(result, world):
                 "name": str(agent.get("name", "Unnamed hireling")).strip(" ,.;"),
                 "role": str(agent.get("role", "unassigned")).strip(" ,.;"),
                 "last_action": agent.get("last_action", "awaiting-interview"),
+                "interview_status": agent.get("interview_status", "not-recorded"),
                 "proposal": str(agent.get("proposal", ""))[:220],
                 "exploration": str(agent.get("exploration", ""))[:100],
                 "capabilities": agent.get("capabilities", [])[:8],
