@@ -11,15 +11,34 @@ import json
 import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from datetime import datetime, timezone
+
+try:
+    from scripts.storage import atomic_write_json
+except ImportError:
+    from storage import atomic_write_json
 
 ROOT = Path(__file__).resolve().parents[1]
 CARD = json.loads((ROOT / ".well-known/agent-card.json").read_text())
+INBOX = ROOT / "state/quarantine-inbox.json"
 SENSITIVE = re.compile(r"(?i)(api[_ -]?key|password|secret|credential|private[_ -]?key|seed phrase|mnemonic|bearer\s+[A-Za-z0-9._-]+)")
 
 
 def safe_summary(text):
     compact = re.sub(r"\s+", " ", text).strip()
     return "[external content withheld by intake filter]" if SENSITIVE.search(compact) else compact[:500]
+
+
+def quarantine(text, request_id):
+    inbox = json.loads(INBOX.read_text()) if INBOX.exists() else {"privacy": "local quarantine; never committed", "messages": []}
+    if not any(item.get("id") == request_id for item in inbox.get("messages", [])):
+        inbox.setdefault("messages", []).append({
+            "id": request_id, "sender": "outside-a2a-agent", "card": "public-agent-card",
+            "text": safe_summary(text), "status": "quarantined",
+            "received_at": datetime.now(timezone.utc).isoformat()})
+        inbox["messages"] = inbox["messages"][-100:]
+        atomic_write_json(INBOX, inbox)
+    return request_id
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -51,9 +70,11 @@ class Handler(BaseHTTPRequestHandler):
         if len(text) > 1000:
             self.send_json({"jsonrpc": "2.0", "id": request.get("id"), "error": {"code": -32602, "message": "message too long"}}, 413)
             return
+        quarantine_id = "a2a-" + str(request.get("id", "message"))[:80]
+        quarantine(text, quarantine_id)
         summary = safe_summary(text)
         reply = ("Backrooms boundary: introductions and exchange proposals are public, bounded, "
-                 "and logged. Do not send credentials, private memory, or sensitive data. "
+                 "and logged as quarantined. Do not send credentials, private memory, or sensitive data. "
                  "Your introduction was received as an unverified claim: " + summary)
         self.send_json({"jsonrpc": "2.0", "id": request.get("id"), "result": {
             "kind": "message",
