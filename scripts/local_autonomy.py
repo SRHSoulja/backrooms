@@ -17,6 +17,10 @@ try:
     from scripts.storage import atomic_write_json
 except ImportError:
     from storage import atomic_write_json
+try:
+    from scripts.code_view import inventory as public_source_inventory
+except ImportError:
+    from code_view import inventory as public_source_inventory
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "state/local-agents.json"
@@ -46,6 +50,7 @@ def ask(url, agent, rooms, cycle, repair=False, shared_work=None):
                           + json.dumps(prior_record, ensure_ascii=True)[:1200])
     if shared_work:
         prior_research += " Shared resident work metadata (provenance only): " + json.dumps(shared_work[:5], ensure_ascii=True)[:900]
+    source_files = ", ".join(str(path.relative_to(ROOT)) for path in public_source_inventory()[:80])
     prompt = (f"You are interviewing for {agent['name']} ({agent['role']}) in a bounded fictional world. "
               f"Cycle {cycle}. Existing rooms: {', '.join(rooms)}. Choose one action based on your role and current work. "
               "You are a software agent running on a computer, not a biological body: you do not need water, food, sleep, shelter, medical care, or physical comfort. Do not request physical necessities; request compute, data, tools, or workspace only when a concrete bounded capability is missing. "
@@ -53,6 +58,8 @@ def ask(url, agent, rooms, cycle, repair=False, shared_work=None):
               "TARGET: short exploration target, PROPOSAL: short useful proposal, REQUEST: one concrete non-sensitive thing you cannot do alone, CODE: short data-only Python for ANALYZE or NONE, REASON: short reason. "
               "You have no external network, credentials, private memory, arbitrary code, money, or authority to change safety rules. ANALYZE is only a request to use the pre-approved restricted local sandbox. "
               "Do not claim consciousness. Use ANALYZE when your bounded-workbench role has a concrete data or arithmetic task; if no specific public URL is available, prefer a tiny local health check such as CODE: print(sum(range(3))). Put only data-only Python in CODE. Use MOVE only for an existing room. Move when another declared room better fits the work; otherwise stay. "
+              f"For project investigations, EXPLORE may use TARGET: code:<allowlisted path> for sanitized read-only source inspection. Available public source paths include: {source_files}. Source reading cannot modify files. "
+              "Use PROPOSE for a concise improvement idea; code patches must go through the separate non-applying proposal and isolated-review gates. "
               "The Backrooms is intended to expand: when the work supports it, prefer DISCOVER to record a new room candidate, BUILD to request a new connected room, or TRANSFORM to repurpose an existing room. A room proposal needs a concrete TARGET and short PROPOSAL description. "
               + prior_research
               + ("Repair the format: emit only the seven labeled fields, with one short line per field; use REQUEST: NONE and CODE: NONE if not needed."
