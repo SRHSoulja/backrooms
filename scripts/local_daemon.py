@@ -628,11 +628,24 @@ def sync_frontier(result, world, registry):
                                      "status": discovery.get("status", "candidate"),
                                      "source_url": discovery.get("source", "")[:300],
                                      "source_hash": discovery.get("source_hash", "")})
-    frontier["tasks"] = [{"id": f"task-{agent.get('id')}", "agent": agent.get("id"),
-                           "room": agent.get("room"), "request": str(agent.get("request", ""))[:220],
-                           "status": agent.get("request_status", "none")}
-                          for agent in registry.get("agents", [])
-                          if agent.get("request") and agent.get("request_status") == "open"]
+    previous_tasks = {item.get("id"): item for item in frontier.get("tasks", []) if item.get("id")}
+    tasks = []
+    tasks.extend({"id": f"task-{agent.get('id')}", "agent": agent.get("id"),
+                  "room": agent.get("room"), "request": str(agent.get("request", ""))[:220],
+                  "status": agent.get("request_status", "none")}
+                 for agent in registry.get("agents", [])
+                 if agent.get("request") and agent.get("request_status") == "open")
+    tasks.extend({"id": f"question-task-{item.get('id')}", "agent": None, "room": None,
+                  "request": item.get("question", "")[:220], "status": "open"}
+                 for item in frontier.get("open_questions", []) if item.get("status") == "open")
+    for task in tasks:
+        old = previous_tasks.get(task["id"], {})
+        for key in ("claimed_by", "claimed_cycle", "completed_cycle", "evidence"):
+            if key in old:
+                task[key] = old[key]
+        if old.get("status") in {"claimed", "completed"}:
+            task["status"] = old["status"]
+    frontier["tasks"] = tasks
     frontier["activity"].append({"cycle": cycle, "question": bool(question),
                                   "resident_actions": len(result.get("autonomy", {}).get("decisions", [])),
                                   "findings": len(frontier["findings"])})

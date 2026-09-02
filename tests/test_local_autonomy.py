@@ -17,11 +17,13 @@ class LocalAutonomyTests(unittest.TestCase):
         self.original_notes = local_autonomy.NOTES
         self.original_analysis_archive = local_autonomy.ANALYSIS_ARCHIVE
         self.original_findings = local_autonomy.FINDINGS
+        self.original_frontier = local_autonomy.FRONTIER
         local_autonomy.WHITEBOARD = Path(self.archive_dir.name) / "whiteboard.json"
         local_autonomy.PRINTER_QUEUE = Path(self.archive_dir.name) / "printer-queue.json"
         local_autonomy.PRINTED = Path(self.archive_dir.name) / "printed"
         local_autonomy.NOTES = Path(self.archive_dir.name) / "notes"
         local_autonomy.FINDINGS = Path(self.archive_dir.name) / "findings.jsonl"
+        local_autonomy.FRONTIER = Path(self.archive_dir.name) / "frontier.json"
 
     def tearDown(self):
         local_autonomy.ARCHIVE = self.original_archive
@@ -31,6 +33,7 @@ class LocalAutonomyTests(unittest.TestCase):
         local_autonomy.NOTES = self.original_notes
         local_autonomy.ANALYSIS_ARCHIVE = self.original_analysis_archive
         local_autonomy.FINDINGS = self.original_findings
+        local_autonomy.FRONTIER = self.original_frontier
         self.archive_dir.cleanup()
 
     def test_build_creates_one_connected_room_and_event(self):
@@ -105,6 +108,17 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(changes[0]["action"], "build")
         self.assertEqual(len(world["rooms"]), 2)
         self.assertEqual(world["events"][0]["kind"], "room-built-from-evidence")
+
+    def test_frontier_task_claim_and_completion_are_durable(self):
+        local_autonomy.FRONTIER.write_text('{"tasks":[{"id":"question-task-1","request":"compare sources","status":"open"}]}')
+        agent = {"id": "local-test", "room": "relay"}
+        claimed = local_autonomy.claim_frontier_task(agent, 81)
+        self.assertEqual(claimed["id"], "question-task-1")
+        agent["last_finding_id"] = "finding-1"
+        self.assertTrue(local_autonomy.complete_frontier_task(agent, 81, {"action": "EXPLORE"}))
+        task = __import__("json").loads(local_autonomy.FRONTIER.read_text())["tasks"][0]
+        self.assertEqual(task["status"], "completed")
+        self.assertEqual(task["evidence"], "finding-1")
 
     def test_safe_request_creates_typed_artifact(self):
         world = {"rooms": [{"id": "atrium"}]}

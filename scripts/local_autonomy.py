@@ -450,6 +450,66 @@ def sync_room_occupants(world, registry):
             room["occupants"].append(agent["id"])
 
 
+def claim_frontier_task(agent, cycle):
+    """Claim one open frontier task for this turn, preserving a durable owner."""
+    if not FRONTIER.exists():
+        return None
+    try:
+        frontier = json.loads(FRONTIER.read_text())
+    except json.JSONDecodeError:
+        return None
+    candidate = next((task for task in frontier.get("tasks", [])
+                      if task.get("status") == "open" and not task.get("claimed_by")
+                      and (not task.get("room") or task.get("room") == agent.get("room"))), None)
+    if candidate is None:
+        return None
+    candidate["claimed_by"] = agent.get("id")
+    candidate["claimed_cycle"] = cycle
+    candidate["status"] = "claimed"
+    atomic_write_json(FRONTIER, frontier)
+    agent["claimed_task"] = candidate["id"]
+    return candidate
+
+
+def complete_frontier_task(agent, cycle, decision):
+    """Complete a claimed task only after a substantive bounded action."""
+    task_id = agent.get("claimed_task")
+    if not task_id or not FRONTIER.exists() or decision.get("action") in {"STAY", "MOVE"}:
+        return False
+    try:
+        frontier = json.loads(FRONTIER.read_text())
+    except json.JSONDecodeError:
+        return False
+    task = next((item for item in frontier.get("tasks", []) if item.get("id") == task_id
+                 and item.get("claimed_by") == agent.get("id")), None)
+    if task is None:
+        return False
+    task["status"] = "completed"
+    task["completed_cycle"] = cycle
+    task["evidence"] = agent.get("last_finding_id") or agent.get("last_analysis", {}).get("artifact_id") or decision.get("proposal", "")[:120]
+    atomic_write_json(FRONTIER, frontier)
+    return True
+
+
+def release_frontier_task(agent):
+    task_id = agent.pop("claimed_task", None)
+    if not task_id or not FRONTIER.exists():
+        return False
+    try:
+        frontier = json.loads(FRONTIER.read_text())
+    except json.JSONDecodeError:
+        return False
+    task = next((item for item in frontier.get("tasks", []) if item.get("id") == task_id
+                 and item.get("claimed_by") == agent.get("id")), None)
+    if task is None:
+        return False
+    task["status"] = "open"
+    task.pop("claimed_by", None)
+    task.pop("claimed_cycle", None)
+    atomic_write_json(FRONTIER, frontier)
+    return True
+
+
 def emit_event(world, cycle, kind, actor, text, **fields):
     """Append one durable world event and mirror it into the local archive."""
     event = {"id": f"world-event-{cycle}-{len(world.get('events', [])) + 1}",
@@ -903,6 +963,10 @@ def main():
                                             "tasks": frontier.get("tasks", [])[-3:]})
                     except json.JSONDecodeError:
                         pass
+                claimed_task = claim_frontier_task(agent, args.cycle)
+                if claimed_task:
+                    shared_work.append({"type": "claimed-task", "id": claimed_task.get("id"),
+                                        "request": claimed_task.get("request"), "status": "claimed"})
                 interview = ask(args.base_url, agent, rooms, args.cycle, repair=attempt == 1,
                                 shared_work=shared_work, structured=attempt == 0)
                 decision = parse(interview, agent, rooms)
@@ -925,6 +989,7 @@ def main():
                         "proposal": "", "request": "", "code": "",
                         "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."}
         if not decision:
+            release_frontier_task(agent)
             agent["interview_status"] = "awaiting-retry"
             agent["interview_attempts"] = agent.get("interview_attempts", 0) + 1
             agent["last_interview_attempt_at"] = datetime.now(timezone.utc).isoformat()
@@ -984,6 +1049,10 @@ def main():
                 "status": "construction-requested" if decision["action"] in {"BUILD", "TRANSFORM"} else "discovered",
                 "cycle": args.cycle,
             }
+        if complete_frontier_task(agent, args.cycle, decision):
+            emit_event(world, args.cycle, "frontier-task-completed", agent.get("id", "resident"),
+                       "Resident completed a claimed frontier task with bounded evidence or a proposal.",
+                       task_id=agent.get("claimed_task"), action=decision.get("action"))
         if decision["action"] not in {"RETIRE", "FIRE"}:
             agent["status"] = "active-local"
         agent["interview_status"] = "accepted"
