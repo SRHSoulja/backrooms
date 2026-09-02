@@ -31,6 +31,7 @@ FORBIDDEN = re.compile(r"(api[_ -]?key|password|secret|private memory|credential
 PHYSICAL_NEEDS = re.compile(r"\b(?:water|food|sleep|shelter|medical|dust|cleaning|temperature|physical comfort)\b", re.I)
 PHYSICAL_NEED_CLASSIFICATION = "anthropomorphic-projection / physical-need-model-confusion"
 ALLOWED = {"STAY", "MOVE", "EXPLORE", "ANALYZE", "PROPOSE", "DISCOVER", "BUILD", "TRANSFORM", "RETIRE", "FIRE"}
+MAX_TURNS_PER_CYCLE = 8
 
 
 def decision_schema(rooms):
@@ -713,9 +714,17 @@ def main():
     world["cycle"] = args.cycle
     rooms = [room["id"] for room in world.get("rooms", []) if room.get("id")]
     results = []
+    candidates = [agent for agent in registry.get("agents", [])
+                  if agent.get("status") in {"active-local", "probation"}]
+    selected = sorted(candidates, key=lambda agent: (
+        0 if agent.get("request_status") == "open" else 1,
+        0 if not agent.get("last_turn_cycle") else 1,
+        agent.get("last_turn_cycle", 0), agent.get("id", "")))[:MAX_TURNS_PER_CYCLE]
+    selected_ids = {agent.get("id") for agent in selected}
     for agent in registry.get("agents", []):
-        if agent.get("status") not in {"active-local", "probation"}:
+        if agent.get("id") not in selected_ids:
             continue
+        agent["last_turn_cycle"] = args.cycle
         decision = None
         for attempt in range(2):
             try:
