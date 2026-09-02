@@ -339,6 +339,12 @@ def sync_research(registry):
         if not tool.get("tool") or tool.get("tool") not in {"public-search", "public-text", "public-json", "public-csv"}:
             continue
         source = str(tool.get("source", ""))
+        age_seconds = None
+        if tool.get("fetched_at"):
+            try:
+                age_seconds = max(0, int((datetime.now(timezone.utc) - datetime.fromisoformat(tool["fetched_at"])).total_seconds()))
+            except (TypeError, ValueError):
+                age_seconds = None
         leads = [{"title": public_event_text(item.get("title", "")), "url": item.get("url", ""),
                   "source_hash": hashlib.sha256(str(item.get("url", "")).encode()).hexdigest(), "verified": False}
                  for item in tool.get("results", [])[:5] if isinstance(item, dict) and str(item.get("url", "")).startswith("https://")]
@@ -346,7 +352,9 @@ def sync_research(registry):
                   "agent": agent.get("id"), "cycle": agent.get("request_cycle"), "tool": tool.get("tool"),
                   "query": public_event_text(tool.get("query", "")), "source": source,
                   "source_hash": tool.get("source_hash") or hashlib.sha256(source.encode()).hexdigest(),
-                  "fetched_at": tool.get("fetched_at"), "verified": bool(tool.get("verified")),
+                  "fetched_at": tool.get("fetched_at"), "age_seconds": age_seconds,
+                  "stale": age_seconds is not None and age_seconds > 7 * 24 * 60 * 60,
+                  "verified": bool(tool.get("verified")),
                   "result_count": tool.get("result_count", 0), "results": leads,
                   "summary": tool.get("summary", {}), "excerpt": public_event_text(tool.get("excerpt", ""))[:420],
                   "analysis_artifact": (agent.get("last_analysis") or {}).get("artifact_id")}
@@ -357,7 +365,8 @@ def sync_research(registry):
               "privacy": "Bounded source leads and sanitized excerpts only; raw fetched pages remain local.",
               "records": records[-100:]}
     atomic_write_json(PUBLIC_RESEARCH, public)
-    return {"research_records": len(records), "research_feed": "docs/research.json"}
+    return {"research_records": len(records), "research_stale": sum(item.get("stale", False) for item in records),
+            "research_feed": "docs/research.json"}
 
 
 def skill_progress(agent, registry):
