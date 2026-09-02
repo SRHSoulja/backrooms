@@ -62,6 +62,8 @@ LOCAL_FRONTIER = ROOT / "state/frontier.json"
 PUBLIC_FRONTIER = ROOT / "docs/frontier.json"
 LOCAL_CODEX_STATUS = ROOT / "state/codex-bridge-status.json"
 PUBLIC_CODEX_STATUS = ROOT / "docs/codex-bridge.json"
+LOCAL_FINDINGS = ROOT / "state/findings.jsonl"
+PUBLIC_FINDINGS = ROOT / "docs/findings.json"
 LOCAL_CODEX_INBOX = ROOT / "state/codex-inbox"
 LOCAL_CODEX_OUTBOX = ROOT / "state/codex-outbox"
 LOCAL_INBOX = ROOT / "state/quarantine-inbox.json"
@@ -372,6 +374,51 @@ def sync_analysis():
             "analysis_feed": "docs/analysis.json"}
 
 
+def sync_findings(registry, cycle):
+    """File only source-backed findings; search-result leads are not findings."""
+    records = []
+    if LOCAL_FINDINGS.exists():
+        for line in LOCAL_FINDINGS.read_text().splitlines()[-200:]:
+            try:
+                item = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if item.get("id"):
+                records.append(item)
+    known = {item.get("id") for item in records}
+    for agent in registry.get("agents", []):
+        tool = agent.get("last_tool") or {}
+        source = str(tool.get("source", ""))
+        excerpt = str(tool.get("excerpt", "")).strip()
+        if not tool.get("verified") or not source.startswith("https://") or not excerpt:
+            continue
+        content_hash = str(tool.get("source_hash", "")) or hashlib.sha256(excerpt.encode()).hexdigest()
+        finding_id = "finding-" + hashlib.sha256(f"{agent.get('id')}:{source}:{content_hash}".encode()).hexdigest()[:20]
+        if finding_id in known:
+            continue
+        claim = str(agent.get("proposal") or tool.get("query") or "Source-backed research result").strip()[:300]
+        records.append({"id": finding_id, "agent": agent.get("id"), "cycle": cycle,
+                        "claim": claim, "quote": excerpt[:300], "url": source[:500],
+                        "content_hash": content_hash, "confidence": 0.5,
+                        "relates_to": [agent.get("room") or "unassigned"], "status": "unreviewed"})
+        known.add(finding_id)
+    LOCAL_FINDINGS.parent.mkdir(parents=True, exist_ok=True)
+    with LOCAL_FINDINGS.open("w") as handle:
+        for item in records[-200:]:
+            handle.write(json.dumps(item, separators=(",", ":")) + "\n")
+    sources_by_claim = {}
+    for item in records:
+        key = re.sub(r"[^a-z0-9 ]", "", str(item.get("claim", "")).lower())[:120]
+        sources_by_claim.setdefault(key, set()).add(item.get("url"))
+    public_records = [{key: item.get(key) for key in ("id", "agent", "cycle", "claim", "quote", "url", "content_hash", "confidence", "relates_to", "status")}
+                      | {"independent_sources": len(sources_by_claim.get(re.sub(r"[^a-z0-9 ]", "", str(item.get("claim", "")).lower())[:120], set()))}
+                      for item in records[-100:]]
+    atomic_write_json(PUBLIC_FINDINGS, {"schema_version": 1, "generated_at": datetime.now(timezone.utc).isoformat(),
+        "privacy": "Sanitized claims, short quotes, URLs, hashes, and review metadata only; raw pages remain external and local context remains private.",
+        "records": public_records})
+    return {"findings": len(records), "corroborated_findings": sum(item["independent_sources"] >= 2 for item in public_records), "findings_feed": "docs/findings.json"}
+
+
 def sync_research(registry):
     """Project bounded source leads; raw fetched pages never enter this feed."""
     records_by_url = {}
@@ -667,6 +714,7 @@ def publish(result, world, model_health=True):
     resource_health = sync_digital_resources(world, registry, result)
     analysis_health = sync_analysis()
     research_health = sync_research(registry)
+    findings_health = sync_findings(registry, world["cycle"])
     frontier_health = sync_frontier(result, world, registry)
     audit = continuity_audit(world, registry)
     public_roster = json.loads(PUBLIC_WORLD.read_text()).get("residents", []) if PUBLIC_WORLD.exists() else []
@@ -685,7 +733,7 @@ def publish(result, world, model_health=True):
         "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
         "activity_feed": "docs/activity.json",
         "feed_freshness_seconds": 0
-        ,**resource_health, **analysis_health, **research_health, **frontier_health, **sync_code_proposals(), **sync_outside_signals(), **sync_codex_bridge(),
+        ,**resource_health, **analysis_health, **research_health, **findings_health, **frontier_health, **sync_code_proposals(), **sync_outside_signals(), **sync_codex_bridge(),
         "dropped_events": 0
     }
     safe = {
@@ -830,10 +878,10 @@ def publish(result, world, model_health=True):
     sync_outside_signals()
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}
-    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json", "state/frontier.json", "state/codex-bridge-status.json"}:
+    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json", "state/frontier.json", "state/codex-bridge-status.json"}:
         print(json.dumps({"publish": "skipped", "reason": "other local changes present"}), flush=True)
         return
-    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json"], cwd=ROOT, check=True)
+    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json"], cwd=ROOT, check=True)
     commit = subprocess.run(["git", "commit", "-m", "chore: publish local council signal"], cwd=ROOT, capture_output=True)
     if commit.returncode == 0:
         pushed = subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=ROOT, capture_output=True)
