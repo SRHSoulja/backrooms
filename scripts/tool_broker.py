@@ -119,6 +119,11 @@ def public_search(query):
             results.append({"title": title[:160], "url": url[:500]})
             if len(results) >= 5:
                 break
+    ignored = {"find", "relevant", "latest", "recent", "data", "public", "access", "use", "the", "for", "with"}
+    terms = [term for term in re.findall(r"[a-z0-9]+", query.lower()) if len(term) > 3 and term not in ignored]
+    if terms:
+        ranked = sorted(results, key=lambda item: sum(term in (item.get("title", "") + " " + item.get("url", "")).lower() for term in terms), reverse=True)
+        results = [item for item in ranked if any(term in (item.get("title", "") + " " + item.get("url", "")).lower() for term in terms)][:5]
     return {"tool": "public-search", "query": query, "results": results,
             "source": provider, "status": "completed",
             "contract": TOOL_CONTRACTS["public-search"]}

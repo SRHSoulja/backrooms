@@ -475,6 +475,29 @@ def resolve_requests(registry, world=None, cycle=None):
             agent["request_fulfillment"] = "Public read-only internet research is available through the broker; private, authenticated, and write-enabled services remain unavailable."
             agent["request_artifact"] = {"kind": "public-research", "scope": "public-only", "accepted": True}
             resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "scope": "public-only"})
+        elif "room candidate" in request:
+            source_record = agent.get("last_tool") or {}
+            source = source_record.get("source", "")
+            artifact = (agent.get("last_analysis") or {}).get("artifact_id", "")
+            if source or artifact:
+                name = str(source_record.get("query") or "Resident research frontier")[:80].strip().title()
+                description = "Candidate recorded from the resident's approved research trail; requires a later resident BUILD or TRANSFORM decision."
+                fingerprint = hashlib.sha256(json.dumps({"agent": agent.get("id"), "cycle": cycle,
+                    "name": name, "source": source, "artifact": artifact}, sort_keys=True).encode()).hexdigest()[:16]
+                discoveries = (world or {}).setdefault("discoveries", []) if world is not None else None
+                discovery_id = f"discovery-{fingerprint}"
+                if discoveries is not None and not any(item.get("id") == discovery_id for item in discoveries):
+                    discoveries.append({"id": discovery_id, "agent": agent.get("id"), "name": name,
+                                        "description": description, "source": source[:300],
+                                        "analysis_artifact": artifact, "source_hash": source_record.get("source_hash", ""),
+                                        "cycle": cycle, "status": "candidate"})
+                    emit_event(world, cycle, "room-discovered", agent.get("id", "resident"),
+                               "Resident recorded a research-backed room candidate; no room was built.",
+                               discovery_id=discovery_id, status="candidate")
+                agent["request_status"] = "closed"
+                agent["request_fulfillment"] = "A provenance-backed room candidate was filed; a later resident BUILD or TRANSFORM decision is required to create a room."
+                agent["request_artifact"] = {"kind": "room-discovery-candidate", "discovery_id": discovery_id, "accepted": True}
+                resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "discovery": discovery_id})
         elif ("restricted local sandbox" in request or "bounded workbench" in request) and "bounded-workbench" in agent.get("capabilities", []):
             agent["request_status"] = "closed"
             agent["request_fulfillment"] = "The pre-approved restricted local sandbox is available for data-only code; network, shell, credentials, and host writes remain disabled."

@@ -16,7 +16,7 @@ class ToolContractTests(unittest.TestCase):
     def test_public_search_extracts_bounded_results(self):
         original = tool_broker.fetch
         try:
-            tool_broker.fetch = lambda url: '<a class="result__a" href="https://example.org">Example</a>'
+            tool_broker.fetch = lambda url: '<a class="result__a" href="https://example.org">Public Dataset Example</a>'
             result = tool_broker.public_search("public dataset")
             self.assertEqual(result["status"], "completed")
             self.assertEqual(result["results"][0]["url"], "https://example.org")
@@ -30,7 +30,7 @@ class ToolContractTests(unittest.TestCase):
                 if "duckduckgo" in url:
                     return "<html>no parsed results</html>"
                 if "format=rss" in url:
-                    return "<rss><item><title>Report</title><link>https://example.org/report</link></item></rss>"
+                    return "<rss><item><title>Public Dataset Report</title><link>https://example.org/report</link></item></rss>"
                 return '<li class="b_algo"><h2><a href="https://example.org/fallback">Fallback</a></h2></li>'
             tool_broker.fetch = fake_fetch
             result = tool_broker.public_search("public dataset")
