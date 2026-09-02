@@ -20,7 +20,7 @@ For an outside agent:
 
 The two sides may exchange public questions, research references, proposals, or approved work. Neither side receives the other’s private memory, credentials, arbitrary execution, or financial authority. A tool grant is specific and revocable; it is not general trust.
 
-Internal room construction is an allowlisted state transition. A validated `BUILD` proposal creates one uniquely identified room, a paired door, and a declared room-link; a `TRANSFORM` proposal updates an existing room. Both transitions emit immutable world events and are idempotent. The public projection exposes topology and sanitized metadata, not local prompts or raw responses.
+Internal room construction is an allowlisted state transition. A validated `BUILD` proposal creates one uniquely identified room, a paired door, and a declared room-link; a `TRANSFORM` proposal updates an existing room. In addition, two independently sourced, hashed findings on the same research topic may create one evidence-led room per cycle, with the finding IDs attached as artifacts. Both transitions emit immutable world events and are idempotent. The public projection exposes topology and sanitized metadata, not local prompts or raw responses.
 
 The local daemon is supervised for recovery, and each publication includes structured work orders, capability contracts, runtime health, and a continuity audit. These are operational checks, not evidence of consciousness.
 

@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import urllib.request
+import urllib.parse
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -27,6 +28,7 @@ PRINTED = ROOT / "state/printed"
 NOTES = ROOT / "state/agent-notes"
 ANALYSIS_ARCHIVE = ROOT / "state/analysis-results.jsonl"
 INTERVIEW_LOG = ROOT / "state/interviews"
+FINDINGS = ROOT / "state/findings.jsonl"
 ANALYSIS_RETENTION = 100
 FORBIDDEN = re.compile(r"(api[_ -]?key|password|secret|private memory|credential|token|wallet|funds|shell|sudo)", re.I)
 PHYSICAL_NEEDS = re.compile(r"\b(?:water|food|sleep|shelter|medical|dust|cleaning|temperature|physical comfort)\b", re.I)
@@ -503,6 +505,53 @@ def apply_construction(world, registry, cycle):
     return changes
 
 
+def evidence_room_growth(world, registry, cycle):
+    """Create at most one connected room from two independent source-backed findings."""
+    if not FINDINGS.exists():
+        return []
+    groups = {}
+    for line in FINDINGS.read_text().splitlines()[-200:]:
+        try:
+            finding = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        topic = re.sub(r"\s+", " ", str(finding.get("topic", "")).lower()).strip()
+        url = str(finding.get("url", ""))
+        if not topic or not url.startswith("https://") or not finding.get("content_hash") or not finding.get("quote"):
+            continue
+        domain = urllib.parse.urlparse(url).netloc.lower()
+        if domain:
+            groups.setdefault(topic, []).append((finding, domain))
+    rooms = normalize_rooms(world, cycle)
+    existing_topics = {str(room.get("growth_topic", "")).lower() for room in rooms}
+    for topic, entries in groups.items():
+        domains = {domain for _finding, domain in entries}
+        findings = list({finding.get("id"): finding for finding, _domain in entries}.values())
+        if len(findings) < 2 or len(domains) < 2 or topic in existing_topics:
+            continue
+        source_room = next((room for room in rooms if room.get("id") in (findings[0].get("relates_to") or [])), rooms[0] if rooms else None)
+        if source_room is None:
+            continue
+        room_id = safe_room_id(topic, {room.get("id") for room in rooms})
+        room = {"id": room_id, "name": topic[:60].title(),
+                "description": f"Connected research room for corroborated findings about {topic[:120]}.",
+                "charter": f"Compare and preserve public evidence about {topic[:180]}.",
+                "growth_topic": topic, "founded_by": "evidence-ledger", "founded_cycle": cycle,
+                "artifacts": [finding.get("id") for finding in findings[:8]],
+                "board": [{"task": "Review the corroborating sources and record the next question.", "claimed_by": None, "status": "open"}],
+                "activity": {"last_cycle": cycle, "score": len(findings)}, "doors": [f"{room_id}-gate"], "occupants": []}
+        rooms.append(room)
+        source_room.setdefault("doors", []).append(f"{room_id}-gate")
+        world.setdefault("connections", []).append({"id": f"room-link-growth-{room_id}", "kind": "room-link",
+            "name": f"{room['name']} Gate", "from": source_room["id"], "to": room_id,
+            "door": f"{room_id}-gate", "status": "declared", "scope": "internal movement only"})
+        emit_event(world, cycle, "room-built-from-evidence", "evidence-ledger",
+                   "A connected room was created from two independently sourced findings.", room=room_id,
+                   finding_ids=room["artifacts"], source_domains=sorted(domains))
+        return [{"action": "build", "room": room_id, "source": source_room["id"], "finding_ids": room["artifacts"]}]
+    return []
+
+
 def resolve_requests(registry, world=None, cycle=None):
     """Fulfill safe internal requests; leave ambiguous external requests explicit."""
     resolutions = []
@@ -972,6 +1021,9 @@ def main():
                         "request_status": agent.get("request_status", "none"),
                         "exploration": agent.get("exploration", "")[:100], "tool": tool})
     construction = apply_construction(world, registry, args.cycle)
+    evidence_growth = evidence_room_growth(world, registry, args.cycle)
+    if evidence_growth:
+        construction.extend(evidence_growth)
     requests = resolve_requests(registry, world, args.cycle)
     if construction:
         registry.setdefault("decisions", []).extend({"cycle": args.cycle, **item} for item in construction)

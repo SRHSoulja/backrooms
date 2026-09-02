@@ -396,9 +396,10 @@ def sync_findings(registry, cycle):
         finding_id = "finding-" + hashlib.sha256(f"{agent.get('id')}:{source}:{content_hash}".encode()).hexdigest()[:20]
         if finding_id in known:
             continue
-        claim = str(agent.get("proposal") or tool.get("query") or "Source-backed research result").strip()[:300]
+        topic = str(tool.get("query") or agent.get("exploration") or "research frontier").strip()[:160]
+        claim = str(agent.get("proposal") or topic or "Source-backed research result").strip()[:300]
         records.append({"id": finding_id, "agent": agent.get("id"), "cycle": cycle,
-                        "claim": claim, "quote": excerpt[:300], "url": source[:500],
+                        "topic": topic, "claim": claim, "quote": excerpt[:300], "url": source[:500],
                         "content_hash": content_hash, "confidence": 0.5,
                         "relates_to": [agent.get("room") or "unassigned"], "status": "unreviewed"})
         known.add(finding_id)
@@ -410,7 +411,7 @@ def sync_findings(registry, cycle):
     for item in records:
         key = re.sub(r"[^a-z0-9 ]", "", str(item.get("claim", "")).lower())[:120]
         sources_by_claim.setdefault(key, set()).add(item.get("url"))
-    public_records = [{key: item.get(key) for key in ("id", "agent", "cycle", "claim", "quote", "url", "content_hash", "confidence", "relates_to", "status")}
+    public_records = [{key: item.get(key) for key in ("id", "agent", "cycle", "topic", "claim", "quote", "url", "content_hash", "confidence", "relates_to", "status")}
                       | {"independent_sources": len(sources_by_claim.get(re.sub(r"[^a-z0-9 ]", "", str(item.get("claim", "")).lower())[:120], set()))}
                       for item in records[-100:]]
     atomic_write_json(PUBLIC_FINDINGS, {"schema_version": 1, "generated_at": datetime.now(timezone.utc).isoformat(),

@@ -16,10 +16,12 @@ class LocalAutonomyTests(unittest.TestCase):
         self.original_printed = local_autonomy.PRINTED
         self.original_notes = local_autonomy.NOTES
         self.original_analysis_archive = local_autonomy.ANALYSIS_ARCHIVE
+        self.original_findings = local_autonomy.FINDINGS
         local_autonomy.WHITEBOARD = Path(self.archive_dir.name) / "whiteboard.json"
         local_autonomy.PRINTER_QUEUE = Path(self.archive_dir.name) / "printer-queue.json"
         local_autonomy.PRINTED = Path(self.archive_dir.name) / "printed"
         local_autonomy.NOTES = Path(self.archive_dir.name) / "notes"
+        local_autonomy.FINDINGS = Path(self.archive_dir.name) / "findings.jsonl"
 
     def tearDown(self):
         local_autonomy.ARCHIVE = self.original_archive
@@ -28,6 +30,7 @@ class LocalAutonomyTests(unittest.TestCase):
         local_autonomy.PRINTED = self.original_printed
         local_autonomy.NOTES = self.original_notes
         local_autonomy.ANALYSIS_ARCHIVE = self.original_analysis_archive
+        local_autonomy.FINDINGS = self.original_findings
         self.archive_dir.cleanup()
 
     def test_build_creates_one_connected_room_and_event(self):
@@ -90,6 +93,18 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(registry["agents"][0]["room_proposal"]["status"], "recorded")
         self.assertEqual(changes[0]["action"], "discover")
         self.assertIn(changes[0]["discovery"], world["rooms"][0]["artifacts"])
+
+    def test_evidence_room_growth_requires_independent_domains(self):
+        world = {"events": [], "rooms": [{"id": "relay", "occupants": []}], "connections": []}
+        self.archive_dir  # keep the temporary directory alive for the redirected path
+        local_autonomy.FINDINGS.write_text("\n".join([
+            '{"id":"f1","topic":"ancient scripts","url":"https://one.example/a","content_hash":"a","quote":"first","relates_to":["relay"]}',
+            '{"id":"f2","topic":"ancient scripts","url":"https://two.example/b","content_hash":"b","quote":"second","relates_to":["relay"]}'
+        ]) + "\n")
+        changes = local_autonomy.evidence_room_growth(world, {"agents": []}, 80)
+        self.assertEqual(changes[0]["action"], "build")
+        self.assertEqual(len(world["rooms"]), 2)
+        self.assertEqual(world["events"][0]["kind"], "room-built-from-evidence")
 
     def test_safe_request_creates_typed_artifact(self):
         world = {"rooms": [{"id": "atrium"}]}
