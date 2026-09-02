@@ -294,6 +294,35 @@ def apply_construction(world, registry, cycle):
         proposal = agent.get("room_proposal") or {}
         if agent.get("status") not in {"active-local", "probation"}:
             continue
+        if proposal.get("kind") == "discover" and proposal.get("status") == "discovered":
+            # Discovery is a durable candidate, not an automatic room. Require
+            # provenance from an approved public lookup or local analysis.
+            source = (agent.get("last_tool") or {}).get("source", "")
+            artifact = (agent.get("last_analysis") or {}).get("artifact_id", "")
+            if not source and not artifact:
+                proposal["status"] = "rejected"
+                proposal["reason"] = "discovery had no approved provenance"
+                continue
+            fingerprint = hashlib.sha256(json.dumps(
+                {"agent": agent.get("id"), "cycle": proposal.get("cycle"),
+                 "name": proposal.get("name"), "source": source, "artifact": artifact},
+                sort_keys=True).encode()).hexdigest()[:16]
+            discoveries = world.setdefault("discoveries", [])
+            if not any(item.get("id") == f"discovery-{fingerprint}" for item in discoveries):
+                discoveries.append({"id": f"discovery-{fingerprint}", "agent": agent.get("id"),
+                                    "name": str(proposal.get("name", ""))[:80],
+                                    "description": str(proposal.get("description", ""))[:220],
+                                    "source": source[:300], "analysis_artifact": artifact,
+                                    "source_hash": (agent.get("last_tool") or {}).get("source_hash", ""),
+                                    "cycle": proposal.get("cycle", cycle), "status": "candidate"})
+                emit_event(world, cycle, "room-discovered", agent.get("id", "resident"),
+                           "Resident recorded a provenance-backed room candidate; no room was built.",
+                           discovery_id=f"discovery-{fingerprint}", status="candidate")
+                changes.append({"agent": agent.get("id"), "action": "discover",
+                                "discovery": f"discovery-{fingerprint}", "status": "candidate"})
+            proposal["discovery_id"] = f"discovery-{fingerprint}"
+            proposal["status"] = "recorded"
+            continue
         if proposal.get("kind") not in {"build", "transform"} or proposal.get("status") != "construction-requested":
             continue
         if proposal.get("kind") == "transform":

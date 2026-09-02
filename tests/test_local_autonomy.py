@@ -60,6 +60,19 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(len(world["rooms"]), 2)
         self.assertEqual(len(world["connections"]), 1)
 
+    def test_discovery_records_provenance_without_building_room(self):
+        world = {"events": [], "rooms": [{"id": "relay", "doors": [], "occupants": []}], "connections": []}
+        registry = {"agents": [{"id": "local-test", "status": "active-local", "room": "relay",
+                                 "last_tool": {"source": "https://example.org/research", "source_hash": "abc"},
+                                 "room_proposal": {"kind": "discover", "name": "Signal Garden",
+                                                   "description": "A candidate found in public research.",
+                                                   "source_room": "relay", "status": "discovered", "cycle": 72}}]}
+        changes = local_autonomy.apply_construction(world, registry, 72)
+        self.assertEqual(len(world["rooms"]), 1)
+        self.assertEqual(world["discoveries"][0]["status"], "candidate")
+        self.assertEqual(registry["agents"][0]["room_proposal"]["status"], "recorded")
+        self.assertEqual(changes[0]["action"], "discover")
+
     def test_safe_request_creates_typed_artifact(self):
         world = {"rooms": [{"id": "atrium"}]}
         registry = {"agents": [{"id": "local-test", "status": "active-local", "room": "atrium",

@@ -601,6 +601,7 @@ def publish(result, world):
         "rooms": public_rooms,
         "residents": historical_world.get("residents", []),
         "connections": world.get("connections", historical_world.get("connections", [])),
+        "discoveries": world.get("discoveries", historical_world.get("discoveries", []))[-100:],
         "events": world["cycle"],
         "recent": [
             {"cycle": event.get("cycle", world["cycle"]), "kind": event.get("kind", "event"),
