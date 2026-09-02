@@ -215,6 +215,20 @@ def sync_work_orders(registry, cycle):
             "artifact": artifact if status == "closed" else {},
             "cycle": agent.get("request_cycle", cycle), "updated_cycle": cycle,
         }
+    # A request is a versioned work order. Once a resident has produced a
+    # newer request, an older still-open snapshot is no longer actionable.
+    current_ids = {
+        f"{agent.get('id', 'agent')}-work-{agent.get('request_cycle', cycle)}"
+        for agent in registry.get("agents", [])
+        if str(agent.get("request", "")).strip()
+        and str(agent.get("request", "")).lower() != "none"
+        and agent.get("status") not in {"fired", "retired"}
+    }
+    for item in orders.values():
+        if item.get("status") == "open" and item.get("id") not in current_ids:
+            item["status"] = "superseded"
+            item["outcome"] = "Superseded by a newer resident request or completed review."
+            item["updated_cycle"] = cycle
     ordered = list(orders.values())[-100:]
     local = {"updated_at": datetime.now(timezone.utc).isoformat(), "orders": ordered}
     LOCAL_WORK_ORDERS.parent.mkdir(parents=True, exist_ok=True)

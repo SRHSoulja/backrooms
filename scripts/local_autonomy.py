@@ -438,6 +438,16 @@ def resolve_requests(registry, world=None, cycle=None):
             agent["request_fulfillment"] = "Bounded loopback and public read-only networking is available; credentials, private network access, and external writes remain disabled."
             agent["request_artifact"] = {"kind": "bounded-network", "scope": "loopback-and-public-read-only", "accepted": True}
             resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "scope": "loopback-and-public-read-only"})
+        elif any(term in request for term in ("internet", "web access", "web connection")) and "public-web-read" in agent.get("capabilities", []):
+            agent["request_status"] = "closed"
+            agent["request_fulfillment"] = "Public read-only internet research is available through the broker; private, authenticated, and write-enabled services remain unavailable."
+            agent["request_artifact"] = {"kind": "public-research", "scope": "public-only", "accepted": True}
+            resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "scope": "public-only"})
+        elif ("restricted local sandbox" in request or "bounded workbench" in request) and "bounded-workbench" in agent.get("capabilities", []):
+            agent["request_status"] = "closed"
+            agent["request_fulfillment"] = "The pre-approved restricted local sandbox is available for data-only code; network, shell, credentials, and host writes remain disabled."
+            agent["request_artifact"] = {"kind": "bounded-workbench", "scope": "data-only-restricted-sandbox", "accepted": True}
+            resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "scope": "data-only-restricted-sandbox"})
         elif any(term in request for term in ("encrypted communication", "encrypted document", "encrypted storage")):
             agent["request_status"] = "needs-clarification"
             agent["request_fulfillment"] = "Educational cryptography and local reviewed documents are available; live private channels, key custody, and secret storage require a specific safe design."

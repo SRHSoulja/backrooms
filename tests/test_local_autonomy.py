@@ -135,6 +135,22 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(registry["agents"][0]["request_artifact"]["kind"], "bounded-network")
         self.assertTrue(registry["agents"][0]["request_artifact"]["accepted"])
 
+    def test_internet_request_is_fulfilled_as_public_only(self):
+        registry = {"agents": [{"id": "local-test", "request": "access to the internet",
+                                 "request_status": "open", "capabilities": ["public-web-read"]}]}
+        local_autonomy.resolve_requests(registry, world={"rooms": []})
+        artifact = registry["agents"][0]["request_artifact"]
+        self.assertEqual(artifact["scope"], "public-only")
+        self.assertTrue(artifact["accepted"])
+
+    def test_restricted_sandbox_request_is_fulfilled_as_data_only(self):
+        registry = {"agents": [{"id": "local-test", "request": "access to the pre-approved restricted local sandbox",
+                                 "request_status": "open", "capabilities": ["bounded-workbench"]}]}
+        local_autonomy.resolve_requests(registry, world={"rooms": []})
+        artifact = registry["agents"][0]["request_artifact"]
+        self.assertEqual(artifact["scope"], "data-only-restricted-sandbox")
+        self.assertTrue(artifact["accepted"])
+
     def test_unprovisioned_computer_request_is_explicitly_limited(self):
         world = {"rooms": [{"id": "atrium"}]}
         registry = {"agents": [{"id": "local-test", "status": "active-local", "room": "atrium",
