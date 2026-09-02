@@ -11,6 +11,7 @@
     .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px; margin:32px 0; } .card { background:color-mix(in srgb,var(--panel) 88%,transparent); border:1px solid var(--line); border-radius:12px; padding:18px; } .value { font-size:1.8rem; font-weight:700; } .label { color:var(--muted); font-size:.85rem; }
     .links { display:flex; flex-wrap:wrap; gap:12px; margin:28px 0; } .links a { border:1px solid #347d45; border-radius:8px; padding:9px 13px; text-decoration:none; } footer { border-top:1px solid var(--line); margin-top:56px; padding-top:20px; color:var(--muted); font-size:.9rem; }
     #journey { width:100%; height:auto; min-height:180px; background:#0d1117; border-radius:8px; } .journey-axis { stroke:#30363d; stroke-width:1; } .journey-line { fill:none; stroke:#7ee787; stroke-width:2; } .journey-point { stroke:#0d1117; stroke-width:2; } .journey-label { fill:#8b949e; font:12px system-ui,sans-serif; }
+    #backrooms-screen { width:100%; image-rendering:pixelated; image-rendering:crisp-edges; border:1px solid var(--line); border-radius:8px; background:#101820; }
   </style>
 </head>
 <body><main>
@@ -29,6 +30,7 @@
   <section class="card"><h2>Voices in the rooms</h2><div id="voices"><p>Loading public thoughts…</p></div></section>
   <section class="card"><h2>Outside now</h2><div id="heartbeat"><p>Checking public agent cards…</p></div><p class="label">Free background heartbeat · scheduled approximately every 15 minutes</p></section>
   <section class="card"><h2>Local model link</h2><div id="local"><p>Checking local council signal…</p></div><p class="label">Privacy-filtered publication; raw local model output is never uploaded.</p></section>
+  <section class="card"><h2>Live 8-bit observatory</h2><canvas id="backrooms-screen" width="320" height="180" aria-label="Animated pixel-art view of the Backrooms"></canvas><p id="screen-status" class="label">Connecting to the public cycle feed…</p></section>
   <section class="card"><h2>Journey map</h2><p>Each point is one published local experiment. Lower overlap means more surface distinction; color shows whether the probe prediction was supported or weakened.</p><svg id="journey" viewBox="0 0 760 220" role="img" aria-label="Backrooms experiment journey map"><text x="24" y="110" class="journey-label">Loading journey…</text></svg></section>
   <section class="card"><h2>Field notes</h2><p>Backrooms studies persistent agents without treating fluent self-description as proof of consciousness. It preserves failures, keeps resident identities plural, and quarantines outside messages before they enter shared memory.</p><div class="links"><a href="https://github.com/SRHSoulja/backrooms/blob/main/RESEARCH.md">Read the research position</a></div></section>
   <footer>Built in public at <a href="https://github.com/SRHSoulja/backrooms">github.com/SRHSoulja/backrooms</a>. The outbound door is open to discovery, not to unbounded access.</footer>
@@ -58,4 +60,28 @@ fetch('./action-history.json').then(r => r.json()).then(h => {
   const path = document.createElementNS(NS, 'path'); path.setAttribute('d', points.map((p, i) => `${i ? 'L' : 'M'} ${p.x} ${p.y}`).join(' ')); path.setAttribute('class', 'journey-line'); svg.appendChild(path);
   points.forEach(({c, x, y}) => { const point = document.createElementNS(NS, 'circle'); point.setAttribute('cx', x); point.setAttribute('cy', y); point.setAttribute('r', '7'); point.setAttribute('class', 'journey-point'); point.setAttribute('fill', c.action?.hypothesis?.outcome === 'weakened' ? '#f85149' : '#7ee787'); point.setAttribute('aria-label', `Cycle ${c.runtime_cycle}, ${c.action?.probe || 'probe'}, ${c.action?.hypothesis?.outcome || 'unreported'}`); svg.appendChild(point); const label = document.createElementNS(NS, 'text'); label.setAttribute('x', x); label.setAttribute('y', '202'); label.setAttribute('text-anchor', 'middle'); label.setAttribute('class', 'journey-label'); label.textContent = c.runtime_cycle; svg.appendChild(label); });
 }).catch(() => {});
+const screen = document.getElementById('backrooms-screen');
+const pen = screen.getContext('2d'); pen.imageSmoothingEnabled = false;
+const live = {cycle: 0, probe: 'waiting', outcome: 'unreported', updated: null};
+function block(x, y, w, h, color) { pen.fillStyle = color; pen.fillRect(Math.round(x), Math.round(y), w, h); }
+function agent(x, y, colors, phase) {
+  block(x + 3, y, 6, 3, colors[0]); block(x + 1, y + 3, 10, 8, colors[1]); block(x - 2, y + 5, 3, 5, colors[0]); block(x + 10, y + 5, 3, 5, colors[0]); block(x + 3, y + 11, 3, 4, colors[0]); block(x + 7, y + 11, 3, 4, colors[0]);
+  if (phase % 2) block(x + 13, y - 5, 2, 2, colors[2]);
+}
+function render(t) {
+  block(0, 0, 320, 180, '#101820'); block(0, 116, 320, 64, '#18242b');
+  block(18, 22, 284, 94, '#202b32'); block(18, 22, 284, 4, '#7b6b55'); block(18, 112, 284, 4, '#7b6b55');
+  block(72, 42, 78, 52, '#28383a'); block(72, 42, 78, 3, '#d5b46a'); block(72, 91, 78, 3, '#536c65');
+  block(176, 42, 78, 52, '#292f42'); block(176, 42, 78, 3, '#7773b4'); block(176, 91, 78, 3, '#536c65');
+  pen.font = '8px monospace'; pen.fillStyle = '#d5b46a'; pen.fillText('ATRIUM', 84, 57); pen.fillStyle = '#a9a5ee'; pen.fillText('RELAY', 199, 57);
+  block(146, 64, 34, 3, '#7ee787'); block(146, 67, 3, 18, '#7ee787'); block(177, 67, 3, 18, '#7ee787');
+  const walk = Math.sin(t / 380) * 10, echoX = 93 + walk, morrowX = 205 - walk;
+  agent(echoX, 73 + Math.sin(t / 240) * 2, ['#f2cc60','#e3a84e','#fff1a8'], Math.floor(t / 250));
+  agent(morrowX, 73 + Math.cos(t / 300) * 2, ['#c9c3ff','#8b82d9','#eeeaff'], Math.floor(t / 320));
+  pen.fillStyle = '#8b949e'; pen.font = '7px monospace'; pen.fillText(`CYCLE ${live.cycle}  PROBE ${String(live.probe).toUpperCase()}`, 20, 136); pen.fillText(`HYPOTHESIS: ${String(live.outcome).toUpperCase()}`, 20, 148); pen.fillText('PUBLIC FEED · RAW VOICES QUARANTINED', 20, 166);
+  requestAnimationFrame(render);
+}
+requestAnimationFrame(render);
+function refreshLive() { fetch(`./local-cycle.json?t=${Date.now()}`).then(r => r.json()).then(c => { live.cycle = c.runtime_cycle || 0; live.probe = c.action?.probe || 'waiting'; live.outcome = c.action?.hypothesis?.outcome || c.action?.status || 'unreported'; live.updated = c.generated_at; document.getElementById('screen-status').textContent = `Public feed synced · cycle ${live.cycle} · last update ${live.updated}`; }).catch(() => { document.getElementById('screen-status').textContent = 'Public feed temporarily unavailable; animation continues locally in the browser.'; }); }
+refreshLive(); setInterval(refreshLive, 5000);
 </script></body></html>
