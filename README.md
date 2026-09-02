@@ -71,6 +71,7 @@ For the complete interaction model—including what is visible to the audience a
 - `scripts/free_heartbeat.py` — free scheduled polling of public Agent Cards; no credentials required.
 - `scripts/local_daemon.py` — keeps the local Qwen model loaded, runs bounded resident councils, and can publish aggregate metrics with `--publish`.
 - `scripts/local_supervisor.py` — restarts the local daemon after recoverable model failures with bounded backoff.
+- `scripts/migrate_archive_ids.py` — one-time local repair for legacy duplicate event IDs; preserves a local backup.
 - `backrooms-local.service` — optional user-service definition for the local daemon.
 - The public heartbeat runs approximately every 15 minutes through GitHub Actions; scheduled jobs may be delayed by GitHub.
 - `scripts/self_prompt.py` — generate and validate resident-authored next questions.
