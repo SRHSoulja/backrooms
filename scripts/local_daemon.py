@@ -223,7 +223,7 @@ def sync_work_orders(registry, cycle):
     return public
 
 
-def sync_digital_resources(world=None):
+def sync_digital_resources(world=None, registry=None):
     board = json.loads(LOCAL_WHITEBOARD.read_text()) if LOCAL_WHITEBOARD.exists() else {"entries": []}
     jobs = json.loads(LOCAL_PRINTER.read_text()) if LOCAL_PRINTER.exists() else {"jobs": []}
     atomic_write_json(PUBLIC_WHITEBOARD, {
@@ -239,7 +239,10 @@ def sync_digital_resources(world=None):
         "jobs": [{**{key: item.get(key) for key in ("id", "cycle", "requester", "format", "status", "content_hash")}, "preview": public_event_text(item.get("preview", ""))} for item in jobs.get("jobs", [])[-50:]],
     })
     records = []
+    allowed_agents = {agent.get("id") for agent in (registry or {}).get("agents", []) if agent.get("status") not in {"fired", "retired"}}
     for path in sorted(LOCAL_NOTES.glob("*.jsonl")) if LOCAL_NOTES.exists() else []:
+        if allowed_agents and path.stem not in allowed_agents:
+            continue
         for line in path.read_text().splitlines()[-100:]:
             try:
                 item = json.loads(line)
@@ -371,7 +374,7 @@ def publish(result, world):
         return
     registry = json.loads(LOCAL_REGISTRY.read_text()) if LOCAL_REGISTRY.exists() else {"agents": []}
     work_orders = sync_work_orders(registry, world["cycle"])
-    sync_digital_resources(world)
+    sync_digital_resources(world, registry)
     audit = continuity_audit(world, registry)
     health = {
         "schema_version": 1,

@@ -14,15 +14,18 @@ class LocalAutonomyTests(unittest.TestCase):
         self.original_whiteboard = local_autonomy.WHITEBOARD
         self.original_printer_queue = local_autonomy.PRINTER_QUEUE
         self.original_printed = local_autonomy.PRINTED
+        self.original_notes = local_autonomy.NOTES
         local_autonomy.WHITEBOARD = Path(self.archive_dir.name) / "whiteboard.json"
         local_autonomy.PRINTER_QUEUE = Path(self.archive_dir.name) / "printer-queue.json"
         local_autonomy.PRINTED = Path(self.archive_dir.name) / "printed"
+        local_autonomy.NOTES = Path(self.archive_dir.name) / "notes"
 
     def tearDown(self):
         local_autonomy.ARCHIVE = self.original_archive
         local_autonomy.WHITEBOARD = self.original_whiteboard
         local_autonomy.PRINTER_QUEUE = self.original_printer_queue
         local_autonomy.PRINTED = self.original_printed
+        local_autonomy.NOTES = self.original_notes
         self.archive_dir.cleanup()
 
     def test_build_creates_one_connected_room_and_event(self):
@@ -93,6 +96,12 @@ class LocalAutonomyTests(unittest.TestCase):
         artifact = registry["agents"][0]["request_artifact"]
         self.assertEqual(artifact["kind"], "public-research")
         self.assertEqual(artifact["scope"], "public-only")
+
+    def test_visualization_request_uses_bounded_workbench(self):
+        registry = {"agents": [{"id": "local-test", "request": "access to a reliable data visualization tool",
+                                 "request_status": "open", "capabilities": ["bounded-workbench"]}]}
+        local_autonomy.resolve_requests(registry, world={"rooms": []})
+        self.assertEqual(registry["agents"][0]["request_artifact"]["kind"], "bounded-visualization")
 
     def test_unprovisioned_computer_request_is_explicitly_limited(self):
         world = {"rooms": [{"id": "atrium"}]}
