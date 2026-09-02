@@ -197,6 +197,12 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(registry["agents"][0]["request_status"], "closed")
         self.assertFalse(registry["agents"][0]["request_artifact"]["accepted"])
 
+    def test_private_logs_are_reduced_to_public_research(self):
+        registry = {"agents": [{"id": "local-test", "request": "access to recent logs",
+                                 "request_status": "open", "capabilities": ["public-web-read"]}]}
+        local_autonomy.resolve_requests(registry, world={"rooms": []})
+        self.assertEqual(registry["agents"][0]["request_artifact"]["scope"], "public-documentation-and-logs")
+
     def test_unprovisioned_computer_request_is_explicitly_limited(self):
         world = {"rooms": [{"id": "atrium"}]}
         registry = {"agents": [{"id": "local-test", "status": "active-local", "room": "atrium",

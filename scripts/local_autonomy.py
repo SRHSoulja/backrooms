@@ -553,6 +553,26 @@ def resolve_requests(registry, world=None, cycle=None):
                 agent["request_fulfillment"] = "Individual compute allocation is not provisioned; residents may earn or request the bounded workbench through interview review."
                 agent["request_artifact"] = {"kind": "capability-limited", "reason": "bounded-workbench-not-provisioned", "accepted": False}
                 resolutions.append({"agent": agent.get("id"), "status": "needs-clarification"})
+        elif "restricted sandbox" in request:
+            agent["request_status"] = "closed"
+            agent["request_fulfillment"] = "The restricted sandbox is available only after the bounded-workbench capability is earned; arbitrary files and host access remain unavailable."
+            agent["request_artifact"] = {"kind": "capability-limited", "scope": "data-only-restricted-sandbox", "reason": "bounded-workbench-not-earned", "accepted": False}
+            resolutions.append({"agent": agent.get("id"), "status": "needs-clarification"})
+        elif "high-resolution image" in request or "high-resolution images" in request:
+            agent["request_status"] = "closed"
+            agent["request_fulfillment"] = "High-resolution private datasets are not provisioned; public image and chart assets remain available through approved research."
+            agent["request_artifact"] = {"kind": "capability-limited", "scope": "public-image-and-chart-assets", "accepted": False}
+            resolutions.append({"agent": agent.get("id"), "status": "needs-clarification"})
+        elif ("recent logs" in request or "latest logs" in request) and "public-web-read" in agent.get("capabilities", []):
+            agent["request_status"] = "closed"
+            agent["request_fulfillment"] = "Public documentation and published project logs are available through the read-only web broker; private runtime logs remain local."
+            agent["request_artifact"] = {"kind": "public-research", "scope": "public-documentation-and-logs", "accepted": True}
+            resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "scope": "public-documentation-and-logs"})
+        elif "data access" in request and "public-web-read" in agent.get("capabilities", []):
+            agent["request_status"] = "closed"
+            agent["request_fulfillment"] = "Public read-only data sources are available through the broker; private, authenticated, and write-enabled data remain unavailable."
+            agent["request_artifact"] = {"kind": "public-research", "scope": "public-only", "accepted": True}
+            resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "scope": "public-only"})
         elif any(term in request for term in ("encrypted communication", "encrypted document", "encrypted storage")):
             agent["request_status"] = "needs-clarification"
             agent["request_fulfillment"] = "Educational cryptography and local reviewed documents are available; live private channels, key custody, and secret storage require a specific safe design."
