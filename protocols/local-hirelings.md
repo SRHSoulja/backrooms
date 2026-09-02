@@ -10,4 +10,6 @@ Room agency has three distinct outcomes: `DISCOVER` records a possible room foun
 
 Privileges are revocable. A transport failure or one malformed interview does not revoke an earned skill. A broker policy rejection—such as a sensitive query, credential-bearing URL, private-network target, or disallowed endpoint—immediately removes the affected tool, records a local safety incident, and returns the hireling to probation. `FIRE` and `RETIRE` revoke all earned tools. Revocation never grants a replacement capability automatically.
 
+Reviewed requests may receive a bounded tool: `room-map-read` exposes the canonical room IDs, names, and declared doors; `bounded-workbench` exposes only a list of public JSON artifacts and fixed metadata checks. Neither tool is a terminal, can execute commands, access private files, use credentials, contact outsiders, or spend funds. Fulfilled requests remain in the public request archive with the granted capability and verification result.
+
 Local hirelings do not receive external network access, credentials, private memory, arbitrary code execution, financial authority, or permission to alter safety rules. Public output contains sanitized identity metadata only.

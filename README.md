@@ -59,6 +59,7 @@ The project treats “connected consciousness” as an engineered continuity lay
 - `scripts/action_engine.py` — closed-vocabulary local experiments; model output is never executed as a command.
 - `scripts/recruitment.py` — propose, list, and review potential residents without auto-activation.
 - `scripts/local_recruiter.py` — generate and validate local-only hireling profiles.
+- `scripts/resident_tools.py` — bounded room-map and public workbench tools; no shell or private-data access.
 - `FIELD_LAB.md` — public productized service offers and delivery boundaries.
 
 ## Quick start
