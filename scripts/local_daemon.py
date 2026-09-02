@@ -178,7 +178,7 @@ def publish(result, world):
                 **{key: agent[key] for key in ("id", "room", "status")},
                 "name": str(agent.get("name", "Unnamed hireling")).strip(" ,.;"),
                 "role": str(agent.get("role", "unassigned")).strip(" ,.;"),
-                "last_action": agent.get("last_action", "uninterviewed"),
+                "last_action": agent.get("last_action", "awaiting-interview"),
                 "proposal": str(agent.get("proposal", ""))[:220],
                 "exploration": str(agent.get("exploration", ""))[:100],
                 "capabilities": agent.get("capabilities", [])[:8],
@@ -220,8 +220,8 @@ try:
             result = json.loads(completed.stdout)
             world = record(result)
             result["action"] = action(base_url, world["cycle"])
-            result["autonomy"] = govern(base_url, world["cycle"])
             result["recruitment"] = recruit(base_url, world["cycle"])
+            result["autonomy"] = govern(base_url, world["cycle"])
             if args.publish:
                 publish(result, world)
             print(json.dumps({"cycle": world["cycle"], "metrics": metrics(result), "action": result["action"],

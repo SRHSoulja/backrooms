@@ -55,6 +55,9 @@ def main():
     parser.add_argument("--cycle", type=int, required=True)
     args = parser.parse_args()
     registry = json.loads(REGISTRY.read_text()) if REGISTRY.exists() else {"agents": [], "decisions": []}
+    for agent in registry.get("agents", []):
+        if agent.get("status") == "active-local" and not agent.get("interviewed_at"):
+            agent["status"] = "probation"
     world = json.loads((ROOT / "state/world.json").read_text())
     rooms = [room["id"] for room in world.get("rooms", []) if room.get("id")]
     results = []
