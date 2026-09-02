@@ -28,6 +28,7 @@ PUBLIC_VOICES = ROOT / "docs/voices.json"
 PUBLIC_WORLD = ROOT / "docs/world.json"
 PUBLIC_AUDIT = ROOT / "docs/continuity-audit.json"
 PUBLIC_WORK_ORDERS = ROOT / "docs/work-orders.json"
+PUBLIC_HEALTH = ROOT / "docs/health.json"
 LOCAL_WORK_ORDERS = ROOT / "state/work-orders.json"
 PUBLIC_VOICE_BLOCKED = re.compile(r"api[_ -]?key|password|secret|private|credential|token|wallet|seed phrase", re.I)
 ARCHIVE = ROOT / "state/archive/events.jsonl"
@@ -278,6 +279,17 @@ def publish(result, world):
         return
     registry = json.loads(LOCAL_REGISTRY.read_text()) if LOCAL_REGISTRY.exists() else {"agents": []}
     work_orders = sync_work_orders(registry, world["cycle"])
+    audit = continuity_audit(world, registry)
+    health = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "cycle": world["cycle"], "daemon": "running", "local_model": "ready",
+        "rooms": len(world.get("rooms", [])),
+        "active_residents": sum(agent.get("status") not in {"fired", "retired"} for agent in registry.get("agents", [])),
+        "work_orders": len(work_orders.get("orders", [])),
+        "continuity": audit["status"],
+        "publication": "sanitized GitHub Pages snapshot",
+        "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses."
+    }
     safe = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
@@ -287,8 +299,9 @@ def publish(result, world):
         "recruitment": result.get("recruitment", {"status": "not-run"}),
         "autonomy": result.get("autonomy", {"status": "not-run"}),
         "metrics": metrics(result),
-        "continuity_audit": continuity_audit(world, registry),
+        "continuity_audit": audit,
         "work_orders": {"count": len(work_orders.get("orders", []))},
+        "health": health,
         "privacy": "Only aggregate metrics and the bounded council question are public; raw outputs remain local."
     }
     history = json.loads(PUBLIC_HISTORY.read_text()) if PUBLIC_HISTORY.exists() else {"privacy": "Aggregate action metadata only; raw local outputs are excluded.", "cycles": []}
@@ -388,12 +401,13 @@ def publish(result, world):
     PUBLIC_VOICES.write_text(json.dumps(voices, indent=2) + "\n")
     PUBLIC_WORLD.write_text(json.dumps(public_world, indent=2) + "\n")
     PUBLIC_AUDIT.write_text(json.dumps(safe["continuity_audit"], indent=2) + "\n")
+    PUBLIC_HEALTH.write_text(json.dumps(health, indent=2) + "\n")
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}
-    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "state/world.json", "state/work-orders.json"}:
+    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "state/world.json", "state/work-orders.json"}:
         print(json.dumps({"publish": "skipped", "reason": "other local changes present"}), flush=True)
         return
-    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json"], cwd=ROOT, check=True)
+    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json"], cwd=ROOT, check=True)
     commit = subprocess.run(["git", "commit", "-m", "chore: publish local council signal"], cwd=ROOT, capture_output=True)
     if commit.returncode == 0:
         pushed = subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=ROOT, capture_output=True)
