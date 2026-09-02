@@ -36,9 +36,11 @@ PUBLIC_WORK_ORDERS = ROOT / "docs/work-orders.json"
 PUBLIC_HEALTH = ROOT / "docs/health.json"
 PUBLIC_WHITEBOARD = ROOT / "docs/whiteboard.json"
 PUBLIC_PRINTER = ROOT / "docs/printer.json"
+PUBLIC_NOTES = ROOT / "docs/resident-notes.json"
 LOCAL_WORK_ORDERS = ROOT / "state/work-orders.json"
 LOCAL_WHITEBOARD = ROOT / "state/whiteboard.json"
 LOCAL_PRINTER = ROOT / "state/printer-queue.json"
+LOCAL_NOTES = ROOT / "state/agent-notes"
 PUBLIC_VOICE_BLOCKED = re.compile(r"api[_ -]?key|password|secret|private|credential|token|wallet|seed phrase", re.I)
 ARCHIVE = ROOT / "state/archive/events.jsonl"
 LOCAL_REGISTRY = ROOT / "state/local-agents.json"
@@ -233,6 +235,21 @@ def sync_digital_resources():
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "privacy": "Sanitized print previews and metadata only; rendered local artifacts are not uploaded.",
         "jobs": [{**{key: item.get(key) for key in ("id", "cycle", "requester", "format", "status")}, "preview": public_event_text(item.get("preview", ""))} for item in jobs.get("jobs", [])[-50:]],
+    })
+    records = []
+    for path in sorted(LOCAL_NOTES.glob("*.jsonl")) if LOCAL_NOTES.exists() else []:
+        for line in path.read_text().splitlines()[-100:]:
+            try:
+                item = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            records.append({"agent": path.stem, "recorded_at": item.get("recorded_at"), "cycle": item.get("cycle"),
+                            "kind": item.get("kind", "note"), "title": public_event_text(item.get("title", "Resident note")),
+                            "entry": public_event_text(item.get("entry", ""))})
+    atomic_write_json(ROOT / "docs/resident-notes.json", {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "privacy": "Sanitized note/document projections only; blocked content and raw local files remain on the host.",
+        "records": records[-100:],
     })
 
 
@@ -449,10 +466,10 @@ def publish(result, world):
     atomic_write_json(PUBLIC_HEALTH, health)
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}
-    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json"}:
+    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json"}:
         print(json.dumps({"publish": "skipped", "reason": "other local changes present"}), flush=True)
         return
-    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json"], cwd=ROOT, check=True)
+    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json"], cwd=ROOT, check=True)
     commit = subprocess.run(["git", "commit", "-m", "chore: publish local council signal"], cwd=ROOT, capture_output=True)
     if commit.returncode == 0:
         pushed = subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=ROOT, capture_output=True)

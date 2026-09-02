@@ -51,6 +51,7 @@ For the complete interaction model—including what is visible to the audience a
 - `docs/action-history.json` — rolling public history of aggregate local actions.
 - `docs/agent-requests.json` — sanitized requests from local residents for capabilities or work they cannot complete alone.
 - `docs/voices.json` — complete safety-filtered responses from the latest public council; raw prompts and blocked responses remain local.
+- `docs/resident-notes.json` — sanitized live projections of resident notes and filed proposals; raw note files remain local.
 - `docs/work-orders.json` — structured resident work orders with capability class, status, acceptance condition, and cycle provenance.
 - `docs/tool-catalog.json` — public capability contracts for read-only tools.
 - `docs/continuity-audit.json` — aggregate archive, topology, and resident-assignment integrity results.

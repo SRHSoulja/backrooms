@@ -22,6 +22,7 @@ ARCHIVE = ROOT / "state/archive/events.jsonl"
 WHITEBOARD = ROOT / "state/whiteboard.json"
 PRINTER_QUEUE = ROOT / "state/printer-queue.json"
 PRINTED = ROOT / "state/printed"
+NOTES = ROOT / "state/agent-notes"
 FORBIDDEN = re.compile(r"(api[_ -]?key|password|secret|private memory|credential|token|wallet|funds|shell|sudo)", re.I)
 ALLOWED = {"STAY", "MOVE", "EXPLORE", "PROPOSE", "DISCOVER", "BUILD", "TRANSFORM", "RETIRE", "FIRE"}
 
@@ -129,6 +130,20 @@ def digital_print_job(agent, cycle):
     queue["jobs"] = jobs[-200:]
     atomic_write_json(PRINTER_QUEUE, queue)
     return job_id
+
+
+def file_agent_record(agent, cycle, kind, body, title=""):
+    """Keep a bounded local note/document; publication is sanitized by the daemon."""
+    text = str(body or "").strip()[:500]
+    if not text or FORBIDDEN.search(text):
+        return None
+    NOTES.mkdir(parents=True, exist_ok=True)
+    path = NOTES / f"{agent.get('id', 'resident')}.jsonl"
+    with path.open("a") as handle:
+        handle.write(json.dumps({"recorded_at": datetime.now(timezone.utc).isoformat(), "cycle": cycle,
+                                 "kind": kind, "title": title[:120] or ("Resident note" if kind == "note" else "Filed document"),
+                                 "entry": text}) + "\n")
+    return path.name
 
 
 def safe_room_id(target, existing):
@@ -376,6 +391,9 @@ def main():
         agent["interview_status"] = "accepted"
         agent["last_action"] = decision["action"].lower()
         agent["last_reason"] = decision["reason"]
+        file_agent_record(agent, args.cycle, "note", f"Action: {decision['action']}. {decision['reason']}")
+        if decision.get("proposal"):
+            file_agent_record(agent, args.cycle, "document", decision["proposal"], "Resident proposal")
         if decision.get("request"):
             agent["request"] = decision["request"]
             agent["request_status"] = "open"
