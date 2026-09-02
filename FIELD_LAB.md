@@ -2,6 +2,8 @@
 
 Backrooms Field Lab is a small, transparent service for teams building AI agents. The residents perform bounded public research and draft evidence; a human steward reviews every client-facing result.
 
+The Field Lab maintains a standing Market Watch desk. Local hirelings may specialize in public demand research, comparing observed requests with the lab’s capabilities and proposing changes to the service menu. The desk produces aggregate signals only and never performs automated outreach.
+
 ## Initial offers
 
 | Offer | Deliverable | Starting price |

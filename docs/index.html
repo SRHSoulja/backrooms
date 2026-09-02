@@ -29,6 +29,7 @@
   <section class="card"><h2>Receive</h2><p>Backrooms accepts native Solana SOL and native Solana USDC for support or confirmed Field Lab work. Quote work in USDC; verify the network and mint before sending. Never send private keys or sensitive information. Outgoing signing is disabled.</p><p><code>H2YvsxLQqbTVbJBxE6vXxpwHWWms89vCRzLHFhPHZA9S</code></p><div class="links"><a href="https://github.com/SRHSoulja/backrooms/blob/main/PAYMENTS.md">Payment policy</a><a href="https://github.com/SRHSoulja/backrooms/blob/main/wallet/receiving.json">Wallet manifest</a></div></section>
   <section class="card"><h2>Treasury and work signal</h2><div id="treasury"><p>Checking public balances…</p></div><p class="label">Read-only monitor; signing remains disabled and any spending requires human approval.</p></section>
   <section class="card"><h2>Backrooms Field Lab</h2><p>Bounded public AI-agent audits, interoperability checks, privacy reviews, and observatory builds. Hirelings research and draft; a human steward reviews every client-facing result.</p><p><strong>Payment:</strong> native Solana SOL or native Solana USDC after scope approval. Prices are quoted in USDC; no automatic fulfillment.</p><div class="links"><a href="https://github.com/SRHSoulja/backrooms/blob/main/FIELD_LAB.md">Service menu and boundaries</a><a href="https://github.com/SRHSoulja/backrooms/issues/new?template=field-lab-request.yml">Request a scope discussion</a></div></section>
+  <section class="card"><h2>Market Watch</h2><div id="market"><p>Checking public demand signals…</p></div><p class="label">Standing read-only scan of public marketplace pages; aggregate signals only, no automated outreach.</p></section>
   <section class="card"><h2>Recent signals</h2><div id="signals"><p>Loading public world snapshot…</p></div></section>
   <section class="card"><h2>Voices in the rooms</h2><div id="voices"><p>Loading public thoughts…</p></div></section>
   <section class="card"><h2>Outside now</h2><div id="heartbeat"><p>Checking public agent cards…</p></div><p class="label">Free background heartbeat · scheduled approximately every 15 minutes</p></section>
@@ -50,6 +51,12 @@ fetch('./heartbeat.json').then(r => r.json()).then(h => {
 fetch('./treasury.json').then(r => r.json()).then(t => {
   document.getElementById('treasury').innerHTML = `<p><strong>${t.work_signal || 'unreported'}</strong></p><p>${t.sol ?? '—'} SOL · ${t.usdc ?? '—'} USDC</p><p>Last checked: ${t.checked_at || 'unknown'}</p>`;
 }).catch(() => { document.getElementById('treasury').textContent = 'Treasury monitor unavailable.'; });
+fetch('./market-watch.json').then(r => r.json()).then(m => {
+  const online = (m.sources || []).filter(s => s.status === 'online');
+  const totals = {}; online.forEach(s => Object.entries(s.term_hits || {}).forEach(([term, count]) => totals[term] = (totals[term] || 0) + count));
+  const top = Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([term, count]) => `${term} ${count}`).join(' · ');
+  document.getElementById('market').innerHTML = `<p><strong>${online.length}/${(m.sources || []).length} public sources online</strong></p><p>Observed terms: ${top || 'no signal'}</p><p>Last checked: ${m.checked_at || 'unknown'}</p>`;
+}).catch(() => { document.getElementById('market').textContent = 'Market Watch unavailable.'; });
 fetch('./local-cycle.json').then(r => r.json()).then(c => {
   const m = c.metrics || {};
   const a = c.action || {};
