@@ -295,7 +295,7 @@ def publish(result, world):
     PUBLIC_WORLD.write_text(json.dumps(public_world, indent=2) + "\n")
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}
-    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json"}:
+    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "state/world.json"}:
         print(json.dumps({"publish": "skipped", "reason": "other local changes present"}), flush=True)
         return
     subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json"], cwd=ROOT, check=True)

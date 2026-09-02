@@ -161,13 +161,26 @@ def resolve_requests(registry):
         if agent.get("request_status") != "open":
             continue
         request = str(agent.get("request", "")).lower()
-        if "facility" in request and "map" in request and "room-map-read" in agent.get("capabilities", []):
+        if "quiet workspace" in request and "quiet-workspace" in {room.get("id") for room in json.loads((ROOT / "state/world.json").read_text()).get("rooms", [])}:
+            agent["room"] = "quiet-workspace"
+            agent["request_status"] = "closed"
+            agent["request_fulfillment"] = "Moved to the declared Quiet Workspace through the internal room gate."
+            resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "room": "quiet-workspace"})
+        elif "facility" in request and "map" in request and "room-map-read" in agent.get("capabilities", []):
             agent["request_status"] = "closed"
             agent["request_fulfillment"] = "Canonical room map made available through the connected observatory rooms."
             resolutions.append({"agent": agent.get("id"), "status": "fulfilled"})
         elif "historical" in request and "text" in request and "public-web-read" in agent.get("capabilities", []):
             agent["request_status"] = "closed"
             agent["request_fulfillment"] = "Approved public historical-text research access enabled; source pages remain external."
+            resolutions.append({"agent": agent.get("id"), "status": "fulfilled"})
+        elif "design resources" in request and "public-web-read" in agent.get("capabilities", []):
+            agent["request_status"] = "closed"
+            agent["request_fulfillment"] = "Approved public research access is available through the web-reading broker."
+            resolutions.append({"agent": agent.get("id"), "status": "fulfilled"})
+        elif "computer" in request and "bounded-workbench" in agent.get("capabilities", []):
+            agent["request_status"] = "closed"
+            agent["request_fulfillment"] = "Bounded local workbench access is available; arbitrary computer control remains disabled."
             resolutions.append({"agent": agent.get("id"), "status": "fulfilled"})
         elif "city" in request and "map" in request:
             agent["request_status"] = "needs-clarification"
