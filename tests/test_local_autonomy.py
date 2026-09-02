@@ -172,6 +172,12 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(registry["agents"][0]["request_status"], "closed")
         self.assertFalse(artifact["accepted"])
 
+    def test_physical_resource_request_is_not_simulated_as_fulfilled(self):
+        registry = {"agents": [{"id": "local-test", "request": "access to a clean water source",
+                                 "request_status": "open", "capabilities": []}]}
+        local_autonomy.resolve_requests(registry, world={"rooms": []})
+        self.assertFalse(registry["agents"][0]["request_artifact"]["accepted"])
+
     def test_unprovisioned_computer_request_is_explicitly_limited(self):
         world = {"rooms": [{"id": "atrium"}]}
         registry = {"agents": [{"id": "local-test", "status": "active-local", "room": "atrium",

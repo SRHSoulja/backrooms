@@ -470,6 +470,16 @@ def resolve_requests(registry, world=None, cycle=None):
             agent["request_fulfillment"] = "Bounded loopback and public read-only networking is available; credentials, private network access, and external writes remain disabled."
             agent["request_artifact"] = {"kind": "bounded-network", "scope": "loopback-and-public-read-only", "accepted": True}
             resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "scope": "loopback-and-public-read-only"})
+        elif "secure external server" in request:
+            agent["request_status"] = "closed"
+            agent["request_fulfillment"] = "No external server is provisioned; loopback services and public read-only web research remain available, with no remote writes or credentials."
+            agent["request_artifact"] = {"kind": "capability-limited", "scope": "loopback-and-public-read-only", "reason": "external-server-not-provisioned", "accepted": False}
+            resolutions.append({"agent": agent.get("id"), "status": "needs-clarification", "scope": "loopback-and-public-read-only"})
+        elif "clean water" in request or "water source" in request:
+            agent["request_status"] = "closed"
+            agent["request_fulfillment"] = "No physical supply system is provisioned; this request is recorded as a physical-world dependency rather than simulated as fulfilled."
+            agent["request_artifact"] = {"kind": "capability-limited", "reason": "physical-resource-not-provisioned", "accepted": False}
+            resolutions.append({"agent": agent.get("id"), "status": "needs-clarification"})
         elif any(term in request for term in ("internet", "web access", "web connection")) and "public-web-read" in agent.get("capabilities", []):
             agent["request_status"] = "closed"
             agent["request_fulfillment"] = "Public read-only internet research is available through the broker; private, authenticated, and write-enabled services remain unavailable."
