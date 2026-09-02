@@ -23,6 +23,20 @@ class ToolContractTests(unittest.TestCase):
         finally:
             tool_broker.fetch = original
 
+    def test_local_code_sandbox_is_contracted(self):
+        self.assertEqual(TOOL_CONTRACTS["local-code-sandbox"]["network"], "none")
+        self.assertEqual(TOOL_CONTRACTS["local-code-sandbox"]["timeout_seconds"], 5)
+
+    def test_restricted_code_executor_runs_data_expression(self):
+        from scripts.code_sandbox import run
+        result = run("print(sum(range(10)))")
+        self.assertEqual(result["status"], "completed")
+        self.assertIn("45", result["output"])
+
+    def test_restricted_code_executor_rejects_imports(self):
+        from scripts.code_sandbox import run
+        self.assertEqual(run("import os") ["status"], "rejected")
+
 
 if __name__ == "__main__":
     unittest.main()
