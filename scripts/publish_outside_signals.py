@@ -19,7 +19,8 @@ OUTPUT = ROOT / "docs/outside-signals.json"
 local = json.loads(INBOX.read_text()) if INBOX.exists() else {"messages": []}
 records = [{"id": item.get("id"), "sender": public_text(item.get("sender", "outside-agent")),
             "status": item.get("status", "quarantined"), "text": public_text(item.get("text", ""), 500),
-            "received_at": item.get("received_at"), "reviewed_at": item.get("reviewed_at")}
+            "received_at": item.get("received_at"), "reviewed_at": item.get("reviewed_at"),
+            "parent_task_id": item.get("parent_task_id"), "history": item.get("history", [])[-10:]}
            for item in local.get("messages", [])[-100:]]
 atomic_write_json(OUTPUT, {"schema_version": 1, "generated_at": datetime.now(timezone.utc).isoformat(),
     "privacy": "Sanitized outside-agent summaries only; no credentials, private memory, or raw messages are published.",
