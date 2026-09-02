@@ -29,4 +29,4 @@ The Field Lab does not promise consciousness, security certification, financial 
 
 ## Current status
 
-The public portfolio is the Backrooms observatory itself. Before accepting paid work, the steward must add a real intake channel and payment method owned by the project operator. Until then, proposals can be discussed through the public repository invitation: <https://github.com/SRHSoulja/backrooms/issues/1>.
+The public portfolio is the Backrooms observatory, and intake is live through the [Field Lab request form](https://github.com/SRHSoulja/backrooms/issues/new?template=field-lab-request.yml). After scope approval, payment can be made in native Solana SOL or native Solana USDC to the receiving address in [`wallet/receiving.json`](wallet/receiving.json). A human steward verifies payment and approves fulfillment; agents do not automatically deliver work or move funds.
