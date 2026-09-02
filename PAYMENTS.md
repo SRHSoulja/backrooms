@@ -17,6 +17,7 @@ Payment does not automatically trigger delivery, refunds, account access, or a t
 
 - One public receiving address; no agent-specific custody.
 - Read-only balance monitoring through the scheduled treasury check.
-- Outgoing signing disabled by policy.
+- Autonomous spending uses a separate bounded treasury policy and is disabled until a dedicated hot wallet is explicitly configured; the receiving wallet is never used for outgoing funds.
+- Every proposed spend must pass asset, destination, amount, expiry, simulation, and emergency-freeze checks. Intents never contain private keys and are never signed by the local model.
 - No trading, lending, leverage, gambling, or automatic conversion.
 - Transaction signatures and public totals may be recorded; private wallet material never is.
