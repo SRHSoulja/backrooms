@@ -41,8 +41,10 @@ def parse(text, agent, rooms):
             fields[match.group(1).upper()] = match.group(2).strip().strip("`*")
     if FORBIDDEN.search(text):
         return None
-    action = fields.get("ACTION", "").upper().strip()
-    room = fields.get("ROOM", agent["room"]).strip().lower()
+    action = re.match(r"[A-Z]+", fields.get("ACTION", "").upper().strip())
+    action = action.group(0) if action else ""
+    room_match = re.search(r"[a-z0-9_-]+", fields.get("ROOM", agent["room"]).lower())
+    room = room_match.group(0) if room_match else agent["room"]
     if action not in ALLOWED or room not in rooms:
         return None
     limits = {"TARGET": 100, "PROPOSAL": 220, "REASON": 220}
@@ -83,10 +85,15 @@ def main():
     for agent in registry.get("agents", []):
         if agent.get("status") not in {"active-local", "probation"}:
             continue
-        try:
-            decision = parse(ask(args.base_url, agent, rooms, args.cycle), agent, rooms)
-        except Exception:
-            decision = None
+        decision = None
+        for attempt in range(2):
+            try:
+                interview = ask(args.base_url, agent, rooms, args.cycle)
+                decision = parse(interview, agent, rooms)
+                if decision:
+                    break
+            except Exception:
+                pass
         if not decision:
             agent["status"] = "probation"
             agent["last_action"] = "interview-rejected"
