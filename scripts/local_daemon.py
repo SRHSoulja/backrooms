@@ -443,6 +443,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--interval", type=int, default=900, help="seconds between bounded cycles")
 parser.add_argument("--port", type=int, default=8080)
 parser.add_argument("--publish", action="store_true", help="publish safe local-cycle metrics to GitHub Pages")
+parser.add_argument("--once", action="store_true", help="run exactly one bounded cycle and exit")
 args = parser.parse_args()
 lock_handle = acquire_lock()
 server = subprocess.Popen(["llama-server", "-hf", "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M", "--host", "127.0.0.1", "--port", str(args.port), "--ctx-size", "4096", "--predict", "800"], cwd=ROOT)
@@ -469,6 +470,8 @@ try:
                               "autonomy": result["autonomy"], "recruitment": result["recruitment"]}), flush=True)
         else:
             print(json.dumps({"error": "roundtable failed", "returncode": completed.returncode}), flush=True)
+        if args.once:
+            break
         time.sleep(args.interval)
 except KeyboardInterrupt:
     pass
