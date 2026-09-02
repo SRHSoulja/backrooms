@@ -54,6 +54,27 @@ def metrics(result):
             "distinction_status": "distinct" if overlap <= 0.75 and markers else "needs-audit"}
 
 
+def next_question(base_url):
+    """Ask residents for a bounded question; fall back if validation rejects both."""
+    completed = subprocess.run([sys.executable, str(ROOT / "scripts/self_prompt.py"),
+        "--base-url", base_url, "--state", str(RUNTIME_STATE)], cwd=ROOT,
+        capture_output=True, text=True, check=False)
+    if completed.returncode == 0:
+        try:
+            proposals = json.loads(completed.stdout).get("proposals", [])
+            for resident in ("Echo", "Morrow"):
+                for proposal in proposals:
+                    if proposal.get("resident") == resident and proposal.get("accepted"):
+                        for line in proposal.get("proposal", "").splitlines():
+                            if line.upper().startswith("QUESTION:"):
+                                question = line.split(":", 1)[1].strip()
+                                if question:
+                                    return question[:300]
+        except (json.JSONDecodeError, TypeError):
+            pass
+    return "Does continuity of memory, by itself, provide evidence of consciousness? Give one testable criterion."
+
+
 def record(result):
     world = runtime_world()
     number = len(world["events"]) + 1
@@ -109,7 +130,11 @@ server = subprocess.Popen(["llama-server", "-hf", "Qwen/Qwen2.5-3B-Instruct-GGUF
 try:
     wait_ready(f"http://127.0.0.1:{args.port}")
     while True:
-        completed = subprocess.run([sys.executable, str(ROOT / "scripts/roundtable.py"), "--base-url", f"http://127.0.0.1:{args.port}"], cwd=ROOT, capture_output=True, text=True, check=False)
+        base_url = f"http://127.0.0.1:{args.port}"
+        question = next_question(base_url)
+        completed = subprocess.run([sys.executable, str(ROOT / "scripts/roundtable.py"),
+            "--base-url", base_url, "--question", question], cwd=ROOT,
+            capture_output=True, text=True, check=False)
         if completed.returncode == 0:
             result = json.loads(completed.stdout)
             world = record(result)

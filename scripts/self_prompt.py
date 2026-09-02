@@ -33,8 +33,9 @@ def valid(proposal):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--base-url", default=os.getenv("BACKROOMS_LLM_BASE_URL", "http://127.0.0.1:8080"))
+parser.add_argument("--state", default="state/world.json", help="public JSON state file to inspect")
 args = parser.parse_args()
-with open("state/world.json") as state_file:
+with open(args.state) as state_file:
     world = json.load(state_file)
 context = json.dumps({"shared_memory": world["shared_memory"], "events": world["events"][-5:]})
 proposals = []
