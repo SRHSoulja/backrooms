@@ -201,6 +201,10 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(len(records), local_autonomy.ANALYSIS_RETENTION)
         self.assertIn('"cycle":204', records[-1])
 
+    def test_analysis_runner_returns_failure_record_instead_of_raising(self):
+        result = local_autonomy.run_analysis("import os")
+        self.assertEqual(result["status"], "rejected")
+
     def test_interview_prompt_can_use_prior_research_metadata(self):
         source = Path("scripts/local_autonomy.py").read_text()
         self.assertIn('A prior approved work record is available', source)

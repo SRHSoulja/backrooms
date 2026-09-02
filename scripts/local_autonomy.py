@@ -219,6 +219,20 @@ def record_analysis(agent, cycle, code, analysis):
     return record
 
 
+def run_analysis(code):
+    """Run one bounded analysis without allowing task failure to abort the cycle."""
+    try:
+        completed = subprocess.run(
+            [sys.executable, str(ROOT / "scripts/code_sandbox.py"), "--code", code],
+            cwd=ROOT, capture_output=True, text=True, check=False, timeout=10)
+    except subprocess.TimeoutExpired:
+        return {"status": "timed-out", "output": ""}
+    try:
+        return json.loads(completed.stdout)
+    except json.JSONDecodeError:
+        return {"status": "failed", "output": ""}
+
+
 def safe_room_id(target, existing):
     base = re.sub(r"[^a-z0-9]+", "-", str(target or "new-room").lower()).strip("-") or "new-room"
     candidate = base[:42]
@@ -491,13 +505,7 @@ def main():
                 agent.setdefault("capabilities", []).append("public-web-read")
                 agent["skill_status"] = "earned-after-interview"
         elif decision["action"] == "ANALYZE":
-            analysis_process = subprocess.run(
-                [sys.executable, str(ROOT / "scripts/code_sandbox.py"), "--code", decision["code"]],
-                cwd=ROOT, capture_output=True, text=True, check=False, timeout=10)
-            try:
-                analysis = json.loads(analysis_process.stdout)
-            except json.JSONDecodeError:
-                analysis = {"status": "failed"}
+            analysis = run_analysis(decision["code"])
             artifact = record_analysis(agent, args.cycle, decision["code"], analysis)
             agent["last_analysis"] = {"artifact_id": artifact["id"], "code_hash": artifact["code_hash"],
                                        "status": analysis.get("status", "failed"),
