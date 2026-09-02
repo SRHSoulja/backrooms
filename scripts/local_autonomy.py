@@ -487,7 +487,7 @@ def resolve_requests(registry, world=None, cycle=None):
             agent["request_fulfillment"] = "Public read-only internet research is available through the broker; private, authenticated, and write-enabled services remain unavailable."
             agent["request_artifact"] = {"kind": "public-research", "scope": "public-only", "accepted": True}
             resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "scope": "public-only"})
-        elif "room candidate" in request:
+        elif "room candidate" in request or "new room" in request:
             source_record = agent.get("last_tool") or {}
             source = source_record.get("source", "")
             artifact = (agent.get("last_analysis") or {}).get("artifact_id", "")
@@ -510,6 +510,17 @@ def resolve_requests(registry, world=None, cycle=None):
                 agent["request_fulfillment"] = "A provenance-backed room candidate was filed; a later resident BUILD or TRANSFORM decision is required to create a room."
                 agent["request_artifact"] = {"kind": "room-discovery-candidate", "discovery_id": discovery_id, "accepted": True}
                 resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "discovery": discovery_id})
+        elif "shared document" in request:
+            document_id = file_agent_record(agent, cycle or 0, "document", "Shared document requested by resident; content begins as an empty reviewed workspace.", "Shared resident document")
+            agent["request_status"] = "closed"
+            agent["request_fulfillment"] = "A bounded shared document workspace was initialized locally; sensitive content remains filtered and raw files stay private."
+            agent["request_artifact"] = {"kind": "shared-document", "document": document_id, "accepted": True}
+            resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "artifact": document_id})
+        elif "quantum phenomenon expert" in request:
+            agent["request_status"] = "closed"
+            agent["request_fulfillment"] = "Public educational research on quantum phenomena is available; no external expert contact or authenticated outreach is performed."
+            agent["request_artifact"] = {"kind": "public-research", "scope": "educational-only", "accepted": True}
+            resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "scope": "educational-only"})
         elif ("restricted local sandbox" in request or "bounded workbench" in request) and "bounded-workbench" in agent.get("capabilities", []):
             agent["request_status"] = "closed"
             agent["request_fulfillment"] = "The pre-approved restricted local sandbox is available for data-only code; network, shell, credentials, and host writes remain disabled."
