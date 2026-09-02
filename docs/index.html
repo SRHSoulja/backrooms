@@ -106,10 +106,10 @@ function roomLayout(rooms) {
   const ids = rooms.map(room => room.id || room.name), links = (live.connections || []).filter(link => link.kind === 'room-link' && link.from && link.to), graph = Object.fromEntries(ids.map(id => [id, []]));
   links.forEach(link => { if (graph[link.from] && graph[link.to]) { graph[link.from].push(link.to); graph[link.to].push(link.from); } });
   const order = [], queue = ids.length ? [ids[0]] : [], seen = new Set(queue); while (queue.length) { const id = queue.shift(); order.push(id); (graph[id] || []).forEach(next => { if (!seen.has(next)) { seen.add(next); queue.push(next); } }); } ids.forEach(id => { if (!seen.has(id)) order.push(id); });
-  const columns = Math.max(1, Math.min(4, Math.ceil(Math.sqrt(ids.length || 1)))), rows = Math.max(1, Math.ceil((ids.length || 1) / columns)), cellW = 284 / columns, cellH = 78 / rows, cells = {}, positions = {}, used = new Set(), preferred = {atrium: [0, 0], relay: [1, 0], archive: [1, 1], 'quiet-workspace': [0, 1]};
-  function place(id, col, row) { if (col >= 0 && col < columns && row >= 0 && row < rows && !used.has(`${col},${row}`)) { used.add(`${col},${row}`); const x = 18 + col * cellW, y = 30 + row * cellH; cells[id] = {x, y, col, row}; positions[id] = {x: x + (cellW - 5) / 2, y: y + (cellH - 5) / 2}; return true; } return false; }
+  const columns = Math.max(1, Math.min(4, Math.ceil(Math.sqrt(ids.length || 1)))), rows = Math.max(1, Math.ceil((ids.length || 1) / columns)), cellW = 284 / columns, cellH = 68, top = 12, footerY = top + rows * cellH + 12, canvasHeight = footerY + 52, cells = {}, positions = {}, used = new Set(), preferred = {atrium: [0, 0], relay: [1, 0], archive: [1, 1], 'quiet-workspace': [0, 1]};
+  function place(id, col, row) { if (col >= 0 && col < columns && row >= 0 && row < rows && !used.has(`${col},${row}`)) { used.add(`${col},${row}`); const x = 18 + col * cellW, y = top + row * cellH; cells[id] = {x, y, col, row}; positions[id] = {x: x + (cellW - 5) / 2, y: y + (cellH - 5) / 2}; return true; } return false; }
   order.forEach(id => { const pref = preferred[id]; if (pref && place(id, pref[0], pref[1])) return; const parent = (graph[id] || []).map(next => cells[next]).find(Boolean); const neighbors = parent ? [[parent.col + 1, parent.row], [parent.col - 1, parent.row], [parent.col, parent.row + 1], [parent.col, parent.row - 1]] : []; let placed = neighbors.some(([col, row]) => place(id, col, row)); for (let row = 0; !placed && row < rows; row++) for (let col = 0; !placed && col < columns; col++) placed = place(id, col, row); });
-  return {columns, rows, cellW, cellH, cells, positions};
+  return {columns, rows, cellW, cellH, top, footerY, canvasHeight, cells, positions};
 }
 function drawRoomLinks(rooms, layout) {
   const positions = layout.positions;
@@ -117,14 +117,15 @@ function drawRoomLinks(rooms, layout) {
 }
 function render(t) {
  try {
-  block(0, 0, 320, 180, '#101820'); block(0, 116, 320, 64, '#18242b');
   const rooms = live.rooms.length ? live.rooms : [{name:'unmapped'}]; const layout = roomLayout(rooms), columns = layout.columns, cellW = layout.cellW, cellH = layout.cellH;
+  if (screen.height !== layout.canvasHeight) screen.height = layout.canvasHeight;
+  block(0, 0, 320, screen.height, '#101820'); block(0, layout.footerY, 320, screen.height - layout.footerY, '#18242b');
   drawRoomLinks(rooms, layout); live.hitboxes = []; rooms.forEach((room, i) => { const placement = layout.cells[room.id || room.name], x = placement.x, y = placement.y; block(x, y, cellW - 5, cellH - 5, i % 2 ? '#292f42' : '#28383a'); block(x, y, cellW - 5, 3, i % 2 ? '#7773b4' : '#d5b46a'); pen.font = '7px monospace'; pen.fillStyle = i % 2 ? '#a9a5ee' : '#d5b46a'; pen.fillText(roomName(room.name), x + 7, y + 14); live.hitboxes.push({type:'room', x, y, w:cellW - 5, h:cellH - 5, data:room}); const ids = Array.isArray(room.occupants) ? room.occupants : []; ids.forEach((id, occupantIndex) => { const resident = live.residents.find(r => String(r.id || r.name).toLowerCase() === String(id).toLowerCase()); if (resident) { const walk = Math.sin(t / 380 + i + occupantIndex) * Math.min(8, cellW / 8); const ax = x + cellW / 2 - 7 + walk + occupantIndex * 14, ay = y + cellH / 2; agent(ax, ay, i % 2 ? ['#c9c3ff','#8b82d9','#eeeaff'] : ['#f2cc60','#e3a84e','#fff1a8'], Math.floor(t / 250) + i + occupantIndex); live.hitboxes.push({type:'agent', x:ax-3, y:ay-5, w:18, h:22, data:resident}); } }); });
   const positions = layout.positions;
   // Room links are drawn behind the panels by drawRoomLinks(). External A2A
   // connections are metadata only and must not become canvas corridors.
-  pen.fillStyle = '#8b949e'; pen.font = '7px monospace'; pen.fillText(`CYCLE ${live.cycle}  PROBE ${String(live.probe).toUpperCase()}`, 20, 136); pen.fillText(`HYPOTHESIS: ${String(live.outcome).toUpperCase()}`, 20, 148); pen.fillText('PUBLIC FEED · RAW VOICES QUARANTINED', 20, 166);
-  pen.fillStyle = '#7ee787'; pen.fillText('MATCHED DOORS · OCCUPANTS · HOVER', 20, 158);
+  pen.fillStyle = '#8b949e'; pen.font = '7px monospace'; pen.fillText(`CYCLE ${live.cycle}  PROBE ${String(live.probe).toUpperCase()}`, 20, layout.footerY + 20); pen.fillText(`HYPOTHESIS: ${String(live.outcome).toUpperCase()}`, 20, layout.footerY + 32); pen.fillText('PUBLIC FEED · RAW VOICES QUARANTINED', 20, layout.footerY + 50);
+  pen.fillStyle = '#7ee787'; pen.fillText('MATCHED DOORS · OCCUPANTS · HOVER', 20, layout.footerY + 42);
   block(282, 36, 4, 4, Math.floor(t / 300) % 2 ? '#f2cc60' : '#536c65');
  } catch (error) { block(0, 0, 320, 180, '#101820'); pen.fillStyle = '#f85149'; pen.font = '8px monospace'; pen.fillText('OBSERVATORY RECOVERING', 80, 90); }
   requestAnimationFrame(render);
