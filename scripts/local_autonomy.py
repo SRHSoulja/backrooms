@@ -5,6 +5,8 @@ import argparse
 import json
 import os
 import re
+import subprocess
+import sys
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
@@ -72,15 +74,29 @@ def main():
             agent["status"] = "retired" if decision["action"] == "RETIRE" else "fired"
         elif decision["action"] == "EXPLORE":
             agent["exploration"] = decision["target"] or "unassigned public room question"
+            if "public-web-read" not in agent.get("capabilities", []):
+                agent.setdefault("capabilities", []).append("public-web-read")
+                agent["skill_status"] = "earned-after-interview"
         elif decision["action"] == "PROPOSE":
             agent["proposal"] = decision["proposal"] or "No proposal text supplied."
         agent["last_action"] = decision["action"].lower()
         agent["last_reason"] = decision["reason"]
         agent["interviewed_at"] = datetime.now(timezone.utc).isoformat()
+        tool = {"status": "not-requested"}
+        if decision["action"] == "EXPLORE" and "public-web-read" in agent.get("capabilities", []):
+            completed = subprocess.run([sys.executable, str(ROOT / "scripts/tool_broker.py"),
+                "wikipedia-search", agent.get("exploration", "")], cwd=ROOT, capture_output=True, text=True, check=False)
+            try:
+                tool = json.loads(completed.stdout)
+            except json.JSONDecodeError:
+                tool = {"status": "failed"}
+            if tool.get("status") == "completed":
+                agent["last_tool"] = {"tool": tool["tool"], "query": tool["query"],
+                                       "result_count": len(tool.get("results", [])), "source": tool["source"]}
         registry.setdefault("decisions", []).append({"cycle": args.cycle, "agent": agent["id"], **decision})
         results.append({"id": agent["id"], "action": decision["action"].lower(), "room": agent["room"],
                         "status": agent["status"], "proposal": agent.get("proposal", "")[:220],
-                        "exploration": agent.get("exploration", "")[:100]})
+                        "exploration": agent.get("exploration", "")[:100], "tool": tool})
     registry["decisions"] = registry.get("decisions", [])[-100:]
     REGISTRY.write_text(json.dumps(registry, indent=2) + "\n")
     active = sum(agent.get("status") in {"active-local", "probation"} for agent in registry.get("agents", []))

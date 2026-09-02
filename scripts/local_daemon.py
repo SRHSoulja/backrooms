@@ -181,6 +181,8 @@ def publish(result, world):
                 "last_action": agent.get("last_action", "uninterviewed"),
                 "proposal": str(agent.get("proposal", ""))[:220],
                 "exploration": str(agent.get("exploration", ""))[:100],
+                "capabilities": agent.get("capabilities", [])[:8],
+                "last_tool": agent.get("last_tool", {}),
             }
             for agent in registry.get("agents", [])[-100:]
         ],
