@@ -119,7 +119,7 @@ All mutations are written to JSON and recorded in the event stream. The optional
 
 ## Optional Codex reviewer
 
-The bridge is a separate local process, not a way to wake this hosted conversation. It is off unless explicitly enabled:
+The bridge is a separate local process, not a way to wake this hosted conversation. It is off unless explicitly enabled. When enabled, the daemon may enqueue one deduplicated review for an unresolved public frontier question; resident cycles continue independently:
 
 ```bash
 mkdir -p state/codex-inbox
