@@ -570,7 +570,10 @@ def main():
                 agent["last_tool"] = {"tool": tool["tool"], "query": tool.get("query", tool.get("url", "")),
                                        "result_count": result_count, "source": tool.get("source", tool.get("url", "")),
                                        "results": tool.get("results", [])[:5], "summary": summary,
-                                       "excerpt": tool.get("excerpt", "")[:2400], "contract": tool.get("contract", {})}
+                                       "excerpt": tool.get("excerpt", "")[:2400], "verified": tool["tool"] != "public-search",
+                                       "fetched_at": datetime.now(timezone.utc).isoformat(),
+                                       "source_hash": hashlib.sha256(str(tool.get("url", tool.get("source", ""))).encode()).hexdigest(),
+                                       "contract": tool.get("contract", {})}
                 emit_event(world, args.cycle, "tool-used", agent.get("id", "resident"),
                            f"Resident used the approved {tool['tool']} capability.",
                            tool=tool["tool"], capability=tool.get("contract", {}).get("capability", "unknown"),

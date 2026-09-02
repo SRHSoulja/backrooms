@@ -333,18 +333,26 @@ def sync_analysis():
 
 def sync_research(registry):
     """Project bounded source leads; raw fetched pages never enter this feed."""
-    records = []
+    records_by_url = {}
     for agent in registry.get("agents", []):
         tool = agent.get("last_tool") or {}
         if not tool.get("tool") or tool.get("tool") not in {"public-search", "public-text", "public-json", "public-csv"}:
             continue
-        records.append({"id": f"research-{agent.get('id', 'resident')}-{agent.get('request_cycle', agent.get('last_action', 'latest'))}",
-                        "agent": agent.get("id"), "cycle": agent.get("request_cycle"), "tool": tool.get("tool"),
-                        "query": public_event_text(tool.get("query", "")), "source": tool.get("source", ""),
-                        "result_count": tool.get("result_count", 0),
-                        "results": [{"title": public_event_text(item.get("title", "")), "url": item.get("url", "")}
-                                    for item in tool.get("results", [])[:5] if isinstance(item, dict) and str(item.get("url", "")).startswith("https://")],
-                        "summary": tool.get("summary", {}), "excerpt": public_event_text(tool.get("excerpt", ""))[:420]})
+        source = str(tool.get("source", ""))
+        leads = [{"title": public_event_text(item.get("title", "")), "url": item.get("url", ""),
+                  "source_hash": hashlib.sha256(str(item.get("url", "")).encode()).hexdigest(), "verified": False}
+                 for item in tool.get("results", [])[:5] if isinstance(item, dict) and str(item.get("url", "")).startswith("https://")]
+        record = {"id": f"research-{agent.get('id', 'resident')}-{agent.get('request_cycle', agent.get('last_action', 'latest'))}",
+                  "agent": agent.get("id"), "cycle": agent.get("request_cycle"), "tool": tool.get("tool"),
+                  "query": public_event_text(tool.get("query", "")), "source": source,
+                  "source_hash": tool.get("source_hash") or hashlib.sha256(source.encode()).hexdigest(),
+                  "fetched_at": tool.get("fetched_at"), "verified": bool(tool.get("verified")),
+                  "result_count": tool.get("result_count", 0), "results": leads,
+                  "summary": tool.get("summary", {}), "excerpt": public_event_text(tool.get("excerpt", ""))[:420],
+                  "analysis_artifact": (agent.get("last_analysis") or {}).get("artifact_id")}
+        key = source if tool.get("verified") else f"{agent.get('id')}-{tool.get('query', '')}"
+        records_by_url[key] = record
+    records = list(records_by_url.values())[-100:]
     public = {"schema_version": 1, "generated_at": datetime.now(timezone.utc).isoformat(),
               "privacy": "Bounded source leads and sanitized excerpts only; raw fetched pages remain local.",
               "records": records[-100:]}
