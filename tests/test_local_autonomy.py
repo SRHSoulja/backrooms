@@ -103,6 +103,20 @@ class LocalAutonomyTests(unittest.TestCase):
         local_autonomy.resolve_requests(registry, world={"rooms": []})
         self.assertEqual(registry["agents"][0]["request_artifact"]["kind"], "bounded-visualization")
 
+    def test_sensitive_research_request_is_reduced_to_educational_scope(self):
+        registry = {"agents": [{"id": "local-test", "request": "access to advanced encryption materials",
+                                 "request_status": "open", "capabilities": ["public-web-read"]}]}
+        local_autonomy.resolve_requests(registry, world={"rooms": []})
+        artifact = registry["agents"][0]["request_artifact"]
+        self.assertEqual(artifact["scope"], "educational-and-historical-only")
+        self.assertTrue(artifact["accepted"])
+
+    def test_high_resolution_data_images_use_public_visualization_scope(self):
+        registry = {"agents": [{"id": "local-test", "request": "access to high-resolution data images",
+                                 "request_status": "open", "capabilities": ["bounded-workbench"]}]}
+        local_autonomy.resolve_requests(registry, world={"rooms": []})
+        self.assertEqual(registry["agents"][0]["request_artifact"]["scope"], "public-image-and-chart-assets")
+
     def test_unprovisioned_computer_request_is_explicitly_limited(self):
         world = {"rooms": [{"id": "atrium"}]}
         registry = {"agents": [{"id": "local-test", "status": "active-local", "room": "atrium",

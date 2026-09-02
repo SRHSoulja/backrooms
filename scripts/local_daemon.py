@@ -381,7 +381,7 @@ def publish(result, world):
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "cycle": world["cycle"], "daemon": "running", "local_model": "ready",
         "rooms": len(world.get("rooms", [])),
-        "active_residents": sum(agent.get("status") not in {"fired", "retired"} for agent in registry.get("agents", [])),
+        "active_residents": len([resident for resident in world.get("residents", []) if resident.get("status") not in {"fired", "retired"}]) + sum(agent.get("status") not in {"fired", "retired"} for agent in registry.get("agents", [])),
         "work_orders": len(work_orders.get("orders", [])),
         "continuity": audit["status"],
         "publication": "sanitized GitHub Pages snapshot",

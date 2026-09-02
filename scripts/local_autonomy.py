@@ -322,6 +322,16 @@ def resolve_requests(registry, world=None, cycle=None):
             agent["request_fulfillment"] = "A bounded local visualization workspace is available for public JSON and resident-approved data; arbitrary software and external database access remain disabled."
             agent["request_artifact"] = {"kind": "bounded-visualization", "scope": "public-json-and-approved-data", "accepted": True}
             resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "scope": "public-json-and-approved-data"})
+        elif ("encryption" in request or "time anomaly" in request) and "public-web-read" in agent.get("capabilities", []):
+            agent["request_status"] = "closed"
+            agent["request_fulfillment"] = "Public educational and historical research is available; operational cryptographic materials and unverified anomaly claims are excluded."
+            agent["request_artifact"] = {"kind": "public-research", "scope": "educational-and-historical-only", "source": (agent.get("last_tool") or {}).get("source", ""), "accepted": True}
+            resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "scope": "educational-and-historical-only"})
+        elif ("data image" in request or "data images" in request or "high resolution" in request) and "bounded-workbench" in agent.get("capabilities", []):
+            agent["request_status"] = "closed"
+            agent["request_fulfillment"] = "Public, non-sensitive image and chart assets are available in the bounded visualization workspace; private or authenticated datasets remain unavailable."
+            agent["request_artifact"] = {"kind": "bounded-visualization", "scope": "public-image-and-chart-assets", "accepted": True}
+            resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "scope": "public-image-and-chart-assets"})
         elif "whiteboard" in request:
             entry_id = digital_whiteboard_entry(agent, cycle or 0)
             agent["request_status"] = "closed"
