@@ -59,6 +59,7 @@ class ToolContractTests(unittest.TestCase):
             self.assertEqual(result["status"], "completed")
             self.assertEqual(result["summary"]["rows"], 2)
             self.assertEqual(result["summary"]["headers"], ["name", "value"])
+            self.assertFalse(result["summary"]["truncated"])
             self.assertNotIn("alpha", result)
         finally:
             tool_broker.fetch = original

@@ -6,6 +6,7 @@ from pathlib import Path
 
 MAX_BYTES = 32_000
 RESEARCH_MAX_BYTES = 5_000_000
+CSV_MAX_ROWS = 100_000
 BLOCKED = re.compile(r"api[_ -]?key|password|secret|private\s+(?:key|memory|data)|credential|(?:auth|access|bearer)[_ -]?token|wallet\s+(?:seed|key)|seed phrase|mnemonic", re.I)
 SCRIPT_STYLE = re.compile(r"<(?:script|style|noscript)[^>]*>.*?</(?:script|style|noscript)>", re.I | re.S)
 SENSITIVE_ASSIGNMENT = re.compile(r"(?i)\b(?:api[_ -]?key|password|secret|credential|token|mnemonic)\s*[:=]\s*[^\s,;]+")
@@ -14,7 +15,7 @@ TOOL_CONTRACTS = {
     "public-https": {"capability": "public-web-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES},
     "public-search": {"capability": "public-web-read", "access": "read-only", "network": "public HTTPS search", "side_effects": False, "max_bytes": MAX_BYTES},
     "public-json": {"capability": "public-data-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": RESEARCH_MAX_BYTES, "raw_data": False},
-    "public-csv": {"capability": "public-data-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": RESEARCH_MAX_BYTES, "raw_data": False},
+    "public-csv": {"capability": "public-data-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": RESEARCH_MAX_BYTES, "max_rows": CSV_MAX_ROWS, "raw_data": False},
     "public-text": {"capability": "public-text-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": RESEARCH_MAX_BYTES, "raw_data": False, "untrusted_content": True},
     "local-code-sandbox": {"capability": "local-code-execution", "access": "isolated-execution", "network": "none", "side_effects": "temporary workspace only", "max_code": 8000, "timeout_seconds": 5, "max_output": 16000},
 }
@@ -135,9 +136,16 @@ def public_json(url):
 
 
 def public_csv(url):
-    rows = list(csv.reader(io.StringIO(fetch(url, RESEARCH_MAX_BYTES))))
-    headers = rows[0][:100] if rows else []
-    summary = {"type": "table", "rows": max(0, len(rows) - 1), "columns": len(headers), "headers": headers}
+    reader = csv.reader(io.StringIO(fetch(url, RESEARCH_MAX_BYTES)))
+    headers = next(reader, [])[:100]
+    row_count = 0
+    truncated = False
+    for _ in reader:
+        row_count += 1
+        if row_count >= CSV_MAX_ROWS:
+            truncated = next(reader, None) is not None
+            break
+    summary = {"type": "table", "rows": row_count, "columns": len(headers), "headers": headers, "truncated": truncated}
     return {"tool": "public-csv", "url": url, "summary": summary, "status": "completed",
             "contract": TOOL_CONTRACTS["public-csv"]}
 
