@@ -37,7 +37,12 @@ def wait_ready(url):
 def runtime_world():
     if RUNTIME_STATE.exists():
         with RUNTIME_STATE.open() as handle:
-            return json.load(handle)
+            world = json.load(handle)
+        with STATE.open() as handle:
+            canonical = json.load(handle)
+        world["rooms"] = canonical.get("rooms", world.get("rooms", []))
+        world["shared_memory"] = canonical.get("shared_memory", world.get("shared_memory", []))
+        return world
     with STATE.open() as handle:
         world = json.load(handle)
     ARCHIVE.parent.mkdir(parents=True, exist_ok=True)
