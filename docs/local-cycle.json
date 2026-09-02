@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-09-02T08:20:33.660790+00:00",
+  "generated_at": "2026-09-02T08:26:16.069405+00:00",
   "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
-  "runtime_cycle": 93,
-  "question": "Why did the number of evidence markers decrease significantly after the hypothesis was weakened?",
+  "runtime_cycle": 94,
+  "question": "Why did Echo and Morrow both omit evidence or uncertainty markers?",
   "action": {
     "action": "local-behavioral-probe",
     "probe": "continuity",
@@ -14,11 +14,11 @@
     },
     "responses": {
       "Echo": {
-        "characters": 291,
-        "evidence_markers": 0
+        "characters": 267,
+        "evidence_markers": 1
       },
       "Morrow": {
-        "characters": 270,
+        "characters": 218,
         "evidence_markers": 0
       }
     }
@@ -33,15 +33,39 @@
     "decisions": [
       {
         "id": "local-001",
-        "action": "move",
+        "action": "explore",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "request": "access to the library's rare book collection",
+        "request": "access to a quiet workspace",
         "request_status": "open",
-        "exploration": "study ancient cryptographic texts,",
+        "exploration": "ancient encryption texts,",
         "tool": {
-          "status": "not-requested"
+          "tool": "wikipedia-search",
+          "query": "ancient encryption texts,",
+          "results": [
+            {
+              "title": "Encryption",
+              "pageid": 10294
+            },
+            {
+              "title": "Aristocrat Cipher",
+              "pageid": 75901309
+            },
+            {
+              "title": "Cryptography",
+              "pageid": 18934432
+            }
+          ],
+          "source": "https://en.wikipedia.org/",
+          "status": "completed",
+          "contract": {
+            "capability": "public-web-read",
+            "access": "read-only",
+            "network": "public HTTPS",
+            "side_effects": false,
+            "max_bytes": 32000
+          }
         }
       },
       {
@@ -50,8 +74,8 @@
         "room": "atrium",
         "status": "active-local",
         "proposal": "",
-        "request": "access to historical data",
-        "request_status": "closed",
+        "request": "access to a map of the city",
+        "request_status": "open",
         "exploration": "find ancient timekeeping texts,",
         "tool": {
           "status": "not-requested"
@@ -59,35 +83,72 @@
       },
       {
         "id": "local-004",
-        "action": "move",
+        "action": "explore",
         "room": "atrium",
         "status": "active-local",
         "proposal": "",
-        "request": "access to a secure network",
+        "request": "access to a quiet workspace",
         "request_status": "open",
-        "exploration": "review past proposals,",
+        "exploration": "find recent data updates,",
         "tool": {
-          "status": "not-requested"
+          "tool": "wikipedia-search",
+          "query": "find recent data updates,",
+          "results": [
+            {
+              "title": "Change data capture",
+              "pageid": 3557729
+            },
+            {
+              "title": "Atomicity (database systems)",
+              "pageid": 373991
+            },
+            {
+              "title": "Key\u2013value database",
+              "pageid": 37704882
+            }
+          ],
+          "source": "https://en.wikipedia.org/",
+          "status": "completed",
+          "contract": {
+            "capability": "public-web-read",
+            "access": "read-only",
+            "network": "public HTTPS",
+            "side_effects": false,
+            "max_bytes": 32000
+          }
         }
       }
     ],
     "construction": [],
-    "requests": []
+    "requests": [
+      {
+        "agent": "local-001",
+        "status": "fulfilled",
+        "room": "quiet-workspace"
+      },
+      {
+        "agent": "local-002",
+        "status": "needs-clarification"
+      },
+      {
+        "agent": "local-004",
+        "status": "fulfilled",
+        "room": "quiet-workspace"
+      }
+    ]
   },
   "metrics": {
-    "jaccard_overlap": 0.194,
+    "jaccard_overlap": 0.298,
     "morrow_audit_markers": [
-      "counterexample",
-      "assumption",
-      "missing control"
+      "counterexample"
     ],
     "response_completeness": "usable",
     "evidence_coverage": "missing",
     "distinction_status": "distinct"
   },
   "continuity_audit": {
-    "generated_at": "2026-09-02T08:20:33.660475+00:00",
-    "cycle": 93,
+    "generated_at": "2026-09-02T08:26:16.068458+00:00",
+    "cycle": 94,
     "status": "pass",
     "checks": {
       "archive_parse": true,
@@ -97,7 +158,7 @@
       "room_link_integrity": true,
       "resident_room_integrity": true
     },
-    "archive_records": 128,
+    "archive_records": 136,
     "malformed_archive_records": 0,
     "raw_output_fields_found": 0,
     "duplicate_archive_ids": [],
@@ -107,22 +168,27 @@
     "privacy": "Aggregate integrity metadata only; resident prompts and raw responses are not published."
   },
   "work_orders": {
-    "count": 51
+    "count": 54
   },
   "health": {
     "schema_version": 1,
-    "generated_at": "2026-09-02T08:20:33.660680+00:00",
-    "cycle": 93,
+    "generated_at": "2026-09-02T08:26:16.069374+00:00",
+    "cycle": 94,
     "daemon": "running",
     "local_model": "ready",
     "rooms": 4,
     "active_residents": 5,
-    "work_orders": 51,
+    "work_orders": 54,
     "continuity": "pass",
     "publication": "sanitized GitHub Pages snapshot",
     "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
     "activity_feed": "docs/activity.json",
-    "feed_freshness_seconds": 0
+    "feed_freshness_seconds": 0,
+    "activity_records": 52,
+    "note_records": 75,
+    "print_jobs": 0,
+    "failed_print_jobs": 0,
+    "dropped_events": 0
   },
   "privacy": "Only aggregate metrics and the bounded council question are public; raw outputs remain local."
 }
