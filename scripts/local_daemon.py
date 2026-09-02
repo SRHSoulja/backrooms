@@ -615,8 +615,17 @@ def queue_codex_frontier_review(frontier):
         return {"codex_task": "not-queued", "codex_task_reason": "no-open-frontier-question"}
     question = candidates[-1]
     task_id = f"frontier-{question.get('id', 'unknown')}"
-    if (LOCAL_CODEX_INBOX / f"{task_id}.json").exists() or (LOCAL_CODEX_OUTBOX / f"{task_id}.json").exists():
+    if (LOCAL_CODEX_INBOX / f"{task_id}.json").exists():
         return {"codex_task": "already-tracked", "codex_task_id": task_id}
+    completed_path = LOCAL_CODEX_OUTBOX / f"{task_id}.json"
+    if completed_path.exists():
+        completed = json.loads(completed_path.read_text())
+        if completed.get("status") not in {"failed", "timed_out"}:
+            return {"codex_task": "already-tracked", "codex_task_id": task_id}
+        retry_number = 1
+        while (LOCAL_CODEX_OUTBOX / f"{task_id}-retry-{retry_number}.json").exists():
+            retry_number += 1
+        task_id = f"{task_id}-retry-{retry_number}"
     text = public_text(str(question.get("question", "")), 300)
     if not text or text.startswith("[") or BLOCKED.search(text):
         return {"codex_task": "not-queued", "codex_task_reason": "question-filtered"}

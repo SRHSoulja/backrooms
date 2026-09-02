@@ -142,7 +142,7 @@ def run_task(path, codex_bin):
             return {name for name in names if name in blocked or name.startswith(".env") or name.endswith((".key", ".pem"))}
         import shutil
         shutil.copytree(ROOT, public_root, ignore=ignore)
-        command = [codex_bin, "exec", "--ephemeral", "--json", "--sandbox", "read-only", "--ask-for-approval", "never", "--skip-git-repo-check", "-C", str(public_root), "-"]
+        command = [codex_bin, "exec", "--ephemeral", "--json", "--sandbox", "read-only", "--skip-git-repo-check", "-C", str(public_root), "-"]
         try:
             result = subprocess.run(command, input=prompt, text=True, capture_output=True, timeout=900, env=environment, cwd=public_root)
             output = result.stdout[-20000:]
