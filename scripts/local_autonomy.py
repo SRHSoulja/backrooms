@@ -21,7 +21,7 @@ def ask(url, agent, rooms, cycle):
     prompt = (f"You are interviewing for {agent['name']} ({agent['role']}) in a bounded fictional world. "
               f"Cycle {cycle}. Existing rooms: {', '.join(rooms)}. Choose one action based on your role and current work. "
               "Return exactly five lines: ACTION: STAY|MOVE|EXPLORE|PROPOSE|DISCOVER|BUILD|TRANSFORM|RETIRE|FIRE, ROOM: existing room id or current room, "
-              "TARGET: short exploration target, PROPOSAL: short useful proposal, REASON: short reason. "
+              "TARGET: short exploration target, PROPOSAL: short useful proposal, REQUEST: one concrete non-sensitive thing you cannot do alone, or NONE, REASON: short reason. "
               "You have no external network, credentials, private memory, arbitrary code, money, or authority to change safety rules. "
               "Do not claim consciousness. Use MOVE only for an existing room.")
     body = json.dumps({"model": os.getenv("BACKROOMS_LLM_MODEL", "local"), "messages": [
@@ -36,7 +36,7 @@ def ask(url, agent, rooms, cycle):
 def parse(text, agent, rooms):
     fields = {}
     for line in text.splitlines():
-        match = re.match(r"\s*(ACTION|ROOM|TARGET|PROPOSAL|REASON)\s*[:\-]\s*(.*?)\s*$", line, re.I)
+        match = re.match(r"\s*(ACTION|ROOM|TARGET|PROPOSAL|REQUEST|REASON)\s*[:\-]\s*(.*?)\s*$", line, re.I)
         if match:
             fields[match.group(1).upper()] = match.group(2).strip().strip("`*")
     if FORBIDDEN.search(text):
@@ -47,14 +47,18 @@ def parse(text, agent, rooms):
     room = room_match.group(0) if room_match else agent["room"]
     if action not in ALLOWED or room not in rooms:
         return None
-    limits = {"TARGET": 100, "PROPOSAL": 220, "REASON": 220}
+    limits = {"TARGET": 100, "PROPOSAL": 220, "REQUEST": 220, "REASON": 220}
     if any(len(fields.get(key, "")) > limit for key, limit in limits.items() for _ in [0]):
         return None
     target = fields.get("TARGET", "").strip()
     if action == "EXPLORE" and not target:
         return None
+    request = fields.get("REQUEST", "").strip()
+    if request.upper() == "NONE":
+        request = ""
     return {"action": action, "room": room, "target": target,
-            "proposal": fields.get("PROPOSAL", "").strip(), "reason": fields.get("REASON", "").strip()}
+            "proposal": fields.get("PROPOSAL", "").strip(), "request": request,
+            "reason": fields.get("REASON", "").strip()}
 
 
 def deduplicate(registry):
@@ -143,6 +147,12 @@ def main():
         agent["interview_status"] = "accepted"
         agent["last_action"] = decision["action"].lower()
         agent["last_reason"] = decision["reason"]
+        if decision.get("request"):
+            agent["request"] = decision["request"]
+            agent["request_status"] = "open"
+            agent["request_cycle"] = args.cycle
+        elif decision.get("action") in {"RETIRE", "FIRE"}:
+            agent["request_status"] = "closed"
         agent["interviewed_at"] = datetime.now(timezone.utc).isoformat()
         tool = {"status": "not-requested"}
         if decision["action"] == "EXPLORE" and "public-web-read" in agent.get("capabilities", []):
@@ -160,6 +170,8 @@ def main():
         registry.setdefault("decisions", []).append({"cycle": args.cycle, "agent": agent["id"], **decision})
         results.append({"id": agent["id"], "action": decision["action"].lower(), "room": agent["room"],
                         "status": agent["status"], "proposal": agent.get("proposal", "")[:220],
+                        "request": agent.get("request", "")[:220],
+                        "request_status": agent.get("request_status", "none"),
                         "exploration": agent.get("exploration", "")[:100], "tool": tool})
     registry["decisions"] = registry.get("decisions", [])[-100:]
     REGISTRY.write_text(json.dumps(registry, indent=2) + "\n")

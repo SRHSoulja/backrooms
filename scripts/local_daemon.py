@@ -21,6 +21,7 @@ RUNTIME_STATE = ROOT / "state/local-runtime.json"
 PUBLIC_CYCLE = ROOT / "docs/local-cycle.json"
 PUBLIC_HISTORY = ROOT / "docs/action-history.json"
 PUBLIC_HIRELINGS = ROOT / "docs/local-hirelings.json"
+PUBLIC_REQUESTS = ROOT / "docs/agent-requests.json"
 ARCHIVE = ROOT / "state/archive/events.jsonl"
 LOCAL_REGISTRY = ROOT / "state/local-agents.json"
 
@@ -181,6 +182,9 @@ def publish(result, world):
                 "last_action": agent.get("last_action", "awaiting-interview"),
                 "interview_status": agent.get("interview_status", "not-recorded"),
                 "proposal": str(agent.get("proposal", ""))[:220],
+                "request": str(agent.get("request", ""))[:220],
+                "request_status": agent.get("request_status", "none"),
+                "request_cycle": agent.get("request_cycle"),
                 "exploration": str(agent.get("exploration", ""))[:100],
                 "capabilities": agent.get("capabilities", [])[:8],
                 "last_tool": agent.get("last_tool", {}),
@@ -190,15 +194,35 @@ def publish(result, world):
             for agent in registry.get("agents", [])[-100:]
         ],
     }
+    requests = json.loads(PUBLIC_REQUESTS.read_text()) if PUBLIC_REQUESTS.exists() else {
+        "privacy": "Sanitized non-sensitive requests only; raw interviews and private context stay local.",
+        "requests": []
+    }
+    for agent in registry.get("agents", []):
+        request = str(agent.get("request", "")).strip()
+        if not request or agent.get("request_status") != "open":
+            continue
+        item = {
+            "id": f"{agent.get('id', 'agent')}-request-{agent.get('request_cycle', world['cycle'])}",
+            "agent_id": agent.get("id"), "agent": str(agent.get("name", "Unnamed hireling"))[:80],
+            "role": str(agent.get("role", "unassigned"))[:80], "room": agent.get("room", "unknown"),
+            "request": request[:220], "cycle": agent.get("request_cycle", world["cycle"]),
+            "status": "open", "fulfillment": "Requires explicit review; no automatic access, spending, or outreach."
+        }
+        requests["requests"] = [old for old in requests.get("requests", []) if old.get("id") != item["id"]]
+        requests["requests"].append(item)
+    requests["requests"] = requests.get("requests", [])[-100:]
+    requests["generated_at"] = datetime.now(timezone.utc).isoformat()
     PUBLIC_CYCLE.write_text(json.dumps(safe, indent=2) + "\n")
     PUBLIC_HISTORY.write_text(json.dumps(history, indent=2) + "\n")
     PUBLIC_HIRELINGS.write_text(json.dumps(public_hirelings, indent=2) + "\n")
+    PUBLIC_REQUESTS.write_text(json.dumps(requests, indent=2) + "\n")
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}
-    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json"}:
+    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json"}:
         print(json.dumps({"publish": "skipped", "reason": "other local changes present"}), flush=True)
         return
-    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json"], cwd=ROOT, check=True)
+    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json"], cwd=ROOT, check=True)
     commit = subprocess.run(["git", "commit", "-m", "chore: publish local council signal"], cwd=ROOT, capture_output=True)
     if commit.returncode == 0:
         pushed = subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=ROOT, capture_output=True)
