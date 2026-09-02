@@ -56,6 +56,7 @@ For the complete interaction model—including what is visible to the audience a
 - `docs/whiteboard.json` / `docs/printer.json` — live digital workspace projections with artifact hashes.
 - `scripts/core_resident_records.py` — bounded note/document filing for Echo and Morrow under the same publication filter.
 - `scripts/treasury_intent.py` / `wallet/treasury-policy.json` — auditable, capped spend-intent preparation; signing and broadcasting require a separately configured signer and policy activation.
+- Residents can use `public-search`, `public-https`, and `wikipedia-search`; all are read-only, public HTTPS tools with bounded responses and no credentials.
 - `docs/work-orders.json` — structured resident work orders with capability class, status, acceptance condition, and cycle provenance.
 - `docs/tool-catalog.json` — public capability contracts for read-only tools.
 - `docs/continuity-audit.json` — aggregate archive, topology, and resident-assignment integrity results.

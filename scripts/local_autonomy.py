@@ -463,8 +463,10 @@ def main():
         agent["interviewed_at"] = datetime.now(timezone.utc).isoformat()
         tool = {"status": "not-requested"}
         if decision["action"] == "EXPLORE" and "public-web-read" in agent.get("capabilities", []):
+            target = agent.get("exploration", "")
+            tool_name = "public-https" if re.match(r"https://", target, re.I) else "public-search"
             completed = subprocess.run([sys.executable, str(ROOT / "scripts/tool_broker.py"),
-                "wikipedia-search", agent.get("exploration", "")], cwd=ROOT, capture_output=True, text=True, check=False)
+                tool_name, target], cwd=ROOT, capture_output=True, text=True, check=False)
             try:
                 tool = json.loads(completed.stdout)
             except json.JSONDecodeError:
