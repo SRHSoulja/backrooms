@@ -65,7 +65,8 @@ def action(base_url, cycle):
     try:
         result = json.loads(completed.stdout)
         return {"action": result.get("action"), "probe": result.get("probe"),
-                "status": result.get("status"), "responses": result.get("responses")}
+                "status": result.get("status"), "hypothesis": result.get("hypothesis"),
+                "responses": result.get("responses")}
     except json.JSONDecodeError:
         return {"action": "local-behavioral-probe", "status": "invalid-result"}
 

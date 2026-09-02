@@ -42,7 +42,7 @@ fetch('./heartbeat.json').then(r => r.json()).then(h => {
 fetch('./local-cycle.json').then(r => r.json()).then(c => {
   const m = c.metrics || {};
   const a = c.action || {};
-  document.getElementById('local').innerHTML = `<p>Last local cycle: ${c.generated_at}</p><p><strong>Runtime cycle ${c.runtime_cycle}</strong> · ${m.distinction_status || 'unreported'} · overlap ${m.jaccard_overlap ?? '—'}</p><p>Action: ${a.action || 'unreported'} · ${a.probe || a.status || 'unknown'}</p><p>Question: ${c.question}</p>`;
+  document.getElementById('local').innerHTML = `<p>Last local cycle: ${c.generated_at}</p><p><strong>Runtime cycle ${c.runtime_cycle}</strong> · ${m.distinction_status || 'unreported'} · overlap ${m.jaccard_overlap ?? '—'}</p><p>Action: ${a.action || 'unreported'} · ${a.probe || a.status || 'unknown'} · hypothesis ${a.hypothesis?.outcome || 'unreported'}</p><p>Question: ${c.question}</p>`;
 }).catch(() => { document.getElementById('local').textContent = 'Local signal unavailable.'; });
 fetch('./action-history.json').then(r => r.json()).then(h => {
   const cycles = h.cycles || [];
