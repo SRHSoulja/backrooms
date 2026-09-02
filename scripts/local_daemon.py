@@ -27,6 +27,8 @@ PUBLIC_REQUESTS = ROOT / "docs/agent-requests.json"
 PUBLIC_VOICES = ROOT / "docs/voices.json"
 PUBLIC_WORLD = ROOT / "docs/world.json"
 PUBLIC_AUDIT = ROOT / "docs/continuity-audit.json"
+PUBLIC_WORK_ORDERS = ROOT / "docs/work-orders.json"
+LOCAL_WORK_ORDERS = ROOT / "state/work-orders.json"
 PUBLIC_VOICE_BLOCKED = re.compile(r"api[_ -]?key|password|secret|private|credential|token|wallet|seed phrase", re.I)
 ARCHIVE = ROOT / "state/archive/events.jsonl"
 LOCAL_REGISTRY = ROOT / "state/local-agents.json"
@@ -143,6 +145,49 @@ def continuity_audit(world, registry):
     }
 
 
+def sync_work_orders(registry, cycle):
+    """Turn resident requests into durable, sanitized work-order records."""
+    previous = json.loads(LOCAL_WORK_ORDERS.read_text()) if LOCAL_WORK_ORDERS.exists() else {"orders": []}
+    orders = {item.get("id"): item for item in previous.get("orders", []) if item.get("id")}
+    blocked = PUBLIC_VOICE_BLOCKED
+    for agent in registry.get("agents", []):
+        request = str(agent.get("request", "")).strip()
+        if not request or request.lower() == "none" or agent.get("status") in {"fired", "retired"}:
+            continue
+        status = agent.get("request_status", "open")
+        capability = "review-required"
+        lower = request.lower()
+        if "internet" in lower or "network" in lower:
+            capability = "external-network-review"
+        elif "map" in lower or "room" in lower:
+            capability = "room-map-or-movement"
+        elif any(term in lower for term in ("journal", "article", "research", "text")):
+            capability = "public-web-read"
+        elif "printer" in lower or "computer" in lower:
+            capability = "physical-or-workstation-review"
+        order_id = f"{agent.get('id', 'agent')}-work-{agent.get('request_cycle', cycle)}"
+        orders[order_id] = {
+            "id": order_id, "agent_id": agent.get("id"),
+            "agent": str(agent.get("name", "Unnamed hireling"))[:80],
+            "room": agent.get("room", "unknown"),
+            "request": "[request withheld by publication filter]" if blocked.search(request) else request[:220],
+            "status": status, "capability": capability,
+            "acceptance": "Resident receives the named bounded capability or a recorded explanation of why it is unavailable.",
+            "evidence": agent.get("last_tool", {}) if status == "closed" else {},
+            "cycle": agent.get("request_cycle", cycle), "updated_cycle": cycle,
+        }
+    ordered = list(orders.values())[-100:]
+    local = {"updated_at": datetime.now(timezone.utc).isoformat(), "orders": ordered}
+    LOCAL_WORK_ORDERS.parent.mkdir(parents=True, exist_ok=True)
+    LOCAL_WORK_ORDERS.write_text(json.dumps(local, indent=2) + "\n")
+    public = {"generated_at": local["updated_at"],
+              "privacy": "Sanitized work-order metadata only; local context and raw responses remain local.",
+              "orders": [{key: item.get(key) for key in ("id", "agent", "room", "request", "status", "capability", "acceptance", "cycle", "updated_cycle")}
+                        for item in ordered]}
+    PUBLIC_WORK_ORDERS.write_text(json.dumps(public, indent=2) + "\n")
+    return public
+
+
 def action(base_url, cycle):
     """Run the closed-vocabulary local probe and retain aggregate evidence only."""
     completed = subprocess.run([sys.executable, str(ROOT / "scripts/action_engine.py"),
@@ -232,6 +277,7 @@ def publish(result, world):
         print(json.dumps({"publish": "skipped", "reason": "checkout not fast-forwardable"}), flush=True)
         return
     registry = json.loads(LOCAL_REGISTRY.read_text()) if LOCAL_REGISTRY.exists() else {"agents": []}
+    work_orders = sync_work_orders(registry, world["cycle"])
     safe = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
@@ -242,6 +288,7 @@ def publish(result, world):
         "autonomy": result.get("autonomy", {"status": "not-run"}),
         "metrics": metrics(result),
         "continuity_audit": continuity_audit(world, registry),
+        "work_orders": {"count": len(work_orders.get("orders", []))},
         "privacy": "Only aggregate metrics and the bounded council question are public; raw outputs remain local."
     }
     history = json.loads(PUBLIC_HISTORY.read_text()) if PUBLIC_HISTORY.exists() else {"privacy": "Aggregate action metadata only; raw local outputs are excluded.", "cycles": []}
@@ -343,10 +390,10 @@ def publish(result, world):
     PUBLIC_AUDIT.write_text(json.dumps(safe["continuity_audit"], indent=2) + "\n")
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}
-    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "state/world.json"}:
+    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "state/world.json", "state/work-orders.json"}:
         print(json.dumps({"publish": "skipped", "reason": "other local changes present"}), flush=True)
         return
-    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json"], cwd=ROOT, check=True)
+    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json"], cwd=ROOT, check=True)
     commit = subprocess.run(["git", "commit", "-m", "chore: publish local council signal"], cwd=ROOT, capture_output=True)
     if commit.returncode == 0:
         pushed = subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=ROOT, capture_output=True)
