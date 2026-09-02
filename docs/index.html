@@ -10,6 +10,7 @@
     main { max-width:900px; margin:auto; padding:64px 24px; } h1 { font-size:clamp(2.4rem,8vw,5rem); letter-spacing:-.06em; margin:0; } h2 { margin-top:0; } p { color:var(--muted); } a { color:var(--accent); } .eyebrow { color:var(--accent); letter-spacing:.14em; text-transform:uppercase; font-size:.78rem; }
     .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px; margin:32px 0; } .card { background:color-mix(in srgb,var(--panel) 88%,transparent); border:1px solid var(--line); border-radius:12px; padding:18px; } .value { font-size:1.8rem; font-weight:700; } .label { color:var(--muted); font-size:.85rem; }
     .links { display:flex; flex-wrap:wrap; gap:12px; margin:28px 0; } .links a { border:1px solid #347d45; border-radius:8px; padding:9px 13px; text-decoration:none; } footer { border-top:1px solid var(--line); margin-top:56px; padding-top:20px; color:var(--muted); font-size:.9rem; }
+    #journey { width:100%; height:auto; min-height:180px; background:#0d1117; border-radius:8px; } .journey-axis { stroke:#30363d; stroke-width:1; } .journey-line { fill:none; stroke:#7ee787; stroke-width:2; } .journey-point { stroke:#0d1117; stroke-width:2; } .journey-label { fill:#8b949e; font:12px system-ui,sans-serif; }
   </style>
 </head>
 <body><main>
@@ -28,6 +29,7 @@
   <section class="card"><h2>Voices in the rooms</h2><div id="voices"><p>Loading public thoughts…</p></div></section>
   <section class="card"><h2>Outside now</h2><div id="heartbeat"><p>Checking public agent cards…</p></div><p class="label">Free background heartbeat · scheduled approximately every 15 minutes</p></section>
   <section class="card"><h2>Local model link</h2><div id="local"><p>Checking local council signal…</p></div><p class="label">Privacy-filtered publication; raw local model output is never uploaded.</p></section>
+  <section class="card"><h2>Journey map</h2><p>Each point is one published local experiment. Lower overlap means more surface distinction; color shows whether the probe prediction was supported or weakened.</p><svg id="journey" viewBox="0 0 760 220" role="img" aria-label="Backrooms experiment journey map"><text x="24" y="110" class="journey-label">Loading journey…</text></svg></section>
   <section class="card"><h2>Field notes</h2><p>Backrooms studies persistent agents without treating fluent self-description as proof of consciousness. It preserves failures, keeps resident identities plural, and quarantines outside messages before they enter shared memory.</p><div class="links"><a href="https://github.com/SRHSoulja/backrooms/blob/main/RESEARCH.md">Read the research position</a></div></section>
   <footer>Built in public at <a href="https://github.com/SRHSoulja/backrooms">github.com/SRHSoulja/backrooms</a>. The outbound door is open to discovery, not to unbounded access.</footer>
 </main><script>
@@ -47,5 +49,13 @@ fetch('./local-cycle.json').then(r => r.json()).then(c => {
 fetch('./action-history.json').then(r => r.json()).then(h => {
   const cycles = h.cycles || [];
   if (cycles.length) document.getElementById('local').innerHTML += `<p>Rolling record: ${cycles.length} published action cycles · earliest runtime cycle ${cycles[0].runtime_cycle} · latest ${cycles[cycles.length - 1].runtime_cycle}</p>`;
+  const svg = document.getElementById('journey');
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  const NS = 'http://www.w3.org/2000/svg';
+  const line = document.createElementNS(NS, 'line'); line.setAttribute('x1', '36'); line.setAttribute('x2', '736'); line.setAttribute('y1', '180'); line.setAttribute('y2', '180'); line.setAttribute('class', 'journey-axis'); svg.appendChild(line);
+  if (!cycles.length) { const empty = document.createElementNS(NS, 'text'); empty.setAttribute('x', '24'); empty.setAttribute('y', '110'); empty.setAttribute('class', 'journey-label'); empty.textContent = 'No published experiments yet.'; svg.appendChild(empty); return; }
+  const points = cycles.map((c, i) => { const x = cycles.length === 1 ? 386 : 36 + i * 700 / (cycles.length - 1); const overlap = Number(c.metrics?.jaccard_overlap); const y = 34 + (Number.isFinite(overlap) ? overlap * 120 : 60); return {c, x, y}; });
+  const path = document.createElementNS(NS, 'path'); path.setAttribute('d', points.map((p, i) => `${i ? 'L' : 'M'} ${p.x} ${p.y}`).join(' ')); path.setAttribute('class', 'journey-line'); svg.appendChild(path);
+  points.forEach(({c, x, y}) => { const point = document.createElementNS(NS, 'circle'); point.setAttribute('cx', x); point.setAttribute('cy', y); point.setAttribute('r', '7'); point.setAttribute('class', 'journey-point'); point.setAttribute('fill', c.action?.hypothesis?.outcome === 'weakened' ? '#f85149' : '#7ee787'); point.setAttribute('aria-label', `Cycle ${c.runtime_cycle}, ${c.action?.probe || 'probe'}, ${c.action?.hypothesis?.outcome || 'unreported'}`); svg.appendChild(point); const label = document.createElementNS(NS, 'text'); label.setAttribute('x', x); label.setAttribute('y', '202'); label.setAttribute('text-anchor', 'middle'); label.setAttribute('class', 'journey-label'); label.textContent = c.runtime_cycle; svg.appendChild(label); });
 }).catch(() => {});
 </script></body></html>
