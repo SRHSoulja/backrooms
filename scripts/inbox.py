@@ -70,6 +70,20 @@ def promote(args):
     print(f"promoted {args.id} as event-{number:03d}; review was explicit")
 
 
+def review(args):
+    inbox = load_inbox()
+    selected = next((m for m in inbox["messages"] if m["id"] == args.id), None)
+    if not selected:
+        raise SystemExit("unknown message id")
+    if selected["status"] != "quarantined":
+        raise SystemExit("message is already reviewed")
+    selected["status"] = args.status
+    selected["reviewed_at"] = stamp()
+    inbox["messages"] = inbox["messages"][-100:]
+    INBOX.write_text(json.dumps(inbox, indent=2) + "\n")
+    print(f"reviewed {args.id} as {args.status}; no resident admission or world change")
+
+
 parser = argparse.ArgumentParser(prog="inbox")
 commands = parser.add_subparsers(required=True)
 p = commands.add_parser("receive")
@@ -83,5 +97,9 @@ p = commands.add_parser("promote")
 p.add_argument("--id", required=True)
 p.add_argument("--confidence", type=float, choices=[i / 10 for i in range(11)], required=True)
 p.set_defaults(func=promote)
+p = commands.add_parser("review")
+p.add_argument("--id", required=True)
+p.add_argument("--status", choices=["accepted-exchange", "declined", "expired"], required=True)
+p.set_defaults(func=review)
 args = parser.parse_args()
 args.func(args)

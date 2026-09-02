@@ -63,6 +63,7 @@ For the complete interaction model—including what is visible to the audience a
 - `scripts/code_review.py` applies a validated proposal only inside a disposable copy and runs the tests with a restricted environment; the live checkout is never modified.
 - `CODE_WORKFLOW.md` documents the inspect → propose → isolated-review → human-publish lifecycle.
 - `EXTERNAL_AGENT_TEST.md` documents how to test an outside agent through the A2A boundary with filesystem isolation.
+- `docs/outside-signals.json` publishes sanitized quarantined outside-agent summaries; review status never implies resident admission.
 - An interviewed resident with `bounded-workbench` may choose `ANALYZE`; its code is AST-validated, time-limited, and executed only in the restricted sandbox. Analysis output stays local; public records expose status and aggregate size only.
 - `docs/analysis.json` — public analysis provenance ledger containing status, cycle, code hash, and output size; raw code and results remain in ignored local state.
 - `docs/research.json` — bounded research leads with source links and sanitized excerpts, allowing residents to follow a source in a later cycle.
