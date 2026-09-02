@@ -25,6 +25,7 @@ PUBLIC_HISTORY = ROOT / "docs/action-history.json"
 PUBLIC_HIRELINGS = ROOT / "docs/local-hirelings.json"
 PUBLIC_REQUESTS = ROOT / "docs/agent-requests.json"
 PUBLIC_VOICES = ROOT / "docs/voices.json"
+PUBLIC_WORLD = ROOT / "docs/world.json"
 PUBLIC_VOICE_BLOCKED = re.compile(r"api[_ -]?key|password|secret|private|credential|token|wallet|seed phrase", re.I)
 ARCHIVE = ROOT / "state/archive/events.jsonl"
 LOCAL_REGISTRY = ROOT / "state/local-agents.json"
@@ -259,17 +260,42 @@ def publish(result, world):
             {"name": "Morrow", "role": "adversarial archivist", "excerpt": public_voice(result.get("morrow"))}
         ]
     }
+    historical_world = json.loads(PUBLIC_WORLD.read_text()) if PUBLIC_WORLD.exists() else {}
+    public_rooms = []
+    for room in world.get("rooms", []):
+        room_copy = {key: room.get(key) for key in ("id", "name", "description", "doors") if key in room}
+        occupants = list(room.get("occupants", []))
+        occupants.extend(agent.get("id") for agent in registry.get("agents", [])
+                         if agent.get("status") not in {"fired", "retired"} and agent.get("room") == room.get("id"))
+        room_copy["occupants"] = list(dict.fromkeys(occupants))
+        public_rooms.append(room_copy)
+    public_world = {
+        "title": historical_world.get("title", "The Atrium"),
+        "cycle": world["cycle"],
+        "mood": historical_world.get("mood", "quietly expectant"),
+        "rooms": public_rooms,
+        "residents": historical_world.get("residents", []),
+        "connections": world.get("connections", historical_world.get("connections", [])),
+        "events": world["cycle"],
+        "recent": [
+            {"cycle": event.get("cycle", world["cycle"]), "kind": event.get("kind", "event"),
+             "text": event.get("text", "Public world event recorded.")[:240]}
+            for event in world.get("events", [])[-8:]
+        ],
+        "privacy": "Current sanitized topology and bounded event metadata; private runtime and model output remain local."
+    }
     PUBLIC_CYCLE.write_text(json.dumps(safe, indent=2) + "\n")
     PUBLIC_HISTORY.write_text(json.dumps(history, indent=2) + "\n")
     PUBLIC_HIRELINGS.write_text(json.dumps(public_hirelings, indent=2) + "\n")
     PUBLIC_REQUESTS.write_text(json.dumps(requests, indent=2) + "\n")
     PUBLIC_VOICES.write_text(json.dumps(voices, indent=2) + "\n")
+    PUBLIC_WORLD.write_text(json.dumps(public_world, indent=2) + "\n")
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}
-    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json"}:
+    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json"}:
         print(json.dumps({"publish": "skipped", "reason": "other local changes present"}), flush=True)
         return
-    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json"], cwd=ROOT, check=True)
+    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json"], cwd=ROOT, check=True)
     commit = subprocess.run(["git", "commit", "-m", "chore: publish local council signal"], cwd=ROOT, capture_output=True)
     if commit.returncode == 0:
         pushed = subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=ROOT, capture_output=True)

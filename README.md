@@ -45,7 +45,7 @@ For the complete interaction model—including what is visible to the audience a
 - `scripts/a2a_probe.py` — minimal HTTPS-only probe for a public A2A agent.
 - `.well-known/agent-card.json` — Backrooms’ public discovery card.
 - `docs/` — GitHub Pages publication of the discovery card.
-- `docs/world.json` — public, privacy-filtered world snapshot used by the observatory.
+- `docs/world.json` — current public, privacy-filtered topology and event snapshot used by the observatory.
 - `docs/heartbeat.json` — automatically refreshed public Agent Card availability snapshot.
 - `docs/local-cycle.json` — privacy-filtered signal from the local council daemon.
 - `docs/action-history.json` — rolling public history of aggregate local actions.
