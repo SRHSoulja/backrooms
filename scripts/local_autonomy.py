@@ -92,6 +92,90 @@ def revoke(agent, capability, reason):
     agent["status"] = "probation"
 
 
+def safe_room_id(target, existing):
+    base = re.sub(r"[^a-z0-9]+", "-", str(target or "new-room").lower()).strip("-") or "new-room"
+    candidate = base[:42]
+    suffix = 2
+    while candidate in existing:
+        candidate = f"{base[:36]}-{suffix}"
+        suffix += 1
+    return candidate
+
+
+def apply_construction(world, registry, cycle):
+    """Materialize only resident proposals that pass the internal-room policy."""
+    rooms = world.setdefault("rooms", [])
+    connections = world.setdefault("connections", [])
+    room_by_id = {room.get("id"): room for room in rooms}
+    room_ids = set(room_by_id)
+    next_link = 1 + max((int(str(link.get("id", "")).rsplit("-", 1)[-1])
+                         for link in connections if link.get("kind") == "room-link"
+                         and str(link.get("id", "")).rsplit("-", 1)[-1].isdigit()), default=0)
+    changes = []
+    for agent in registry.get("agents", []):
+        proposal = agent.get("room_proposal") or {}
+        if agent.get("status") not in {"active-local", "probation"}:
+            continue
+        if proposal.get("kind") not in {"build", "transform"} or proposal.get("status") != "construction-requested":
+            continue
+        if proposal.get("kind") == "transform":
+            source = room_by_id.get(proposal.get("source_room"))
+            if source and proposal.get("description"):
+                source["description"] = str(proposal["description"])[:220]
+                proposal["status"] = "transformed"
+                proposal["completed_cycle"] = cycle
+                changes.append({"agent": agent.get("id"), "action": "transform", "room": source.get("id")})
+            continue
+        if proposal.get("room_id") or not proposal.get("name"):
+            continue
+        source = room_by_id.get(proposal.get("source_room"))
+        if not source:
+            proposal["status"] = "rejected"
+            proposal["reason"] = "source room is not declared"
+            continue
+        room_id = safe_room_id(proposal["name"], room_ids)
+        room = {"id": room_id, "name": str(proposal["name"])[:60],
+                "description": str(proposal.get("description") or "Resident-built internal room")[:220],
+                "doors": [f"{room_id}-gate"], "occupants": []}
+        rooms.append(room)
+        room_by_id[room_id] = room
+        room_ids.add(room_id)
+        door = f"{room_id}-gate"
+        source.setdefault("doors", []).append(door)
+        connections.append({"id": f"room-link-{next_link:03d}", "kind": "room-link",
+                            "name": f"{room['name']} Gate", "from": source["id"], "to": room_id,
+                            "door": door, "status": "declared", "scope": "internal movement only"})
+        next_link += 1
+        proposal["room_id"] = room_id
+        proposal["status"] = "constructed"
+        proposal["completed_cycle"] = cycle
+        changes.append({"agent": agent.get("id"), "action": "build", "room": room_id,
+                        "connected_to": source["id"]})
+    return changes
+
+
+def resolve_requests(registry):
+    """Fulfill safe internal requests; leave ambiguous external requests explicit."""
+    resolutions = []
+    for agent in registry.get("agents", []):
+        if agent.get("request_status") != "open":
+            continue
+        request = str(agent.get("request", "")).lower()
+        if "facility" in request and "map" in request and "room-map-read" in agent.get("capabilities", []):
+            agent["request_status"] = "closed"
+            agent["request_fulfillment"] = "Canonical room map made available through the connected observatory rooms."
+            resolutions.append({"agent": agent.get("id"), "status": "fulfilled"})
+        elif "historical" in request and "text" in request and "public-web-read" in agent.get("capabilities", []):
+            agent["request_status"] = "closed"
+            agent["request_fulfillment"] = "Approved public historical-text research access enabled; source pages remain external."
+            resolutions.append({"agent": agent.get("id"), "status": "fulfilled"})
+        elif "city" in request and "map" in request:
+            agent["request_status"] = "needs-clarification"
+            agent["request_fulfillment"] = "A city or region must be named before a public map can be selected."
+            resolutions.append({"agent": agent.get("id"), "status": "needs-clarification"})
+    return resolutions
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-url", default="http://127.0.0.1:8080")
@@ -183,10 +267,16 @@ def main():
                         "request": agent.get("request", "")[:220],
                         "request_status": agent.get("request_status", "none"),
                         "exploration": agent.get("exploration", "")[:100], "tool": tool})
+    construction = apply_construction(world, registry, args.cycle)
+    requests = resolve_requests(registry)
+    if construction:
+        registry.setdefault("decisions", []).extend({"cycle": args.cycle, **item} for item in construction)
     registry["decisions"] = registry.get("decisions", [])[-100:]
+    (ROOT / "state/world.json").write_text(json.dumps(world, indent=2) + "\n")
     REGISTRY.write_text(json.dumps(registry, indent=2) + "\n")
     active = sum(agent.get("status") in {"active-local", "probation"} for agent in registry.get("agents", []))
-    print(json.dumps({"status": "completed", "active": active, "decisions": results}))
+    print(json.dumps({"status": "completed", "active": active, "decisions": results,
+                      "construction": construction, "requests": requests}))
 
 
 if __name__ == "__main__":

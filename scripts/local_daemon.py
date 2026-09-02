@@ -233,7 +233,8 @@ def publish(result, world):
     for old in requests.get("requests", []):
         current = registry_by_id.get(old.get("agent_id"))
         if current and current.get("request_status") != "open" and old.get("status") == "open":
-            old["status"] = "closed"
+            old["status"] = current.get("request_status", "closed")
+            old["fulfillment"] = current.get("request_fulfillment") or old.get("fulfillment")
     for agent in registry.get("agents", []):
         request = str(agent.get("request", "")).strip()
         if not request or agent.get("request_status") != "open":
@@ -243,7 +244,8 @@ def publish(result, world):
             "agent_id": agent.get("id"), "agent": str(agent.get("name", "Unnamed hireling"))[:80],
             "role": str(agent.get("role", "unassigned"))[:80], "room": agent.get("room", "unknown"),
             "request": request[:220], "cycle": agent.get("request_cycle", world["cycle"]),
-            "status": "open", "fulfillment": "Requires explicit review; no automatic access, spending, or outreach."
+            "status": agent.get("request_status", "open"),
+            "fulfillment": agent.get("request_fulfillment") or "Requires explicit review; no automatic access, spending, or outreach."
         }
         for old in requests.get("requests", []):
             if old.get("agent_id") == item["agent_id"] and old.get("status") == "open":
@@ -324,6 +326,9 @@ try:
             result["action"] = action(base_url, world["cycle"])
             result["recruitment"] = recruit(base_url, world["cycle"])
             result["autonomy"] = govern(base_url, world["cycle"])
+            # Autonomy may have constructed or transformed internal rooms.
+            # Reload the canonical topology before publishing this cycle.
+            world = runtime_world()
             if args.publish:
                 publish(result, world)
             print(json.dumps({"cycle": world["cycle"], "metrics": metrics(result), "action": result["action"],
