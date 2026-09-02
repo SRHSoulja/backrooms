@@ -42,6 +42,8 @@ def fetch(url, max_bytes=MAX_BYTES):
     request = urllib.request.Request(url, headers={"User-Agent": "BackroomsResearch/1.0", "Accept-Encoding": "identity"}, method="GET")
     opener = urllib.request.build_opener(NoRedirect)
     with opener.open(request, timeout=15) as response:
+        if response.headers.get("Content-Encoding", "identity").lower() not in {"", "identity"}:
+            raise ValueError("compressed responses are not accepted by the broker")
         declared_length = response.headers.get("Content-Length")
         if declared_length and int(declared_length) > max_bytes:
             raise ValueError("response exceeds broker limit")

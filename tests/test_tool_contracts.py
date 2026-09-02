@@ -79,6 +79,7 @@ class ToolContractTests(unittest.TestCase):
     def test_research_tools_have_a_larger_input_cap_but_small_public_outputs(self):
         self.assertEqual(TOOL_CONTRACTS["public-text"]["max_bytes"], 5000000)
         self.assertEqual(TOOL_CONTRACTS["public-json"]["raw_data"], False)
+        self.assertIn("compressed responses are not accepted", Path("scripts/tool_broker.py").read_text())
 
     def test_local_code_sandbox_is_contracted(self):
         self.assertEqual(TOOL_CONTRACTS["local-code-sandbox"]["network"], "none")
