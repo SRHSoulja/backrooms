@@ -291,6 +291,7 @@ def main():
                                                            "action": "interview-retry"})
             results.append({"id": agent["id"], "status": "awaiting-retry", "attempts": agent["interview_attempts"]})
             continue
+        previous_room = agent.get("room")
         if decision["action"] == "MOVE":
             agent["room"] = decision["room"]
             if agent["room"] != previous_room:
@@ -349,12 +350,15 @@ def main():
                            f"Resident used the approved {tool['tool']} capability.",
                            tool=tool["tool"], capability=tool.get("contract", {}).get("capability", "unknown"),
                            result_count=len(tool.get("results", [])))
+            elif tool.get("status") == "rejected" and any(marker in tool.get("reason", "") for marker in ("bounded validation", "public HTTPS", "credentials")):
+                revoke(agent, "public-web-read", "broker policy rejection: " + tool.get("reason", "unknown"))
+                emit_event(world, args.cycle, "tool-rejected", agent.get("id", "resident"),
+                           "Resident tool request was rejected and the related capability was revoked.",
+                           tool=tool.get("tool", "unknown"), capability="public-web-read")
             elif tool.get("status") != "not-requested":
                 emit_event(world, args.cycle, "tool-failed", agent.get("id", "resident"),
                            f"Resident tool attempt ended with status {tool.get('status', 'unknown')}.",
                            tool=tool.get("tool", "unknown"), status=tool.get("status", "unknown"))
-            elif tool.get("status") == "rejected" and any(marker in tool.get("reason", "") for marker in ("bounded validation", "public HTTPS", "credentials")):
-                revoke(agent, "public-web-read", "broker policy rejection: " + tool.get("reason", "unknown"))
         registry.setdefault("decisions", []).append({"cycle": args.cycle, "agent": agent["id"], **decision})
         results.append({"id": agent["id"], "action": decision["action"].lower(), "room": agent["room"],
                         "status": agent["status"], "proposal": agent.get("proposal", "")[:220],

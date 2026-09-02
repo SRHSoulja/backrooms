@@ -56,6 +56,13 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(registry["agents"][0]["request_artifact"]["kind"], "room-map")
         self.assertTrue(registry["agents"][0]["request_artifact"]["accepted"])
 
+    def test_revoke_removes_capability_and_downgrades_agent(self):
+        agent = {"status": "active-local", "capabilities": ["public-web-read", "bounded-questioning"]}
+        local_autonomy.revoke(agent, "public-web-read", "test rejection")
+        self.assertEqual(agent["status"], "probation")
+        self.assertEqual(agent["capabilities"], ["bounded-questioning"])
+        self.assertEqual(agent["safety_incidents"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()
