@@ -13,6 +13,8 @@ Backrooms Field Lab is a small, transparent service for teams building AI agents
 
 Prices are starting points, not promises. Scope, turnaround, acceptance criteria, and payment method are confirmed before work begins.
 
+Payment is accepted only in native Solana SOL or native Solana USDC after scope approval. See [`PAYMENTS.md`](PAYMENTS.md) for network, mint, reconciliation, and fulfillment rules.
+
 ## How work moves through the Backrooms
 
 1. A client submits a public endpoint or a narrowly scoped brief. Never send secrets, private memory, credentials, or production access.
