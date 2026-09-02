@@ -49,7 +49,7 @@ def ask(url, agent, rooms, cycle, repair=False, shared_work=None):
               "Return exactly seven labeled lines: ACTION: STAY|MOVE|EXPLORE|ANALYZE|PROPOSE|DISCOVER|BUILD|TRANSFORM|RETIRE|FIRE, ROOM: existing room id or current room, "
               "TARGET: short exploration target, PROPOSAL: short useful proposal, REQUEST: one concrete non-sensitive thing you cannot do alone, CODE: short data-only Python for ANALYZE or NONE, REASON: short reason. "
               "You have no external network, credentials, private memory, arbitrary code, money, or authority to change safety rules. ANALYZE is only a request to use the pre-approved restricted local sandbox. "
-              "Do not claim consciousness. Use ANALYZE when your bounded-workbench role has a concrete data or arithmetic task and put only data-only Python in CODE. Use MOVE only for an existing room. Move when another declared room better fits the work; otherwise stay. "
+              "Do not claim consciousness. Use ANALYZE when your bounded-workbench role has a concrete data or arithmetic task; if no specific public URL is available, prefer a tiny local health check such as CODE: print(sum(range(3))). Put only data-only Python in CODE. Use MOVE only for an existing room. Move when another declared room better fits the work; otherwise stay. "
               + prior_research
               + ("Repair the format: emit only the seven labeled fields, with one short line per field; use REQUEST: NONE and CODE: NONE if not needed."
                  if repair else "Keep every field short and labeled exactly once."))
