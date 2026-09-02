@@ -92,8 +92,15 @@ def metrics(result):
     overlap = len(echo & morrow) / len(union) if union else 1.0
     lower = result.get("morrow", "").lower()
     markers = [word for word in ("counterexample", "confound", "assumption", "missing control") if word in lower]
+    responses = result.get("responses") or result.get("action", {}).get("responses", {})
+    response_sizes = {name: int(data.get("characters", 0)) for name, data in responses.items() if isinstance(data, dict)}
+    marker_counts = {name: int(data.get("evidence_markers", 0)) for name, data in responses.items() if isinstance(data, dict)}
+    complete = bool(response_sizes) and all(size >= 80 for size in response_sizes.values())
+    evidence_covered = bool(marker_counts) and all(count >= 1 for count in marker_counts.values())
     return {"jaccard_overlap": round(overlap, 3), "morrow_audit_markers": markers,
-            "distinction_status": "distinct" if overlap <= 0.75 and markers else "needs-audit"}
+            "response_completeness": "usable" if complete else "thin-or-missing",
+            "evidence_coverage": "present" if evidence_covered else "missing",
+            "distinction_status": "distinct" if overlap <= 0.75 and markers and complete else "needs-audit"}
 
 
 def public_voice(text):
