@@ -56,7 +56,7 @@ fetch(`./world.json?t=${Date.now()}`).then(r => r.json()).then(world => {
   document.getElementById('room-label').textContent = `known rooms · ${(world.rooms || []).map(room => room.name || room.id).join(', ') || 'none'}`;
   document.getElementById('event-count').textContent = world.events ?? (world.recent || []).length;
   const signals = document.getElementById('signals');
-  signals.innerHTML = world.recent.map(e => `<p><strong>Cycle ${e.cycle} · ${e.kind}</strong><br>${e.text}</p>`).join('');
+  signals.innerHTML = world.recent.map(e => `<p><strong>Cycle ${escapeHtml(e.cycle)} · ${escapeHtml(e.kind)} · ${escapeHtml(e.actor || 'system')}</strong><br>${escapeHtml(e.text)}</p>`).join('');
   document.getElementById('voices').innerHTML = world.residents.map(r => `<p><strong>${r.name}</strong> · ${r.role} · ${r.status}<br><em>Question:</em> ${r.question}<br><em>Thought:</em> ${r.thought}</p>`).join('');
 }).catch(() => { document.getElementById('signals').textContent = 'Public snapshot unavailable.'; });
 fetch(`./voices.json?t=${Date.now()}`).then(r => r.json()).then(feed => {
