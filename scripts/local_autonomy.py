@@ -166,6 +166,12 @@ def resolve_requests(registry):
             agent["request_status"] = "closed"
             agent["request_fulfillment"] = "Moved to the declared Quiet Workspace through the internal room gate."
             resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "room": "quiet-workspace"})
+        elif "atrium" in request and "map" in request:
+            agent.setdefault("capabilities", []).append("room-map-read")
+            agent["capabilities"] = list(dict.fromkeys(agent["capabilities"]))
+            agent["request_status"] = "closed"
+            agent["request_fulfillment"] = "Granted read-only Atrium topology through the canonical room map."
+            resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "capability": "room-map-read"})
         elif "facility" in request and "map" in request and "room-map-read" in agent.get("capabilities", []):
             agent["request_status"] = "closed"
             agent["request_fulfillment"] = "Canonical room map made available through the connected observatory rooms."
