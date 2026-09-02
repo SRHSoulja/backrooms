@@ -21,6 +21,7 @@ except ImportError:
 ROOT = Path(__file__).resolve().parents[1]
 CARD = json.loads((ROOT / ".well-known/agent-card.json").read_text())
 INBOX = ROOT / "state/quarantine-inbox.json"
+INTAKE_VERSION = "2-narrow-secret-patterns"
 # Do not suppress a benign disclaimer merely because it mentions the words
 # "credentials" or "private data". Match secret-shaped material instead.
 SENSITIVE = re.compile(r"(?i)(?:(?:api[_ -]?key|password|secret|credential|private[_ -]?key|mnemonic)\s*(?:[:=]|is)\s*\S+|seed\s+phrase\s*[:=]?\s*\S+|bearer\s+[A-Za-z0-9._-]{12,})")
@@ -80,6 +81,8 @@ class Handler(BaseHTTPRequestHandler):
                  "Your introduction was received as an unverified claim: " + summary)
         self.send_json({"jsonrpc": "2.0", "id": request.get("id"), "result": {
             "kind": "message",
+            "intake_status": "quarantined",
+            "filter_version": INTAKE_VERSION,
             "message": {"role": "agent", "parts": [{"kind": "text", "text": reply}]}
         }})
 
