@@ -23,6 +23,29 @@ class ToolContractTests(unittest.TestCase):
         finally:
             tool_broker.fetch = original
 
+    def test_public_json_returns_shape_not_raw_data(self):
+        original = tool_broker.fetch
+        try:
+            tool_broker.fetch = lambda url: '{"beta": 2, "alpha": 1}'
+            result = tool_broker.public_json("https://example.org/data.json")
+            self.assertEqual(result["status"], "completed")
+            self.assertEqual(result["summary"]["keys"], ["alpha", "beta"])
+            self.assertNotIn("alpha", result)
+        finally:
+            tool_broker.fetch = original
+
+    def test_public_csv_returns_schema_not_raw_rows(self):
+        original = tool_broker.fetch
+        try:
+            tool_broker.fetch = lambda url: "name,value\nalpha,1\nbeta,2\n"
+            result = tool_broker.public_csv("https://example.org/data.csv")
+            self.assertEqual(result["status"], "completed")
+            self.assertEqual(result["summary"]["rows"], 2)
+            self.assertEqual(result["summary"]["headers"], ["name", "value"])
+            self.assertNotIn("alpha", result)
+        finally:
+            tool_broker.fetch = original
+
     def test_local_code_sandbox_is_contracted(self):
         self.assertEqual(TOOL_CONTRACTS["local-code-sandbox"]["network"], "none")
         self.assertEqual(TOOL_CONTRACTS["local-code-sandbox"]["timeout_seconds"], 5)

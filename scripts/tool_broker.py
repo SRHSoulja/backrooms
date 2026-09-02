@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Safe, read-only internet broker for local hireling research."""
 
-import argparse, html, ipaddress, json, re, socket, urllib.parse, urllib.request
+import argparse, csv, html, ipaddress, io, json, re, socket, urllib.parse, urllib.request
 from pathlib import Path
 
 MAX_BYTES = 32_000
@@ -10,6 +10,8 @@ TOOL_CONTRACTS = {
     "wikipedia-search": {"capability": "public-web-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES},
     "public-https": {"capability": "public-web-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES},
     "public-search": {"capability": "public-web-read", "access": "read-only", "network": "public HTTPS search", "side_effects": False, "max_bytes": MAX_BYTES},
+    "public-json": {"capability": "public-data-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES, "raw_data": False},
+    "public-csv": {"capability": "public-data-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES, "raw_data": False},
     "local-code-sandbox": {"capability": "local-code-execution", "access": "isolated-execution", "network": "none", "side_effects": "temporary workspace only", "max_code": 8000, "timeout_seconds": 5, "max_output": 16000},
 }
 
@@ -73,12 +75,37 @@ def public_search(query):
             "contract": TOOL_CONTRACTS["public-search"]}
 
 
+def public_json(url):
+    data = json.loads(fetch(url))
+    if isinstance(data, dict):
+        summary = {"type": "object", "keys": sorted(str(key) for key in data)[:100], "items": len(data)}
+    elif isinstance(data, list):
+        sample_keys = sorted({str(key) for item in data[:10] if isinstance(item, dict) for key in item})[:100]
+        summary = {"type": "array", "items": len(data), "sample_keys": sample_keys}
+    else:
+        summary = {"type": type(data).__name__}
+    return {"tool": "public-json", "url": url, "summary": summary, "status": "completed",
+            "contract": TOOL_CONTRACTS["public-json"]}
+
+
+def public_csv(url):
+    rows = list(csv.reader(io.StringIO(fetch(url))))
+    headers = rows[0][:100] if rows else []
+    summary = {"type": "table", "rows": max(0, len(rows) - 1), "columns": len(headers), "headers": headers}
+    return {"tool": "public-csv", "url": url, "summary": summary, "status": "completed",
+            "contract": TOOL_CONTRACTS["public-csv"]}
+
+
 def run(tool, value):
     try:
         if tool == "wikipedia-search":
             return wikipedia(value)
         if tool == "public-search":
             return public_search(value)
+        if tool == "public-json":
+            return public_json(value)
+        if tool == "public-csv":
+            return public_csv(value)
         return {"tool": tool, "status": "completed", "characters": len(fetch(value)), "contract": TOOL_CONTRACTS[tool]}
     except Exception as error:
         return {"tool": tool, "status": "rejected", "reason": str(error)[:120], "contract": TOOL_CONTRACTS[tool]}

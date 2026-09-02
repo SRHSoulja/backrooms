@@ -464,7 +464,11 @@ def main():
         tool = {"status": "not-requested"}
         if decision["action"] == "EXPLORE" and "public-web-read" in agent.get("capabilities", []):
             target = agent.get("exploration", "")
-            tool_name = "public-https" if re.match(r"https://", target, re.I) else "public-search"
+            if re.match(r"https://", target, re.I):
+                path = target.lower().split("?", 1)[0]
+                tool_name = "public-json" if path.endswith(".json") else "public-csv" if path.endswith(".csv") else "public-https"
+            else:
+                tool_name = "public-search"
             completed = subprocess.run([sys.executable, str(ROOT / "scripts/tool_broker.py"),
                 tool_name, target], cwd=ROOT, capture_output=True, text=True, check=False)
             try:
