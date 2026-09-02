@@ -579,12 +579,25 @@ def publish(result, world):
     voices = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "cycle": world["cycle"],
-        "privacy": "Complete filtered council responses only; prompts, private runtime, and blocked responses remain local.",
+        "privacy": "Filtered council responses and sanitized hireling contributions only; prompts, private runtime, and blocked responses remain local.",
         "voices": [
             {"name": "Echo", "role": "first cartographer", "excerpt": public_voice(result.get("echo"))},
             {"name": "Morrow", "role": "adversarial archivist", "excerpt": public_voice(result.get("morrow"))}
         ]
     }
+    registry_by_id = {agent.get("id"): agent for agent in registry.get("agents", [])}
+    for decision in result.get("autonomy", {}).get("decisions", []):
+        agent = registry_by_id.get(decision.get("id"))
+        if not agent or agent.get("status") in {"fired", "retired"} or not decision.get("action"):
+            continue
+        contribution = f"Action: {str(decision.get('action')).upper()}. {decision.get('reason') or 'No public reason recorded.'}"
+        if decision.get("proposal"):
+            contribution += f" Proposal: {decision['proposal']}"
+        if decision.get("exploration"):
+            contribution += f" Exploration: {decision['exploration']}"
+        voices["voices"].append({"name": str(agent.get("name", agent.get("id", "Unnamed hireling"))).strip(" ,.;"),
+                                  "role": str(agent.get("role", "hireling")).strip(" ,.;"),
+                                  "excerpt": public_voice(contribution)})
     historical_world = json.loads(PUBLIC_WORLD.read_text()) if PUBLIC_WORLD.exists() else {}
     public_rooms = []
     for room in world.get("rooms", []):
