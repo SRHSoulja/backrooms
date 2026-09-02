@@ -64,7 +64,7 @@ def action(base_url, cycle):
         return {"action": "local-behavioral-probe", "status": "failed"}
     try:
         result = json.loads(completed.stdout)
-        return {"action": result.get("action"), "probe": result.get("probe"),
+        return {"action": result.get("action"), "probe": result.get("probe"), "selection": result.get("selection"),
                 "status": result.get("status"), "hypothesis": result.get("hypothesis"),
                 "responses": result.get("responses")}
     except json.JSONDecodeError:

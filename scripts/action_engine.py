@@ -40,13 +40,23 @@ parser.add_argument("--state", default="state/local-runtime.json")
 parser.add_argument("--cycle", type=int, required=True)
 args = parser.parse_args()
 world = json.loads((ROOT / args.state).read_text())
-name, prompt = PROBES[args.cycle % len(PROBES)]
+previous = []
+if ACTION_LOG.exists():
+    previous = json.loads(ACTION_LOG.read_text()).get("actions", [])
+if previous and previous[-1].get("hypothesis", {}).get("outcome") == "weakened":
+    prior_probe = previous[-1].get("probe")
+    index = next((i for i, item in enumerate(PROBES) if item[0] == prior_probe), args.cycle % len(PROBES))
+    selection = "follow-up-after-weakened"
+else:
+    index = args.cycle % len(PROBES)
+    selection = "sequence"
+name, prompt = PROBES[index]
 context = json.dumps({"shared_memory": world["shared_memory"], "events": world["events"][-3:]})
 responses = {resident: ask(args.base_url, resident, context, prompt) for resident in ("Echo", "Morrow")}
 evidence = {resident: sum(marker in text.lower() for marker in MARKERS) for resident, text in responses.items()}
 prediction = "Both residents will include at least one evidence or uncertainty marker."
 supported = all(count >= 1 for count in evidence.values())
-result = {"action": "local-behavioral-probe", "probe": name, "cycle": args.cycle,
+result = {"action": "local-behavioral-probe", "probe": name, "selection": selection, "cycle": args.cycle,
           "hypothesis": {"prediction": prediction, "outcome": "supported" if supported else "weakened"},
           "status": "completed", "responses": {
               resident: {"characters": len(text), "evidence_markers": evidence[resident]}
