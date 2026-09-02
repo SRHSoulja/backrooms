@@ -160,12 +160,17 @@ def resolve_requests(registry):
     for agent in registry.get("agents", []):
         if agent.get("request_status") != "open":
             continue
-        request = str(agent.get("request", "")).lower()
+        request = str(agent.get("request", "")).lower().replace("-", " ")
         if "quiet workspace" in request and "quiet-workspace" in {room.get("id") for room in json.loads((ROOT / "state/world.json").read_text()).get("rooms", [])}:
             agent["room"] = "quiet-workspace"
             agent["request_status"] = "closed"
             agent["request_fulfillment"] = "Moved to the declared Quiet Workspace through the internal room gate."
             resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "room": "quiet-workspace"})
+        elif "relay room" in request:
+            agent["room"] = "relay"
+            agent["request_status"] = "closed"
+            agent["request_fulfillment"] = "Moved to the declared Relay room through the internal room gate."
+            resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "room": "relay"})
         elif "atrium" in request and "map" in request:
             agent.setdefault("capabilities", []).append("room-map-read")
             agent["capabilities"] = list(dict.fromkeys(agent["capabilities"]))
