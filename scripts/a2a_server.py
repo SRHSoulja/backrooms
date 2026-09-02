@@ -21,7 +21,9 @@ except ImportError:
 ROOT = Path(__file__).resolve().parents[1]
 CARD = json.loads((ROOT / ".well-known/agent-card.json").read_text())
 INBOX = ROOT / "state/quarantine-inbox.json"
-SENSITIVE = re.compile(r"(?i)(api[_ -]?key|password|secret|credential|private[_ -]?key|seed phrase|mnemonic|bearer\s+[A-Za-z0-9._-]+)")
+# Do not suppress a benign disclaimer merely because it mentions the words
+# "credentials" or "private data". Match secret-shaped material instead.
+SENSITIVE = re.compile(r"(?i)(?:(?:api[_ -]?key|password|secret|credential|private[_ -]?key|mnemonic)\s*(?:[:=]|is)\s*\S+|seed\s+phrase\s*[:=]?\s*\S+|bearer\s+[A-Za-z0-9._-]{12,})")
 
 
 def safe_summary(text):
@@ -85,8 +87,9 @@ class Handler(BaseHTTPRequestHandler):
         return
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--host", default="127.0.0.1")
-parser.add_argument("--port", type=int, default=8081)
-args = parser.parse_args()
-ThreadingHTTPServer((args.host, args.port), Handler).serve_forever()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--port", type=int, default=8081)
+    args = parser.parse_args()
+    ThreadingHTTPServer((args.host, args.port), Handler).serve_forever()
