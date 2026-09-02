@@ -182,15 +182,17 @@ def apply_construction(world, registry, cycle):
 def resolve_requests(registry, world=None, cycle=None):
     """Fulfill safe internal requests; leave ambiguous external requests explicit."""
     resolutions = []
+    known_rooms = {room.get("id") for room in (world or json.loads((ROOT / "state/world.json").read_text())).get("rooms", [])}
     for agent in registry.get("agents", []):
         if agent.get("request_status") != "open":
             continue
         request = str(agent.get("request", "")).lower().replace("-", " ")
-        if "quiet workspace" in request and "quiet-workspace" in {room.get("id") for room in json.loads((ROOT / "state/world.json").read_text()).get("rooms", [])}:
+        if "quiet workspace" in request and "quiet-workspace" in known_rooms:
             previous_room = agent.get("room")
             agent["room"] = "quiet-workspace"
             agent["request_status"] = "closed"
             agent["request_fulfillment"] = "Moved to the declared Quiet Workspace through the internal room gate."
+            agent["request_artifact"] = {"kind": "movement", "target_room": "quiet-workspace", "accepted": True}
             resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "room": "quiet-workspace"})
             if world is not None and previous_room != agent["room"]:
                 emit_event(world, cycle, "resident-moved", agent.get("id", "resident"),
@@ -201,6 +203,7 @@ def resolve_requests(registry, world=None, cycle=None):
             agent["room"] = "relay"
             agent["request_status"] = "closed"
             agent["request_fulfillment"] = "Moved to the declared Relay room through the internal room gate."
+            agent["request_artifact"] = {"kind": "movement", "target_room": "relay", "accepted": True}
             resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "room": "relay"})
             if world is not None and previous_room != agent["room"]:
                 emit_event(world, cycle, "resident-moved", agent.get("id", "resident"),
@@ -211,30 +214,37 @@ def resolve_requests(registry, world=None, cycle=None):
             agent["capabilities"] = list(dict.fromkeys(agent["capabilities"]))
             agent["request_status"] = "closed"
             agent["request_fulfillment"] = "Granted read-only Atrium topology through the canonical room map."
+            agent["request_artifact"] = {"kind": "room-map", "scope": "atrium", "accepted": True}
             resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "capability": "room-map-read"})
         elif "facility" in request and "map" in request and "room-map-read" in agent.get("capabilities", []):
             agent["request_status"] = "closed"
             agent["request_fulfillment"] = "Canonical room map made available through the connected observatory rooms."
+            agent["request_artifact"] = {"kind": "room-map", "scope": "facility", "accepted": True}
             resolutions.append({"agent": agent.get("id"), "status": "fulfilled"})
         elif "historical" in request and "text" in request and "public-web-read" in agent.get("capabilities", []):
             agent["request_status"] = "closed"
             agent["request_fulfillment"] = "Approved public historical-text research access enabled; source pages remain external."
+            agent["request_artifact"] = {"kind": "public-research", "source": (agent.get("last_tool") or {}).get("source", ""), "accepted": True}
             resolutions.append({"agent": agent.get("id"), "status": "fulfilled"})
         elif "design resources" in request and "public-web-read" in agent.get("capabilities", []):
             agent["request_status"] = "closed"
             agent["request_fulfillment"] = "Approved public research access is available through the web-reading broker."
+            agent["request_artifact"] = {"kind": "public-research", "source": (agent.get("last_tool") or {}).get("source", ""), "accepted": True}
             resolutions.append({"agent": agent.get("id"), "status": "fulfilled"})
         elif any(term in request for term in ("journal", "article", "research")) and "public-web-read" in agent.get("capabilities", []):
             agent["request_status"] = "closed"
             agent["request_fulfillment"] = "Approved public research access is available through the read-only web broker."
+            agent["request_artifact"] = {"kind": "public-research", "source": (agent.get("last_tool") or {}).get("source", ""), "accepted": True}
             resolutions.append({"agent": agent.get("id"), "status": "fulfilled"})
         elif "computer" in request and "bounded-workbench" in agent.get("capabilities", []):
             agent["request_status"] = "closed"
             agent["request_fulfillment"] = "Bounded local workbench access is available; arbitrary computer control remains disabled."
+            agent["request_artifact"] = {"kind": "bounded-workbench", "accepted": True}
             resolutions.append({"agent": agent.get("id"), "status": "fulfilled"})
         elif "city" in request and "map" in request:
             agent["request_status"] = "needs-clarification"
             agent["request_fulfillment"] = "A city or region must be named before a public map can be selected."
+            agent["request_artifact"] = {"kind": "clarification-needed", "accepted": False}
             resolutions.append({"agent": agent.get("id"), "status": "needs-clarification"})
         if resolutions and world is not None and cycle is not None and resolutions[-1].get("agent") == agent.get("id"):
             outcome = resolutions[-1]
@@ -317,6 +327,7 @@ def main():
             agent["request_cycle"] = args.cycle
             # A new request must not inherit the resolution text of a prior one.
             agent["request_fulfillment"] = ""
+            agent["request_artifact"] = {}
         elif decision["action"] not in {"RETIRE", "FIRE"}:
             agent["request_status"] = "closed"
         elif decision.get("action") in {"RETIRE", "FIRE"}:

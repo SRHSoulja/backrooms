@@ -180,6 +180,7 @@ def sync_work_orders(registry, cycle):
             continue
         status = agent.get("request_status", "open")
         public_status = {"closed": "completed"}.get(status, status)
+        artifact = agent.get("request_artifact") or {}
         capability = "review-required"
         lower = request.lower()
         if "internet" in lower or "network" in lower:
@@ -201,6 +202,7 @@ def sync_work_orders(registry, cycle):
             "outcome": agent.get("request_fulfillment", "") if status == "closed" else "",
             "evidence_source": (agent.get("last_tool") or {}).get("source", "") if status == "closed" else "",
             "evidence": agent.get("last_tool", {}) if status == "closed" else {},
+            "artifact": artifact if status == "closed" else {},
             "cycle": agent.get("request_cycle", cycle), "updated_cycle": cycle,
         }
     ordered = list(orders.values())[-100:]
@@ -209,7 +211,7 @@ def sync_work_orders(registry, cycle):
     atomic_write_json(LOCAL_WORK_ORDERS, local)
     public = {"generated_at": local["updated_at"],
               "privacy": "Sanitized work-order metadata only; local context and raw responses remain local.",
-              "orders": [{key: item.get(key) for key in ("id", "agent", "room", "request", "status", "capability", "acceptance", "outcome", "evidence_source", "cycle", "updated_cycle")}
+              "orders": [{key: item.get(key) for key in ("id", "agent", "room", "request", "status", "capability", "acceptance", "outcome", "evidence_source", "artifact", "cycle", "updated_cycle")}
                         for item in ordered]}
     atomic_write_json(PUBLIC_WORK_ORDERS, public)
     return public

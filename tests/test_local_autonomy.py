@@ -46,6 +46,16 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(len(world["rooms"]), 2)
         self.assertEqual(len(world["connections"]), 1)
 
+    def test_safe_request_creates_typed_artifact(self):
+        world = {"rooms": [{"id": "atrium"}]}
+        registry = {"agents": [{"id": "local-test", "status": "active-local", "room": "atrium",
+                                 "request": "access to an Atrium map", "request_status": "open",
+                                 "capabilities": []}]}
+        resolutions = local_autonomy.resolve_requests(registry, world=world)
+        self.assertEqual(resolutions[0]["status"], "fulfilled")
+        self.assertEqual(registry["agents"][0]["request_artifact"]["kind"], "room-map")
+        self.assertTrue(registry["agents"][0]["request_artifact"]["accepted"])
+
 
 if __name__ == "__main__":
     unittest.main()
