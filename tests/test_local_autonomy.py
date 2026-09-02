@@ -190,6 +190,13 @@ class LocalAutonomyTests(unittest.TestCase):
         source = Path("scripts/local_autonomy.py").read_text()
         self.assertIn("PHYSICAL_NEEDS", source)
 
+    def test_compute_request_has_bounded_outcome(self):
+        registry = {"agents": [{"id": "local-test", "request": "access to compute resources",
+                                 "request_status": "open", "capabilities": []}]}
+        local_autonomy.resolve_requests(registry, world={"rooms": []})
+        self.assertEqual(registry["agents"][0]["request_status"], "closed")
+        self.assertFalse(registry["agents"][0]["request_artifact"]["accepted"])
+
     def test_unprovisioned_computer_request_is_explicitly_limited(self):
         world = {"rooms": [{"id": "atrium"}]}
         registry = {"agents": [{"id": "local-test", "status": "active-local", "room": "atrium",

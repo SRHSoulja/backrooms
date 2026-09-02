@@ -48,6 +48,7 @@ LOCAL_WORK_ORDERS = ROOT / "state/work-orders.json"
 # one profile per cycle and can therefore grow well beyond the old three-person
 # threshold without starting one process per hireling.
 MAX_LOCAL_HIRELINGS = 256
+MAX_PENDING_INTERVIEWS = 4
 LOCAL_WHITEBOARD = ROOT / "state/whiteboard.json"
 LOCAL_PRINTER = ROOT / "state/printer-queue.json"
 LOCAL_NOTES = ROOT / "state/agent-notes"
@@ -438,6 +439,11 @@ def next_question(base_url):
 def recruit(base_url, cycle):
     registry = json.loads(LOCAL_REGISTRY.read_text()) if LOCAL_REGISTRY.exists() else {"agents": []}
     active = sum(agent.get("status") in {"active-local", "probation"} for agent in registry.get("agents", []))
+    pending = sum(agent.get("status") == "probation" or agent.get("interview_status") == "awaiting-retry"
+                  for agent in registry.get("agents", []))
+    if pending >= MAX_PENDING_INTERVIEWS:
+        return {"status": "interview-backpressure", "active": active, "pending": pending,
+                "capacity": MAX_LOCAL_HIRELINGS}
     if active >= MAX_LOCAL_HIRELINGS:
         return {"status": "capacity-reached", "active": active, "capacity": MAX_LOCAL_HIRELINGS}
     completed = subprocess.run([sys.executable, str(ROOT / "scripts/local_recruiter.py"),
@@ -587,6 +593,7 @@ def publish(result, world):
         ]
     }
     registry_by_id = {agent.get("id"): agent for agent in registry.get("agents", [])}
+    voiced_ids = set()
     for decision in result.get("autonomy", {}).get("decisions", []):
         agent = registry_by_id.get(decision.get("id"))
         if not agent or agent.get("status") in {"fired", "retired"} or not decision.get("action"):
@@ -598,6 +605,16 @@ def publish(result, world):
             contribution += f" Exploration: {decision['exploration']}"
         voices["voices"].append({"name": str(agent.get("name", agent.get("id", "Unnamed hireling"))).strip(" ,.;"),
                                   "role": str(agent.get("role", "hireling")).strip(" ,.;"),
+                                  "excerpt": public_voice(contribution)})
+        voiced_ids.add(agent.get("id"))
+    # Keep the roster complete when an interview retries or a resident has no
+    # new decision this cycle; use only its already-public action metadata.
+    for agent in registry.get("agents", []):
+        if agent.get("id") in voiced_ids or agent.get("status") in {"fired", "retired"}:
+            continue
+        contribution = f"Latest recorded action: {agent.get('last_action', 'awaiting-interview')}. {agent.get('last_reason', 'No new public contribution recorded this cycle.')}"
+        voices["voices"].append({"name": str(agent.get("name", agent.get("id", "Unnamed resident"))).strip(" ,.;"),
+                                  "role": str(agent.get("role", "resident")).strip(" ,.;"),
                                   "excerpt": public_voice(contribution)})
     historical_world = json.loads(PUBLIC_WORLD.read_text()) if PUBLIC_WORLD.exists() else {}
     public_rooms = []

@@ -542,6 +542,17 @@ def resolve_requests(registry, world=None, cycle=None):
             agent["request_fulfillment"] = "A quantum simulator is not provisioned; public educational research and the restricted data-only sandbox remain available, with no arbitrary package installation."
             agent["request_artifact"] = {"kind": "capability-limited", "scope": "public-education-only", "reason": "simulator-not-provisioned", "accepted": False}
             resolutions.append({"agent": agent.get("id"), "status": "needs-clarification", "scope": "public-education-only"})
+        elif "compute" in request:
+            if "bounded-workbench" in agent.get("capabilities", []):
+                agent["request_status"] = "closed"
+                agent["request_fulfillment"] = "Bounded local compute is available through the restricted workbench; no arbitrary host processes or private data access are provided."
+                agent["request_artifact"] = {"kind": "bounded-workbench", "scope": "data-only-restricted-sandbox", "accepted": True}
+                resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "scope": "data-only-restricted-sandbox"})
+            else:
+                agent["request_status"] = "closed"
+                agent["request_fulfillment"] = "Individual compute allocation is not provisioned; residents may earn or request the bounded workbench through interview review."
+                agent["request_artifact"] = {"kind": "capability-limited", "reason": "bounded-workbench-not-provisioned", "accepted": False}
+                resolutions.append({"agent": agent.get("id"), "status": "needs-clarification"})
         elif any(term in request for term in ("encrypted communication", "encrypted document", "encrypted storage")):
             agent["request_status"] = "needs-clarification"
             agent["request_fulfillment"] = "Educational cryptography and local reviewed documents are available; live private channels, key custody, and secret storage require a specific safe design."
@@ -620,6 +631,10 @@ def main():
                         "target": f"follow-up to {agent['last_analysis'].get('artifact_id', 'previous analysis')}",
                         "proposal": "", "request": "", "code": "print(sum(range(4)))",
                         "reason": "Deterministic continuity follow-up after a temporary interview retry."}
+        if not decision and agent.get("interview_attempts", 0) >= 2:
+            decision = {"action": "STAY", "room": agent.get("room", rooms[0]), "target": "",
+                        "proposal": "", "request": "", "code": "",
+                        "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."}
         if not decision:
             agent["interview_status"] = "awaiting-retry"
             agent["interview_attempts"] = agent.get("interview_attempts", 0) + 1
