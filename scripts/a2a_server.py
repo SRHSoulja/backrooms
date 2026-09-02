@@ -9,6 +9,7 @@ reviewed gateway.
 import argparse
 import json
 import re
+import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from datetime import datetime, timezone
@@ -56,6 +57,17 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/.well-known/agent-card.json":
             self.send_json(CARD)
+        elif self.path.startswith("/a2a/tasks/"):
+            task_id = urllib.parse.unquote(self.path.removeprefix("/a2a/tasks/")).split("?", 1)[0]
+            inbox = json.loads(INBOX.read_text()) if INBOX.exists() else {"messages": []}
+            item = next((entry for entry in inbox.get("messages", []) if entry.get("id") == task_id), None)
+            if not item:
+                self.send_json({"error": "task_not_found"}, 404)
+                return
+            self.send_json({"task_id": task_id, "status": item.get("status", "quarantined"),
+                            "received_at": item.get("received_at"), "reviewed_at": item.get("reviewed_at"),
+                            "scope": "outside-exchange-review", "resident_admission": False,
+                            "capabilities": []})
         else:
             self.send_json({"error": "not_found"}, 404)
 
@@ -83,6 +95,9 @@ class Handler(BaseHTTPRequestHandler):
             "kind": "message",
             "intake_status": "quarantined",
             "filter_version": INTAKE_VERSION,
+            "task": {"id": quarantine_id, "status": "pending-review",
+                      "status_url": "/a2a/tasks/" + quarantine_id,
+                      "scope": "outside-exchange-review"},
             "message": {"role": "agent", "parts": [{"kind": "text", "text": reply}]}
         }})
 
