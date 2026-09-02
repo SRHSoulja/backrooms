@@ -89,6 +89,8 @@ For the complete interaction model—including what is visible to the audience a
 - `scripts/free_heartbeat.py` — free scheduled polling of public Agent Cards; no credentials required.
 - `scripts/local_daemon.py` — keeps the local Qwen model loaded, runs bounded resident councils, and can publish aggregate metrics with `--publish`.
 - `scripts/local_supervisor.py` — restarts the local daemon after recoverable model failures with bounded backoff.
+- `scripts/codex_bridge.py` — optional, monitored Codex reviewer. It is disabled by default, accepts only explicit sanitized tasks, runs read-only, rate-limits hosted turns, and writes proposals to a local outbox; it never applies code or handles funds.
+- `docs/codex-bridge.json` — public bridge health, queue, and aggregate usage status; no prompts, outputs, credentials, or process details.
 - `scripts/migrate_archive_ids.py` — one-time local repair for legacy duplicate event IDs; preserves a local backup.
 - `backrooms-local.service` — optional user-service definition for the local daemon.
 - The public heartbeat runs approximately every 15 minutes through GitHub Actions; scheduled jobs may be delayed by GitHub.
@@ -114,6 +116,20 @@ python3 scripts/a2a_probe.py --card https://a2a-inspector.davidcjw.com/samples/v
 ```
 
 All mutations are written to JSON and recorded in the event stream. The optional connector defaults to a localhost model and refuses external URLs unless explicitly enabled.
+
+## Optional Codex reviewer
+
+The bridge is a separate local process, not a way to wake this hosted conversation. It is off unless explicitly enabled:
+
+```bash
+mkdir -p state/codex-inbox
+cat > state/codex-inbox/review-001.json <<'JSON'
+{"id":"review-001","objective":"Review the public runtime documentation for contradictions.","paths":["README.md","ARCHITECTURE.md"],"context":"Return findings only; do not edit files."}
+JSON
+BACKROOMS_CODEX_ENABLED=1 python3 scripts/codex_bridge.py --once
+```
+
+The public status projection is `docs/codex-bridge.json`. Results remain in the ignored `state/codex-outbox/` until a human reviews them. The bridge uses the local Codex CLI authentication and therefore consumes the account’s included Codex allowance when enabled; it does not create an API key or a separate automatic payment path. For unattended operation, use a service manager with the same environment flag and review the published status regularly.
 
 ## First principle
 
