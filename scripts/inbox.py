@@ -81,6 +81,8 @@ def review(args):
     selected["reviewed_at"] = stamp()
     inbox["messages"] = inbox["messages"][-100:]
     INBOX.write_text(json.dumps(inbox, indent=2) + "\n")
+    import subprocess, sys
+    subprocess.run([sys.executable, str(ROOT / "scripts/publish_outside_signals.py")], cwd=ROOT, check=False)
     print(f"reviewed {args.id} as {args.status}; no resident admission or world change")
 
 
