@@ -282,7 +282,7 @@ def publish(result, world):
              "text": event.get("text", "Public world event recorded.")[:240]}
             for event in world.get("events", [])[-8:]
         ],
-        "privacy": "Current sanitized topology and bounded event metadata; private runtime and model output remain local."
+        "privacy": "Current sanitized topology and bounded event metadata; local runtime and model output stay on the host."
     }
     PUBLIC_CYCLE.write_text(json.dumps(safe, indent=2) + "\n")
     PUBLIC_HISTORY.write_text(json.dumps(history, indent=2) + "\n")
