@@ -29,8 +29,8 @@ LOCAL_STATUS = ROOT / "state/codex-bridge-status.json"
 PUBLIC_STATUS = ROOT / "docs/codex-bridge.json"
 LOG = ROOT / "state/codex-bridge-log.jsonl"
 MAX_TASK_BYTES = 24_000
-MAX_TASKS_PER_HOUR = 4
-MAX_TASKS_PER_DAY = 12
+MAX_TASKS_PER_HOUR = 16
+MAX_TASKS_PER_DAY = 48
 SENSITIVE = re.compile(r"(?i)(api[_-]?key|secret|private[_-]?key|mnemonic|seed phrase|password|token|authorization)\s*[:=]")
 SENSITIVE_PATH = re.compile(r"(?i)(^|/)(state|wallet|\.env|.*secret.*|.*credential.*|.*private.*|.*\.key|.*\.pem)(/|$)")
 

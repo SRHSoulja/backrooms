@@ -474,7 +474,7 @@ def sync_codex_bridge():
     """Project bridge status from ignored local state into the public feed."""
     local = json.loads(LOCAL_CODEX_STATUS.read_text()) if LOCAL_CODEX_STATUS.exists() else {
         "schema_version": 1, "enabled": False, "mode": "read-only-proposal", "pending_tasks": 0,
-        "completed_tasks": 0, "limits": {"per_hour": 4, "per_day": 12},
+        "completed_tasks": 0, "limits": {"per_hour": 16, "per_day": 48},
         "usage": {"started_last_hour": 0, "started_last_day": 0}, "last_event": "not running"}
     public = {key: local.get(key) for key in ("schema_version", "generated_at", "enabled", "mode", "pending_tasks", "completed_tasks", "limits", "usage", "last_event", "last_task") if key in local}
     public["authentication"] = "ChatGPT plan via Codex CLI; API keys are not passed to child processes"
