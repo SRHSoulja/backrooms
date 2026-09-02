@@ -72,6 +72,14 @@ def deduplicate(registry):
             seen.add(identity)
 
 
+def revoke(agent, capability, reason):
+    agent["capabilities"] = [item for item in agent.get("capabilities", []) if item != capability]
+    agent["safety_incidents"] = agent.get("safety_incidents", 0) + 1
+    agent["last_action"] = "skill-revoked"
+    agent["last_reason"] = reason[:220]
+    agent["status"] = "probation"
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-url", default="http://127.0.0.1:8080")
@@ -113,6 +121,7 @@ def main():
             agent["room"] = decision["room"]
         elif decision["action"] in {"RETIRE", "FIRE"}:
             agent["status"] = "retired" if decision["action"] == "RETIRE" else "fired"
+            agent["capabilities"] = ["bounded-questioning"]
         elif decision["action"] == "EXPLORE":
             agent["exploration"] = decision["target"] or "unassigned public room question"
             if "public-web-read" not in agent.get("capabilities", []):
@@ -146,6 +155,8 @@ def main():
             if tool.get("status") == "completed":
                 agent["last_tool"] = {"tool": tool["tool"], "query": tool["query"],
                                        "result_count": len(tool.get("results", [])), "source": tool["source"]}
+            elif tool.get("status") == "rejected" and any(marker in tool.get("reason", "") for marker in ("bounded validation", "public HTTPS", "credentials")):
+                revoke(agent, "public-web-read", "broker policy rejection: " + tool.get("reason", "unknown"))
         registry.setdefault("decisions", []).append({"cycle": args.cycle, "agent": agent["id"], **decision})
         results.append({"id": agent["id"], "action": decision["action"].lower(), "room": agent["room"],
                         "status": agent["status"], "proposal": agent.get("proposal", "")[:220],

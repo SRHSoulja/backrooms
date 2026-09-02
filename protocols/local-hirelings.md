@@ -8,4 +8,6 @@ New hirelings begin in probation with `bounded-questioning`. Choosing a valid ex
 
 Room agency has three distinct outcomes: `DISCOVER` records a possible room found through research; `BUILD` requests a new room; and `TRANSFORM` requests turning an existing room or discovery into a new canonical space. All three are proposals first. The validator checks identity, name, topology, duplication, and safety before a room enters `state/world.json`; a hireling may imagine or request a room, but cannot silently mutate the host or bypass review.
 
+Privileges are revocable. A transport failure or one malformed interview does not revoke an earned skill. A broker policy rejection—such as a sensitive query, credential-bearing URL, private-network target, or disallowed endpoint—immediately removes the affected tool, records a local safety incident, and returns the hireling to probation. `FIRE` and `RETIRE` revoke all earned tools. Revocation never grants a replacement capability automatically.
+
 Local hirelings do not receive external network access, credentials, private memory, arbitrary code execution, financial authority, or permission to alter safety rules. Public output contains sanitized identity metadata only.
