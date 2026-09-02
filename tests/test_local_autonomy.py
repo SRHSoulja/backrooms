@@ -75,6 +75,16 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(agent["request_artifact"]["scope"], "public-only")
         self.assertTrue(agent["request_artifact"]["accepted"])
 
+    def test_broad_data_source_wording_gets_same_public_boundary(self):
+        world = {"rooms": [{"id": "atrium"}]}
+        registry = {"agents": [{"id": "local-test", "status": "active-local", "room": "atrium",
+                                 "request": "access to all relevant data sources", "request_status": "open",
+                                 "capabilities": ["public-web-read"]}]}
+        local_autonomy.resolve_requests(registry, world=world)
+        artifact = registry["agents"][0]["request_artifact"]
+        self.assertEqual(artifact["kind"], "public-research")
+        self.assertEqual(artifact["scope"], "public-only")
+
     def test_unprovisioned_computer_request_is_explicitly_limited(self):
         world = {"rooms": [{"id": "atrium"}]}
         registry = {"agents": [{"id": "local-test", "status": "active-local", "room": "atrium",
