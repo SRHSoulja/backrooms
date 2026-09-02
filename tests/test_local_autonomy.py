@@ -119,6 +119,14 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(artifact["kind"], "digital-printer")
         self.assertTrue((local_autonomy.PRINTED / "print-local-test-91.txt").exists())
 
+    def test_filed_document_records_revision_link(self):
+        agent = {"id": "local-test"}
+        local_autonomy.file_agent_record(agent, 92, "document", "first draft", "Resident proposal")
+        local_autonomy.file_agent_record(agent, 93, "document", "revised draft", "Resident proposal")
+        records = [__import__("json").loads(line) for line in local_autonomy.NOTES.joinpath("local-test.jsonl").read_text().splitlines()]
+        self.assertEqual(records[-1]["lifecycle"], "revision")
+        self.assertEqual(records[-1]["supersedes"], records[-2]["document_id"])
+
 
 if __name__ == "__main__":
     unittest.main()

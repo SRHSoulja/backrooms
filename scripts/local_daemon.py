@@ -248,7 +248,8 @@ def sync_digital_resources(world=None):
             records.append({"agent": path.stem, "recorded_at": item.get("recorded_at"), "cycle": item.get("cycle"),
                             "kind": item.get("kind", "note"), "title": public_event_text(item.get("title", "Resident note")),
                             "entry": public_event_text(item.get("entry", "")), "content_hash": item.get("content_hash"),
-                            "document_id": item.get("document_id"), "lifecycle": item.get("lifecycle")})
+                            "document_id": item.get("document_id"), "lifecycle": item.get("lifecycle"),
+                            "supersedes": item.get("supersedes")})
     notes_public = {
         "schema_version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(),

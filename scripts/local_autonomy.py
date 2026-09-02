@@ -143,13 +143,24 @@ def file_agent_record(agent, cycle, kind, body, title=""):
         return None
     NOTES.mkdir(parents=True, exist_ok=True)
     path = NOTES / f"{agent.get('id', 'resident')}.jsonl"
+    previous_documents = []
+    if path.exists():
+        for line in path.read_text().splitlines():
+            try:
+                old = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if old.get("kind") == "document" and old.get("document_id"):
+                previous_documents.append(old["document_id"])
     with path.open("a") as handle:
         record = {"recorded_at": datetime.now(timezone.utc).isoformat(), "cycle": cycle,
                                  "kind": kind, "title": title[:120] or ("Resident note" if kind == "note" else "Filed document"),
                                  "entry": text, "content_hash": hashlib.sha256(text.encode()).hexdigest()}
         if kind == "document":
             record["document_id"] = f"document-{agent.get('id', 'resident')}-{cycle}"
-            record["lifecycle"] = "filed"
+            record["lifecycle"] = "revision" if previous_documents else "filed"
+            if previous_documents:
+                record["supersedes"] = previous_documents[-1]
         handle.write(json.dumps(record) + "\n")
     return path.name
 
