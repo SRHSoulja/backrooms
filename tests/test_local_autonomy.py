@@ -293,6 +293,7 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertIn('"verified": tool["tool"] != "public-search"', source)
         self.assertIn('Use ANALYZE when your bounded-workbench role', source)
         self.assertIn('prefer a tiny local health check', source)
+        self.assertIn('not a biological body', source)
 
 
 if __name__ == "__main__":
