@@ -265,6 +265,10 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertIn('"purpose": agent.get("purpose"', source)
         self.assertIn('"self_summary": agent.get("self_summary"', source)
 
+    def test_autonomy_uses_daemon_cycle_as_canonical(self):
+        source = Path("scripts/local_autonomy.py").read_text()
+        self.assertIn('world["cycle"] = args.cycle', source)
+
     def test_research_does_not_pollute_resident_query_or_fake_provenance(self):
         source = Path("scripts/local_autonomy.py").read_text()
         self.assertIn("query_target = target[:160].strip()", source)

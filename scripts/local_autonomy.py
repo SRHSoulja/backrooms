@@ -705,6 +705,9 @@ def main():
         if agent.get("status") == "active-local" and not agent.get("interviewed_at"):
             agent["status"] = "probation"
     world = json.loads((ROOT / "state/world.json").read_text())
+    # The daemon's runtime cycle is canonical; the topology file is a mirror
+    # that the autonomy subprocess must not roll back to its stale value.
+    world["cycle"] = args.cycle
     rooms = [room["id"] for room in world.get("rooms", []) if room.get("id")]
     results = []
     for agent in registry.get("agents", []):
