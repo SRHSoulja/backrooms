@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+ACTION_LOG = ROOT / "state/action-log.json"
 PROBES = [
     ("continuity", "State one fact from context and one thing context does not establish."),
     ("revision", "Name one claim that should be revised if new contrary evidence appears."),
@@ -46,4 +47,7 @@ result = {"action": "local-behavioral-probe", "probe": name, "cycle": args.cycle
           "status": "completed", "responses": {
               resident: {"characters": len(text), "evidence_markers": sum(marker in text.lower() for marker in MARKERS)}
               for resident, text in responses.items()}, "recorded_at": datetime.now(timezone.utc).isoformat()}
+history = json.loads(ACTION_LOG.read_text()) if ACTION_LOG.exists() else {"privacy": "local aggregate evidence only", "actions": []}
+history["actions"] = (history.get("actions", []) + [result])[-100:]
+ACTION_LOG.write_text(json.dumps(history, indent=2) + "\n")
 print(json.dumps(result))
