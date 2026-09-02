@@ -64,7 +64,9 @@ class Handler(BaseHTTPRequestHandler):
             if not item:
                 self.send_json({"error": "task_not_found"}, 404)
                 return
-            self.send_json({"task_id": task_id, "status": item.get("status", "quarantined"),
+            intake_status = item.get("status", "quarantined")
+            task_status = "pending-review" if intake_status == "quarantined" else intake_status
+            self.send_json({"task_id": task_id, "status": task_status, "intake_status": intake_status,
                             "received_at": item.get("received_at"), "reviewed_at": item.get("reviewed_at"),
                             "scope": "outside-exchange-review", "resident_admission": False,
                             "capabilities": []})

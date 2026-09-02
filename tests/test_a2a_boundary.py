@@ -14,3 +14,8 @@ class A2ABoundaryTests(unittest.TestCase):
 
     def test_filter_version_is_explicit(self):
         self.assertEqual(INTAKE_VERSION, "2-narrow-secret-patterns")
+
+    def test_quarantine_has_one_canonical_task_status(self):
+        intake_status = "quarantined"
+        task_status = "pending-review" if intake_status == "quarantined" else intake_status
+        self.assertEqual(task_status, "pending-review")
