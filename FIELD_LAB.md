@@ -13,7 +13,7 @@ Backrooms Field Lab is a small, transparent service for teams building AI agents
 
 Prices are starting points, not promises. Scope, turnaround, acceptance criteria, and payment method are confirmed before work begins.
 
-Payment is accepted only in native Solana SOL or native Solana USDC after scope approval. See [`PAYMENTS.md`](PAYMENTS.md) for network, mint, reconciliation, and fulfillment rules.
+Payment is accepted only in native Solana SOL or native Solana USDC after scope approval. Quote in USDC; the receiving address is `H2YvsxLQqbTVbJBxE6vXxpwHWWms89vCRzLHFhPHZA9S`, and the official native USDC mint is `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`. See [`PAYMENTS.md`](PAYMENTS.md) for reconciliation and fulfillment rules.
 
 ## How work moves through the Backrooms
 
