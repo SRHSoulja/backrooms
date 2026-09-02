@@ -117,6 +117,22 @@ class LocalAutonomyTests(unittest.TestCase):
         local_autonomy.resolve_requests(registry, world={"rooms": []})
         self.assertEqual(registry["agents"][0]["request_artifact"]["scope"], "public-image-and-chart-assets")
 
+    def test_atrium_view_request_moves_resident(self):
+        world = {"rooms": [{"id": "atrium"}, {"id": "archive"}], "events": [], "connections": []}
+        registry = {"agents": [{"id": "local-test", "room": "archive", "request": "access to the atrium for a better view",
+                                 "request_status": "open"}]}
+        local_autonomy.resolve_requests(registry, world=world, cycle=94)
+        self.assertEqual(registry["agents"][0]["room"], "atrium")
+        self.assertEqual(registry["agents"][0]["request_artifact"]["kind"], "movement")
+
+    def test_secure_network_request_is_explicitly_restricted(self):
+        registry = {"agents": [{"id": "local-test", "request": "access to a secure network",
+                                 "request_status": "open"}]}
+        local_autonomy.resolve_requests(registry, world={"rooms": []})
+        self.assertEqual(registry["agents"][0]["request_status"], "closed")
+        self.assertEqual(registry["agents"][0]["request_artifact"]["kind"], "bounded-network")
+        self.assertTrue(registry["agents"][0]["request_artifact"]["accepted"])
+
     def test_unprovisioned_computer_request_is_explicitly_limited(self):
         world = {"rooms": [{"id": "atrium"}]}
         registry = {"agents": [{"id": "local-test", "status": "active-local", "room": "atrium",

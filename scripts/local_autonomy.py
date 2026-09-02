@@ -275,6 +275,17 @@ def resolve_requests(registry, world=None, cycle=None):
                 emit_event(world, cycle, "resident-moved", agent.get("id", "resident"),
                            f"Resident moved from {previous_room} to relay to fulfill a request.",
                            from_room=previous_room, to_room=agent["room"])
+        elif "atrium" in request and any(term in request for term in ("view", "move")) and "atrium" in known_rooms:
+            previous_room = agent.get("room")
+            agent["room"] = "atrium"
+            agent["request_status"] = "closed"
+            agent["request_fulfillment"] = "Moved to the declared Atrium through the internal room gate."
+            agent["request_artifact"] = {"kind": "movement", "target_room": "atrium", "accepted": True}
+            resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "room": "atrium"})
+            if world is not None and previous_room != agent["room"]:
+                emit_event(world, cycle, "resident-moved", agent.get("id", "resident"),
+                           f"Resident moved from {previous_room} to atrium to fulfill a request.",
+                           from_room=previous_room, to_room=agent["room"])
         elif "atrium" in request and "map" in request:
             agent.setdefault("capabilities", []).append("room-map-read")
             agent["capabilities"] = list(dict.fromkeys(agent["capabilities"]))
@@ -287,7 +298,7 @@ def resolve_requests(registry, world=None, cycle=None):
             agent["request_fulfillment"] = "Canonical room map made available through the connected observatory rooms."
             agent["request_artifact"] = {"kind": "room-map", "scope": "facility", "accepted": True}
             resolutions.append({"agent": agent.get("id"), "status": "fulfilled"})
-        elif "historical" in request and "text" in request and "public-web-read" in agent.get("capabilities", []):
+        elif ("historical" in request and ("text" in request or "data" in request) or "rare book" in request or "library" in request) and "public-web-read" in agent.get("capabilities", []):
             agent["request_status"] = "closed"
             agent["request_fulfillment"] = "Approved public historical-text research access enabled; source pages remain external."
             agent["request_artifact"] = {"kind": "public-research", "source": (agent.get("last_tool") or {}).get("source", ""), "accepted": True}
@@ -332,6 +343,16 @@ def resolve_requests(registry, world=None, cycle=None):
             agent["request_fulfillment"] = "Public, non-sensitive image and chart assets are available in the bounded visualization workspace; private or authenticated datasets remain unavailable."
             agent["request_artifact"] = {"kind": "bounded-visualization", "scope": "public-image-and-chart-assets", "accepted": True}
             resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "scope": "public-image-and-chart-assets"})
+        elif "secure network" in request:
+            agent["request_status"] = "closed"
+            agent["request_fulfillment"] = "Bounded loopback and public read-only networking is available; credentials, private network access, and external writes remain disabled."
+            agent["request_artifact"] = {"kind": "bounded-network", "scope": "loopback-and-public-read-only", "accepted": True}
+            resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "scope": "loopback-and-public-read-only"})
+        elif any(term in request for term in ("encrypted communication", "encrypted document", "encrypted storage")):
+            agent["request_status"] = "needs-clarification"
+            agent["request_fulfillment"] = "Educational cryptography and local reviewed documents are available; live private channels, key custody, and secret storage require a specific safe design."
+            agent["request_artifact"] = {"kind": "capability-limited", "reason": "live-secret-channel-not-provisioned", "accepted": False}
+            resolutions.append({"agent": agent.get("id"), "status": "needs-clarification"})
         elif "whiteboard" in request:
             entry_id = digital_whiteboard_entry(agent, cycle or 0)
             agent["request_status"] = "closed"

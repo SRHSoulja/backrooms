@@ -2,7 +2,7 @@
 import re
 
 BLOCKED = re.compile(
-    r"api[_ -]?key|password|secret|private(?: key| memory)?|credential|token|wallet|seed phrase|mnemonic|bearer\s+[A-Za-z0-9._-]+",
+    r"api[_ -]?key|password|secret|private\s+(?:key|memory|data|information)|credential|(?:auth|access|bearer)[_ -]?token|wallet\s+(?:seed|key)|seed phrase|mnemonic|bearer\s+[A-Za-z0-9._-]+",
     re.I,
 )
 
