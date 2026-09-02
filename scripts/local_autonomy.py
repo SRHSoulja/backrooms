@@ -124,7 +124,8 @@ def digital_print_job(agent, cycle):
         output = PRINTED / f"{job_id}.txt"
         output.write_text(f"BACKROOMS DIGITAL PRINT\nResident: {agent.get('id', 'resident')}\nCycle: {cycle}\nRequest: {str(agent.get('request', ''))[:220]}\n")
         jobs.append({"id": job_id, "cycle": cycle, "requester": agent.get("id", "resident"),
-                     "format": "text", "status": "printed", "output": f"state/printed/{output.name}"})
+                     "format": "text", "status": "printed", "preview": str(agent.get("request", ""))[:220],
+                     "output": f"state/printed/{output.name}"})
     queue["jobs"] = jobs[-200:]
     atomic_write_json(PRINTER_QUEUE, queue)
     return job_id

@@ -226,13 +226,13 @@ def sync_digital_resources():
     jobs = json.loads(LOCAL_PRINTER.read_text()) if LOCAL_PRINTER.exists() else {"jobs": []}
     atomic_write_json(PUBLIC_WHITEBOARD, {
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "privacy": "Public note metadata only; local resident context is not published.",
-        "entries": [{key: item.get(key) for key in ("id", "cycle", "author", "title", "status")} for item in board.get("entries", [])[-50:]],
+        "privacy": "Sanitized note text and metadata only; blocked sensitive content is withheld.",
+        "entries": [{**{key: item.get(key) for key in ("id", "cycle", "author", "title", "status")}, "body": public_event_text(item.get("body", ""))} for item in board.get("entries", [])[-50:]],
     })
     atomic_write_json(PUBLIC_PRINTER, {
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "privacy": "Public job metadata only; rendered local artifacts are not uploaded.",
-        "jobs": [{key: item.get(key) for key in ("id", "cycle", "requester", "format", "status")} for item in jobs.get("jobs", [])[-50:]],
+        "privacy": "Sanitized print previews and metadata only; rendered local artifacts are not uploaded.",
+        "jobs": [{**{key: item.get(key) for key in ("id", "cycle", "requester", "format", "status")}, "preview": public_event_text(item.get("preview", ""))} for item in jobs.get("jobs", [])[-50:]],
     })
 
 
