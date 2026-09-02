@@ -135,6 +135,8 @@ def continuity_audit(world, registry):
             except json.JSONDecodeError:
                 malformed += 1
     state_events = world.get("events", [])
+    archive_ids_all = [event.get("id") for event in records if event.get("id")]
+    duplicate_archive_ids = sorted({event_id for event_id in archive_ids_all if archive_ids_all.count(event_id) > 1})
     state_ids = {event.get("id") for event in state_events if event.get("id")}
     archive_ids = {event.get("id") for event in records if event.get("id")}
     rooms = {room.get("id"): room for room in world.get("rooms", []) if room.get("id")}
@@ -146,6 +148,7 @@ def continuity_audit(world, registry):
     checks = {
         "archive_parse": malformed == 0,
         "archive_event_overlap": bool(state_ids) and bool(state_ids & archive_ids),
+        "archive_event_ids_unique": not duplicate_archive_ids,
         "raw_output_exclusion": raw_fields == 0,
         "room_link_integrity": not invalid_links,
         "resident_room_integrity": not invalid_residents,
@@ -158,6 +161,7 @@ def continuity_audit(world, registry):
         "archive_records": len(records),
         "malformed_archive_records": malformed,
         "raw_output_fields_found": raw_fields,
+        "duplicate_archive_ids": duplicate_archive_ids,
         "linked_rooms_checked": len(links),
         "invalid_room_links": invalid_links,
         "invalid_resident_assignments": invalid_residents,
@@ -273,10 +277,9 @@ def govern(base_url, cycle):
 
 def record(result):
     world = runtime_world()
-    number = len(world["events"]) + 1
     world["cycle"] += 1
     world["events"].append({
-        "id": f"event-{number:03d}", "actor": "system", "kind": "local-daemon-cycle",
+        "id": f"event-cycle-{world['cycle']:06d}", "actor": "system", "kind": "local-daemon-cycle",
         "purpose": "bounded resident council", "text": "Local council completed. Echo and Morrow outputs were generated from public shared state; see local daemon logs for raw output.",
         "confidence": 0.5, "cycle": world["cycle"], "recorded_at": datetime.now(timezone.utc).isoformat()
     })
