@@ -182,8 +182,10 @@ class LocalAutonomyTests(unittest.TestCase):
 
     def test_interview_prompt_can_use_prior_research_metadata(self):
         source = Path("scripts/local_autonomy.py").read_text()
-        self.assertIn('A prior approved research record is available', source)
+        self.assertIn('A prior approved work record is available', source)
         self.assertIn('"summary"', source)
+        self.assertIn('"analysis"', source)
+        self.assertIn('"artifact_id"', source)
 
 
 if __name__ == "__main__":
