@@ -44,6 +44,7 @@ PUBLIC_PRINTER = ROOT / "docs/printer.json"
 PUBLIC_NOTES = ROOT / "docs/resident-notes.json"
 PUBLIC_ACTIVITY = ROOT / "docs/activity.json"
 LOCAL_WORK_ORDERS = ROOT / "state/work-orders.json"
+MAX_LOCAL_HIRELINGS = 8
 LOCAL_WHITEBOARD = ROOT / "state/whiteboard.json"
 LOCAL_PRINTER = ROOT / "state/printer-queue.json"
 LOCAL_NOTES = ROOT / "state/agent-notes"
@@ -433,14 +434,14 @@ def next_question(base_url):
 def recruit(base_url, cycle):
     registry = json.loads(LOCAL_REGISTRY.read_text()) if LOCAL_REGISTRY.exists() else {"agents": []}
     active = sum(agent.get("status") in {"active-local", "probation"} for agent in registry.get("agents", []))
-    if active >= 3:
-        return {"status": "not-needed", "active": active}
+    if active >= MAX_LOCAL_HIRELINGS:
+        return {"status": "capacity-reached", "active": active, "capacity": MAX_LOCAL_HIRELINGS}
     completed = subprocess.run([sys.executable, str(ROOT / "scripts/local_recruiter.py"),
         "--base-url", base_url, "--cycle", str(cycle)], cwd=ROOT, capture_output=True, text=True, check=False)
     try:
         return json.loads(completed.stdout)
     except json.JSONDecodeError:
-        return {"status": "failed"}
+        return {"status": "failed", "active": active, "capacity": MAX_LOCAL_HIRELINGS}
 
 
 def govern(base_url, cycle):

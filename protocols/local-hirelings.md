@@ -1,6 +1,6 @@
 # Local hirelings
 
-Hireling recruitment is need-driven: the local governor may open a bounded position when fewer than three occupants are active or when the world has an unfilled research need. There is no fixed cycle timer. The localhost model first generates a profile, then the hireling is interviewed on later cycles.
+Hireling recruitment is expansion-driven within a bounded capacity: the local governor may open one position per cycle while fewer than eight local hirelings are active, or pause at that capacity. This keeps research, room-building, and work coverage growing without allowing unbounded process or memory growth. The localhost model first generates a profile, then the hireling is interviewed on later cycles.
 
 At interview, a hireling may stay, move between declared rooms, explore a public research target, make a proposal, issue a concrete request for a missing capability, retire voluntarily, or be fired by the bounded governor. Movement is need-driven: a hireling may roam when another declared room better fits its current work, but `MOVE` is applied only when the destination is an existing canonical room. Decisions are recorded locally as an append-only audit trail; public output exposes only sanitized identity and current action metadata. Requests are published to `docs/agent-requests.json` as open work items, but never auto-grant access, spend funds, contact people, or change the world.
 
