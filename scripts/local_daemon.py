@@ -107,14 +107,25 @@ def next_question(base_url):
 
 
 def recruit(base_url, cycle):
-    if cycle % 4:
-        return {"status": "not-scheduled"}
+    registry = json.loads(LOCAL_REGISTRY.read_text()) if LOCAL_REGISTRY.exists() else {"agents": []}
+    active = sum(agent.get("status") in {"active-local", "probation"} for agent in registry.get("agents", []))
+    if active >= 3:
+        return {"status": "not-needed", "active": active}
     completed = subprocess.run([sys.executable, str(ROOT / "scripts/local_recruiter.py"),
         "--base-url", base_url, "--cycle", str(cycle)], cwd=ROOT, capture_output=True, text=True, check=False)
     try:
         return json.loads(completed.stdout)
     except json.JSONDecodeError:
         return {"status": "failed"}
+
+
+def govern(base_url, cycle):
+    completed = subprocess.run([sys.executable, str(ROOT / "scripts/local_autonomy.py"),
+        "--base-url", base_url, "--cycle", str(cycle)], cwd=ROOT, capture_output=True, text=True, check=False)
+    try:
+        return json.loads(completed.stdout)
+    except json.JSONDecodeError:
+        return {"status": "failed", "active": 0, "decisions": []}
 
 
 def record(result):
@@ -152,6 +163,7 @@ def publish(result, world):
         "question": result.get("question", ""),
         "action": result.get("action", {"status": "not-run"}),
         "recruitment": result.get("recruitment", {"status": "not-run"}),
+        "autonomy": result.get("autonomy", {"status": "not-run"}),
         "metrics": metrics(result),
         "privacy": "Only aggregate metrics and the bounded council question are public; raw outputs remain local."
     }
@@ -166,6 +178,9 @@ def publish(result, world):
                 **{key: agent[key] for key in ("id", "room", "status")},
                 "name": str(agent.get("name", "Unnamed hireling")).strip(" ,.;"),
                 "role": str(agent.get("role", "unassigned")).strip(" ,.;"),
+                "last_action": agent.get("last_action", "uninterviewed"),
+                "proposal": str(agent.get("proposal", ""))[:220],
+                "exploration": str(agent.get("exploration", ""))[:100],
             }
             for agent in registry.get("agents", [])[-100:]
         ],
@@ -203,10 +218,12 @@ try:
             result = json.loads(completed.stdout)
             world = record(result)
             result["action"] = action(base_url, world["cycle"])
+            result["autonomy"] = govern(base_url, world["cycle"])
             result["recruitment"] = recruit(base_url, world["cycle"])
             if args.publish:
                 publish(result, world)
-            print(json.dumps({"cycle": world["cycle"], "metrics": metrics(result), "action": result["action"]}), flush=True)
+            print(json.dumps({"cycle": world["cycle"], "metrics": metrics(result), "action": result["action"],
+                              "autonomy": result["autonomy"], "recruitment": result["recruitment"]}), flush=True)
         else:
             print(json.dumps({"error": "roundtable failed", "returncode": completed.returncode}), flush=True)
         time.sleep(args.interval)
