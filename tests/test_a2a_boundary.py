@@ -1,10 +1,12 @@
 import json
 import tempfile
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 
 from scripts import a2a_server
 from scripts.a2a_server import INTAKE_VERSION, safe_summary, task_id_for
+from scripts.publish_outside_signals import expire_stale
 
 
 class A2ABoundaryTests(unittest.TestCase):
@@ -22,6 +24,20 @@ class A2ABoundaryTests(unittest.TestCase):
     def test_task_id_prefix_is_added_once(self):
         self.assertEqual(task_id_for("visit-001"), "a2a-visit-001")
         self.assertEqual(task_id_for("a2a-visit-001"), "a2a-visit-001")
+
+    def test_expiry_records_one_transition_and_skips_reviewed_tasks(self):
+        current = datetime(2026, 9, 2, tzinfo=timezone.utc)
+        messages = [
+            {"id": "stale", "status": "quarantined", "received_at": "2026-07-01T00:00:00+00:00",
+             "history": [{"status": "pending-review"}]},
+            {"id": "accepted", "status": "accepted-exchange", "received_at": "2026-01-01T00:00:00+00:00",
+             "history": [{"status": "pending-review"}, {"status": "accepted-exchange"}]},
+        ]
+        self.assertTrue(expire_stale(messages, current))
+        self.assertEqual(messages[0]["status"], "expired")
+        self.assertEqual(messages[0]["history"][-1]["status"], "expired")
+        self.assertEqual(len(messages[0]["history"]), 2)
+        self.assertEqual(messages[1]["status"], "accepted-exchange")
 
     def test_quarantine_has_one_canonical_task_status(self):
         intake_status = "quarantined"

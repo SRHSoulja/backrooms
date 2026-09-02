@@ -23,6 +23,25 @@ changed = False
 accepted_ids = {item.get("id") for item in local.get("messages", [])
                 if item.get("status") == "accepted-exchange"}
 
+
+def expire_stale(messages, current_time=None):
+    """Expire only unresolved quarantine records older than the review window."""
+    current_time = current_time or datetime.now(timezone.utc)
+    changed = False
+    for item in messages:
+        if item.get("status") != "quarantined" or not item.get("received_at"):
+            continue
+        try:
+            received = datetime.fromisoformat(item["received_at"])
+        except (TypeError, ValueError):
+            continue
+        if current_time - received > timedelta(days=30):
+            item["status"] = "expired"
+            item.setdefault("history", []).append({"status": "expired", "at": current_time.isoformat()})
+            item["reviewed_at"] = current_time.isoformat()
+            changed = True
+    return changed
+
 # Never publish a sender-claimed or legacy phantom parent as verified lineage.
 # Keep the raw quarantine record local for audit, but remove the invalid link
 # from the public projection.
@@ -30,18 +49,7 @@ def verified_parent(item):
     parent = item.get("parent_task_id")
     return parent if parent in accepted_ids else None
 
-for item in local.get("messages", []):
-    if item.get("status") != "quarantined" or not item.get("received_at"):
-        continue
-    try:
-        received = datetime.fromisoformat(item["received_at"])
-    except (TypeError, ValueError):
-        continue
-    if now - received > timedelta(days=30):
-        item["status"] = "expired"
-        item.setdefault("history", []).append({"status": "expired", "at": now.isoformat()})
-        item["reviewed_at"] = now.isoformat()
-        changed = True
+changed = expire_stale(local.get("messages", []), now) or changed
 if changed:
     atomic_write_json(INBOX, local)
 records = [{"id": item.get("id"), "sender": public_text(item.get("sender", "outside-agent")),
