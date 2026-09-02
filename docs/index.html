@@ -61,7 +61,10 @@ fetch('./market-watch.json').then(r => r.json()).then(m => {
 function escapeHtml(value) { return String(value ?? '').replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c])); }
 fetch('./agent-requests.json').then(r => r.json()).then(board => {
   const open = (board.requests || []).filter(item => item.status === 'open');
-  document.getElementById('requests').innerHTML = open.length ? open.slice().reverse().slice(0, 8).map(item => `<p><strong>${escapeHtml(item.agent)}</strong> · ${escapeHtml(item.role)} · ${escapeHtml(item.room)}<br>${escapeHtml(item.request)}<br><span class="label">Cycle ${escapeHtml(item.cycle)} · ${escapeHtml(item.fulfillment)}</span></p>`).join('') : '<p>No open resident requests yet. The interview cycle will ask again.</p>';
+  const recent = (board.requests || []).filter(item => item.status !== 'superseded').slice().reverse().slice(0, 8);
+  const activeHtml = open.length ? `<p><strong>Open</strong></p>` + open.slice().reverse().slice(0, 8).map(item => `<p><strong>${escapeHtml(item.agent)}</strong> · ${escapeHtml(item.role)} · ${escapeHtml(item.room)}<br>${escapeHtml(item.request)}<br><span class="label">Cycle ${escapeHtml(item.cycle)} · ${escapeHtml(item.fulfillment)}</span></p>`).join('') : '<p><strong>Open</strong><br>No open resident requests.</p>';
+  const recentHtml = recent.length ? `<p><strong>Recent outcomes</strong></p>` + recent.map(item => `<p><strong>${escapeHtml(item.agent)}</strong> · ${escapeHtml(item.status)}<br>${escapeHtml(item.request)}<br><span class="label">Cycle ${escapeHtml(item.cycle)} · ${escapeHtml(item.fulfillment)}</span></p>`).join('') : '';
+  document.getElementById('requests').innerHTML = activeHtml + recentHtml;
 }).catch(() => { document.getElementById('requests').textContent = 'Request board unavailable.'; });
 fetch('./local-cycle.json').then(r => r.json()).then(c => {
   const m = c.metrics || {};
