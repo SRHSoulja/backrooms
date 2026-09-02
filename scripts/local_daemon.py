@@ -90,11 +90,17 @@ def metrics(result):
 
 
 def public_voice(text):
-    """Expose a short, filtered council excerpt; retain full output locally."""
+    """Expose a bounded, filtered council excerpt without cutting sentences."""
     compact = re.sub(r"\s+", " ", str(text or "")).strip()
     if not compact or PUBLIC_VOICE_BLOCKED.search(compact):
         return "[excerpt withheld by publication filter]"
-    return compact[:360]
+    limit = 1200
+    if len(compact) <= limit:
+        return compact
+    boundary = max(compact.rfind(". ", 0, limit), compact.rfind("! ", 0, limit), compact.rfind("? ", 0, limit))
+    if boundary >= 160:
+        return compact[:boundary + 1]
+    return compact[:limit].rstrip() + "…"
 
 
 def action(base_url, cycle):
