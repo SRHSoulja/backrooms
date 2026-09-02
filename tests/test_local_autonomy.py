@@ -244,15 +244,23 @@ class LocalAutonomyTests(unittest.TestCase):
 
     def test_json_decision_is_parsed_with_existing_safety_rules(self):
         text = '{"action":"EXPLORE","room":"atrium","target":"public A2A standards",' \
-               '"proposal":"compare public specifications","request":"","code":"","reason":"clear lead"}'
+               '"proposal":"compare public specifications","request":"","code":"","reason":"clear lead",' \
+               '"self_summary":"I am comparing public interoperability standards next."}'
         decision = local_autonomy.parse(text, {"room": "atrium", "capabilities": []}, ["atrium"])
         self.assertEqual(decision["action"], "EXPLORE")
         self.assertEqual(decision["target"], "public A2A standards")
+        self.assertIn("interoperability", decision["self_summary"])
 
     def test_decision_schema_uses_only_existing_rooms_and_actions(self):
         schema = local_autonomy.decision_schema(["atrium", "archive"])
         self.assertEqual(schema["properties"]["room"]["enum"], ["atrium", "archive"])
         self.assertIn("BUILD", schema["properties"]["action"]["enum"])
+        self.assertIn("self_summary", schema["required"])
+
+    def test_prompt_contains_agent_continuity_context(self):
+        source = Path("scripts/local_autonomy.py").read_text()
+        self.assertIn('"purpose": agent.get("purpose"', source)
+        self.assertIn('"self_summary": agent.get("self_summary"', source)
 
     def test_research_does_not_pollute_resident_query_or_fake_provenance(self):
         source = Path("scripts/local_autonomy.py").read_text()
