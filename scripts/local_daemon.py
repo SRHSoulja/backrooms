@@ -44,7 +44,10 @@ PUBLIC_PRINTER = ROOT / "docs/printer.json"
 PUBLIC_NOTES = ROOT / "docs/resident-notes.json"
 PUBLIC_ACTIVITY = ROOT / "docs/activity.json"
 LOCAL_WORK_ORDERS = ROOT / "state/work-orders.json"
-MAX_LOCAL_HIRELINGS = 8
+# This is an emergency runaway guard, not a target roster size. Recruitment is
+# one profile per cycle and can therefore grow well beyond the old three-person
+# threshold without starting one process per hireling.
+MAX_LOCAL_HIRELINGS = 256
 LOCAL_WHITEBOARD = ROOT / "state/whiteboard.json"
 LOCAL_PRINTER = ROOT / "state/printer-queue.json"
 LOCAL_NOTES = ROOT / "state/agent-notes"

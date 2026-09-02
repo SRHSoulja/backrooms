@@ -7,6 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "state/local-agents.json"
+REGISTRY_RETENTION = 256
 FORBIDDEN = re.compile(r"(api[_ -]?key|password|secret|private memory|credential|token|wallet|funds)", re.I)
 
 def ask(url, cycle):
@@ -40,6 +41,6 @@ if any(re.sub(r"[^a-z0-9]", "", str(existing.get("name", "")).lower()) == normal
     print(json.dumps({"status": "rejected", "reason": "duplicate active identity"})); raise SystemExit(0)
 number = len(registry["agents"]) + 1
 agent = {"id": f"local-{number:03d}", "name": profile["NAME"], "role": profile["ROLE"], "purpose": profile["PURPOSE"], "question": profile["QUESTION"], "room": "archive", "status": "probation", "capabilities": ["bounded-questioning"], "recorded_at": datetime.now(timezone.utc).isoformat()}
-registry["agents"] = (registry.get("agents", []) + [agent])[-100:]
+registry["agents"] = (registry.get("agents", []) + [agent])[-REGISTRY_RETENTION:]
 REGISTRY.write_text(json.dumps(registry, indent=2) + "\n")
 print(json.dumps({"status": "activated", "agent": {k: agent[k] for k in ("id", "name", "role", "room", "status")}}))
