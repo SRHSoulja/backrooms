@@ -34,8 +34,11 @@ def ask(url, agent, rooms, cycle):
 
 
 def parse(text, agent, rooms):
-    fields = {line.split(":", 1)[0].strip().upper(): line.split(":", 1)[1].strip()
-              for line in text.splitlines() if ":" in line}
+    fields = {}
+    for line in text.splitlines():
+        match = re.match(r"\s*(ACTION|ROOM|TARGET|PROPOSAL|REASON)\s*[:\-]\s*(.*?)\s*$", line, re.I)
+        if match:
+            fields[match.group(1).upper()] = match.group(2).strip().strip("`*")
     if FORBIDDEN.search(text):
         return None
     action = fields.get("ACTION", "").upper().strip()
@@ -69,6 +72,11 @@ def main():
         except Exception:
             decision = None
         if not decision:
+            agent["status"] = "probation"
+            agent["last_action"] = "interview-rejected"
+            agent["interviewed_at"] = datetime.now(timezone.utc).isoformat()
+            registry.setdefault("decisions", []).append({"cycle": args.cycle, "agent": agent["id"],
+                                                           "action": "interview-rejected"})
             results.append({"id": agent["id"], "status": "interview-rejected"})
             continue
         if decision["action"] == "MOVE":
