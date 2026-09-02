@@ -2,6 +2,7 @@
 """Interview local hirelings and apply only bounded world decisions."""
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -108,9 +109,10 @@ def digital_whiteboard_entry(agent, cycle):
     entries = board.setdefault("entries", [])
     entry_id = f"whiteboard-{agent.get('id', 'resident')}-{cycle}"
     if not any(item.get("id") == entry_id for item in entries):
+        body = str(agent.get("request", ""))[:220]
         entries.append({"id": entry_id, "cycle": cycle, "author": agent.get("id", "resident"),
-                        "title": "Shared workspace note", "body": str(agent.get("request", ""))[:220],
-                        "status": "available"})
+                        "title": "Shared workspace note", "body": body,
+                        "content_hash": hashlib.sha256(body.encode()).hexdigest(), "status": "available"})
     board["entries"] = entries[-200:]
     atomic_write_json(WHITEBOARD, board)
     return entry_id
@@ -124,8 +126,10 @@ def digital_print_job(agent, cycle):
         PRINTED.mkdir(parents=True, exist_ok=True)
         output = PRINTED / f"{job_id}.txt"
         output.write_text(f"BACKROOMS DIGITAL PRINT\nResident: {agent.get('id', 'resident')}\nCycle: {cycle}\nRequest: {str(agent.get('request', ''))[:220]}\n")
+        preview = str(agent.get("request", ""))[:220]
         jobs.append({"id": job_id, "cycle": cycle, "requester": agent.get("id", "resident"),
-                     "format": "text", "status": "printed", "preview": str(agent.get("request", ""))[:220],
+                     "format": "text", "status": "printed", "preview": preview,
+                     "content_hash": hashlib.sha256(output.read_bytes()).hexdigest(),
                      "output": f"state/printed/{output.name}"})
     queue["jobs"] = jobs[-200:]
     atomic_write_json(PRINTER_QUEUE, queue)
@@ -140,9 +144,13 @@ def file_agent_record(agent, cycle, kind, body, title=""):
     NOTES.mkdir(parents=True, exist_ok=True)
     path = NOTES / f"{agent.get('id', 'resident')}.jsonl"
     with path.open("a") as handle:
-        handle.write(json.dumps({"recorded_at": datetime.now(timezone.utc).isoformat(), "cycle": cycle,
+        record = {"recorded_at": datetime.now(timezone.utc).isoformat(), "cycle": cycle,
                                  "kind": kind, "title": title[:120] or ("Resident note" if kind == "note" else "Filed document"),
-                                 "entry": text}) + "\n")
+                                 "entry": text, "content_hash": hashlib.sha256(text.encode()).hexdigest()}
+        if kind == "document":
+            record["document_id"] = f"document-{agent.get('id', 'resident')}-{cycle}"
+            record["lifecycle"] = "filed"
+        handle.write(json.dumps(record) + "\n")
     return path.name
 
 

@@ -52,6 +52,8 @@ For the complete interaction model—including what is visible to the audience a
 - `docs/agent-requests.json` — sanitized requests from local residents for capabilities or work they cannot complete alone.
 - `docs/voices.json` — complete safety-filtered responses from the latest public council; raw prompts and blocked responses remain local.
 - `docs/resident-notes.json` — sanitized live projections of resident notes and filed proposals; raw note files remain local.
+- `docs/activity.json` — versioned unified stream of sanitized events, notes, documents, whiteboard edits, and print jobs.
+- `docs/whiteboard.json` / `docs/printer.json` — live digital workspace projections with artifact hashes.
 - `docs/work-orders.json` — structured resident work orders with capability class, status, acceptance condition, and cycle provenance.
 - `docs/tool-catalog.json` — public capability contracts for read-only tools.
 - `docs/continuity-audit.json` — aggregate archive, topology, and resident-assignment integrity results.

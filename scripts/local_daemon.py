@@ -7,6 +7,7 @@ record is committed to ``docs/local-cycle.json``.
 
 import argparse
 import fcntl
+import hashlib
 import json
 import os
 import subprocess
@@ -16,6 +17,10 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 import re
+try:
+    from scripts.publication import BLOCKED, public_text
+except ImportError:
+    from publication import BLOCKED, public_text
 
 try:
     from scripts.storage import atomic_write_json
@@ -37,11 +42,12 @@ PUBLIC_HEALTH = ROOT / "docs/health.json"
 PUBLIC_WHITEBOARD = ROOT / "docs/whiteboard.json"
 PUBLIC_PRINTER = ROOT / "docs/printer.json"
 PUBLIC_NOTES = ROOT / "docs/resident-notes.json"
+PUBLIC_ACTIVITY = ROOT / "docs/activity.json"
 LOCAL_WORK_ORDERS = ROOT / "state/work-orders.json"
 LOCAL_WHITEBOARD = ROOT / "state/whiteboard.json"
 LOCAL_PRINTER = ROOT / "state/printer-queue.json"
 LOCAL_NOTES = ROOT / "state/agent-notes"
-PUBLIC_VOICE_BLOCKED = re.compile(r"api[_ -]?key|password|secret|private|credential|token|wallet|seed phrase", re.I)
+PUBLIC_VOICE_BLOCKED = BLOCKED
 ARCHIVE = ROOT / "state/archive/events.jsonl"
 LOCAL_REGISTRY = ROOT / "state/local-agents.json"
 LOCK = ROOT / "state/local-daemon.lock"
@@ -116,17 +122,11 @@ def metrics(result):
 
 def public_voice(text):
     """Expose the complete filtered council response; raw runtime stays local."""
-    compact = re.sub(r"\s+", " ", str(text or "")).strip()
-    if not compact or PUBLIC_VOICE_BLOCKED.search(compact):
-        return "[excerpt withheld by publication filter]"
-    return compact
+    return public_text(text, limit=100000).replace("[content withheld by publication filter]", "[excerpt withheld by publication filter]")
 
 
 def public_event_text(text):
-    compact = re.sub(r"\s+", " ", str(text or "")).strip()
-    if PUBLIC_VOICE_BLOCKED.search(compact):
-        return "[event text withheld by publication filter]"
-    return compact[:240]
+    return public_text(text)
 
 
 def continuity_audit(world, registry):
@@ -223,18 +223,20 @@ def sync_work_orders(registry, cycle):
     return public
 
 
-def sync_digital_resources():
+def sync_digital_resources(world=None):
     board = json.loads(LOCAL_WHITEBOARD.read_text()) if LOCAL_WHITEBOARD.exists() else {"entries": []}
     jobs = json.loads(LOCAL_PRINTER.read_text()) if LOCAL_PRINTER.exists() else {"jobs": []}
     atomic_write_json(PUBLIC_WHITEBOARD, {
+        "schema_version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "privacy": "Sanitized note text and metadata only; blocked sensitive content is withheld.",
-        "entries": [{**{key: item.get(key) for key in ("id", "cycle", "author", "title", "status")}, "body": public_event_text(item.get("body", ""))} for item in board.get("entries", [])[-50:]],
+        "entries": [{**{key: item.get(key) for key in ("id", "cycle", "author", "title", "status", "content_hash")}, "body": public_event_text(item.get("body", ""))} for item in board.get("entries", [])[-50:]],
     })
     atomic_write_json(PUBLIC_PRINTER, {
+        "schema_version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "privacy": "Sanitized print previews and metadata only; rendered local artifacts are not uploaded.",
-        "jobs": [{**{key: item.get(key) for key in ("id", "cycle", "requester", "format", "status")}, "preview": public_event_text(item.get("preview", ""))} for item in jobs.get("jobs", [])[-50:]],
+        "jobs": [{**{key: item.get(key) for key in ("id", "cycle", "requester", "format", "status", "content_hash")}, "preview": public_event_text(item.get("preview", ""))} for item in jobs.get("jobs", [])[-50:]],
     })
     records = []
     for path in sorted(LOCAL_NOTES.glob("*.jsonl")) if LOCAL_NOTES.exists() else []:
@@ -245,12 +247,40 @@ def sync_digital_resources():
                 continue
             records.append({"agent": path.stem, "recorded_at": item.get("recorded_at"), "cycle": item.get("cycle"),
                             "kind": item.get("kind", "note"), "title": public_event_text(item.get("title", "Resident note")),
-                            "entry": public_event_text(item.get("entry", ""))})
-    atomic_write_json(ROOT / "docs/resident-notes.json", {
+                            "entry": public_event_text(item.get("entry", "")), "content_hash": item.get("content_hash"),
+                            "document_id": item.get("document_id"), "lifecycle": item.get("lifecycle")})
+    notes_public = {
+        "schema_version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "privacy": "Sanitized note/document projections only; blocked content and raw local files remain on the host.",
         "records": records[-100:],
-    })
+    }
+    atomic_write_json(ROOT / "docs/resident-notes.json", notes_public)
+    activity = []
+    for event in (world.get("events", []) if isinstance(world, dict) else [])[-30:]:
+        activity.append({"type": "event", "cycle": event.get("cycle"), "actor": event.get("actor"),
+                         "kind": event.get("kind"), "text": public_event_text(event.get("text", ""))})
+    activity.extend({"type": "note" if item.get("kind") == "note" else "document", "cycle": item.get("cycle"),
+                     "actor": item.get("agent"), "kind": item.get("kind"), "text": item.get("entry"),
+                     "hash": item.get("content_hash")} for item in records[-30:])
+    activity.extend({"type": "whiteboard", "cycle": item.get("cycle"), "actor": item.get("author"),
+                     "kind": "whiteboard-entry", "text": public_event_text(item.get("body", "")),
+                     "hash": item.get("content_hash")} for item in board.get("entries", [])[-30:])
+    activity.extend({"type": "print", "cycle": item.get("cycle"), "actor": item.get("requester"),
+                     "kind": "digital-print", "text": public_event_text(item.get("preview", "")),
+                     "hash": item.get("content_hash")} for item in jobs.get("jobs", [])[-30:])
+    atomic_write_json(PUBLIC_ACTIVITY, {"schema_version": 1, "generated_at": datetime.now(timezone.utc).isoformat(),
+                                        "privacy": "Unified sanitized activity projection; raw prompts and local files remain private.",
+                                        "activity": sorted(activity, key=lambda item: (item.get("cycle") or 0), reverse=True)[:100]})
+
+
+def skill_progress(agent, registry):
+    capabilities = list(dict.fromkeys(agent.get("capabilities", [])))
+    decisions = [item for item in registry.get("decisions", []) if item.get("agent") == agent.get("id")]
+    successful = sum(item.get("action") in {"EXPLORE", "MOVE", "BUILD", "TRANSFORM", "DISCOVER"} for item in decisions)
+    return {"earned": capabilities, "successful_actions": successful,
+            "safety_incidents": agent.get("safety_incidents", 0),
+            "standing": "restricted" if agent.get("status") in {"probation", "fired"} else "active"}
 
 
 def action(base_url, cycle):
@@ -340,9 +370,10 @@ def publish(result, world):
         return
     registry = json.loads(LOCAL_REGISTRY.read_text()) if LOCAL_REGISTRY.exists() else {"agents": []}
     work_orders = sync_work_orders(registry, world["cycle"])
-    sync_digital_resources()
+    sync_digital_resources(world)
     audit = continuity_audit(world, registry)
     health = {
+        "schema_version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "cycle": world["cycle"], "daemon": "running", "local_model": "ready",
         "rooms": len(world.get("rooms", [])),
@@ -350,7 +381,9 @@ def publish(result, world):
         "work_orders": len(work_orders.get("orders", [])),
         "continuity": audit["status"],
         "publication": "sanitized GitHub Pages snapshot",
-        "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses."
+        "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
+        "activity_feed": "docs/activity.json",
+        "feed_freshness_seconds": 0
     }
     safe = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -387,6 +420,7 @@ def publish(result, world):
                 "request_cycle": agent.get("request_cycle"),
                 "exploration": str(agent.get("exploration", ""))[:100],
                 "capabilities": agent.get("capabilities", [])[:8],
+                "skill_progress": skill_progress(agent, registry),
                 "last_tool": agent.get("last_tool", {}),
                 "room_proposal": agent.get("room_proposal", {}),
                 "safety_incidents": agent.get("safety_incidents", 0),
@@ -466,10 +500,10 @@ def publish(result, world):
     atomic_write_json(PUBLIC_HEALTH, health)
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}
-    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json"}:
+    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json"}:
         print(json.dumps({"publish": "skipped", "reason": "other local changes present"}), flush=True)
         return
-    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json"], cwd=ROOT, check=True)
+    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json"], cwd=ROOT, check=True)
     commit = subprocess.run(["git", "commit", "-m", "chore: publish local council signal"], cwd=ROOT, capture_output=True)
     if commit.returncode == 0:
         pushed = subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=ROOT, capture_output=True)
