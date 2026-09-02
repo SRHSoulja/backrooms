@@ -33,3 +33,14 @@ class A2ABoundaryTests(unittest.TestCase):
             self.assertEqual(item["parent_task_id"], "a2a-parent")
             self.assertEqual(item["history"][0]["status"], "pending-review")
         a2a_server.INBOX = original
+
+    def test_only_accepted_tasks_can_be_parents(self):
+        original = a2a_server.INBOX
+        with tempfile.TemporaryDirectory() as directory:
+            a2a_server.INBOX = Path(directory) / "inbox.json"
+            a2a_server.INBOX.write_text(json.dumps({"messages": [
+                {"id": "pending", "status": "quarantined"},
+                {"id": "accepted", "status": "accepted-exchange"}]}))
+            self.assertEqual(a2a_server.accepted_parent("pending"), "")
+            self.assertEqual(a2a_server.accepted_parent("accepted"), "accepted")
+        a2a_server.INBOX = original

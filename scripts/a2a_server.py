@@ -49,6 +49,17 @@ def quarantine(text, request_id, parent_task_id=""):
     return request_id
 
 
+def accepted_parent(task_id):
+    if not task_id or not INBOX.exists():
+        return ""
+    try:
+        inbox = json.loads(INBOX.read_text())
+    except json.JSONDecodeError:
+        return ""
+    return task_id[:80] if any(item.get("id") == task_id and item.get("status") == "accepted-exchange"
+                               for item in inbox.get("messages", [])) else ""
+
+
 class Handler(BaseHTTPRequestHandler):
     def send_json(self, payload, status=200):
         raw = json.dumps(payload).encode()
@@ -95,7 +106,8 @@ class Handler(BaseHTTPRequestHandler):
             return
         quarantine_id = "a2a-" + str(request.get("id", "message"))[:80]
         message = request.get("params", {}).get("message", {})
-        parent_task_id = str(message.get("taskId") or request.get("params", {}).get("taskId") or "")
+        requested_parent = str(message.get("taskId") or request.get("params", {}).get("taskId") or "")
+        parent_task_id = accepted_parent(requested_parent)
         quarantine(text, quarantine_id, parent_task_id)
         summary = safe_summary(text)
         reply = ("Backrooms boundary: introductions and exchange proposals are public, bounded, "
@@ -108,7 +120,8 @@ class Handler(BaseHTTPRequestHandler):
             "task": {"id": quarantine_id, "status": "pending-review",
                       "status_url": "/a2a/tasks/" + quarantine_id,
                       "scope": "outside-exchange-review",
-                      "parent_task_id": parent_task_id or None},
+                      "parent_task_id": parent_task_id or None,
+                      "parent_link": "accepted-exchange" if parent_task_id else ("unrecognized" if requested_parent else None)},
             "message": {"role": "agent", "parts": [{"kind": "text", "text": reply}]}
         }})
 
