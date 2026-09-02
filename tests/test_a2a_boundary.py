@@ -28,8 +28,10 @@ class A2ABoundaryTests(unittest.TestCase):
         original = a2a_server.INBOX
         with tempfile.TemporaryDirectory() as directory:
             a2a_server.INBOX = Path(directory) / "inbox.json"
+            a2a_server.INBOX.write_text(json.dumps({"messages": [
+                {"id": "a2a-parent", "status": "accepted-exchange"}]}))
             a2a_server.quarantine("bounded report", "a2a-followup", "a2a-parent")
-            item = json.loads(a2a_server.INBOX.read_text())["messages"][0]
+            item = json.loads(a2a_server.INBOX.read_text())["messages"][-1]
             self.assertEqual(item["parent_task_id"], "a2a-parent")
             self.assertEqual(item["history"][0]["status"], "pending-review")
         a2a_server.INBOX = original
@@ -43,4 +45,13 @@ class A2ABoundaryTests(unittest.TestCase):
                 {"id": "accepted", "status": "accepted-exchange"}]}))
             self.assertEqual(a2a_server.accepted_parent("pending"), "")
             self.assertEqual(a2a_server.accepted_parent("accepted"), "accepted")
+        a2a_server.INBOX = original
+
+    def test_quarantine_defends_against_unverified_parent_callers(self):
+        original = a2a_server.INBOX
+        with tempfile.TemporaryDirectory() as directory:
+            a2a_server.INBOX = Path(directory) / "inbox.json"
+            a2a_server.quarantine("bounded report", "child", "phantom-parent")
+            item = json.loads(a2a_server.INBOX.read_text())["messages"][0]
+            self.assertNotIn("parent_task_id", item)
         a2a_server.INBOX = original

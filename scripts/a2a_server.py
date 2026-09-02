@@ -34,6 +34,10 @@ def safe_summary(text):
 
 
 def quarantine(text, request_id, parent_task_id=""):
+    # Defense in depth: callers must never be able to persist an unverified
+    # parent, even if they bypass the request handler's resolution step.
+    if parent_task_id and not accepted_parent(parent_task_id):
+        parent_task_id = ""
     inbox = json.loads(INBOX.read_text()) if INBOX.exists() else {"privacy": "local quarantine; never committed", "messages": []}
     if not any(item.get("id") == request_id for item in inbox.get("messages", [])):
         received_at = datetime.now(timezone.utc).isoformat()
@@ -83,7 +87,8 @@ class Handler(BaseHTTPRequestHandler):
             task_status = "pending-review" if intake_status == "quarantined" else intake_status
             self.send_json({"task_id": task_id, "status": task_status, "intake_status": intake_status,
                             "received_at": item.get("received_at"), "reviewed_at": item.get("reviewed_at"),
-                            "parent_task_id": item.get("parent_task_id"),
+                            "parent_task_id": item.get("parent_task_id") if accepted_parent(item.get("parent_task_id", "")) else None,
+                            "parent_link": "accepted-exchange" if accepted_parent(item.get("parent_task_id", "")) else ("unrecognized" if item.get("parent_task_id") else None),
                             "history": item.get("history", []),
                             "scope": "outside-exchange-review", "resident_admission": False,
                             "capabilities": []})
