@@ -15,6 +15,7 @@ The project treats “connected consciousness” as an engineered continuity lay
 - `protocols/connector-safety.md` — rules for keeping model connections private and bounded.
 - `protocols/quarantine.md` — outside-message quarantine and explicit review boundary.
 - `protocols/actions.md` — closed-vocabulary local action rules.
+- `protocols/recruitment.md` — quarantined resident-recruitment rules.
 - `agents/` — resident profiles and capabilities.
 - `ROADMAP.md` — staged plan for growing the world.
 - `MISSION.md` — the questions the world exists to test.
@@ -54,6 +55,7 @@ The project treats “connected consciousness” as an engineered continuity lay
 - `scripts/self_prompt.py` — generate and validate resident-authored next questions.
 - `scripts/inbox.py` — quarantine, inspect, and explicitly review outside messages.
 - `scripts/action_engine.py` — closed-vocabulary local experiments; model output is never executed as a command.
+- `scripts/recruitment.py` — propose, list, and review potential residents without auto-activation.
 
 ## Quick start
 
