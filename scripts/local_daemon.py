@@ -17,6 +17,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 import re
 
+try:
+    from scripts.storage import atomic_write_json
+except ImportError:
+    from storage import atomic_write_json
+
 ROOT = Path(__file__).resolve().parents[1]
 STATE = ROOT / "state/world.json"
 RUNTIME_STATE = ROOT / "state/local-runtime.json"
@@ -81,7 +86,7 @@ def runtime_world():
             for event in world.get("events", []):
                 archive.write(json.dumps(event, separators=(",", ":")) + "\n")
     world["events"] = world.get("events", [])[-20:]
-    RUNTIME_STATE.write_text(json.dumps(world, indent=2) + "\n")
+    atomic_write_json(RUNTIME_STATE, world)
     return world
 
 
@@ -109,6 +114,13 @@ def public_voice(text):
     if not compact or PUBLIC_VOICE_BLOCKED.search(compact):
         return "[excerpt withheld by publication filter]"
     return compact
+
+
+def public_event_text(text):
+    compact = re.sub(r"\s+", " ", str(text or "")).strip()
+    if PUBLIC_VOICE_BLOCKED.search(compact):
+        return "[event text withheld by publication filter]"
+    return compact[:240]
 
 
 def continuity_audit(world, registry):
@@ -190,12 +202,12 @@ def sync_work_orders(registry, cycle):
     ordered = list(orders.values())[-100:]
     local = {"updated_at": datetime.now(timezone.utc).isoformat(), "orders": ordered}
     LOCAL_WORK_ORDERS.parent.mkdir(parents=True, exist_ok=True)
-    LOCAL_WORK_ORDERS.write_text(json.dumps(local, indent=2) + "\n")
+    atomic_write_json(LOCAL_WORK_ORDERS, local)
     public = {"generated_at": local["updated_at"],
               "privacy": "Sanitized work-order metadata only; local context and raw responses remain local.",
               "orders": [{key: item.get(key) for key in ("id", "agent", "room", "request", "status", "capability", "acceptance", "outcome", "evidence_source", "cycle", "updated_cycle")}
                         for item in ordered]}
-    PUBLIC_WORK_ORDERS.write_text(json.dumps(public, indent=2) + "\n")
+    atomic_write_json(PUBLIC_WORK_ORDERS, public)
     return public
 
 
@@ -271,9 +283,7 @@ def record(result):
     ARCHIVE.parent.mkdir(parents=True, exist_ok=True)
     with ARCHIVE.open("a") as archive:
         archive.write(json.dumps(world["events"][-1], separators=(",", ":")) + "\n")
-    with RUNTIME_STATE.open("w") as handle:
-        json.dump(world, handle, indent=2)
-        handle.write("\n")
+    atomic_write_json(RUNTIME_STATE, world)
     return world
 
 
@@ -399,19 +409,19 @@ def publish(result, world):
         "events": world["cycle"],
         "recent": [
             {"cycle": event.get("cycle", world["cycle"]), "kind": event.get("kind", "event"),
-             "text": event.get("text", "Public world event recorded.")[:240]}
+             "text": public_event_text(event.get("text", "Public world event recorded."))}
             for event in world.get("events", [])[-8:]
         ],
         "privacy": "Current sanitized topology and bounded event metadata; local runtime and model output stay on the host."
     }
-    PUBLIC_CYCLE.write_text(json.dumps(safe, indent=2) + "\n")
-    PUBLIC_HISTORY.write_text(json.dumps(history, indent=2) + "\n")
-    PUBLIC_HIRELINGS.write_text(json.dumps(public_hirelings, indent=2) + "\n")
-    PUBLIC_REQUESTS.write_text(json.dumps(requests, indent=2) + "\n")
-    PUBLIC_VOICES.write_text(json.dumps(voices, indent=2) + "\n")
-    PUBLIC_WORLD.write_text(json.dumps(public_world, indent=2) + "\n")
-    PUBLIC_AUDIT.write_text(json.dumps(safe["continuity_audit"], indent=2) + "\n")
-    PUBLIC_HEALTH.write_text(json.dumps(health, indent=2) + "\n")
+    atomic_write_json(PUBLIC_CYCLE, safe)
+    atomic_write_json(PUBLIC_HISTORY, history)
+    atomic_write_json(PUBLIC_HIRELINGS, public_hirelings)
+    atomic_write_json(PUBLIC_REQUESTS, requests)
+    atomic_write_json(PUBLIC_VOICES, voices)
+    atomic_write_json(PUBLIC_WORLD, public_world)
+    atomic_write_json(PUBLIC_AUDIT, safe["continuity_audit"])
+    atomic_write_json(PUBLIC_HEALTH, health)
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}
     if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "state/world.json", "state/work-orders.json"}:

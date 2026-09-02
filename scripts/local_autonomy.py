@@ -11,6 +11,11 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
+try:
+    from scripts.storage import atomic_write_json
+except ImportError:
+    from storage import atomic_write_json
+
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "state/local-agents.json"
 ARCHIVE = ROOT / "state/archive/events.jsonl"
@@ -333,6 +338,10 @@ def main():
                            f"Resident used the approved {tool['tool']} capability.",
                            tool=tool["tool"], capability=tool.get("contract", {}).get("capability", "unknown"),
                            result_count=len(tool.get("results", [])))
+            elif tool.get("status") != "not-requested":
+                emit_event(world, args.cycle, "tool-failed", agent.get("id", "resident"),
+                           f"Resident tool attempt ended with status {tool.get('status', 'unknown')}.",
+                           tool=tool.get("tool", "unknown"), status=tool.get("status", "unknown"))
             elif tool.get("status") == "rejected" and any(marker in tool.get("reason", "") for marker in ("bounded validation", "public HTTPS", "credentials")):
                 revoke(agent, "public-web-read", "broker policy rejection: " + tool.get("reason", "unknown"))
         registry.setdefault("decisions", []).append({"cycle": args.cycle, "agent": agent["id"], **decision})
@@ -346,8 +355,8 @@ def main():
     if construction:
         registry.setdefault("decisions", []).extend({"cycle": args.cycle, **item} for item in construction)
     registry["decisions"] = registry.get("decisions", [])[-100:]
-    (ROOT / "state/world.json").write_text(json.dumps(world, indent=2) + "\n")
-    REGISTRY.write_text(json.dumps(registry, indent=2) + "\n")
+    atomic_write_json(ROOT / "state/world.json", world)
+    atomic_write_json(REGISTRY, registry)
     active = sum(agent.get("status") in {"active-local", "probation"} for agent in registry.get("agents", []))
     print(json.dumps({"status": "completed", "active": active, "decisions": results,
                       "construction": construction, "requests": requests}))
