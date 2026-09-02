@@ -503,6 +503,22 @@ def resolve_requests(registry, world=None, cycle=None):
             agent["request_fulfillment"] = "The pre-approved restricted local sandbox is available for data-only code; network, shell, credentials, and host writes remain disabled."
             agent["request_artifact"] = {"kind": "bounded-workbench", "scope": "data-only-restricted-sandbox", "accepted": True}
             resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "scope": "data-only-restricted-sandbox"})
+        elif "secure workstation" in request:
+            if "bounded-workbench" in agent.get("capabilities", []):
+                agent["request_status"] = "closed"
+                agent["request_fulfillment"] = "A bounded workstation is available through the data-only local sandbox; shell, network, credentials, and host writes remain disabled."
+                agent["request_artifact"] = {"kind": "bounded-workbench", "scope": "data-only-restricted-sandbox", "accepted": True}
+                resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "scope": "data-only-restricted-sandbox"})
+            else:
+                agent["request_status"] = "needs-clarification"
+                agent["request_fulfillment"] = "A general secure workstation is not provisioned; the resident must request the bounded data-only workbench after interview."
+                agent["request_artifact"] = {"kind": "capability-limited", "reason": "bounded-workbench-not-earned", "accepted": False}
+                resolutions.append({"agent": agent.get("id"), "status": "needs-clarification"})
+        elif "quantum computing simulator" in request:
+            agent["request_status"] = "closed"
+            agent["request_fulfillment"] = "A quantum simulator is not provisioned; public educational research and the restricted data-only sandbox remain available, with no arbitrary package installation."
+            agent["request_artifact"] = {"kind": "capability-limited", "scope": "public-education-only", "reason": "simulator-not-provisioned", "accepted": False}
+            resolutions.append({"agent": agent.get("id"), "status": "needs-clarification", "scope": "public-education-only"})
         elif any(term in request for term in ("encrypted communication", "encrypted document", "encrypted storage")):
             agent["request_status"] = "needs-clarification"
             agent["request_fulfillment"] = "Educational cryptography and local reviewed documents are available; live private channels, key custody, and secret storage require a specific safe design."

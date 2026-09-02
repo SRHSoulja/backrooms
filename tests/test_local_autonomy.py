@@ -164,6 +164,14 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(artifact["scope"], "data-only-restricted-sandbox")
         self.assertTrue(artifact["accepted"])
 
+    def test_unprovisioned_quantum_simulator_is_explicitly_closed(self):
+        registry = {"agents": [{"id": "local-test", "request": "access to a quantum computing simulator",
+                                 "request_status": "open", "capabilities": ["public-web-read"]}]}
+        local_autonomy.resolve_requests(registry, world={"rooms": []})
+        artifact = registry["agents"][0]["request_artifact"]
+        self.assertEqual(registry["agents"][0]["request_status"], "closed")
+        self.assertFalse(artifact["accepted"])
+
     def test_unprovisioned_computer_request_is_explicitly_limited(self):
         world = {"rooms": [{"id": "atrium"}]}
         registry = {"agents": [{"id": "local-test", "status": "active-local", "room": "atrium",
