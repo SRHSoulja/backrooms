@@ -23,7 +23,7 @@ def ask(url, agent, rooms, cycle, repair=False):
               "Return exactly five lines: ACTION: STAY|MOVE|EXPLORE|PROPOSE|DISCOVER|BUILD|TRANSFORM|RETIRE|FIRE, ROOM: existing room id or current room, "
               "TARGET: short exploration target, PROPOSAL: short useful proposal, REQUEST: one concrete non-sensitive thing you cannot do alone, or NONE, REASON: short reason. "
               "You have no external network, credentials, private memory, arbitrary code, money, or authority to change safety rules. "
-              "Do not claim consciousness. Use MOVE only for an existing room. "
+              "Do not claim consciousness. Use MOVE only for an existing room. Move when another declared room better fits the work; otherwise stay. "
               + ("Repair the format: emit only the six labeled fields, with one short line per field; use REQUEST: NONE if no request."
                  if repair else "Keep every field short and labeled exactly once."))
     body = json.dumps({"model": os.getenv("BACKROOMS_LLM_MODEL", "local"), "messages": [
