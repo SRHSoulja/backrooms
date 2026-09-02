@@ -64,6 +64,12 @@ def accepted_parent(task_id):
                                for item in inbox.get("messages", [])) else ""
 
 
+def task_id_for(request_id):
+    """Return a stable public task ID without duplicating the namespace prefix."""
+    value = str(request_id or "message")[:80]
+    return value if value.startswith("a2a-") else "a2a-" + value
+
+
 class Handler(BaseHTTPRequestHandler):
     def send_json(self, payload, status=200):
         raw = json.dumps(payload).encode()
@@ -109,7 +115,7 @@ class Handler(BaseHTTPRequestHandler):
         if len(text) > 1000:
             self.send_json({"jsonrpc": "2.0", "id": request.get("id"), "error": {"code": -32602, "message": "message too long"}}, 413)
             return
-        quarantine_id = "a2a-" + str(request.get("id", "message"))[:80]
+        quarantine_id = task_id_for(request.get("id", "message"))
         message = request.get("params", {}).get("message", {})
         requested_parent = str(message.get("taskId") or request.get("params", {}).get("taskId") or "")
         parent_task_id = accepted_parent(requested_parent)

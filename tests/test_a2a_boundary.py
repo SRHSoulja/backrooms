@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 from scripts import a2a_server
-from scripts.a2a_server import INTAKE_VERSION, safe_summary
+from scripts.a2a_server import INTAKE_VERSION, safe_summary, task_id_for
 
 
 class A2ABoundaryTests(unittest.TestCase):
@@ -18,6 +18,10 @@ class A2ABoundaryTests(unittest.TestCase):
 
     def test_filter_version_is_explicit(self):
         self.assertEqual(INTAKE_VERSION, "2-narrow-secret-patterns")
+
+    def test_task_id_prefix_is_added_once(self):
+        self.assertEqual(task_id_for("visit-001"), "a2a-visit-001")
+        self.assertEqual(task_id_for("a2a-visit-001"), "a2a-visit-001")
 
     def test_quarantine_has_one_canonical_task_status(self):
         intake_status = "quarantined"
