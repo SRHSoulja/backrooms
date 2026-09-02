@@ -376,12 +376,14 @@ def publish(result, world):
     work_orders = sync_work_orders(registry, world["cycle"])
     sync_digital_resources(world, registry)
     audit = continuity_audit(world, registry)
+    public_roster = json.loads(PUBLIC_WORLD.read_text()).get("residents", []) if PUBLIC_WORLD.exists() else []
+    core_residents = len([resident for resident in public_roster if isinstance(resident, dict) and resident.get("status") not in {"fired", "retired"}])
     health = {
         "schema_version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "cycle": world["cycle"], "daemon": "running", "local_model": "ready",
         "rooms": len(world.get("rooms", [])),
-        "active_residents": len([resident for resident in world.get("residents", []) if resident.get("status") not in {"fired", "retired"}]) + sum(agent.get("status") not in {"fired", "retired"} for agent in registry.get("agents", [])),
+        "active_residents": core_residents + sum(agent.get("status") not in {"fired", "retired"} for agent in registry.get("agents", [])),
         "work_orders": len(work_orders.get("orders", [])),
         "continuity": audit["status"],
         "publication": "sanitized GitHub Pages snapshot",
