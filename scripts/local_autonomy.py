@@ -13,6 +13,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "state/local-agents.json"
+ARCHIVE = ROOT / "state/archive/events.jsonl"
 FORBIDDEN = re.compile(r"(api[_ -]?key|password|secret|private memory|credential|token|wallet|funds|shell|sudo)", re.I)
 ALLOWED = {"STAY", "MOVE", "EXPLORE", "PROPOSE", "DISCOVER", "BUILD", "TRANSFORM", "RETIRE", "FIRE"}
 
@@ -102,6 +103,18 @@ def safe_room_id(target, existing):
     return candidate
 
 
+def emit_event(world, cycle, kind, actor, text, **fields):
+    """Append one durable world event and mirror it into the local archive."""
+    event = {"id": f"world-event-{cycle}-{len(world.get('events', [])) + 1}",
+             "actor": actor, "kind": kind, "text": text[:240], "cycle": cycle,
+             "recorded_at": datetime.now(timezone.utc).isoformat(), **fields}
+    world.setdefault("events", []).append(event)
+    ARCHIVE.parent.mkdir(parents=True, exist_ok=True)
+    with ARCHIVE.open("a") as archive:
+        archive.write(json.dumps(event, separators=(",", ":")) + "\n")
+    return event
+
+
 def apply_construction(world, registry, cycle):
     """Materialize only resident proposals that pass the internal-room policy."""
     rooms = world.setdefault("rooms", [])
@@ -124,6 +137,9 @@ def apply_construction(world, registry, cycle):
                 source["description"] = str(proposal["description"])[:220]
                 proposal["status"] = "transformed"
                 proposal["completed_cycle"] = cycle
+                emit_event(world, cycle, "room-transformed", agent.get("id", "resident"),
+                           f"Resident transformed {source.get('id')} through a validated internal proposal.",
+                           room=source.get("id"), proposal_kind="transform")
                 changes.append({"agent": agent.get("id"), "action": "transform", "room": source.get("id")})
             continue
         if proposal.get("room_id") or not proposal.get("name"):
@@ -149,12 +165,15 @@ def apply_construction(world, registry, cycle):
         proposal["room_id"] = room_id
         proposal["status"] = "constructed"
         proposal["completed_cycle"] = cycle
+        emit_event(world, cycle, "room-built", agent.get("id", "resident"),
+                   f"Resident built {room_id} as a connected internal room.",
+                   room=room_id, connected_to=source["id"], proposal_kind="build")
         changes.append({"agent": agent.get("id"), "action": "build", "room": room_id,
                         "connected_to": source["id"]})
     return changes
 
 
-def resolve_requests(registry):
+def resolve_requests(registry, world=None, cycle=None):
     """Fulfill safe internal requests; leave ambiguous external requests explicit."""
     resolutions = []
     for agent in registry.get("agents", []):
@@ -201,6 +220,11 @@ def resolve_requests(registry):
             agent["request_status"] = "needs-clarification"
             agent["request_fulfillment"] = "A city or region must be named before a public map can be selected."
             resolutions.append({"agent": agent.get("id"), "status": "needs-clarification"})
+        if resolutions and world is not None and cycle is not None and resolutions[-1].get("agent") == agent.get("id"):
+            outcome = resolutions[-1]
+            emit_event(world, cycle, "request-resolved", agent.get("id", "resident"),
+                       f"Resident request resolved as {outcome.get('status')}.",
+                       request_status=outcome.get("status"), request=agent.get("request", "")[:120])
     return resolutions
 
 
@@ -298,7 +322,7 @@ def main():
                         "request_status": agent.get("request_status", "none"),
                         "exploration": agent.get("exploration", "")[:100], "tool": tool})
     construction = apply_construction(world, registry, args.cycle)
-    requests = resolve_requests(registry)
+    requests = resolve_requests(registry, world, args.cycle)
     if construction:
         registry.setdefault("decisions", []).extend({"cycle": args.cycle, **item} for item in construction)
     registry["decisions"] = registry.get("decisions", [])[-100:]
