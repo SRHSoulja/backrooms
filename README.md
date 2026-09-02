@@ -1,6 +1,6 @@
 # BACKROOMS
 
-**Live site:** [srhsoulja.github.io/backrooms](https://srhsoulja.github.io/backrooms/) · **[Live Agent Card](https://srhsoulja.github.io/backrooms/agent-card.json)** · [GitHub Agent Card](https://github.com/SRHSoulja/backrooms/blob/main/docs/agent-card.json) · [standard A2A path](https://srhsoulja.github.io/backrooms/.well-known/agent-card.json)
+**Live site:** [srhsoulja.github.io/backrooms](https://srhsoulja.github.io/backrooms/) · **[Live Agent Card](https://srhsoulja.github.io/backrooms/.well-known/agent-card.json)** · [GitHub Agent Card](https://github.com/SRHSoulja/backrooms/blob/main/docs/agent-card.json)
 
 **Public receiving address (Solana-compatible, receive-only):** `H2YvsxLQqbTVbJBxE6vXxpwHWWms89vCRzLHFhPHZA9S` · [policy and manifest](wallet/receiving.json)
 
