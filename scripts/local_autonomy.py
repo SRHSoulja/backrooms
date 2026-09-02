@@ -24,6 +24,8 @@ WHITEBOARD = ROOT / "state/whiteboard.json"
 PRINTER_QUEUE = ROOT / "state/printer-queue.json"
 PRINTED = ROOT / "state/printed"
 NOTES = ROOT / "state/agent-notes"
+ANALYSIS_ARCHIVE = ROOT / "state/analysis-results.jsonl"
+ANALYSIS_RETENTION = 100
 FORBIDDEN = re.compile(r"(api[_ -]?key|password|secret|private memory|credential|token|wallet|funds|shell|sudo)", re.I)
 ALLOWED = {"STAY", "MOVE", "EXPLORE", "ANALYZE", "PROPOSE", "DISCOVER", "BUILD", "TRANSFORM", "RETIRE", "FIRE"}
 
@@ -177,6 +179,29 @@ def file_agent_record(agent, cycle, kind, body, title=""):
                 record["supersedes"] = previous_documents[-1]
         handle.write(json.dumps(record) + "\n")
     return path.name
+
+
+def record_analysis(agent, cycle, code, analysis):
+    """Persist raw analysis locally; public projection is metadata-only."""
+    ANALYSIS_ARCHIVE.parent.mkdir(parents=True, exist_ok=True)
+    record = {"id": f"analysis-{agent.get('id', 'resident')}-{cycle}",
+              "agent": agent.get("id", "resident"), "cycle": cycle,
+              "status": analysis.get("status", "failed"), "returncode": analysis.get("returncode"),
+              "code": code, "output": analysis.get("output", ""),
+              "code_hash": hashlib.sha256(code.encode()).hexdigest(),
+              "output_chars": len(analysis.get("output", "")),
+              "recorded_at": datetime.now(timezone.utc).isoformat()}
+    existing = []
+    if ANALYSIS_ARCHIVE.exists():
+        for line in ANALYSIS_ARCHIVE.read_text().splitlines():
+            try:
+                existing.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    existing = [item for item in existing if item.get("id") != record["id"]][-ANALYSIS_RETENTION + 1:]
+    existing.append(record)
+    ANALYSIS_ARCHIVE.write_text("\n".join(json.dumps(item, separators=(",", ":")) for item in existing) + "\n")
+    return record
 
 
 def safe_room_id(target, existing):
@@ -452,7 +477,9 @@ def main():
                 analysis = json.loads(analysis_process.stdout)
             except json.JSONDecodeError:
                 analysis = {"status": "failed"}
-            agent["last_analysis"] = {"status": analysis.get("status", "failed"),
+            artifact = record_analysis(agent, args.cycle, decision["code"], analysis)
+            agent["last_analysis"] = {"artifact_id": artifact["id"], "code_hash": artifact["code_hash"],
+                                       "status": analysis.get("status", "failed"),
                                        "returncode": analysis.get("returncode"),
                                        "output_chars": len(analysis.get("output", "")),
                                        "contract": analysis.get("contract", {})}

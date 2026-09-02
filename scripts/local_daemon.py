@@ -48,6 +48,8 @@ LOCAL_WHITEBOARD = ROOT / "state/whiteboard.json"
 LOCAL_PRINTER = ROOT / "state/printer-queue.json"
 LOCAL_NOTES = ROOT / "state/agent-notes"
 LOCAL_CORE_NOTES = ROOT / "state/core-notes.jsonl"
+LOCAL_ANALYSIS = ROOT / "state/analysis-results.jsonl"
+PUBLIC_ANALYSIS = ROOT / "docs/analysis.json"
 PUBLIC_VOICE_BLOCKED = BLOCKED
 ARCHIVE = ROOT / "state/archive/events.jsonl"
 LOCAL_REGISTRY = ROOT / "state/local-agents.json"
@@ -305,6 +307,26 @@ def sync_digital_resources(world=None, registry=None, result=None):
             "failed_print_jobs": sum(item.get("status") == "failed" for item in jobs.get("jobs", []))}
 
 
+def sync_analysis():
+    """Project analysis provenance only; raw code and output never leave state/."""
+    records = []
+    if LOCAL_ANALYSIS.exists():
+        for line in LOCAL_ANALYSIS.read_text().splitlines()[-100:]:
+            try:
+                item = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            records.append({key: item.get(key) for key in
+                            ("id", "agent", "cycle", "status", "returncode", "code_hash", "output_chars", "recorded_at")})
+    public = {"schema_version": 1, "generated_at": datetime.now(timezone.utc).isoformat(),
+              "privacy": "Analysis provenance only; raw code and output remain local.", "records": records}
+    atomic_write_json(PUBLIC_ANALYSIS, public)
+    return {"analysis_runs": len(records),
+            "analysis_completed": sum(item.get("status") == "completed" for item in records),
+            "analysis_failed": sum(item.get("status") in {"failed", "rejected", "timed-out"} for item in records),
+            "analysis_feed": "docs/analysis.json"}
+
+
 def skill_progress(agent, registry):
     capabilities = list(dict.fromkeys(agent.get("capabilities", [])))
     decisions = [item for item in registry.get("decisions", []) if item.get("agent") == agent.get("id")]
@@ -402,6 +424,7 @@ def publish(result, world):
     registry = json.loads(LOCAL_REGISTRY.read_text()) if LOCAL_REGISTRY.exists() else {"agents": []}
     work_orders = sync_work_orders(registry, world["cycle"])
     resource_health = sync_digital_resources(world, registry, result)
+    analysis_health = sync_analysis()
     audit = continuity_audit(world, registry)
     public_roster = json.loads(PUBLIC_WORLD.read_text()).get("residents", []) if PUBLIC_WORLD.exists() else []
     core_residents = len([resident for resident in public_roster if isinstance(resident, dict) and resident.get("status") not in {"fired", "retired"}])
@@ -417,7 +440,7 @@ def publish(result, world):
         "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
         "activity_feed": "docs/activity.json",
         "feed_freshness_seconds": 0
-        ,**resource_health,
+        ,**resource_health, **analysis_health,
         "dropped_events": 0
     }
     safe = {
@@ -535,10 +558,10 @@ def publish(result, world):
     atomic_write_json(PUBLIC_HEALTH, health)
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}
-    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json"}:
+    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json"}:
         print(json.dumps({"publish": "skipped", "reason": "other local changes present"}), flush=True)
         return
-    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json"], cwd=ROOT, check=True)
+    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json"], cwd=ROOT, check=True)
     commit = subprocess.run(["git", "commit", "-m", "chore: publish local council signal"], cwd=ROOT, capture_output=True)
     if commit.returncode == 0:
         pushed = subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=ROOT, capture_output=True)
