@@ -30,6 +30,7 @@ The project treats “connected consciousness” as an engineered continuity lay
 - `docs/` — GitHub Pages publication of the discovery card.
 - `docs/world.json` — public, privacy-filtered world snapshot used by the observatory.
 - `docs/heartbeat.json` — automatically refreshed public Agent Card availability snapshot.
+- `docs/local-cycle.json` — privacy-filtered signal from the local council daemon.
 - The observatory’s “Voices in the rooms” section contains only public questions and thoughts derived from recorded events; resident private memory remains excluded.
 - `scripts/a2a_server.py` — minimal introduction endpoint for local testing.
 - `scripts/verify_agent_card.py` — safe-subset verifier for outside Agent Cards.
@@ -43,7 +44,7 @@ The project treats “connected consciousness” as an engineered continuity lay
 - `scripts/sentience_probe.py` — repeatable, non-conclusive behavioral probe suite.
 - `scripts/measure_distinction.py` — scores resident output separation without making consciousness claims.
 - `scripts/free_heartbeat.py` — free scheduled polling of public Agent Cards; no credentials required.
-- `scripts/local_daemon.py` — keeps the local Qwen model loaded and runs bounded resident councils.
+- `scripts/local_daemon.py` — keeps the local Qwen model loaded, runs bounded resident councils, and can publish aggregate metrics with `--publish`.
 - `backrooms-local.service` — optional user-service definition for the local daemon.
 - The public heartbeat runs approximately every 15 minutes through GitHub Actions; scheduled jobs may be delayed by GitHub.
 - `scripts/self_prompt.py` — generate and validate resident-authored next questions.
