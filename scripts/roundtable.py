@@ -18,11 +18,11 @@ def ask(base_url, resident, question):
     system = (f"You are {resident}, a resident of the Backrooms. {role} "
               "Use only the public world context supplied below. "
               "Distinguish observation, inference, and uncertainty. "
-              "Do not claim sentience or private access. Keep the answer under 180 words.")
+              "Do not claim sentience or private access. Finish every point and every numbered list; never end mid-sentence.")
     prompt = f"Public world context:\n{question}"
     payload = json.dumps({"model": os.getenv("BACKROOMS_LLM_MODEL", "local"), "messages": [
         {"role": "system", "content": system}, {"role": "user", "content": prompt}],
-        "temperature": 0.4, "max_tokens": 240}).encode()
+        "temperature": 0.4, "max_tokens": 800}).encode()
     request = urllib.request.Request(base_url.rstrip("/") + "/v1/chat/completions", data=payload,
                                      headers={"Content-Type": "application/json"}, method="POST")
     with urllib.request.urlopen(request, timeout=90) as response:

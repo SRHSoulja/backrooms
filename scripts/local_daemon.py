@@ -90,17 +90,11 @@ def metrics(result):
 
 
 def public_voice(text):
-    """Expose a bounded, filtered council excerpt without cutting sentences."""
+    """Expose the complete filtered council response; raw runtime stays local."""
     compact = re.sub(r"\s+", " ", str(text or "")).strip()
     if not compact or PUBLIC_VOICE_BLOCKED.search(compact):
         return "[excerpt withheld by publication filter]"
-    limit = 1200
-    if len(compact) <= limit:
-        return compact
-    boundary = max(compact.rfind(". ", 0, limit), compact.rfind("! ", 0, limit), compact.rfind("? ", 0, limit))
-    if boundary >= 160:
-        return compact[:boundary + 1]
-    return compact[:limit].rstrip() + "…"
+    return compact
 
 
 def action(base_url, cycle):
@@ -263,7 +257,7 @@ def publish(result, world):
     voices = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "cycle": world["cycle"],
-        "privacy": "Bounded filtered excerpts only; full prompts, responses, and private runtime remain local.",
+        "privacy": "Complete filtered council responses only; prompts, private runtime, and blocked responses remain local.",
         "voices": [
             {"name": "Echo", "role": "first cartographer", "excerpt": public_voice(result.get("echo"))},
             {"name": "Morrow", "role": "adversarial archivist", "excerpt": public_voice(result.get("morrow"))}
@@ -317,7 +311,7 @@ parser.add_argument("--port", type=int, default=8080)
 parser.add_argument("--publish", action="store_true", help="publish safe local-cycle metrics to GitHub Pages")
 args = parser.parse_args()
 lock_handle = acquire_lock()
-server = subprocess.Popen(["llama-server", "-hf", "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M", "--host", "127.0.0.1", "--port", str(args.port), "--ctx-size", "4096", "--predict", "240"], cwd=ROOT)
+server = subprocess.Popen(["llama-server", "-hf", "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M", "--host", "127.0.0.1", "--port", str(args.port), "--ctx-size", "4096", "--predict", "800"], cwd=ROOT)
 try:
     wait_ready(f"http://127.0.0.1:{args.port}")
     while True:
