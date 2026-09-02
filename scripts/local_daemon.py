@@ -162,7 +162,11 @@ def publish(result, world):
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "privacy": "Sanitized local identity metadata only; purposes, questions, raw outputs, and private registry stay local.",
         "agents": [
-            {key: agent[key] for key in ("id", "name", "role", "room", "status")}
+            {
+                **{key: agent[key] for key in ("id", "room", "status")},
+                "name": str(agent.get("name", "Unnamed hireling")).strip(" ,.;"),
+                "role": str(agent.get("role", "unassigned")).strip(" ,.;"),
+            }
             for agent in registry.get("agents", [])[-100:]
         ],
     }
