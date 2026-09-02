@@ -15,6 +15,7 @@ class LocalAutonomyTests(unittest.TestCase):
         self.original_printer_queue = local_autonomy.PRINTER_QUEUE
         self.original_printed = local_autonomy.PRINTED
         self.original_notes = local_autonomy.NOTES
+        self.original_analysis_archive = local_autonomy.ANALYSIS_ARCHIVE
         local_autonomy.WHITEBOARD = Path(self.archive_dir.name) / "whiteboard.json"
         local_autonomy.PRINTER_QUEUE = Path(self.archive_dir.name) / "printer-queue.json"
         local_autonomy.PRINTED = Path(self.archive_dir.name) / "printed"
@@ -26,6 +27,7 @@ class LocalAutonomyTests(unittest.TestCase):
         local_autonomy.PRINTER_QUEUE = self.original_printer_queue
         local_autonomy.PRINTED = self.original_printed
         local_autonomy.NOTES = self.original_notes
+        local_autonomy.ANALYSIS_ARCHIVE = self.original_analysis_archive
         self.archive_dir.cleanup()
 
     def test_build_creates_one_connected_room_and_event(self):
@@ -179,6 +181,15 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertIsNone(denied)
         self.assertEqual(allowed["action"], "ANALYZE")
         self.assertIn("sum", allowed["code"])
+
+    def test_analysis_artifact_keeps_raw_local_and_creates_bounded_summary(self):
+        local_autonomy.ANALYSIS_ARCHIVE = Path(self.archive_dir.name) / "analysis.jsonl"
+        artifact = local_autonomy.record_analysis({"id": "local-test"}, 95, "print(42)",
+                                                   {"status": "completed", "returncode": 0, "output": "42\n"})
+        self.assertEqual(artifact["summary"], "42")
+        stored = __import__("json").loads(local_autonomy.ANALYSIS_ARCHIVE.read_text())
+        self.assertEqual(stored["output"], "42\n")
+        self.assertEqual(stored["code_hash"], artifact["code_hash"])
 
     def test_interview_prompt_can_use_prior_research_metadata(self):
         source = Path("scripts/local_autonomy.py").read_text()

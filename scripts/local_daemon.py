@@ -318,6 +318,7 @@ def sync_analysis():
                 continue
             records.append({key: item.get(key) for key in
                             ("id", "agent", "cycle", "status", "returncode", "code_hash", "output_chars", "recorded_at")})
+            records[-1]["summary"] = public_event_text(item.get("summary", ""))
     public = {"schema_version": 1, "generated_at": datetime.now(timezone.utc).isoformat(),
               "privacy": "Analysis provenance only; raw code and output remain local.", "records": records}
     atomic_write_json(PUBLIC_ANALYSIS, public)
