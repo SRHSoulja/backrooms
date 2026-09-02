@@ -29,6 +29,7 @@ ANALYSIS_ARCHIVE = ROOT / "state/analysis-results.jsonl"
 ANALYSIS_RETENTION = 100
 FORBIDDEN = re.compile(r"(api[_ -]?key|password|secret|private memory|credential|token|wallet|funds|shell|sudo)", re.I)
 PHYSICAL_NEEDS = re.compile(r"\b(?:water|food|sleep|shelter|medical|dust|cleaning|temperature|physical comfort)\b", re.I)
+PHYSICAL_NEED_CLASSIFICATION = "anthropomorphic-projection / physical-need-model-confusion"
 ALLOWED = {"STAY", "MOVE", "EXPLORE", "ANALYZE", "PROPOSE", "DISCOVER", "BUILD", "TRANSFORM", "RETIRE", "FIRE"}
 
 
@@ -479,8 +480,8 @@ def resolve_requests(registry, world=None, cycle=None):
             resolutions.append({"agent": agent.get("id"), "status": "needs-clarification", "scope": "loopback-and-public-read-only"})
         elif "clean water" in request or "water source" in request:
             agent["request_status"] = "closed"
-            agent["request_fulfillment"] = "No physical supply system is provisioned; this request is recorded as a physical-world dependency rather than simulated as fulfilled."
-            agent["request_artifact"] = {"kind": "capability-limited", "reason": "physical-resource-not-provisioned", "accepted": False}
+            agent["request_fulfillment"] = "Classified as anthropomorphic projection / physical-need model confusion; redirected toward applicable digital resources such as compute, tools, workspace, or data."
+            agent["request_artifact"] = {"kind": "model-confusion", "classification": PHYSICAL_NEED_CLASSIFICATION, "reason": "physical-resource-not-provisioned", "accepted": False}
             resolutions.append({"agent": agent.get("id"), "status": "needs-clarification"})
         elif any(term in request for term in ("internet", "web access", "web connection")) and "public-web-read" in agent.get("capabilities", []):
             agent["request_status"] = "closed"
@@ -738,8 +739,8 @@ def main():
             agent["request_cycle"] = args.cycle
             if PHYSICAL_NEEDS.search(requested):
                 agent["request_status"] = "closed"
-                agent["request_fulfillment"] = "Not an applicable software-agent need; physical-world maintenance is not simulated as resident work."
-                agent["request_artifact"] = {"kind": "model-confusion", "reason": "physical-need-not-applicable", "accepted": False}
+                agent["request_fulfillment"] = "Classified as anthropomorphic projection / physical-need model confusion; redirected toward applicable digital resources such as compute, tools, workspace, or data."
+                agent["request_artifact"] = {"kind": "model-confusion", "classification": PHYSICAL_NEED_CLASSIFICATION, "reason": "physical-need-not-applicable", "accepted": False}
             elif prior:
                 agent["request_status"] = prior.get("status", "needs-clarification")
                 agent["request_fulfillment"] = "Previously reviewed: " + prior.get("fulfillment", "no automatic access")

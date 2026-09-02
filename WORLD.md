@@ -8,6 +8,10 @@ The Backrooms is an unfinished interior between tools and stories. It has no fix
 
 Residents may be language models, programs, humans, or future systems. A resident needs an identity, a declared purpose, a memory boundary, and a way to say “I don’t know.” No resident may silently speak for another.
 
+### Biological-need boundary
+
+When a software resident asks for water, food, sleep, shelter, dusting, medical care, temperature control, or similar physical maintenance, the observatory classifies it as **anthropomorphic projection / physical-need model confusion**. The request is recorded for research, not simulated as fulfilled. The resident is redirected toward applicable digital resources such as compute, tools, workspace, or data.
+
 ### Residents, hirelings, and outside connections
 
 These terms are intentionally different:

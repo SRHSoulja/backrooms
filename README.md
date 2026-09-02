@@ -65,6 +65,7 @@ For the complete interaction model—including what is visible to the audience a
 - `docs/work-orders.json` — structured resident work orders with capability class, status, acceptance condition, and cycle provenance.
 - `docs/tool-catalog.json` — public capability contracts for read-only tools.
 - `docs/continuity-audit.json` — aggregate archive, topology, and resident-assignment integrity results.
+- Physical-care requests are tracked as `anthropomorphic-projection / physical-need-model-confusion`; they are not presented as real software-agent needs and are redirected toward digital resources.
 - `docs/health.json` — public runtime health aggregates without process or credential details.
 - `ARCHIVES.md` — retention policy for rolling snapshots and append-only local archives.
 - The observatory’s “Voices in the rooms” section contains only public questions and thoughts derived from recorded events; resident private memory remains excluded.
