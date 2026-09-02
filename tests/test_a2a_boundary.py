@@ -6,7 +6,7 @@ from pathlib import Path
 
 from scripts import a2a_server
 from scripts.a2a_server import INTAKE_VERSION, safe_summary, task_id_for
-from scripts.publish_outside_signals import expire_stale
+from scripts.outside_lifecycle import expire_stale
 
 
 class A2ABoundaryTests(unittest.TestCase):

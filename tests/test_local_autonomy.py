@@ -242,6 +242,18 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertIn('tool.get("source", tool.get("url", ""))', source)
         self.assertIn('summary.get("items", summary.get("rows", 0))', source)
 
+    def test_json_decision_is_parsed_with_existing_safety_rules(self):
+        text = '{"action":"EXPLORE","room":"atrium","target":"public A2A standards",' \
+               '"proposal":"compare public specifications","request":"","code":"","reason":"clear lead"}'
+        decision = local_autonomy.parse(text, {"room": "atrium", "capabilities": []}, ["atrium"])
+        self.assertEqual(decision["action"], "EXPLORE")
+        self.assertEqual(decision["target"], "public A2A standards")
+
+    def test_decision_schema_uses_only_existing_rooms_and_actions(self):
+        schema = local_autonomy.decision_schema(["atrium", "archive"])
+        self.assertEqual(schema["properties"]["room"]["enum"], ["atrium", "archive"])
+        self.assertIn("BUILD", schema["properties"]["action"]["enum"])
+
     def test_analyze_requires_workbench_and_data_only_code(self):
         text = "ACTION: ANALYZE\nROOM: atrium\nTARGET: summarize values\nPROPOSAL: NONE\nREQUEST: NONE\nCODE: print(sum(range(3)))\nREASON: test"
         denied = local_autonomy.parse(text, {"room": "atrium", "capabilities": []}, ["atrium"])

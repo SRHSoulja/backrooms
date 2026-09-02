@@ -2,7 +2,7 @@
 """Project sanitized quarantine lifecycle records immediately."""
 
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 
 try:
@@ -11,6 +11,10 @@ try:
 except ImportError:
     from publication import public_text
     from storage import atomic_write_json
+try:
+    from scripts.outside_lifecycle import expire_stale
+except ImportError:
+    from outside_lifecycle import expire_stale
 
 ROOT = Path(__file__).resolve().parents[1]
 INBOX = ROOT / "state/quarantine-inbox.json"
@@ -23,24 +27,6 @@ changed = False
 accepted_ids = {item.get("id") for item in local.get("messages", [])
                 if item.get("status") == "accepted-exchange"}
 
-
-def expire_stale(messages, current_time=None):
-    """Expire only unresolved quarantine records older than the review window."""
-    current_time = current_time or datetime.now(timezone.utc)
-    changed = False
-    for item in messages:
-        if item.get("status") != "quarantined" or not item.get("received_at"):
-            continue
-        try:
-            received = datetime.fromisoformat(item["received_at"])
-        except (TypeError, ValueError):
-            continue
-        if current_time - received > timedelta(days=30):
-            item["status"] = "expired"
-            item.setdefault("history", []).append({"status": "expired", "at": current_time.isoformat()})
-            item["reviewed_at"] = current_time.isoformat()
-            changed = True
-    return changed
 
 # Never publish a sender-claimed or legacy phantom parent as verified lineage.
 # Keep the raw quarantine record local for audit, but remove the invalid link
