@@ -241,6 +241,16 @@ def resolve_requests(registry, world=None, cycle=None):
             agent["request_fulfillment"] = "Bounded local workbench access is available; arbitrary computer control remains disabled."
             agent["request_artifact"] = {"kind": "bounded-workbench", "accepted": True}
             resolutions.append({"agent": agent.get("id"), "status": "fulfilled"})
+        elif "computer" in request:
+            agent["request_status"] = "needs-clarification"
+            agent["request_fulfillment"] = "A bounded workbench is not currently provisioned; arbitrary computer control is unavailable."
+            agent["request_artifact"] = {"kind": "clarification-needed", "reason": "bounded-workbench-not-provisioned", "accepted": False}
+            resolutions.append({"agent": agent.get("id"), "status": "needs-clarification"})
+        elif any(term in request for term in ("external database", "external databases", "data feed", "data feeds")) and "public-web-read" in agent.get("capabilities", []):
+            agent["request_status"] = "closed"
+            agent["request_fulfillment"] = "Public read-only web research is available through the broker; private, authenticated, and write-enabled databases remain unavailable."
+            agent["request_artifact"] = {"kind": "public-research", "scope": "public-only", "source": (agent.get("last_tool") or {}).get("source", ""), "accepted": True}
+            resolutions.append({"agent": agent.get("id"), "status": "fulfilled", "scope": "public-only"})
         elif "city" in request and "map" in request:
             agent["request_status"] = "needs-clarification"
             agent["request_fulfillment"] = "A city or region must be named before a public map can be selected."

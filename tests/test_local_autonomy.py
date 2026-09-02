@@ -63,6 +63,28 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(agent["capabilities"], ["bounded-questioning"])
         self.assertEqual(agent["safety_incidents"], 1)
 
+    def test_external_database_request_is_reduced_to_public_research(self):
+        world = {"rooms": [{"id": "atrium"}]}
+        registry = {"agents": [{"id": "local-test", "status": "active-local", "room": "atrium",
+                                 "request": "access to external databases", "request_status": "open",
+                                 "capabilities": ["public-web-read"],
+                                 "last_tool": {"source": "https://en.wikipedia.org/"}}]}
+        resolutions = local_autonomy.resolve_requests(registry, world=world)
+        agent = registry["agents"][0]
+        self.assertEqual(resolutions[0]["status"], "fulfilled")
+        self.assertEqual(agent["request_artifact"]["scope"], "public-only")
+        self.assertTrue(agent["request_artifact"]["accepted"])
+
+    def test_unprovisioned_computer_request_is_explicitly_limited(self):
+        world = {"rooms": [{"id": "atrium"}]}
+        registry = {"agents": [{"id": "local-test", "status": "active-local", "room": "atrium",
+                                 "request": "access to a computer", "request_status": "open",
+                                 "capabilities": []}]}
+        resolutions = local_autonomy.resolve_requests(registry, world=world)
+        agent = registry["agents"][0]
+        self.assertEqual(resolutions[0]["status"], "needs-clarification")
+        self.assertFalse(agent["request_artifact"]["accepted"])
+
 
 if __name__ == "__main__":
     unittest.main()
