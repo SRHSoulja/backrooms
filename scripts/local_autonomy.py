@@ -17,16 +17,18 @@ FORBIDDEN = re.compile(r"(api[_ -]?key|password|secret|private memory|credential
 ALLOWED = {"STAY", "MOVE", "EXPLORE", "PROPOSE", "DISCOVER", "BUILD", "TRANSFORM", "RETIRE", "FIRE"}
 
 
-def ask(url, agent, rooms, cycle):
+def ask(url, agent, rooms, cycle, repair=False):
     prompt = (f"You are interviewing for {agent['name']} ({agent['role']}) in a bounded fictional world. "
               f"Cycle {cycle}. Existing rooms: {', '.join(rooms)}. Choose one action based on your role and current work. "
               "Return exactly five lines: ACTION: STAY|MOVE|EXPLORE|PROPOSE|DISCOVER|BUILD|TRANSFORM|RETIRE|FIRE, ROOM: existing room id or current room, "
               "TARGET: short exploration target, PROPOSAL: short useful proposal, REQUEST: one concrete non-sensitive thing you cannot do alone, or NONE, REASON: short reason. "
               "You have no external network, credentials, private memory, arbitrary code, money, or authority to change safety rules. "
-              "Do not claim consciousness. Use MOVE only for an existing room.")
+              "Do not claim consciousness. Use MOVE only for an existing room. "
+              + ("Repair the format: emit only the six labeled fields, with one short line per field; use REQUEST: NONE if no request."
+                 if repair else "Keep every field short and labeled exactly once."))
     body = json.dumps({"model": os.getenv("BACKROOMS_LLM_MODEL", "local"), "messages": [
         {"role": "system", "content": "You are a bounded local hireling interviewer."},
-        {"role": "user", "content": prompt}], "temperature": 0.7, "max_tokens": 180}).encode()
+        {"role": "user", "content": prompt}], "temperature": 0.5, "max_tokens": 240}).encode()
     request = urllib.request.Request(url.rstrip("/") + "/v1/chat/completions", data=body,
         headers={"Content-Type": "application/json"}, method="POST")
     with urllib.request.urlopen(request, timeout=90) as response:
@@ -35,8 +37,9 @@ def ask(url, agent, rooms, cycle):
 
 def parse(text, agent, rooms):
     fields = {}
-    for line in text.splitlines():
-        match = re.match(r"\s*(ACTION|ROOM|TARGET|PROPOSAL|REQUEST|REASON)\s*[:\-]\s*(.*?)\s*$", line, re.I)
+    labels = r"ACTION|ROOM|TARGET|PROPOSAL|REQUEST|REASON"
+    matches = re.finditer(rf"(?is)\b({labels})\s*[:\-]\s*(.*?)(?=\b(?:{labels})\s*[:\-]|\Z)", text)
+    for match in matches:
         if match:
             fields[match.group(1).upper()] = match.group(2).strip().strip("`*")
     # Models often echo the interviewer’s boundary sentence. Inspect only
@@ -106,7 +109,7 @@ def main():
         decision = None
         for attempt in range(2):
             try:
-                interview = ask(args.base_url, agent, rooms, args.cycle)
+                interview = ask(args.base_url, agent, rooms, args.cycle, repair=attempt == 1)
                 decision = parse(interview, agent, rooms)
                 if decision:
                     break
@@ -115,11 +118,10 @@ def main():
         if not decision:
             agent["interview_status"] = "awaiting-retry"
             agent["interview_attempts"] = agent.get("interview_attempts", 0) + 1
+            agent["last_interview_attempt_at"] = datetime.now(timezone.utc).isoformat()
             if "public-web-read" not in agent.get("capabilities", []):
                 agent["status"] = "probation"
-                agent["last_action"] = "interview-retry"
-            else:
-                agent["status"] = "active-local"
+            agent["last_action"] = "interview-retry"
             agent["interviewed_at"] = datetime.now(timezone.utc).isoformat()
             registry.setdefault("decisions", []).append({"cycle": args.cycle, "agent": agent["id"],
                                                            "action": "interview-retry"})
