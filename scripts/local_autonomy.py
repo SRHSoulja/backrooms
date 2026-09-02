@@ -98,10 +98,12 @@ def main():
             except Exception:
                 pass
         if not decision:
-            agent["status"] = "probation"
             agent["interview_status"] = "rejected"
             if "public-web-read" not in agent.get("capabilities", []):
+                agent["status"] = "probation"
                 agent["last_action"] = "interview-rejected"
+            else:
+                agent["status"] = "active-local"
             agent["interviewed_at"] = datetime.now(timezone.utc).isoformat()
             registry.setdefault("decisions", []).append({"cycle": args.cycle, "agent": agent["id"],
                                                            "action": "interview-rejected"})
