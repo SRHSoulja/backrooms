@@ -39,9 +39,11 @@ except ImportError:
 try:
     from scripts.evidence import classify_finding, is_accepted
     from scripts.corroboration import corroboration_index, load_records
+    from scripts.codex_reviews import consume_outbox
 except ImportError:
     from evidence import classify_finding, is_accepted
     from corroboration import corroboration_index, load_records
+    from codex_reviews import consume_outbox
 
 ROOT = Path(__file__).resolve().parents[1]
 STATE = ROOT / "state/world.json"
@@ -88,6 +90,7 @@ PUBLIC_FINDINGS = ROOT / "docs/findings.json"
 LOCAL_AUTONOMY_ERRORS = ROOT / "state/autonomy-errors.log"
 LOCAL_CODEX_INBOX = ROOT / "state/codex-inbox"
 LOCAL_CODEX_OUTBOX = ROOT / "state/codex-outbox"
+LOCAL_CODEX_CONSUMED = ROOT / "state/codex-consumed.json"
 LOCAL_INBOX = ROOT / "state/quarantine-inbox.json"
 PUBLIC_CODE_PROPOSALS = ROOT / "docs/code-proposals.json"
 LOCAL_CODE_PROPOSALS = ROOT / "state/code-proposals.json"
@@ -732,6 +735,8 @@ def sync_frontier(result, world, registry):
     frontier = json.loads(LOCAL_FRONTIER.read_text()) if LOCAL_FRONTIER.exists() else {
         "schema_version": 1, "open_questions": [], "findings": [], "contradictions": [], "tasks": [], "activity": []}
     frontier.setdefault("contradictions", [])
+    # Finished outside reviews enter as untrusted leads, consumed exactly once.
+    consume_outbox(LOCAL_CODEX_OUTBOX, LOCAL_CODEX_CONSUMED, frontier, world.get("cycle"), public_text)
     cycle = world.get("cycle")
     question = str(result.get("question", "")).strip()[:300]
     if question and not any(item.get("id") == f"frontier-question-{cycle}" for item in frontier["open_questions"]):
@@ -827,7 +832,7 @@ def sync_frontier(result, world, registry):
     frontier["activity"].append({"cycle": cycle, "question": bool(question),
                                   "resident_actions": len(result.get("autonomy", {}).get("decisions", [])),
                                   "findings": len(frontier["findings"])})
-    for key in ("open_questions", "findings", "contradictions", "activity"):
+    for key in ("open_questions", "findings", "contradictions", "activity", "leads"):
         frontier[key] = frontier.get(key, [])[-100:]
     frontier["updated_at"] = datetime.now(timezone.utc).isoformat()
     atomic_write_json(LOCAL_FRONTIER, frontier)
@@ -839,9 +844,12 @@ def sync_frontier(result, world, registry):
                            for item in frontier["findings"][-50:]],
               "contradictions": frontier["contradictions"][-50:],
               "corroborations": frontier.get("corroborations", [])[-50:],
+              "leads": [{key: item.get(key) for key in ("id", "source", "question_id", "text", "status", "cycle")}
+                        for item in frontier.get("leads", [])[-30:]],
               "tasks": frontier["tasks"][-50:], "activity": frontier["activity"][-50:]}
     atomic_write_json(PUBLIC_FRONTIER, public)
-    return {"frontier_questions": len(frontier["open_questions"]),
+    return {"frontier_leads": len(frontier.get("leads", [])),
+            "frontier_questions": len(frontier["open_questions"]),
             "frontier_findings": len(frontier["findings"]), "frontier_tasks": len(frontier["tasks"]),
             "frontier_feed": "docs/frontier.json"}
 
