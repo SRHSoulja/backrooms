@@ -1270,6 +1270,7 @@ try:
         if reload_requested:
             print(json.dumps({"daemon": "reload requested; exiting after completed cycle"}), flush=True)
             break
+        cycle_started = time.monotonic()
         if not model_probe(base_url):
             if configured_url:
                 raise RuntimeError("configured local model endpoint is unhealthy")
@@ -1310,7 +1311,11 @@ try:
                 raise RuntimeError("local model exited during roundtable")
         if args.once:
             break
-        sleep_between_cycles(args.interval)
+        # Keep the cadence on wall-clock time: a long cycle shortens the idle
+        # wait instead of pushing every later cycle back by its own duration.
+        cycle_seconds = time.monotonic() - cycle_started
+        print(json.dumps({"cycle_seconds": round(cycle_seconds)}), flush=True)
+        sleep_between_cycles(max(60, args.interval - cycle_seconds))
 except KeyboardInterrupt:
     pass
 finally:
