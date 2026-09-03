@@ -56,6 +56,22 @@ MAX_FETCHES_PER_CYCLE = 4
 # evidence. Re-ground a few such purposes per cycle against the frontier, and
 # rest residents that keep producing nothing so turns go to productive work.
 MAX_REGROUNDS_PER_CYCLE = 2
+QUESTION_STOPWORDS = {"about", "after", "also", "from", "into", "that", "this", "with", "what", "which", "where",
+                      "when", "does", "did", "have", "their", "there", "these", "those", "than", "between",
+                      "should", "could", "would", "current", "public", "evidence", "sources", "source", "independent",
+                      "confirm", "challenge", "which", "does", "say"}
+
+
+def question_terms(question, limit=8):
+    """Turn a council question into a compact search query of its content words."""
+    seen = []
+    for term in re.findall(r"[a-z0-9][a-z0-9-]{3,}", str(question or "").lower()):
+        if term in QUESTION_STOPWORDS or term in seen:
+            continue
+        seen.append(term)
+        if len(seen) >= limit:
+            break
+    return " ".join(seen)
 DORMANT_AFTER_TURNS_WITHOUT_EVIDENCE = 12
 CATALOG = ROOT / "docs/tool-catalog.json"
 MISSION_LINE = ("The Backrooms tests whether bounded agents can build a coherent shared record from public, "
@@ -113,7 +129,7 @@ def decision_schema(rooms, agent=None):
                 "message": {"type": "string", "maxLength": 240}}}
 
 
-def ask(url, agent, rooms, cycle, repair=False, shared_work=None, structured=True, post_tool=False, inbox=None, pending_trades=None):
+def ask(url, agent, rooms, cycle, repair=False, shared_work=None, structured=True, post_tool=False, inbox=None, pending_trades=None, assigned_research=None):
     prior_tool = agent.get("last_tool") or {}
     prior_analysis = agent.get("last_analysis") or {}
     prior_research = ""
@@ -138,6 +154,7 @@ def ask(url, agent, rooms, cycle, repair=False, shared_work=None, structured=Tru
                                    "last_action": agent.get("last_action", "none"),
                                    "last_reason": agent.get("last_reason", ""),
                                    "request_status": agent.get("request_status", "none"),
+                                   "assigned_research": (str(assigned_research)[:300] if assigned_research else None),
                                    "inbox": [{"from": item.get("from"), "cycle": item.get("cycle"), "body": str(item.get("body", ""))[:240]}
                                              for item in (inbox or [])[-3:]],
                                    "pending_trades": [{"id": item.get("id"), "from": item.get("from"),
@@ -159,7 +176,9 @@ def ask(url, agent, rooms, cycle, repair=False, shared_work=None, structured=Tru
               "Use PROPOSE for a concise improvement idea; code patches must go through the separate non-applying proposal and isolated-review gates. "
               "Use TRADE only for a non-financial exchange with an active reachable resident: put the recipient id in message_to, the work or evidence you offer in proposal, and what you request in request. Never use it for money, wallets, credentials, or external transactions. "
               "If your inbox holds a message that needs an answer, reply with message_to and message. If pending_trades lists an offer made to you, answer it with ACCEPT_TRADE or DECLINE_TRADE and put the trade id in target. "
-              "The Backrooms is intended to expand: when the work supports it, prefer DISCOVER to record a new room candidate, BUILD to request a new connected room, or TRANSFORM to repurpose an existing room. A room proposal needs a concrete TARGET and short PROPOSAL description. "
+              + ("This turn you are assigned the council's shared research question in assigned_research: if you EXPLORE, investigate that question so your finding can be compared with other residents' findings on it. "
+                 if assigned_research else "")
+              + "The Backrooms is intended to expand: when the work supports it, prefer DISCOVER to record a new room candidate, BUILD to request a new connected room, or TRANSFORM to repurpose an existing room. A room proposal needs a concrete TARGET and short PROPOSAL description. "
               + prior_research
               + (" This is a post-tool decision: the fetched result above is now observed. Choose a concrete follow-up or STAY based on that evidence; do not request another external fetch in this pass."
                  if post_tool else "")
@@ -1324,7 +1343,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-url", default="http://127.0.0.1:8080")
     parser.add_argument("--cycle", type=int, required=True)
+    parser.add_argument("--question", default="", help="the cycle's council question; half of the research turns investigate it")
     args = parser.parse_args()
+    shared_research = question_terms(args.question)
     registry = json.loads(REGISTRY.read_text()) if REGISTRY.exists() else {"agents": [], "decisions": []}
     deduplicate(registry)
     for agent in registry.get("agents", []):
@@ -1358,9 +1379,16 @@ def main():
                            "Resident purpose was re-grounded in public, checkable evidence toward an open question.",
                            regrounded_cycle=args.cycle)
     fetch_budget = MAX_FETCHES_PER_CYCLE
+    turn_index = -1
     for agent in registry.get("agents", []):
         if agent.get("id") not in selected_ids:
             continue
+        turn_index += 1
+        # Even turns research the council's question so findings on one topic
+        # arrive from more than one resident; source families alternate on a
+        # slower cadence so the same topic is reached through two domains.
+        research_assignment = shared_research if (shared_research and turn_index % 2 == 0) else None
+        prefer_encyclopedia = (turn_index // 2) % 2 == 0
         agent["last_turn_cycle"] = args.cycle
         decision = None
         post_decision = None
@@ -1396,7 +1424,7 @@ def main():
                                         "request": claimed_task.get("request"), "status": "claimed"})
                 interview = ask(args.base_url, agent, rooms, args.cycle, repair=attempt == 1,
                                 shared_work=shared_work, structured=attempt == 0,
-                                inbox=inbox, pending_trades=pending_trades)
+                                inbox=inbox, pending_trades=pending_trades, assigned_research=research_assignment)
                 decision, parse_reason = parse_decision(interview, agent, rooms)
                 parse_reasons.append(parse_reason)
                 log_interview(agent, args.cycle, attempt, raw=interview, parsed=bool(decision), reason=parse_reason)
@@ -1549,6 +1577,11 @@ def main():
                 query_target = target
             if tool_name == "public-search":
                 query_target = target[:160].strip()
+                if research_assignment:
+                    query_target = research_assignment[:160]
+                agent["research_assignment"] = {"cycle": args.cycle, "query": query_target,
+                                                "origin": "council-question" if research_assignment else "resident-target",
+                                                "source_preference": "encyclopedia-first" if prefer_encyclopedia else "web-first"}
             completed = subprocess.run([sys.executable, str(ROOT / "scripts/tool_broker.py"),
                 tool_name, query_target], cwd=ROOT, capture_output=True, text=True, check=False)
             try:
@@ -1558,7 +1591,8 @@ def main():
             # Prefer an encyclopedic summary as the first evidence source: it
             # is clean, quotable prose with a canonical page URL, and it adds a
             # second domain to any later web fetch on the same topic.
-            if tool_name == "public-search" and fetch_budget > 0 and tool.get("status") == "completed":
+            if (tool_name == "public-search" and fetch_budget > 0 and tool.get("status") == "completed"
+                    and prefer_encyclopedia):
                 summary_run = subprocess.run([sys.executable, str(ROOT / "scripts/tool_broker.py"),
                     "wikipedia-summary", query_target], cwd=ROOT, capture_output=True, text=True, check=False)
                 try:
@@ -1567,7 +1601,7 @@ def main():
                     summarized = {"status": "failed"}
                 if summarized.get("status") == "completed" and summarized.get("excerpt"):
                     fetch_budget -= 1
-                    summarized["query"] = target[:160].strip()
+                    summarized["query"] = query_target
                     summarized["search_results"] = tool.get("results", [])[:5]
                     tool = summarized
             # A search is only a lead. Fetch one selected HTTPS result so the
@@ -1591,7 +1625,7 @@ def main():
                         except json.JSONDecodeError:
                             fetched = {"status": "failed"}
                         if fetched.get("status") == "completed":
-                            fetched["query"] = target[:160].strip()
+                            fetched["query"] = query_target
                             fetched["search_results"] = tool.get("results", [])[:5]
                             tool = fetched
                             break

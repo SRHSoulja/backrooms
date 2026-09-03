@@ -541,6 +541,11 @@ class LocalAutonomyTests(unittest.TestCase):
         selected = [item["id"] for item in local_autonomy.select_agents(awake + awake[:3] + dormant)]
         self.assertFalse(any(item.startswith("d") for item in selected))
 
+    def test_question_terms_keep_content_words_in_order(self):
+        query = local_autonomy.question_terms("What does current public evidence say about persistent memory designs for autonomous agents, and which two independent sources could confirm it?")
+        self.assertEqual(query, "persistent memory designs autonomous agents")
+        self.assertEqual(local_autonomy.question_terms(""), "")
+
     def test_select_agents_reserves_half_for_open_work_and_rotates_the_rest(self):
         candidates = []
         for index in range(6):

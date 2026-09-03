@@ -44,6 +44,14 @@ class SelfPromptTests(unittest.TestCase):
         self.assertTrue(all(isinstance(item, str) and item for item in first))
         self.assertEqual(research_themes(3, path="/nonexistent/themes.json"), [])
 
+    def test_theme_questions_are_concrete_and_rotate(self):
+        from scripts.self_prompt_rules import theme_questions, valid
+        first = theme_questions(0, count=2)
+        self.assertEqual(len(first), 2)
+        self.assertEqual(theme_questions(1, count=1)[0], first[1])
+        for question in theme_questions(0, count=8):
+            self.assertTrue(valid(f"QUESTION: {question}\nWHY: theme.\nTEST: compare two public sources."), question)
+
     def test_rejects_self_referential_marker_loop(self):
         proposal = ("QUESTION: Why did Echo's evidence markers decrease after the hypothesis weakened?\n"
                     "WHY: The metric changed.\nTEST: Count markers again.")

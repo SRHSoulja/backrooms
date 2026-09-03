@@ -7,9 +7,9 @@ import os
 import re
 import urllib.request
 try:
-    from scripts.self_prompt_rules import FORBIDDEN, research_themes, valid
+    from scripts.self_prompt_rules import FORBIDDEN, research_themes, theme_questions, valid
 except ImportError:
-    from self_prompt_rules import FORBIDDEN, research_themes, valid
+    from self_prompt_rules import FORBIDDEN, research_themes, theme_questions, valid
 
 
 def ask(url, resident, context):
@@ -40,6 +40,7 @@ try:
 except FileNotFoundError:
     pass
 context = json.dumps({"research_themes": research_themes(world.get("cycle", 0)),
+                      "suggested_questions": theme_questions(world.get("cycle", 0), count=2),
                       "shared_memory": world.get("shared_memory", []),
                       "rooms": [{"id": room.get("id"), "description": room.get("description", "")}
                                for room in world.get("rooms", [])],

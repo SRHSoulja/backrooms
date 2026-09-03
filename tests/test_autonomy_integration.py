@@ -137,10 +137,10 @@ class AutonomyIntegrationTests(unittest.TestCase):
         self.server.server_close()
         self.temporary.cleanup()
 
-    def run_autonomy(self, cycle=7):
+    def run_autonomy(self, cycle=7, question=""):
         completed = subprocess.run([sys.executable, str(self.root / "scripts/local_autonomy.py"),
-                                    "--base-url", self.base_url, "--cycle", str(cycle)],
-                                   cwd=self.root, capture_output=True, text=True, timeout=60)
+                                    "--base-url", self.base_url, "--cycle", str(cycle), "--question", question],
+                                   cwd=self.root, capture_output=True, text=True, timeout=90)
         return completed
 
     def test_propose_turn_completes_and_persists(self):
@@ -251,6 +251,42 @@ class AutonomyIntegrationTests(unittest.TestCase):
         ledger = [json.loads(line) for line in (self.root / "state/findings.jsonl").read_text().splitlines()]
         self.assertEqual(ledger[0]["url"], "https://en.wikipedia.org/wiki/Agent_card")
         self.assertEqual(ledger[0]["status"], "unreviewed")
+
+    def test_shared_council_question_yields_a_judged_pair_and_an_evidence_room(self):
+        registry = json.loads((self.root / "state/local-agents.json").read_text())
+        for index in range(2, 5):
+            registry["agents"].append({"id": f"local-00{index}", "name": f"Resident {index}", "role": "researcher",
+                                       "purpose": "p", "question": "q", "room": "atrium", "status": "active-local",
+                                       "capabilities": ["bounded-questioning"], "interviewed_at": "2026-09-01T00:00:00+00:00"})
+        (self.root / "state/local-agents.json").write_text(json.dumps(registry))
+        self.server.decision = {**BASE_DECISION, "action": "EXPLORE", "target": "agent card discovery", "reason": "lead"}
+        question = "How do public agent discovery cards enable interoperability between agents?"
+        completed = self.run_autonomy(question=question)
+        self.assertEqual(completed.returncode, 0, completed.stderr[-1500:])
+        output = json.loads(completed.stdout)
+        registry = json.loads((self.root / "state/local-agents.json").read_text())
+        assignments = [agent["research_assignment"] for agent in registry["agents"]]
+        self.assertEqual([item["origin"] for item in assignments],
+                         ["council-question", "resident-target", "council-question", "resident-target"])
+        self.assertEqual([item["source_preference"] for item in assignments],
+                         ["encyclopedia-first", "encyclopedia-first", "web-first", "web-first"])
+        self.assertEqual(assignments[0]["query"], "agent discovery cards enable interoperability agents")
+        self.assertTrue(any("assigned_research" in body and "agent discovery cards" in body for body in self.server.bodies))
+        ledger = [json.loads(line) for line in (self.root / "state/findings.jsonl").read_text().splitlines()]
+        council_domains = {item["url"].split("/")[2] for item in ledger if item["topic"] == assignments[0]["query"]}
+        self.assertEqual(council_domains, {"en.wikipedia.org", "spec.example"})
+        self.assertEqual(output["corroborations"][0]["relation"], "supports")
+        self.assertEqual([item["action"] for item in output["construction"]], ["build"])
+        self.assertEqual(output["construction"][0]["corroboration"], output["corroborations"][0]["id"])
+        world = json.loads((self.root / "state/world.json").read_text())
+        self.assertEqual(len(world["rooms"]), 4)
+        new_room = world["rooms"][-1]
+        self.assertEqual(new_room["founded_by"], "evidence-ledger")
+        self.assertEqual(len(new_room["artifacts"]), 2)
+        self.assertTrue(any(link["to"] == new_room["id"] and link["from"] == "atrium" for link in world["connections"]))
+        kinds = [event["kind"] for event in world["events"]]
+        self.assertIn("findings-corroborated", kinds)
+        self.assertIn("room-built-from-evidence", kinds)
 
     def test_frontier_question_and_outside_lead_reach_the_prompt(self):
         (self.root / "state/frontier.json").write_text(json.dumps({

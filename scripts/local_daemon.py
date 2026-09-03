@@ -40,12 +40,12 @@ try:
     from scripts.evidence import classify_finding, is_accepted
     from scripts.corroboration import corroboration_index, load_records
     from scripts.codex_reviews import consume_outbox
-    from scripts.self_prompt_rules import research_themes
+    from scripts.self_prompt_rules import research_themes, theme_questions
 except ImportError:
     from evidence import classify_finding, is_accepted
     from corroboration import corroboration_index, load_records
     from codex_reviews import consume_outbox
-    from self_prompt_rules import research_themes
+    from self_prompt_rules import research_themes, theme_questions
 
 ROOT = Path(__file__).resolve().parents[1]
 STATE = ROOT / "state/world.json"
@@ -679,6 +679,9 @@ def next_question(base_url):
         cycle = json.loads(RUNTIME_STATE.read_text()).get("cycle", 0)
     except (OSError, json.JSONDecodeError, TypeError):
         cycle = 0
+    questions = theme_questions(cycle, count=1)
+    if questions:
+        return questions[0][:300], "theme-fallback", accepted
     themes = research_themes(cycle, count=1)
     if themes:
         return (f"What does current public evidence say about {themes[0]}, and which two independent sources "
@@ -723,9 +726,10 @@ def recruit(base_url, cycle):
         return {"status": "failed", "active": active, "capacity": MAX_LOCAL_HIRELINGS}
 
 
-def govern(base_url, cycle):
+def govern(base_url, cycle, question=""):
     completed = subprocess.run([sys.executable, str(ROOT / "scripts/local_autonomy.py"),
-        "--base-url", base_url, "--cycle", str(cycle)], cwd=ROOT, capture_output=True, text=True, check=False)
+        "--base-url", base_url, "--cycle", str(cycle), "--question", str(question or "")[:300]],
+        cwd=ROOT, capture_output=True, text=True, check=False)
     if completed.returncode != 0:
         LOCAL_AUTONOMY_ERRORS.parent.mkdir(parents=True, exist_ok=True)
         with LOCAL_AUTONOMY_ERRORS.open("a") as handle:
@@ -1289,7 +1293,7 @@ try:
             world = record(result)
             result["action"] = action(base_url, world["cycle"])
             result["recruitment"] = recruit(base_url, world["cycle"])
-            result["autonomy"] = govern(base_url, world["cycle"])
+            result["autonomy"] = govern(base_url, world["cycle"], question)
             # Autonomy may have constructed or transformed internal rooms.
             # Reload the canonical topology before publishing this cycle.
             world = runtime_world()

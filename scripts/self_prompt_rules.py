@@ -7,6 +7,18 @@ from pathlib import Path
 THEMES = Path(__file__).resolve().parents[1] / "docs/research-themes.json"
 
 
+def theme_questions(cycle, count=1, path=THEMES):
+    """Rotate concrete, source-answerable questions from the public research themes."""
+    try:
+        questions = [str(item) for item in json.loads(Path(path).read_text()).get("questions", []) if str(item).strip()]
+    except (OSError, json.JSONDecodeError):
+        return []
+    if not questions:
+        return []
+    start = int(cycle or 0) % len(questions)
+    return [questions[(start + offset) % len(questions)] for offset in range(min(count, len(questions)))]
+
+
 def research_themes(cycle, count=2, path=THEMES):
     """Rotate a bounded slice of the public research themes into council context."""
     try:
