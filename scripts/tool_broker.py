@@ -163,6 +163,11 @@ def public_csv(url):
 def public_text(url):
     raw = SCRIPT_STYLE.sub(" ", fetch(url, RESEARCH_MAX_BYTES))
     text = re.sub(r"<[^>]+>", " ", html.unescape(raw))
+    # Some sites ship malformed/minified client-side fragments that survive
+    # tag stripping. Remove obvious script artifacts before exposing the
+    # bounded excerpt to the finding extractor.
+    text = re.sub(r"\{\{.*?\}\}|\b(?:tap|AMP|stateSearch|autocomplete|dataset)\b[^.]{0,180}", " ", text, flags=re.I)
+    text = re.sub(r"(?:[A-Za-z_$][\w$]*\.){1,}[A-Za-z_$][\w$]*\([^)]{0,240}\)", " ", text)
     text = re.sub(r"\s+", " ", text).strip()
     text = SENSITIVE_ASSIGNMENT.sub("[withheld]", text)
     text = BLOCKED.sub("[withheld]", text)

@@ -38,9 +38,13 @@ def bounded_context(world):
     questions = [{key: str(item.get(key, ""))[:300] for key in ("id", "question", "status")}
                  for item in frontier.get("open_questions", [])[-6:]
                  if item.get("status") == "open"]
+    contradictions = [{key: item.get(key) for key in ("id", "topic", "finding_ids", "status")}
+                      for item in frontier.get("contradictions", [])[-4:]
+                      if item.get("status") == "open"]
     return {"title": world["title"], "cycle": world["cycle"],
             "shared_memory": world["shared_memory"][-12:], "events": world["events"][-3:],
-            "verified_findings": findings[-6:], "frontier_questions": questions}
+            "verified_findings": findings[-6:], "frontier_questions": questions,
+            "open_contradictions": contradictions}
 
 
 def ask(base_url, resident, question):

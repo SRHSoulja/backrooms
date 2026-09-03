@@ -10,6 +10,7 @@ class SelfPromptTests(unittest.TestCase):
         self.assertIn("def bounded_context(world):", source)
         self.assertIn('"verified_findings": findings[-6:]', source)
         self.assertIn('"frontier_questions": questions', source)
+        self.assertIn('"open_contradictions": contradictions', source)
 
     def test_rejects_self_referential_marker_loop(self):
         proposal = ("QUESTION: Why did Echo's evidence markers decrease after the hypothesis weakened?\n"

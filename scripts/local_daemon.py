@@ -639,7 +639,8 @@ def govern(base_url, cycle):
 def sync_frontier(result, world, registry):
     """Persist the bounded work exchange between council, rooms, and residents."""
     frontier = json.loads(LOCAL_FRONTIER.read_text()) if LOCAL_FRONTIER.exists() else {
-        "schema_version": 1, "open_questions": [], "findings": [], "tasks": [], "activity": []}
+        "schema_version": 1, "open_questions": [], "findings": [], "contradictions": [], "tasks": [], "activity": []}
+    frontier.setdefault("contradictions", [])
     cycle = world.get("cycle")
     question = str(result.get("question", "")).strip()[:300]
     if question and not any(item.get("id") == f"frontier-question-{cycle}" for item in frontier["open_questions"]):
@@ -678,6 +679,22 @@ def sync_frontier(result, world, registry):
                                          "source_url": str(finding.get("url", ""))[:300],
                                          "source_hash": finding.get("content_hash", "")})
             known.add(finding_id)
+    by_topic = {}
+    for item in frontier["findings"][-100:]:
+        topic = re.sub(r"\s+", " ", str(item.get("topic", "")).lower()).strip()
+        claim = re.sub(r"\s+", " ", str(item.get("claim", "")).lower()).strip()
+        if topic and claim:
+            by_topic.setdefault(topic, {}).setdefault(claim, []).append(item)
+    known_contradictions = {item.get("id") for item in frontier["contradictions"]}
+    for topic, claims in by_topic.items():
+        if len(claims) < 2:
+            continue
+        claim_ids = sorted(item.get("id") for values in claims.values() for item in values if item.get("id"))
+        contradiction_id = "contradiction-" + hashlib.sha256((topic + ":" + ":".join(claim_ids)).encode()).hexdigest()[:20]
+        if contradiction_id not in known_contradictions:
+            frontier["contradictions"].append({"id": contradiction_id, "cycle": cycle, "topic": topic[:160],
+                "finding_ids": claim_ids[:8], "status": "open"})
+            known_contradictions.add(contradiction_id)
     previous_tasks = {item.get("id"): item for item in frontier.get("tasks", []) if item.get("id")}
     tasks = []
     tasks.extend({"id": f"task-{agent.get('id')}", "agent": agent.get("id"),
@@ -699,7 +716,7 @@ def sync_frontier(result, world, registry):
     frontier["activity"].append({"cycle": cycle, "question": bool(question),
                                   "resident_actions": len(result.get("autonomy", {}).get("decisions", [])),
                                   "findings": len(frontier["findings"])})
-    for key in ("open_questions", "findings", "activity"):
+    for key in ("open_questions", "findings", "contradictions", "activity"):
         frontier[key] = frontier.get(key, [])[-100:]
     frontier["updated_at"] = datetime.now(timezone.utc).isoformat()
     atomic_write_json(LOCAL_FRONTIER, frontier)
@@ -709,6 +726,7 @@ def sync_frontier(result, world, registry):
                                  for item in frontier["open_questions"][-50:]],
               "findings": [{key: item.get(key) for key in ("id", "cycle", "source", "room", "claim", "status", "source_url", "source_hash")}
                            for item in frontier["findings"][-50:]],
+              "contradictions": frontier["contradictions"][-50:],
               "tasks": frontier["tasks"][-50:], "activity": frontier["activity"][-50:]}
     atomic_write_json(PUBLIC_FRONTIER, public)
     return {"frontier_questions": len(frontier["open_questions"]),
