@@ -631,6 +631,7 @@ class LocalAutonomyTests(unittest.TestCase):
             {"claim": "Agents exchange tasks through the open A2A standard.", "quote": "open standard that lets agents exchange tasks", "confidence": 0.8},
             {"claim": "Agents exchange tasks through the open A2A standard.", "quote": "agents must register with a central exchange broker", "confidence": 0.8},
             {"claim": "", "quote": "", "confidence": 0.0},
+            {"claim": "", "quote": "It publishes an Agent Card for discovery.", "confidence": 0.6},
         ])
 
         class FakeResponse:
@@ -649,9 +650,13 @@ class LocalAutonomyTests(unittest.TestCase):
             accepted = local_autonomy.extract_finding("http://127.0.0.1:1", agent, 5, tool)
             rejected = local_autonomy.extract_finding("http://127.0.0.1:1", agent, 6, tool)
             empty = local_autonomy.extract_finding("http://127.0.0.1:1", agent, 7, tool)
+            quoted = local_autonomy.extract_finding("http://127.0.0.1:1", agent, 8, tool)
         finally:
             local_autonomy.urllib.request.urlopen = original
         self.assertIsNone(empty)
+        self.assertEqual(quoted["status"], "unreviewed")
+        self.assertEqual((quoted["claim"], quoted["claim_origin"]), ("It publishes an Agent Card for discovery.", "quote"))
+        self.assertEqual(accepted["claim_origin"], "model")
         self.assertEqual(accepted["status"], "unreviewed")
         self.assertEqual(accepted["quote_match"], "quote-exact")
         self.assertEqual(rejected["status"], "rejected")
