@@ -94,6 +94,7 @@ LOCAL_REGISTRY = ROOT / "state/local-agents.json"
 LOCK = ROOT / "state/local-daemon.lock"
 MODEL_LOG = ROOT / "state/llama-server.log"
 MODEL_PID = ROOT / "state/llama-server.pid"
+PORT_RELEASE_GRACE_SECONDS = 30
 
 
 def acquire_lock():
@@ -1146,8 +1147,17 @@ def start_local_model():
     reaped = reap_recorded_model(MODEL_PID)
     if reaped:
         print(json.dumps({"model": "stopped stale recorded model process", "pid": reaped}), flush=True)
-    if port_in_use(args.port):
-        raise SystemExit(f"model port {args.port} is already owned by another process; refusing to start a duplicate llama-server")
+    # A model that was just stopped can keep its listener open for a few
+    # seconds while it tears down. Wait briefly for that, but never start a
+    # second server while any listener still owns the port.
+    for waited in range(PORT_RELEASE_GRACE_SECONDS):
+        if not port_in_use(args.port):
+            if waited:
+                print(json.dumps({"model": "waited for the previous listener to release the port", "seconds": waited}), flush=True)
+            break
+        time.sleep(1)
+    else:
+        raise SystemExit(f"model port {args.port} is still owned by another listener after {PORT_RELEASE_GRACE_SECONDS}s; refusing to start a duplicate llama-server")
     MODEL_LOG.parent.mkdir(parents=True, exist_ok=True)
     log_handle = MODEL_LOG.open("a")
     process = subprocess.Popen(["llama-server", "-hf", "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",

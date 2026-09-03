@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.runtime_process import ReloadWatcher, port_in_use, process_alive, reap_recorded_model
+from scripts.runtime_process import ReloadWatcher, port_has_listener, port_in_use, process_alive, reap_recorded_model
 
 
 class ReloadWatcherTests(unittest.TestCase):
@@ -44,6 +44,33 @@ class ProcessOwnershipTests(unittest.TestCase):
         finally:
             listener.close()
         self.assertFalse(port_in_use(port))
+
+    def test_lingering_connections_without_a_listener_do_not_count_as_ownership(self):
+        listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        listener.bind(("127.0.0.1", 0))
+        listener.listen(2)
+        port = listener.getsockname()[1]
+        client = socket.create_connection(("127.0.0.1", port))
+        accepted, _address = listener.accept()
+        listener.close()
+        try:
+            # The accepted connection is still open and a second one sits in
+            # TIME_WAIT on the server side, exactly the state left behind by a
+            # model process that just exited. Nobody is listening any more.
+            self.assertFalse(port_in_use(port))
+        finally:
+            accepted.close()
+            client.close()
+
+    def test_listener_detection_parses_kernel_table_format(self):
+        with tempfile.TemporaryDirectory() as directory:
+            table = Path(directory) / "tcp"
+            table.write_text("  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode\n"
+                             "   0: 0100007F:1F90 00000000:0000 0A 00000000:00000000 00:00000000 00000000  1000        0 1 0\n"
+                             "   1: 0100007F:1F91 0100007F:C350 06 00000000:00000000 00:00000000 00000000  1000        0 1 0\n")
+            self.assertTrue(port_has_listener(8080, proc_tables=(str(table),)))
+            self.assertFalse(port_has_listener(8081, proc_tables=(str(table),)))
 
     def test_process_alive_reports_self_and_not_bogus_pid(self):
         self.assertTrue(process_alive(os.getpid()))

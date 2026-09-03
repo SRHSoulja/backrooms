@@ -14,13 +14,36 @@ import time
 from pathlib import Path
 
 
-def port_in_use(port, host="127.0.0.1"):
-    """True when any listener already owns the port.
+LISTEN_STATE = "0A"
 
-    The probe sets SO_REUSEADDR so leftover TIME_WAIT connections do not count,
-    but a live listener still refuses the bind even if it used SO_REUSEPORT,
-    which is exactly the duplicate-ownership case that must be refused.
+
+def port_has_listener(port, proc_tables=("/proc/net/tcp", "/proc/net/tcp6")):
+    """True when a LISTEN socket owns the port, read from the kernel's TCP tables.
+
+    A bind probe is the wrong test here: right after a model process dies its
+    accepted connections linger in FIN_WAIT/TIME_WAIT for a while, and a plain
+    bind can fail on those even though no one is listening. Only a socket in
+    LISTEN state means another server owns the port.
     """
+    wanted = f":{int(port):04X}"
+    found_table = False
+    for table in proc_tables:
+        try:
+            lines = Path(table).read_text().splitlines()[1:]
+        except OSError:
+            continue
+        found_table = True
+        for line in lines:
+            fields = line.split()
+            if len(fields) > 3 and fields[1].upper().endswith(wanted) and fields[3].upper() == LISTEN_STATE:
+                return True
+    if found_table:
+        return False
+    return _bind_probe_in_use(port)
+
+
+def _bind_probe_in_use(port, host="127.0.0.1"):
+    """Fallback for hosts without /proc: a bind that fails means the port is taken."""
     probe = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -30,6 +53,11 @@ def port_in_use(port, host="127.0.0.1"):
         return True
     finally:
         probe.close()
+
+
+def port_in_use(port, host="127.0.0.1"):
+    """True when another listener already owns the port (see port_has_listener)."""
+    return port_has_listener(port)
 
 
 def process_alive(pid):
