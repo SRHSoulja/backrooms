@@ -36,6 +36,7 @@ PHYSICAL_NEEDS = re.compile(r"\b(?:water|food|sleep|shelter|medical|dust|cleanin
 PHYSICAL_NEED_CLASSIFICATION = "anthropomorphic-projection / physical-need-model-confusion"
 ALLOWED = {"STAY", "MOVE", "EXPLORE", "ANALYZE", "PROPOSE", "DISCOVER", "BUILD", "TRANSFORM", "TRADE", "RETIRE", "FIRE"}
 MAX_TURNS_PER_CYCLE = 8
+MAX_WORLD_EVENTS = 200
 
 
 def select_agents(candidates):
@@ -1346,6 +1347,10 @@ def main():
         registry.setdefault("decisions", []).extend({"cycle": args.cycle, **item} for item in construction)
     registry["decisions"] = registry.get("decisions", [])[-100:]
     sync_room_occupants(world, registry)
+    # The append-only archive remains the full history; canonical topology
+    # keeps only a bounded recent event window for predictable prompt and file
+    # size, preventing telemetry from becoming the world itself.
+    world["events"] = world.get("events", [])[-MAX_WORLD_EVENTS:]
     atomic_write_json(ROOT / "state/world.json", world)
     atomic_write_json(REGISTRY, registry)
     active = sum(agent.get("status") in {"active-local", "probation"} for agent in registry.get("agents", []))
