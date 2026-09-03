@@ -911,6 +911,14 @@ def record(result):
 PUBLISH_STATUS = {"outcome": "not-run", "reason": "", "at": None}
 
 
+def previous_publication_status():
+    """The last recorded outcome survives daemon restarts through the health feed itself."""
+    try:
+        return json.loads(PUBLIC_HEALTH.read_text()).get("publication_status") or dict(PUBLISH_STATUS)
+    except (OSError, json.JSONDecodeError):
+        return dict(PUBLISH_STATUS)
+
+
 def note_publish(outcome, reason=""):
     """Record the publication outcome in the log and in the public health feed.
 
@@ -983,7 +991,7 @@ def publish(result, world, model_health=True):
         **autonomy_summary(result),
         "publication": "sanitized GitHub Pages snapshot",
         "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
-        "publication_status": dict(PUBLISH_STATUS),
+        "publication_status": dict(PUBLISH_STATUS) if PUBLISH_STATUS.get("at") else previous_publication_status(),
         "question_source": result.get("question_source", "unknown"),
         "self_prompt_accepted": result.get("self_prompt_accepted", 0),
         "activity_feed": "docs/activity.json",
