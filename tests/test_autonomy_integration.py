@@ -8,6 +8,8 @@ assignment; this test runs the real ``main()`` code path instead.
 
 import json
 import shutil
+import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -23,6 +25,16 @@ BASE_DECISION = {"action": "PROPOSE", "room": "atrium", "target": "public A2A st
                  "request": "", "code": "", "reason": "clear lead from the frontier",
                  "self_summary": "I am comparing public interoperability standards next.",
                  "message_to": "", "message": ""}
+
+
+def isolated_env(root):
+    """The child must never see the operator's real provider keys: point the
+    router at an empty secrets file and allow only the stub 'local' provider."""
+    env = {key: value for key, value in os.environ.items()
+           if not re.search(r"(?i)(key|token|secret|password|mnemonic|credential)", key)}
+    env["BACKROOMS_ENV_FILE"] = str(Path(root) / "no-secrets.env")
+    env["BACKROOMS_PROVIDER_ORDER"] = "local"
+    return env
 
 
 FAKE_BROKER = """#!/usr/bin/env python3
@@ -148,7 +160,8 @@ class AutonomyIntegrationTests(unittest.TestCase):
     def run_autonomy(self, cycle=7, question=""):
         completed = subprocess.run([sys.executable, str(self.root / "scripts/local_autonomy.py"),
                                     "--base-url", self.base_url, "--cycle", str(cycle), "--question", question],
-                                   cwd=self.root, capture_output=True, text=True, timeout=90)
+                                   cwd=self.root, capture_output=True, text=True, timeout=90,
+                                   env=isolated_env(self.root))
         return completed
 
     def test_propose_turn_completes_and_persists(self):
