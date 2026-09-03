@@ -229,8 +229,8 @@ def public_voice(text):
     return public_text(text, limit=100000).replace("[content withheld by publication filter]", "[excerpt withheld by publication filter]")
 
 
-def public_event_text(text):
-    return public_text(text)
+def public_event_text(text, limit=240):
+    return public_text(text, limit)
 
 
 def continuity_audit(world, registry):
