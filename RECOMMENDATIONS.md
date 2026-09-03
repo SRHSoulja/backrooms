@@ -5,6 +5,21 @@ checkout at commit `1fcb6c4`, the live process tree, and the on-disk state. No c
 changed. One side effect: running the unit tests regenerated `docs/outside-signals.json`
 (timestamp only; the file was already modified in the working tree — see §2.4).
 
+### Current implementation status
+
+This review is a historical baseline. Since it was written, model health/recovery and code-change
+reloads, schema-constrained decisions, resident continuity and fair scheduling, clean public
+research with bounded HTTPS fetching, source hashes and quote-backed findings, contradiction
+scaffolding, connected room construction, bounded resident exchanges, capability policies,
+isolated local analysis, and public health/autonomy metrics have been implemented. The A2A
+boundary also exposes tracked tasks, verified parent links, and transition history.
+
+Remaining work is narrower: complete a same-turn observe-to-tool-to-observe loop; improve multi-source
+corroboration and research quality; make BUILD/TRANSFORM reliably finding-driven; add explicit
+trade and contradiction adjudication; and replace orphan-prone model reloads with a dedicated
+model service or process-group cleanup. A successful page fetch is not itself a finding, a
+discovery is not automatically a room, and review never grants resident access.
+
 The stated goal: a living Backrooms that agents evolve over time, with new agents filtering
 in and new rooms being added, using real tools and real research, finding purpose and
 discovery. This document measures the current system against that goal and proposes what to
