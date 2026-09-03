@@ -352,6 +352,8 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertIn("query_target = target[:160].strip()", source)
         self.assertIn('"public-text", candidate', source)
         self.assertIn('fetched["search_results"]', source)
+        self.assertIn("fetched_this_cycle = False", source)
+        self.assertIn("not fetched_this_cycle", source)
         self.assertIn('"verified": bool(source and excerpt)', source)
         self.assertIn('"source_hash": hashlib.sha256(excerpt.encode()).hexdigest() if source and excerpt else ""', source)
 

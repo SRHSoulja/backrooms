@@ -967,6 +967,7 @@ def main():
         0 if not agent.get("last_turn_cycle") else 1,
         agent.get("last_turn_cycle", 0), agent.get("id", "")))[:MAX_TURNS_PER_CYCLE]
     selected_ids = {agent.get("id") for agent in selected}
+    fetched_this_cycle = False
     for agent in registry.get("agents", []):
         if agent.get("id") not in selected_ids:
             continue
@@ -1140,11 +1141,13 @@ def main():
             # A search is only a lead. Fetch one selected HTTPS result so the
             # evidence ledger can require an actual page excerpt and hash,
             # rather than treating a search-provider homepage as provenance.
-            if (tool_name == "public-search" and tool.get("status") == "completed" and
+            if (tool_name == "public-search" and not fetched_this_cycle and
+                    tool.get("status") == "completed" and
                     isinstance(tool.get("results"), list)):
                 candidate = next((item.get("url", "") for item in tool["results"]
                                   if re.match(r"https://", str(item.get("url", "")), re.I)), "")
                 if candidate:
+                    fetched_this_cycle = True
                     fetched_run = subprocess.run([sys.executable, str(ROOT / "scripts/tool_broker.py"),
                         "public-text", candidate], cwd=ROOT, capture_output=True, text=True, check=False)
                     try:
