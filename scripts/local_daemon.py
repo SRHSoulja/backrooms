@@ -33,9 +33,9 @@ try:
 except ImportError:
     from capability_policy import public_catalog
 try:
-    from scripts.runtime_process import port_in_use, reap_recorded_model
+    from scripts.runtime_process import port_in_use, reap_recorded_model, startup_delay
 except ImportError:
-    from runtime_process import port_in_use, reap_recorded_model
+    from runtime_process import port_in_use, reap_recorded_model, startup_delay
 try:
     from scripts.evidence import classify_finding, is_accepted
     from scripts.corroboration import corroboration_index, load_records
@@ -54,6 +54,7 @@ except ImportError:
 ROOT = Path(__file__).resolve().parents[1]
 STATE = ROOT / "state/world.json"
 RUNTIME_STATE = ROOT / "state/local-runtime.json"
+CYCLE_CLOCK = ROOT / "state/cycle-clock.json"
 PUBLIC_CYCLE = ROOT / "docs/local-cycle.json"
 PUBLIC_HISTORY = ROOT / "docs/action-history.json"
 PUBLIC_HIRELINGS = ROOT / "docs/local-hirelings.json"
@@ -1353,6 +1354,16 @@ if configured_url:
 elif not model_client.configured_remote() and local_mode != "never":
     server = start_local_model()
 try:
+    # After a reload or crash restart, honor the cadence instead of running a
+    # cycle immediately on top of the one that just finished.
+    try:
+        _clock = json.loads(CYCLE_CLOCK.read_text()) if CYCLE_CLOCK.exists() else {}
+    except (OSError, ValueError):
+        _clock = {}
+    _delay = startup_delay(_clock.get("completed_at"), args.interval, time.time())
+    if _delay > 0:
+        print(json.dumps({"daemon": "resuming cadence after restart", "idle_seconds": round(_delay)}), flush=True)
+        sleep_between_cycles(_delay)
     while True:
         if reload_requested:
             print(json.dumps({"daemon": "reload requested; exiting after completed cycle"}), flush=True)
@@ -1410,6 +1421,10 @@ try:
         # wait instead of pushing every later cycle back by its own duration.
         cycle_seconds = time.monotonic() - cycle_started
         print(json.dumps({"cycle_seconds": round(cycle_seconds)}), flush=True)
+        try:
+            CYCLE_CLOCK.write_text(json.dumps({"completed_at": time.time(), "interval": args.interval}))
+        except OSError:
+            pass
         sleep_between_cycles(max(60, args.interval - cycle_seconds))
 except KeyboardInterrupt:
     pass

@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.runtime_process import ReloadWatcher, port_has_listener, port_in_use, process_alive, reap_recorded_model
+from scripts.runtime_process import startup_delay, ReloadWatcher, port_has_listener, port_in_use, process_alive, reap_recorded_model
 
 
 class ReloadWatcherTests(unittest.TestCase):
@@ -90,6 +90,14 @@ class ProcessOwnershipTests(unittest.TestCase):
             pidfile.write_text("not-a-pid")
             self.assertIsNone(reap_recorded_model(pidfile))
             self.assertFalse(pidfile.exists())
+
+
+    def test_restarted_daemon_idles_out_the_rest_of_the_cadence(self):
+        self.assertEqual(startup_delay(1000.0, 600, 1100.0), 500.0)
+        self.assertEqual(startup_delay(1000.0, 600, 1700.0), 0.0)
+        self.assertEqual(startup_delay(None, 600, 1100.0), 0.0)
+        self.assertEqual(startup_delay("bad", 600, 1100.0), 0.0)
+        self.assertEqual(startup_delay(2000.0, 600, 1100.0), 0.0)
 
 
 if __name__ == "__main__":

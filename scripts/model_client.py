@@ -196,6 +196,34 @@ def _request(provider, messages, temperature, max_tokens, schema, schema_name, t
 
 
 RETRY_429_MAX_WAIT = 10
+COOLDOWN_WAIT_MAX = 60
+
+
+def _soonest_cooldown(ordered, usage, now):
+    """Seconds until the first rate-limited provider is usable again, or None."""
+    waits = []
+    for provider in ordered:
+        entry = usage["providers"].get(provider["name"], {})
+        if entry.get("disabled") or provider["name"] == "local":
+            continue
+        ok, why = _available(provider, usage, now)
+        if why == "cooldown":
+            waits.append(max(0.0, entry.get("cooldown_until", 0) - now))
+    return min(waits) if waits else None
+
+
+def _error_detail(error):
+    """The provider's own one-line reason for a 429, without anything secret."""
+    try:
+        body = error.read().decode("utf-8", "replace")[:400]
+    except Exception:  # noqa: BLE001
+        return ""
+    try:
+        data = json.loads(body)
+        text = data.get("message") or (data.get("error") or {}).get("message") if isinstance(data, dict) else ""
+    except (ValueError, AttributeError):
+        text = body
+    return re.sub(r"[A-Za-z0-9_\-]{24,}", "[redacted]", str(text or ""))[:80]
 
 
 def _retry_after(error):
@@ -220,47 +248,63 @@ def _request_with_retry(provider, messages, temperature, max_tokens, schema, sch
 
 def complete(messages, *, temperature=0.3, max_tokens=400, schema=None, schema_name="response", call_class="general",
              base_url=None, timeout=90, opener=None, sleep=time.sleep, clock=time.time):
-    """Return the model's text from the first provider that answers; raise ModelUnavailable if none does."""
+    """Return the model's text from the first provider that answers; raise ModelUnavailable if none does.
+
+    When every provider is out and at least one is only cooling down briefly (a
+    rate limit rather than a budget or bad credentials), the cooldown is waited
+    out once and the providers are tried again, so a single free-tier provider
+    can carry the world without a call being lost to a momentary 429.
+    """
     usage = _load_usage()
     failures = []
-    for provider in providers(base_url):
-        now = clock()
-        ok, why = _available(provider, usage, now)
-        if not ok:
-            failures.append(f"{provider['name']}:{why}")
-            continue
-        entry = _record(usage, provider["name"])
-        _pace(provider, entry, now, sleep)
-        try:
-            content, prompt_tokens, completion_tokens = _request_with_retry(provider, messages, temperature, max_tokens, schema, schema_name, timeout, opener, sleep)
-        except urllib.error.HTTPError as error:
-            status = getattr(error, "code", 0)
-            if status == 429:
-                retry_after = _retry_after(error)
-                _record(usage, provider["name"], errors=1, last_error=f"429 rate limited ({call_class})", last_call_at=clock(),
-                        cooldown_until=clock() + max(15, min(retry_after, 900)))
-            elif status in (401, 403):
-                _record(usage, provider["name"], errors=1, last_error=f"{status} rejected credentials", disabled=True)
-            elif status == 400 and schema is not None and provider["json_schema"]:
-                # Some endpoints reject schema mode for a given model; retry once with a prompt hint.
-                try:
-                    content, prompt_tokens, completion_tokens = _request({**provider, "json_schema": False}, messages, temperature, max_tokens, schema, schema_name, timeout, opener)
-                    _record(usage, provider["name"], calls=1, input_tokens=prompt_tokens, output_tokens=completion_tokens, last_call_at=clock(), last_error="400 on schema mode; prompt hint used")
-                    _save_usage(usage)
-                    return content, provider["name"]
-                except Exception as retry_error:  # noqa: BLE001 - recorded and passed to the next provider
-                    _record(usage, provider["name"], errors=1, last_error=f"400 {str(retry_error)[:80]}", cooldown_until=clock() + 30)
-            else:
-                _record(usage, provider["name"], errors=1, last_error=f"{status} {call_class}", cooldown_until=clock() + 30)
-            failures.append(f"{provider['name']}:{status}")
-            continue
-        except Exception as error:  # noqa: BLE001 - any transport failure moves to the next provider
-            _record(usage, provider["name"], errors=1, last_error=f"{type(error).__name__} ({call_class})", cooldown_until=clock() + (5 if provider["name"] == "local" else 30))
-            failures.append(f"{provider['name']}:{type(error).__name__}")
-            continue
-        _record(usage, provider["name"], calls=1, input_tokens=prompt_tokens, output_tokens=completion_tokens, last_call_at=clock())
-        _save_usage(usage)
-        return content, provider["name"]
+    ordered = providers(base_url)
+    for attempt in range(2):
+        for provider in ordered:
+            now = clock()
+            ok, why = _available(provider, usage, now)
+            if not ok:
+                failures.append(f"{provider['name']}:{why}")
+                continue
+            entry = _record(usage, provider["name"])
+            _pace(provider, entry, now, sleep)
+            try:
+                content, prompt_tokens, completion_tokens = _request_with_retry(provider, messages, temperature, max_tokens, schema, schema_name, timeout, opener, sleep)
+            except urllib.error.HTTPError as error:
+                status = getattr(error, "code", 0)
+                if status == 429:
+                    retry_after = _retry_after(error)
+                    detail = _error_detail(error)
+                    _record(usage, provider["name"], errors=1, last_call_at=clock(),
+                            last_error=f"429 rate limited ({call_class})" + (f": {detail}" if detail else ""),
+                            cooldown_until=clock() + max(15, min(retry_after, 900)))
+                elif status in (401, 403):
+                    _record(usage, provider["name"], errors=1, last_error=f"{status} rejected credentials", disabled=True)
+                elif status == 400 and schema is not None and provider["json_schema"]:
+                    # Some endpoints reject schema mode for a given model; retry once with a prompt hint.
+                    try:
+                        content, prompt_tokens, completion_tokens = _request({**provider, "json_schema": False}, messages, temperature, max_tokens, schema, schema_name, timeout, opener)
+                        _record(usage, provider["name"], calls=1, input_tokens=prompt_tokens, output_tokens=completion_tokens, last_call_at=clock(), last_error="400 on schema mode; prompt hint used")
+                        _save_usage(usage)
+                        return content, provider["name"]
+                    except Exception as retry_error:  # noqa: BLE001 - recorded and passed to the next provider
+                        _record(usage, provider["name"], errors=1, last_error=f"400 {str(retry_error)[:80]}", cooldown_until=clock() + 30)
+                else:
+                    _record(usage, provider["name"], errors=1, last_error=f"{status} {call_class}", cooldown_until=clock() + 30)
+                failures.append(f"{provider['name']}:{status}")
+                continue
+            except Exception as error:  # noqa: BLE001 - any transport failure moves to the next provider
+                _record(usage, provider["name"], errors=1, last_error=f"{type(error).__name__} ({call_class})", cooldown_until=clock() + (5 if provider["name"] == "local" else 30))
+                failures.append(f"{provider['name']}:{type(error).__name__}")
+                continue
+            _record(usage, provider["name"], calls=1, input_tokens=prompt_tokens, output_tokens=completion_tokens, last_call_at=clock())
+            _save_usage(usage)
+            return content, provider["name"]
+        if attempt == 0:
+            wait = _soonest_cooldown(ordered, usage, clock())
+            if wait is None or wait > COOLDOWN_WAIT_MAX:
+                break
+            _save_usage(usage)
+            sleep(wait + 0.5)
     _save_usage(usage)
     raise ModelUnavailable("no model provider answered: " + ", ".join(failures)[:300])
 

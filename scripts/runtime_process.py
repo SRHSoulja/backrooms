@@ -152,3 +152,17 @@ class ReloadWatcher:
             self.requested_at = now
             return "request"
         return "changing"
+
+
+def startup_delay(last_completed_at, interval, now):
+    """Seconds a restarted daemon should idle before its first cycle so a reload
+    or crash-restart does not double up on the cadence. Unknown or stale
+    completion times mean no delay."""
+    try:
+        last = float(last_completed_at)
+        interval = float(interval)
+    except (TypeError, ValueError):
+        return 0.0
+    if interval <= 0 or last <= 0 or now < last:
+        return 0.0
+    return max(0.0, interval - (now - last))

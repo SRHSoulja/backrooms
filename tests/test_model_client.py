@@ -119,6 +119,52 @@ class ModelClientTests(unittest.TestCase):
                               sleep=self.sleeps.append, clock=lambda: 1001.0)
         self.assertTrue(all("mistral" not in url for url in attempts))
 
+    def test_single_provider_waits_out_a_brief_cooldown_instead_of_failing(self):
+        model_client.SECRETS.clear()
+        model_client.SECRETS.update({"MISTRAL_API_KEY": "test-mistral"})
+        clock = {"now": 1000.0}
+        sleeps = []
+
+        def sleep(seconds):
+            sleeps.append(seconds)
+            clock["now"] += seconds
+
+        attempts = []
+
+        def opener(request, timeout=0):
+            attempts.append(request.full_url)
+            if "mistral" in request.full_url:
+                if sum("mistral" in url for url in attempts) <= 2:
+                    raise urllib.error.HTTPError(request.full_url, 429, "rate limited", {},
+                                                 io.BytesIO(b'{"message": "Requests rate limit exceeded"}'))
+                return reply('{"ok": true}')
+            raise urllib.error.URLError("connection refused")
+
+        content, provider = model_client.complete([{"role": "user", "content": "hi"}], base_url="http://127.0.0.1:9",
+                                                  opener=opener, sleep=sleep, clock=lambda: clock["now"])
+        self.assertEqual((content, provider), ('{"ok": true}', "mistral"))
+        # one immediate retry, then the whole cooldown waited out, then success
+        self.assertEqual(sum("mistral" in url for url in attempts), 3)
+        self.assertTrue(any(seconds >= 15 for seconds in sleeps))
+        summary = {item["name"]: item for item in model_client.usage_summary("http://127.0.0.1:9")["providers"]}
+        self.assertEqual(summary["mistral"]["calls"], 1)
+        self.assertIn("Requests rate limit exceeded", summary["mistral"]["last_error"])
+
+    def test_long_cooldown_is_not_waited_out(self):
+        model_client.SECRETS.clear()
+        model_client.SECRETS.update({"MISTRAL_API_KEY": "test-mistral"})
+        sleeps = []
+
+        def opener(request, timeout=0):
+            if "mistral" in request.full_url:
+                raise urllib.error.HTTPError(request.full_url, 429, "rate limited", {"Retry-After": "300"}, io.BytesIO(b""))
+            raise urllib.error.URLError("connection refused")
+
+        with self.assertRaises(model_client.ModelUnavailable):
+            model_client.complete([{"role": "user", "content": "hi"}], base_url="http://127.0.0.1:9",
+                                  opener=opener, sleep=sleeps.append, clock=lambda: 1000.0)
+        self.assertFalse(any(seconds > 60 for seconds in sleeps))
+
     def test_bad_credentials_disable_a_provider_and_all_failures_raise(self):
         def opener(request, timeout=0):
             raise urllib.error.HTTPError(request.full_url, 401, "unauthorized", {}, io.BytesIO(b""))
