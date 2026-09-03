@@ -8,9 +8,32 @@ from scripts import code_proposal, code_view, code_sandbox
 class CodeToolTests(unittest.TestCase):
     def test_sandbox_uses_networkless_isolation_and_bounded_data(self):
         result = code_sandbox.run("print(len(data))", "public excerpt")
-        self.assertEqual(result["status"], "completed")
-        self.assertEqual(result["isolation"], "bubblewrap-unshare-all")
+        self.assertEqual(result["status"], "completed", result)
+        self.assertIn(result["isolation"], {"bubblewrap-unshare-all", "language-isolated-fallback"})
+        self.assertTrue(result["isolation_detail"])
         self.assertIn("14", result["output"])
+
+    def test_sandbox_falls_back_explicitly_when_bubblewrap_is_unavailable(self):
+        original_probe = code_sandbox._BWRAP_PROBE
+        original_which = code_sandbox.shutil.which
+        try:
+            code_sandbox._BWRAP_PROBE = None
+            code_sandbox.shutil.which = lambda _name: None
+            result = code_sandbox.run("print(len(data))", "public excerpt")
+            self.assertEqual(result["status"], "completed", result)
+            self.assertEqual(result["isolation"], "language-isolated-fallback")
+            self.assertEqual(result["isolation_detail"], "bwrap-not-installed")
+            self.assertIn("14", result["output"])
+        finally:
+            code_sandbox._BWRAP_PROBE = original_probe
+            code_sandbox.shutil.which = original_which
+
+    def test_bubblewrap_prefix_binds_only_existing_roots(self):
+        prefix = code_sandbox.bwrap_prefix()
+        self.assertEqual(prefix[:2], ["bwrap", "--unshare-all"])
+        bound = [prefix[index + 1] for index, item in enumerate(prefix) if item == "--ro-bind"]
+        self.assertTrue(all(Path(root).exists() for root in bound))
+        self.assertNotIn("--share-net", prefix)
 
     def test_code_view_rejects_private_paths(self):
         result = code_view.run("../.env")

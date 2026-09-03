@@ -32,17 +32,53 @@ def validate_tree(tree):
             raise ValueError("dunder names are not allowed")
 
 
-def sandbox_command(work, script):
-    """Use Bubblewrap when available, with no host-network or host-write view."""
-    python = ["python3", "-I", "/work/task.py"]
+_BWRAP_PROBE = None
+BIND_ROOTS = ("/usr", "/bin", "/lib", "/lib64", "/etc")
+
+
+def bwrap_prefix(work=None):
+    """Bubblewrap arguments with no network, no host writes, and only existing read-only roots."""
+    command = ["bwrap", "--unshare-all", "--die-with-parent", "--new-session"]
+    for root in BIND_ROOTS:
+        if Path(root).exists():
+            command += ["--ro-bind", root, root]
+    command += ["--proc", "/proc", "--dev", "/dev", "--tmpfs", "/tmp"]
+    if work:
+        command += ["--ro-bind", str(work), "/work", "--chdir", "/work"]
+    return command
+
+
+def bwrap_usable():
+    """Probe once whether Bubblewrap can actually build the sandbox here.
+
+    Presence of the binary is not enough: some hosts and CI runners restrict
+    unprivileged user namespaces, in which case ``--unshare-all`` fails and the
+    executor must say so explicitly instead of reporting a false isolation.
+    """
+    global _BWRAP_PROBE
+    if _BWRAP_PROBE is not None:
+        return _BWRAP_PROBE
     if not shutil.which("bwrap"):
-        return python, "language-isolated-fallback"
-    return (["bwrap", "--unshare-all", "--die-with-parent", "--new-session",
-             "--ro-bind", "/usr", "/usr", "--ro-bind", "/bin", "/bin",
-             "--ro-bind", "/lib", "/lib", "--ro-bind", "/lib64", "/lib64",
-             "--ro-bind", "/etc", "/etc", "--proc", "/proc", "--dev", "/dev",
-             "--tmpfs", "/tmp", "--ro-bind", work, "/work", "--chdir", "/work"] + python,
-            "bubblewrap-unshare-all")
+        _BWRAP_PROBE = (False, "bwrap-not-installed")
+        return _BWRAP_PROBE
+    try:
+        completed = subprocess.run(bwrap_prefix() + ["/bin/true"], capture_output=True, text=True, timeout=10)
+        if completed.returncode == 0:
+            _BWRAP_PROBE = (True, "bubblewrap-unshare-all")
+        else:
+            detail = (completed.stderr.strip().splitlines() or ["unknown error"])[-1][:120]
+            _BWRAP_PROBE = (False, "bwrap-unusable: " + detail)
+    except (OSError, subprocess.TimeoutExpired) as error:
+        _BWRAP_PROBE = (False, f"bwrap-unusable: {type(error).__name__}")
+    return _BWRAP_PROBE
+
+
+def sandbox_command(work, script):
+    """Use Bubblewrap when it works here; otherwise run the AST-restricted script directly."""
+    usable, detail = bwrap_usable()
+    if not usable:
+        return ["python3", "-I", str(script)], "language-isolated-fallback", detail
+    return bwrap_prefix(work) + ["python3", "-I", "/work/task.py"], "bubblewrap-unshare-all", detail
 
 
 def run(code, data=""):
@@ -58,7 +94,7 @@ def run(code, data=""):
     with tempfile.TemporaryDirectory(prefix="backrooms-code-") as work:
         script = Path(work) / "task.py"
         script.write_text("import builtins\n__builtins__ = {name: getattr(builtins, name) for name in " + repr(sorted(SAFE_CALLS)) + "}\ndata = " + repr(data) + "\n" + code)
-        command, isolation = sandbox_command(work, str(script))
+        command, isolation, isolation_detail = sandbox_command(work, str(script))
         try:
             completed = subprocess.run(command, capture_output=True, text=True, timeout=5,
                                        cwd=work, env={"PATH": "/usr/bin:/bin", "LANG": "C"})
@@ -67,7 +103,8 @@ def run(code, data=""):
         output = (completed.stdout + completed.stderr)[:MAX_OUTPUT]
         return {"status": "completed" if completed.returncode == 0 else "failed",
                 "returncode": completed.returncode, "output": output,
-                "contract": CONTRACT, "workspace": "temporary-and-destroyed", "isolation": isolation}
+                "contract": CONTRACT, "workspace": "temporary-and-destroyed", "isolation": isolation,
+                "isolation_detail": isolation_detail}
 
 
 if __name__ == "__main__":
