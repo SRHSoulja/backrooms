@@ -390,6 +390,17 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(result["status"], "completed")
         self.assertIn("14", result["output"])
 
+    def test_workbench_is_earned_from_three_verified_findings(self):
+        for index in range(3):
+            with local_autonomy.FINDINGS.open("a") as handle:
+                handle.write(json.dumps({
+                    "id": f"finding-{index}", "agent": "local-test", "url": f"https://example.org/{index}",
+                    "content_hash": f"hash-{index}"}) + "\n")
+        world = {"events": []}
+        agent = {"id": "local-test", "capabilities": []}
+        self.assertTrue(local_autonomy.grant_earned_capabilities(agent, world, 84))
+        self.assertIn("bounded-workbench", agent["capabilities"])
+
     def test_analysis_artifact_keeps_raw_local_and_creates_bounded_summary(self):
         local_autonomy.ANALYSIS_ARCHIVE = Path(self.archive_dir.name) / "analysis.jsonl"
         artifact = local_autonomy.record_analysis({"id": "local-test"}, 95, "print(42)",

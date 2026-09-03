@@ -177,6 +177,30 @@ def record_finding(finding):
     return True
 
 
+def grant_earned_capabilities(agent, world, cycle):
+    """Grant the reviewed workbench only after three verified findings."""
+    if "bounded-workbench" in agent.get("capabilities", []) or not FINDINGS.exists():
+        return False
+    count = 0
+    for line in FINDINGS.read_text().splitlines():
+        try:
+            item = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if item.get("agent") == agent.get("id") and item.get("url", "").startswith("https://") and item.get("content_hash"):
+            count += 1
+    if count < 3:
+        return False
+    agent.setdefault("capabilities", []).append("bounded-workbench")
+    agent["capability_grants"] = agent.get("capability_grants", []) + [{
+        "capability": "bounded-workbench", "cycle": cycle, "basis": "three-verified-findings",
+        "scope": "data-only temporary sandbox"}]
+    emit_event(world, cycle, "capability-earned", agent.get("id", "resident"),
+               "Resident earned bounded workbench access from three verified findings.",
+               capability="bounded-workbench", basis="three-verified-findings")
+    return True
+
+
 def accepted_outside_signals():
     """Return only explicitly accepted, already-sanitized outside summaries."""
     inbox_path = ROOT / "state/quarantine-inbox.json"
@@ -1234,6 +1258,7 @@ def main():
                         emit_event(world, args.cycle, "finding-filed", agent.get("id", "resident"),
                                    "Resident filed a source-backed finding from a fetched public excerpt.",
                                    finding_id=finding["id"], source_hash=finding["content_hash"])
+                        grant_earned_capabilities(agent, world, args.cycle)
                 emit_event(world, args.cycle, "tool-used", agent.get("id", "resident"),
                            f"Resident used the approved {tool['tool']} capability.",
                            tool=tool["tool"], capability=tool.get("contract", {}).get("capability", "unknown"),
