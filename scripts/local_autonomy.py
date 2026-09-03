@@ -50,11 +50,28 @@ MAX_TURNS_PER_CYCLE = 8
 # selected resident may fetch at most one page per turn, and the whole cycle
 # is capped so research cannot crowd out the council.
 MAX_FETCHES_PER_CYCLE = 4
+# A resident whose purpose cannot be pursued with public tools never files
+# evidence. Re-ground a few such purposes per cycle against the frontier, and
+# rest residents that keep producing nothing so turns go to productive work.
+MAX_REGROUNDS_PER_CYCLE = 2
+DORMANT_AFTER_TURNS_WITHOUT_EVIDENCE = 12
+CATALOG = ROOT / "docs/tool-catalog.json"
+MISSION_LINE = ("The Backrooms tests whether bounded agents can build a coherent shared record from public, "
+                "source-backed evidence without pretending, and grows rooms only from corroborated findings.")
 MAX_WORLD_EVENTS = 200
 
 
 def select_agents(candidates):
-    """Reserve half the turn budget for open work, then rotate everyone else."""
+    """Reserve half the turn budget for open work, then rotate everyone else.
+
+    Dormant residents are used only to fill turns that active residents leave
+    unused; a turn wakes them.
+    """
+    awake = [agent for agent in candidates if agent.get("status") != "dormant"]
+    dormant = [agent for agent in candidates if agent.get("status") == "dormant"]
+    if len(awake) < MAX_TURNS_PER_CYCLE:
+        awake = awake + sorted(dormant, key=lambda agent: (agent.get("last_turn_cycle", 0), agent.get("id", "")))[:MAX_TURNS_PER_CYCLE - len(awake)]
+    candidates = awake
     ordered = sorted(candidates, key=lambda agent: (
         0 if not agent.get("last_turn_cycle") else 1,
         agent.get("last_turn_cycle", 0), agent.get("id", "")))
@@ -861,6 +878,82 @@ def apply_construction(world, registry, cycle):
     return changes
 
 
+def catalog_tool_names():
+    try:
+        return [str(item.get("name")) for item in json.loads(CATALOG.read_text()).get("tools", []) if item.get("name")]
+    except (OSError, json.JSONDecodeError):
+        return ["public-search", "wikipedia-summary", "public-text"]
+
+
+def needs_regrounding(agent):
+    return (agent.get("status") in {"active-local", "probation", "dormant"} and not agent.get("regrounded_cycle")
+            and not agent.get("last_finding_id"))
+
+
+def reground_purpose(url, agent, rooms, frontier, cycle):
+    """Rewrite one resident's purpose so it can be pursued with public tools toward an open question.
+
+    The name and role stay; only the purpose and driving question change, and
+    the previous wording is kept on the record. This is how a roster recruited
+    without context stops chasing fantasy and starts producing evidence.
+    """
+    schema = {"type": "object", "additionalProperties": False,
+              "required": ["purpose", "question", "first_tool", "room"],
+              "properties": {"purpose": {"type": "string", "maxLength": 200},
+                             "question": {"type": "string", "maxLength": 200},
+                             "first_tool": {"type": "string", "enum": catalog_tool_names()},
+                             "room": {"type": "string", "enum": rooms}}}
+    context = {"open_questions": [str(item.get("question", ""))[:200] for item in frontier.get("open_questions", [])[-4:]],
+               "recent_findings": [str(item.get("claim", ""))[:160] for item in frontier.get("findings", [])[-3:]],
+               "rooms": rooms, "tools": catalog_tool_names()}
+    prompt = (f"{MISSION_LINE} Resident {agent.get('name')} ({agent.get('role')}) currently has the purpose "
+              f"'{str(agent.get('purpose', ''))[:200]}' and the question '{str(agent.get('question', ''))[:200]}'. "
+              "Rewrite the purpose and the question so they can be pursued with the listed public read-only tools "
+              "and advance one of the open questions or recent findings. Keep the name and role. No time travel, "
+              "quantum anomalies, hidden dimensions, secret powers, or physical needs: only claims that a public "
+              "source could support or refute. Context: " + json.dumps(context, ensure_ascii=True)[:1400] +
+              " Return only the JSON object.")
+    payload = {"model": os.getenv("BACKROOMS_LLM_MODEL", "local"), "messages": [
+        {"role": "system", "content": "You ground a research resident's purpose in checkable public evidence."},
+        {"role": "user", "content": prompt}], "temperature": 0.4, "max_tokens": 200,
+        "response_format": {"type": "json_schema", "json_schema": {"name": "grounded_purpose", "strict": True, "schema": schema}}}
+    try:
+        request = urllib.request.Request(url.rstrip("/") + "/v1/chat/completions", data=json.dumps(payload).encode(),
+                                         headers={"Content-Type": "application/json"}, method="POST")
+        with urllib.request.urlopen(request, timeout=90) as response:
+            grounded = json.loads(json.load(response)["choices"][0]["message"]["content"])
+        if not isinstance(grounded, dict):
+            return None
+    except (OSError, ValueError, TypeError, KeyError, AttributeError, json.JSONDecodeError):
+        return None
+    purpose = re.sub(r"\s+", " ", str(grounded.get("purpose", "")).strip())[:200]
+    question = re.sub(r"\s+", " ", str(grounded.get("question", "")).strip())[:200]
+    if not purpose or not question or FORBIDDEN.search(purpose + " " + question) or PHYSICAL_NEEDS.search(purpose + " " + question):
+        return None
+    agent["previous_purpose"] = {"purpose": agent.get("purpose"), "question": agent.get("question")}
+    agent["purpose"] = purpose
+    agent["question"] = question
+    agent["regrounded_cycle"] = cycle
+    agent["preferred_tool"] = str(grounded.get("first_tool", ""))[:40]
+    return {"agent": agent.get("id"), "purpose": purpose, "question": question, "room": str(grounded.get("room", ""))[:60]}
+
+
+def update_evidence_activity(agent, filed, cycle):
+    """Track turns without evidence; rest a resident that keeps producing none."""
+    if filed:
+        agent["turns_without_evidence"] = 0
+        if agent.get("status") == "dormant":
+            agent["status"] = "active-local"
+        return None
+    agent["turns_without_evidence"] = agent.get("turns_without_evidence", 0) + 1
+    if (agent["turns_without_evidence"] >= DORMANT_AFTER_TURNS_WITHOUT_EVIDENCE and not agent.get("claimed_task")
+            and agent.get("request_status") != "open" and agent.get("status") == "active-local"):
+        agent["status"] = "dormant"
+        agent["dormant_since_cycle"] = cycle
+        return "dormant"
+    return None
+
+
 def accepted_findings():
     findings = []
     if not FINDINGS.exists():
@@ -1227,9 +1320,26 @@ def main():
     rooms = [room["id"] for room in world.get("rooms", []) if room.get("id")]
     results = []
     candidates = [agent for agent in registry.get("agents", [])
-                  if agent.get("status") in {"active-local", "probation"}]
+                  if agent.get("status") in {"active-local", "probation", "dormant"}]
     selected = select_agents(candidates)
     selected_ids = {agent.get("id") for agent in selected}
+    frontier_snapshot = {}
+    if FRONTIER.exists():
+        try:
+            frontier_snapshot = json.loads(FRONTIER.read_text())
+        except json.JSONDecodeError:
+            frontier_snapshot = {}
+    regrounded = []
+    for agent in selected:
+        if len(regrounded) >= MAX_REGROUNDS_PER_CYCLE:
+            break
+        if needs_regrounding(agent):
+            outcome = reground_purpose(args.base_url, agent, rooms, frontier_snapshot, args.cycle)
+            if outcome:
+                regrounded.append(outcome)
+                emit_event(world, args.cycle, "purpose-regrounded", agent.get("id", "resident"),
+                           "Resident purpose was re-grounded in public, checkable evidence toward an open question.",
+                           regrounded_cycle=args.cycle)
     fetch_budget = MAX_FETCHES_PER_CYCLE
     for agent in registry.get("agents", []):
         if agent.get("id") not in selected_ids:
@@ -1373,6 +1483,7 @@ def main():
         if decision["action"] not in {"RETIRE", "FIRE"}:
             agent["status"] = "active-local"
         agent["interview_status"] = "accepted"
+        agent["turn_status_note"] = None
         agent["last_action"] = decision["action"].lower()
         agent["last_reason"] = decision["reason"]
         if decision.get("self_summary"):
@@ -1546,6 +1657,10 @@ def main():
                 "description": post_decision.get("proposal", "")[:220], "source_room": agent["room"],
                 "status": "construction-requested" if post_decision["action"] in {"BUILD", "TRANSFORM"} else "discovered",
                 "cycle": args.cycle}
+        if update_evidence_activity(agent, filed_finding_id, args.cycle) == "dormant":
+            emit_event(world, args.cycle, "resident-dormant", agent.get("id", "resident"),
+                       "Resident rested after repeated turns without filed evidence; a later turn can wake it.",
+                       turns_without_evidence=agent.get("turns_without_evidence"))
         completed_task_id = agent.get("claimed_task")
         if complete_frontier_task(agent, args.cycle, decision, filed_finding_id or turn_artifact_id):
             emit_event(world, args.cycle, "frontier-task-completed", agent.get("id", "resident"),
@@ -1581,7 +1696,8 @@ def main():
     active = sum(agent.get("status") in {"active-local", "probation"} for agent in registry.get("agents", []))
     print(json.dumps({"status": "completed", "active": active, "decisions": results,
                       "construction": construction, "requests": requests, "trades_settled": settled_trades,
-                      "corroborations": corroborations}))
+                      "corroborations": corroborations, "regrounded": regrounded,
+                      "dormant": sum(agent.get("status") == "dormant" for agent in registry.get("agents", []))}))
 
 
 if __name__ == "__main__":

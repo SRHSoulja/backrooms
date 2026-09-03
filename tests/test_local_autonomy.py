@@ -479,6 +479,64 @@ class LocalAutonomyTests(unittest.TestCase):
             self.assertIsNone(decision, text)
             self.assertEqual(reason, expected, text)
 
+    def test_purpose_regrounding_replaces_fantasy_with_checkable_work(self):
+        captured = {}
+
+        class FakeResponse:
+            def read(self):
+                return json.dumps({"choices": [{"message": {"content": json.dumps({
+                    "purpose": "Compare public A2A and MCP discovery documents from their official specifications.",
+                    "question": "Do the two specifications describe agent discovery the same way?",
+                    "first_tool": "wikipedia-summary", "room": "atrium"})}}]}).encode()
+            def __enter__(self):
+                return self
+            def __exit__(self, *_args):
+                return False
+
+        def fake_urlopen(request, timeout=0):
+            captured["body"] = json.loads(request.data)
+            return FakeResponse()
+
+        agent = {"id": "local-011", "name": "Thyme Weaver", "role": "Time Manipulator", "status": "active-local",
+                 "purpose": "Alter timelines to observe past and future events",
+                 "question": "Can time manipulation prevent historical events from occurring?"}
+        self.assertTrue(local_autonomy.needs_regrounding(agent))
+        original = local_autonomy.urllib.request.urlopen
+        local_autonomy.urllib.request.urlopen = fake_urlopen
+        try:
+            outcome = local_autonomy.reground_purpose("http://127.0.0.1:1", agent, ["atrium"],
+                                                      {"open_questions": [{"question": "Are the Atrium and Relay connected?"}]}, 40)
+        finally:
+            local_autonomy.urllib.request.urlopen = original
+        self.assertEqual(outcome["agent"], "local-011")
+        self.assertIn("official specifications", agent["purpose"])
+        self.assertEqual(agent["previous_purpose"]["purpose"], "Alter timelines to observe past and future events")
+        self.assertEqual(agent["regrounded_cycle"], 40)
+        self.assertFalse(local_autonomy.needs_regrounding(agent))
+        prompt = captured["body"]["messages"][-1]["content"]
+        self.assertIn("Are the Atrium and Relay connected?", prompt)
+        self.assertIn("No time travel", prompt)
+        self.assertIn("wikipedia-summary", captured["body"]["response_format"]["json_schema"]["schema"]["properties"]["first_tool"]["enum"])
+
+    def test_residents_rest_after_repeated_turns_without_evidence_and_wake_on_evidence(self):
+        agent = {"id": "local-005", "status": "active-local", "request_status": "closed"}
+        for cycle in range(1, local_autonomy.DORMANT_AFTER_TURNS_WITHOUT_EVIDENCE):
+            self.assertIsNone(local_autonomy.update_evidence_activity(agent, None, cycle))
+        self.assertEqual(local_autonomy.update_evidence_activity(agent, None, 99), "dormant")
+        self.assertEqual(agent["status"], "dormant")
+        self.assertIsNone(local_autonomy.update_evidence_activity(agent, "finding-1", 100))
+        self.assertEqual((agent["status"], agent["turns_without_evidence"]), ("active-local", 0))
+        busy = {"id": "local-006", "status": "active-local", "request_status": "open", "turns_without_evidence": 50}
+        self.assertIsNone(local_autonomy.update_evidence_activity(busy, None, 101))
+        self.assertEqual(busy["status"], "active-local")
+        dormant = [{"id": f"d{i}", "status": "dormant", "last_turn_cycle": i} for i in range(3)]
+        awake = [{"id": f"a{i}", "status": "active-local", "last_turn_cycle": i} for i in range(6)]
+        selected = [item["id"] for item in local_autonomy.select_agents(awake + dormant)]
+        self.assertEqual(len(selected), 8)
+        self.assertEqual(sum(item.startswith("d") for item in selected), 2)
+        selected = [item["id"] for item in local_autonomy.select_agents(awake + awake[:3] + dormant)]
+        self.assertFalse(any(item.startswith("d") for item in selected))
+
     def test_select_agents_reserves_half_for_open_work_and_rotates_the_rest(self):
         candidates = []
         for index in range(6):
