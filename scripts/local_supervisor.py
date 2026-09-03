@@ -11,6 +11,12 @@ ROOT = Path(__file__).resolve().parents[1]
 stopping = False
 
 
+def source_signature():
+    """Return a cheap signature for runtime code loaded by the daemon."""
+    return tuple((path.name, path.stat().st_mtime_ns, path.stat().st_size)
+                 for path in sorted((ROOT / "scripts").glob("*.py")))
+
+
 def stop(*_args):
     global stopping
     stopping = True
@@ -22,15 +28,24 @@ backoff = 5
 log_path = ROOT / "state/daemon.log"
 log_path.parent.mkdir(parents=True, exist_ok=True)
 while not stopping:
+    signature = source_signature()
+    changed = False
     with log_path.open("a") as log_handle:
         process = subprocess.Popen([sys.executable, str(ROOT / "scripts/local_daemon.py"), "--interval", "900", "--publish"], cwd=ROOT, stdout=log_handle, stderr=subprocess.STDOUT)
     while process.poll() is None and not stopping:
         time.sleep(1)
+        if source_signature() != signature:
+            changed = True
+            process.terminate()
+            process.wait(timeout=20)
+            with log_path.open("a") as log_handle:
+                log_handle.write('{"supervisor": "runtime code changed; daemon restarting"}\n')
+            break
     if stopping and process.poll() is None:
         process.terminate()
         process.wait(timeout=20)
         break
-    if process.returncode == 0:
+    if changed or process.returncode == 0:
         backoff = 5
     else:
         time.sleep(backoff)
