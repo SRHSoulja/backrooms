@@ -728,7 +728,7 @@ def evidence_room_growth(world, registry, cycle):
     """Create at most one connected room from two independent source-backed findings."""
     if not FINDINGS.exists():
         return []
-    groups = {}
+    candidates = []
     for line in FINDINGS.read_text().splitlines()[-200:]:
         try:
             finding = json.loads(line)
@@ -740,34 +740,44 @@ def evidence_room_growth(world, registry, cycle):
             continue
         domain = urllib.parse.urlparse(url).netloc.lower()
         if domain:
-            groups.setdefault(topic, []).append((finding, domain))
+            terms = {term for term in re.findall(r"[a-z0-9]{4,}", topic)
+                     if term not in {"about", "after", "also", "from", "into", "that", "this", "with", "what", "which"}}
+            candidates.append((finding, domain, terms))
     rooms = normalize_rooms(world, cycle)
     existing_topics = {str(room.get("growth_topic", "")).lower() for room in rooms}
-    for topic, entries in groups.items():
-        domains = {domain for _finding, domain in entries}
-        findings = list({finding.get("id"): finding for finding, _domain in entries}.values())
-        if len(findings) < 2 or len(domains) < 2 or topic in existing_topics:
-            continue
-        source_room = next((room for room in rooms if room.get("id") in (findings[0].get("relates_to") or [])), rooms[0] if rooms else None)
-        if source_room is None:
-            continue
-        room_id = safe_room_id(topic, {room.get("id") for room in rooms})
-        room = {"id": room_id, "name": topic[:60].title(),
+    for index, (first, first_domain, first_terms) in enumerate(candidates):
+        for second, second_domain, second_terms in candidates[index + 1:]:
+            if first_domain == second_domain or not first_terms or not second_terms:
+                continue
+            similarity = len(first_terms & second_terms) / len(first_terms | second_terms)
+            if similarity < 0.5:
+                continue
+            findings = [first, second]
+            topic_terms = sorted(first_terms & second_terms)
+            topic = " ".join(topic_terms)[:160] or str(first.get("topic", "research frontier"))[:160]
+            if topic in existing_topics:
+                continue
+            domains = {first_domain, second_domain}
+            source_room = next((room for room in rooms if room.get("id") in (findings[0].get("relates_to") or [])), rooms[0] if rooms else None)
+            if source_room is None:
+                continue
+            room_id = safe_room_id(topic, {room.get("id") for room in rooms})
+            room = {"id": room_id, "name": topic[:60].title(),
                 "description": f"Connected research room for corroborated findings about {topic[:120]}.",
                 "charter": f"Compare and preserve public evidence about {topic[:180]}.",
                 "growth_topic": topic, "founded_by": "evidence-ledger", "founded_cycle": cycle,
                 "artifacts": [finding.get("id") for finding in findings[:8]],
                 "board": [{"task": "Review the corroborating sources and record the next question.", "claimed_by": None, "status": "open"}],
                 "activity": {"last_cycle": cycle, "score": len(findings)}, "doors": [f"{room_id}-gate"], "occupants": []}
-        rooms.append(room)
-        source_room.setdefault("doors", []).append(f"{room_id}-gate")
-        world.setdefault("connections", []).append({"id": f"room-link-growth-{room_id}", "kind": "room-link",
+            rooms.append(room)
+            source_room.setdefault("doors", []).append(f"{room_id}-gate")
+            world.setdefault("connections", []).append({"id": f"room-link-growth-{room_id}", "kind": "room-link",
             "name": f"{room['name']} Gate", "from": source_room["id"], "to": room_id,
             "door": f"{room_id}-gate", "status": "declared", "scope": "internal movement only"})
-        emit_event(world, cycle, "room-built-from-evidence", "evidence-ledger",
+            emit_event(world, cycle, "room-built-from-evidence", "evidence-ledger",
                    "A connected room was created from two independently sourced findings.", room=room_id,
                    finding_ids=room["artifacts"], source_domains=sorted(domains))
-        return [{"action": "build", "room": room_id, "source": source_room["id"], "finding_ids": room["artifacts"]}]
+            return [{"action": "build", "room": room_id, "source": source_room["id"], "finding_ids": room["artifacts"]}]
     return []
 
 
