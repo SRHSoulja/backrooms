@@ -467,9 +467,10 @@ def sync_findings(registry, cycle):
                 continue
             if not item.get("id"):
                 continue
-            if not item.get("recorded_at"):
-                journal_module.backfill_timestamps([item], journal_module.cycle_times(
-                    json.loads(PUBLIC_HISTORY.read_text()) if PUBLIC_HISTORY.exists() else {}))
+            if not item.get("recorded_at") or item.get("recorded_at_estimated"):
+                times = journal_module.cycle_times_from_events(ARCHIVE.read_text().splitlines() if ARCHIVE.exists() else [])
+                times.update(journal_module.cycle_times(json.loads(PUBLIC_HISTORY.read_text()) if PUBLIC_HISTORY.exists() else {}))
+                journal_module.backfill_timestamps([item], times)
             if is_accepted(item):
                 status, reason, _score = classify_finding(item.get("claim", ""), item.get("quote", ""),
                                                           None, item.get("confidence"))
@@ -943,7 +944,8 @@ def sync_journal(world, registry, result):
         tasks = frontier.get("tasks", [])
         # Rows written before timestamping carry only a cycle; estimate from the public cycle history.
         history = json.loads(PUBLIC_HISTORY.read_text()) if PUBLIC_HISTORY.exists() else {}
-        times = journal_module.cycle_times(history)
+        times = journal_module.cycle_times_from_events(ARCHIVE.read_text().splitlines() if ARCHIVE.exists() else [])
+        times.update(journal_module.cycle_times(history))
         journal_module.backfill_timestamps(findings, times)
         journal_module.backfill_timestamps(corroborations, times)
         journal_module.backfill_timestamps(tasks, times, cycle_key="completed_cycle", stamp_key="completed_at")
@@ -1225,7 +1227,7 @@ def publish(result, world, model_health=True):
     sync_outside_signals()
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}
-    allowlisted = { "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/trades.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json", "docs/journal.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json", "state/frontier.json", "state/codex-bridge-status.json"}
+    allowlisted = {"docs/local-cycle.json",  "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/trades.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json", "docs/journal.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json", "state/frontier.json", "state/codex-bridge-status.json"}
     offending = {path for path in changed if path not in allowlisted and not path.startswith("journal/")}
     if offending:
         note_publish("skipped", "other local changes present: " + ", ".join(sorted(offending)[:5])[:160])

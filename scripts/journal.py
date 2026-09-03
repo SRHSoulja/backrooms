@@ -30,21 +30,43 @@ def cycle_times(history):
     return times
 
 
+def cycle_times_from_events(lines):
+    """cycle -> earliest recorded_at seen in the append-only event archive."""
+    times = {}
+    for line in lines:
+        try:
+            event = json.loads(line)
+            cycle = int(event.get("cycle"))
+            stamp = str(event.get("recorded_at") or "")
+        except (TypeError, ValueError):
+            continue
+        if stamp and (cycle not in times or stamp < times[cycle]):
+            times[cycle] = stamp
+    return times
+
+
 def backfill_timestamps(rows, times, cycle_key="cycle", stamp_key="recorded_at"):
-    """Estimate a timestamp for rows that predate timestamping, from the nearest published cycle."""
+    """Estimate a timestamp for rows that predate timestamping, from the nearest known cycle.
+
+    Provisional estimates (marked ``*_estimated``) are refined whenever a
+    better cycle map is available; real stamps are never touched.
+    """
     if not times:
         return 0
     known = sorted(times)
     changed = 0
     for row in rows:
-        if row.get(stamp_key) or row.get(cycle_key) in (None, ""):
+        if (row.get(stamp_key) and not row.get(stamp_key + "_estimated")) or row.get(cycle_key) in (None, ""):
             continue
         try:
             cycle = int(row.get(cycle_key))
         except (TypeError, ValueError):
             continue
         nearest = max((c for c in known if c <= cycle), default=None) or min(known)
-        row[stamp_key] = times[nearest]
+        estimate = times[nearest]
+        if row.get(stamp_key) == estimate:
+            continue
+        row[stamp_key] = estimate
         row[stamp_key + "_estimated"] = True
         changed += 1
     return changed

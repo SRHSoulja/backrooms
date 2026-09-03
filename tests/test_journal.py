@@ -1,3 +1,4 @@
+import json
 import unittest
 
 from scripts import journal
@@ -55,6 +56,12 @@ class JournalTests(unittest.TestCase):
         self.assertEqual(rows[2]["recorded_at"], "kept")
         self.assertNotIn("recorded_at", rows[3])
         self.assertEqual(journal.backfill_timestamps(rows, {}), 0)
+        better = dict(times); better[150] = "2026-09-02T12:00:00+00:00"
+        self.assertEqual(journal.backfill_timestamps(rows, better), 1)
+        self.assertEqual(rows[1]["recorded_at"], "2026-09-02T12:00:00+00:00")
+        events = [json.dumps({"cycle": 150, "recorded_at": "2026-09-02T12:30:00+00:00"}),
+                  json.dumps({"cycle": 150, "recorded_at": "2026-09-02T12:05:00+00:00"}), "not json", json.dumps({"cycle": "x"})]
+        self.assertEqual(journal.cycle_times_from_events(events), {150: "2026-09-02T12:05:00+00:00"})
 
     def test_compose_falls_back_to_ledger_text_when_the_draft_invents(self):
         d = digest()
