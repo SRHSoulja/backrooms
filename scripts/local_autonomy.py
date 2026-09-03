@@ -216,6 +216,11 @@ def extract_finding(url, agent, cycle, tool):
         return None
     claim = re.sub(r"\s+", " ", str(finding.get("claim", "")).strip())[:300]
     quote = re.sub(r"\s+", " ", str(finding.get("quote", "")).strip())[:300]
+    if not claim and not quote:
+        # The model found nothing quotable on this page. That is not a
+        # rejected finding, just no extraction; the tool-used event already
+        # records the fetch.
+        return None
     status, reason, quote_score = classify_finding(claim, quote, excerpt)
     confidence = clamp_confidence(finding.get("confidence", 0))
     source_hash = str(tool.get("source_hash"))

@@ -21,7 +21,11 @@ def research_themes(cycle, count=2, path=THEMES):
 FORBIDDEN = re.compile(r"(api[_ -]?key|password|secret|private memory|credential|token)", re.I)
 SELF_REFERENTIAL = re.compile(
     r"(?:evidence\s+markers?|hypothesis\s+(?:was\s+)?weaken|marker\s+counts?|"
-    r"(?:echo|morrow)(?:'s|\s+outputs?)|recent\s+aggregate\s+actions?)", re.I)
+    r"(?:echo|morrow)(?:'s|\s+outputs?)|recent\s+aggregate\s+actions?|"
+    # Questions about the world's own topology or telemetry never lead to
+    # public evidence; the council should ask about the outside world.
+    r"\b(?:atrium|relay|archive|quiet[- ]workspace|outbound\s+door|dead\s+terminal)\b|"
+    r"\bresidents?\b|\brooms?\b|\bhirelings?\b|\bcycle\s+\d+)", re.I)
 
 
 def valid(proposal):

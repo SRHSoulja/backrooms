@@ -49,6 +49,17 @@ class SelfPromptTests(unittest.TestCase):
                     "WHY: The metric changed.\nTEST: Count markers again.")
         self.assertFalse(valid(proposal))
 
+    def test_rejects_questions_about_the_world_itself(self):
+        for question in ("How does the behavior of residents in the Atrium compare to those in the Relay?",
+                         "Why did the resident move from Archive to Quiet-Workspace?",
+                         "What unexplained pattern in the current rooms deserves an experiment?",
+                         "Are the anomalies at cycle 146 consistent?"):
+            proposal = f"QUESTION: {question}\nWHY: curiosity.\nTEST: look."
+            self.assertFalse(valid(proposal), question)
+        proposal = ("QUESTION: What do public sources say about persistent memory designs for autonomous agents?\n"
+                    "WHY: It is a research theme.\nTEST: Compare two independent public sources.")
+        self.assertTrue(valid(proposal))
+
     def test_accepts_public_frontier_question(self):
         proposal = ("QUESTION: Which public finding should we verify next?\n"
                     "WHY: It may explain the newest room candidate.\n"
