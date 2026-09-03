@@ -12,6 +12,11 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
+try:
+    from scripts.model_client import complete
+except ImportError:
+    from model_client import complete
+
 ROOT = Path(__file__).resolve().parents[1]
 ACTION_LOG = ROOT / "state/action-log.json"
 ACTION_ARCHIVE = ROOT / "state/archive/actions.jsonl"
@@ -25,14 +30,11 @@ MARKERS = ("uncertain", "cannot establish", "evidence", "confound", "revise")
 
 
 def ask(url, resident, context, prompt):
-    body = json.dumps({"model": os.getenv("BACKROOMS_LLM_MODEL", "local"), "messages": [
+    content, _provider = complete([
         {"role": "system", "content": f"You are {resident}. This is a bounded local experiment. Do not claim subjective experience."},
         {"role": "user", "content": f"Public context:\n{context}\n\nProbe:\n{prompt}"}],
-        "temperature": 0.3, "max_tokens": 120}).encode()
-    request = urllib.request.Request(url.rstrip("/") + "/v1/chat/completions", data=body,
-        headers={"Content-Type": "application/json"}, method="POST")
-    with urllib.request.urlopen(request, timeout=90) as response:
-        return json.load(response)["choices"][0]["message"]["content"].strip()
+        temperature=0.3, max_tokens=120, call_class="probe", base_url=url)
+    return content
 
 
 parser = argparse.ArgumentParser()

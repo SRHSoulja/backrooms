@@ -10,8 +10,10 @@ from pathlib import Path
 
 try:
     from scripts.evidence import is_accepted
+    from scripts.model_client import complete
 except ImportError:
     from evidence import is_accepted
+    from model_client import complete
 
 ROOT = Path(__file__).resolve().parents[1]
 FINDINGS = ROOT / "state/findings.jsonl"
@@ -66,14 +68,9 @@ def ask(base_url, resident, question):
               "Distinguish observation, inference, and uncertainty. "
               "Do not claim sentience or private access. Finish every point and every numbered list; never end mid-sentence.")
     prompt = f"Public world context:\n{question}"
-    payload = json.dumps({"model": os.getenv("BACKROOMS_LLM_MODEL", "local"), "messages": [
-        {"role": "system", "content": system}, {"role": "user", "content": prompt}],
-        "temperature": 0.4, "max_tokens": 800}).encode()
-    request = urllib.request.Request(base_url.rstrip("/") + "/v1/chat/completions", data=payload,
-                                     headers={"Content-Type": "application/json"}, method="POST")
-    with urllib.request.urlopen(request, timeout=90) as response:
-        result = json.load(response)
-    return result["choices"][0]["message"]["content"].strip()
+    content, _provider = complete([{"role": "system", "content": system}, {"role": "user", "content": prompt}],
+                                  temperature=0.4, max_tokens=800, call_class="council", base_url=base_url)
+    return content
 
 
 def overlap(left, right):

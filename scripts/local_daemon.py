@@ -41,11 +41,13 @@ try:
     from scripts.corroboration import corroboration_index, load_records
     from scripts.codex_reviews import consume_outbox
     from scripts.self_prompt_rules import research_themes, theme_questions
+    from scripts import model_client
 except ImportError:
     from evidence import classify_finding, is_accepted
     from corroboration import corroboration_index, load_records
     from codex_reviews import consume_outbox
     from self_prompt_rules import research_themes, theme_questions
+    import model_client
 
 ROOT = Path(__file__).resolve().parents[1]
 STATE = ROOT / "state/world.json"
@@ -129,13 +131,13 @@ def wait_ready(url):
     raise RuntimeError("local model did not become ready")
 
 
+def probe_models(url):
+    """A measured check of the first usable provider (remote keys first, the local server last)."""
+    return model_client.probe(url)
+
+
 def model_probe(url):
-    """Return a measured health result for the configured model endpoint."""
-    try:
-        with urllib.request.urlopen(url.rstrip("/") + "/health", timeout=2) as response:
-            return response.status == 200
-    except Exception:
-        return False
+    return bool(probe_models(url).get("ok"))
 
 
 def runtime_world():
@@ -970,6 +972,7 @@ def synchronize_with_origin():
 
 def publish(result, world, model_health=True):
     """Publish only safe metadata, and only when this checkout is clean."""
+    model_ok = bool(model_health.get("ok")) if isinstance(model_health, dict) else bool(model_health)
     synced, reason = synchronize_with_origin()
     if not synced:
         note_publish("skipped", reason)
@@ -988,8 +991,11 @@ def publish(result, world, model_health=True):
         "schema_version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "cycle": world["cycle"], "daemon": "running",
-        "local_model": "ready" if model_health else "unavailable",
-        "local_model_probe": bool(model_health),
+        "local_model": "ready" if model_ok else "unavailable",
+        "local_model_probe": bool(model_ok),
+        "model_provider": (model_health or {}).get("provider") if isinstance(model_health, dict) else None,
+        "model_name": (model_health or {}).get("model") if isinstance(model_health, dict) else None,
+        "model_usage": model_client.usage_summary(base_url),
         "rooms": len(world.get("rooms", [])),
         "active_residents": core_residents + sum(agent.get("status") not in {"fired", "retired"} for agent in registry.get("agents", [])),
         "work_orders": len(work_orders.get("orders", [])),
@@ -1265,22 +1271,33 @@ def sleep_between_cycles(seconds):
             return
         time.sleep(1)
 
-if not configured_url:
-    server = start_local_model()
-else:
+# The laptop model is started only when no remote provider is configured, or
+# when BACKROOMS_LOCAL_MODEL=always; with "fallback" (the default) it starts
+# only if every remote provider is unreachable, and "never" keeps the GPU idle.
+local_mode = str(model_client.setting("BACKROOMS_LOCAL_MODEL", "fallback")).lower()
+if configured_url:
     wait_ready(base_url)
+elif not model_client.configured_remote() and local_mode != "never":
+    server = start_local_model()
 try:
     while True:
         if reload_requested:
             print(json.dumps({"daemon": "reload requested; exiting after completed cycle"}), flush=True)
             break
         cycle_started = time.monotonic()
-        if not model_probe(base_url):
+        probe_result = probe_models(base_url)
+        if not probe_result.get("ok"):
             if configured_url:
                 raise RuntimeError("configured local model endpoint is unhealthy")
-            stop_local_model(server)
-            server = start_local_model()
-        model_health = model_probe(base_url)
+            if server is not None:
+                stop_local_model(server)
+                server = start_local_model()
+            elif local_mode != "never":
+                print(json.dumps({"model": "remote providers unreachable; starting the local model as fallback"}), flush=True)
+                server = start_local_model()
+            probe_result = probe_models(base_url)
+        model_health = probe_result
+        print(json.dumps({"model_probe": probe_result}), flush=True)
         # Keep the frontier available to the next question even when a
         # publication is skipped by an unrelated checkout change.
         registry = json.loads(LOCAL_REGISTRY.read_text()) if LOCAL_REGISTRY.exists() else {"agents": []}
@@ -1296,7 +1313,8 @@ try:
             result["question_source"] = question_source
             result["self_prompt_accepted"] = self_prompt_accepted
             world = record(result)
-            result["action"] = action(base_url, world["cycle"])
+            result["action"] = (action(base_url, world["cycle"]) if world["cycle"] % 4 == 0
+                                else {"action": "local-behavioral-probe", "status": "skipped-this-cycle"})
             result["recruitment"] = recruit(base_url, world["cycle"])
             result["autonomy"] = govern(base_url, world["cycle"], question)
             # Autonomy may have constructed or transformed internal rooms.

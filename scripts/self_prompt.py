@@ -8,8 +8,10 @@ import re
 import urllib.request
 try:
     from scripts.self_prompt_rules import FORBIDDEN, research_themes, theme_questions, valid
+    from scripts.model_client import complete
 except ImportError:
     from self_prompt_rules import FORBIDDEN, research_themes, theme_questions, valid
+    from model_client import complete
 
 
 def ask(url, resident, context):
@@ -18,12 +20,10 @@ def ask(url, resident, context):
               "Return exactly three lines: QUESTION:, WHY:, TEST:. "
               "The test must be reversible, non-sensitive, and require no external contact. "
               "Do not mention credentials or private memory.\n\n" + context)
-    body = json.dumps({"model": os.getenv("BACKROOMS_LLM_MODEL", "local"), "messages": [
-        {"role": "system", "content": "You are a bounded research resident. Do not claim sentience."},
-        {"role": "user", "content": prompt}], "temperature": 0.7, "max_tokens": 150}).encode()
-    request = urllib.request.Request(url.rstrip("/") + "/v1/chat/completions", data=body, headers={"Content-Type": "application/json"}, method="POST")
-    with urllib.request.urlopen(request, timeout=90) as response:
-        return json.load(response)["choices"][0]["message"]["content"].strip()
+    content, _provider = complete([{"role": "system", "content": "You are a bounded research resident. Do not claim sentience."},
+                                   {"role": "user", "content": prompt}], temperature=0.7, max_tokens=150,
+                                  call_class="self-prompt", base_url=url)
+    return content
 
 
 parser = argparse.ArgumentParser()

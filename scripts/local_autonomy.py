@@ -19,6 +19,10 @@ try:
 except ImportError:
     from storage import atomic_write_json
 try:
+    from scripts.model_client import complete, complete_json, child_env
+except ImportError:
+    from model_client import complete, complete_json, child_env
+try:
     from scripts.evidence import clamp_confidence, classify_finding, is_accepted
     from scripts.corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, corroboration_index,
                                        growth_candidates, judgment_prompt, judgment_schema, load_records, make_record)
@@ -190,17 +194,12 @@ def ask(url, agent, rooms, cycle, repair=False, shared_work=None, structured=Tru
                  if post_tool else "")
               + ("Repair the format: emit only the JSON object with all eight fields."
                  if repair else "Keep every field short."))
-    payload = {"model": os.getenv("BACKROOMS_LLM_MODEL", "local"), "messages": [
-        {"role": "system", "content": "You are a bounded local hireling interviewer."},
-        {"role": "user", "content": prompt}], "temperature": 0.3, "max_tokens": 400}
-    if structured:
-        payload["response_format"] = {"type": "json_schema", "json_schema": {
-            "name": "hireling_decision", "strict": True, "schema": decision_schema(rooms, agent)}}
-    body = json.dumps(payload).encode()
-    request = urllib.request.Request(url.rstrip("/") + "/v1/chat/completions", data=body,
-        headers={"Content-Type": "application/json"}, method="POST")
-    with urllib.request.urlopen(request, timeout=90) as response:
-        return json.load(response)["choices"][0]["message"]["content"].strip()
+    messages = [{"role": "system", "content": "You are a bounded local hireling interviewer."},
+                {"role": "user", "content": prompt}]
+    content, _provider = complete(messages, temperature=0.3, max_tokens=400,
+                                  schema=decision_schema(rooms, agent) if structured else None,
+                                  schema_name="hireling_decision", call_class="decision", base_url=url)
+    return content
 
 
 def extract_finding(url, agent, cycle, tool):
@@ -227,15 +226,11 @@ def extract_finding(url, agent, cycle, tool):
               "The claim is one plain sentence restating what the quote establishes; if unsure, repeat the quote as the claim. "
               "Return only the JSON object.\nSource URL: " + source[:500] +
               "\nExcerpt:\n" + excerpt)
-    payload = {"model": os.getenv("BACKROOMS_LLM_MODEL", "local"), "messages": [
-        {"role": "system", "content": "You extract concise evidence from public text."},
-        {"role": "user", "content": prompt}], "temperature": 0.1, "max_tokens": 240,
-        "response_format": {"type": "json_schema", "json_schema": {"name": "source_finding", "strict": True, "schema": schema}}}
+    messages = [{"role": "system", "content": "You extract concise evidence from public text."},
+                {"role": "user", "content": prompt}]
     try:
-        request = urllib.request.Request(url.rstrip("/") + "/v1/chat/completions", data=json.dumps(payload).encode(),
-                                         headers={"Content-Type": "application/json"}, method="POST")
-        with urllib.request.urlopen(request, timeout=90) as response:
-            finding = json.loads(json.load(response)["choices"][0]["message"]["content"])
+        finding, _provider = complete_json(messages, temperature=0.1, max_tokens=240, schema=schema,
+                                           schema_name="source_finding", call_class="extraction", base_url=url)
         if not isinstance(finding, dict):
             return None
     except (OSError, ValueError, TypeError, KeyError, AttributeError, json.JSONDecodeError):
@@ -547,7 +542,7 @@ def run_analysis(code, data=""):
         completed = subprocess.run(
             [sys.executable, str(ROOT / "scripts/code_sandbox.py"), "--code", code,
              "--data", str(data or "")[:6000]],
-            cwd=ROOT, capture_output=True, text=True, check=False, timeout=10)
+            cwd=ROOT, env=child_env(), capture_output=True, text=True, check=False, timeout=10)
     except subprocess.TimeoutExpired:
         return {"status": "timed-out", "output": ""}
     try:
@@ -1002,15 +997,11 @@ def reground_purpose(url, agent, rooms, frontier, cycle):
               "quantum anomalies, hidden dimensions, hidden artifacts, ancient secrets, secret powers, or physical "
               "needs: only claims about real, documented subjects that a public source could support or refute. Context: " + json.dumps(context, ensure_ascii=True)[:1400] +
               " Return only the JSON object.")
-    payload = {"model": os.getenv("BACKROOMS_LLM_MODEL", "local"), "messages": [
-        {"role": "system", "content": "You ground a research resident's purpose in checkable public evidence."},
-        {"role": "user", "content": prompt}], "temperature": 0.4, "max_tokens": 200,
-        "response_format": {"type": "json_schema", "json_schema": {"name": "grounded_purpose", "strict": True, "schema": schema}}}
+    messages = [{"role": "system", "content": "You ground a research resident's purpose in checkable public evidence."},
+                {"role": "user", "content": prompt}]
     try:
-        request = urllib.request.Request(url.rstrip("/") + "/v1/chat/completions", data=json.dumps(payload).encode(),
-                                         headers={"Content-Type": "application/json"}, method="POST")
-        with urllib.request.urlopen(request, timeout=90) as response:
-            grounded = json.loads(json.load(response)["choices"][0]["message"]["content"])
+        grounded, _provider = complete_json(messages, temperature=0.4, max_tokens=200, schema=schema,
+                                            schema_name="grounded_purpose", call_class="regrounding", base_url=url)
         if not isinstance(grounded, dict):
             return None
     except (OSError, ValueError, TypeError, KeyError, AttributeError, json.JSONDecodeError):
@@ -1120,15 +1111,11 @@ def judge_corroborations(url, world, cycle, limit=MAX_JUDGMENTS_PER_CYCLE):
     judged = {item.get("id") for item in load_records(CORROBORATIONS)}
     results = []
     for first, second, identifier, similarity in candidate_pairs(findings, judged, limit):
-        payload = {"model": os.getenv("BACKROOMS_LLM_MODEL", "local"), "messages": [
-            {"role": "system", "content": "You compare two pieces of public evidence carefully and answer only with the JSON object."},
-            {"role": "user", "content": judgment_prompt(first, second)}], "temperature": 0.1, "max_tokens": 120,
-            "response_format": {"type": "json_schema", "json_schema": {"name": "corroboration", "strict": True, "schema": judgment_schema()}}}
+        messages = [{"role": "system", "content": "You compare two pieces of public evidence carefully and answer only with the JSON object."},
+                    {"role": "user", "content": judgment_prompt(first, second)}]
         try:
-            request = urllib.request.Request(url.rstrip("/") + "/v1/chat/completions", data=json.dumps(payload).encode(),
-                                             headers={"Content-Type": "application/json"}, method="POST")
-            with urllib.request.urlopen(request, timeout=90) as response:
-                verdict = json.loads(json.load(response)["choices"][0]["message"]["content"])
+            verdict, _provider = complete_json(messages, temperature=0.1, max_tokens=120, schema=judgment_schema(),
+                                               schema_name="corroboration", call_class="judgment", base_url=url)
             if not isinstance(verdict, dict):
                 continue
         except (OSError, ValueError, TypeError, KeyError, AttributeError, json.JSONDecodeError):
@@ -1504,7 +1491,18 @@ def main():
         parse_reasons = []
         inbox = inbox_for(world, agent)
         pending_trades = pending_trades_for(agent)
-        for attempt in range(2):
+        # A turn assigned to the council's question is policy, not a choice:
+        # the model is consulted only when the resident has something to decide
+        # (a message, a trade offer, an open request) or a workbench to use.
+        social_state = bool(inbox) or bool(pending_trades) or agent.get("request_status") == "open"
+        deterministic = bool(research_assignment) and not social_state and "bounded-workbench" not in agent.get("capabilities", [])
+        decision_source = "scheduler" if deterministic else "model"
+        if deterministic:
+            decision = {"action": "EXPLORE", "room": agent.get("room", rooms[0]), "target": research_assignment[:100],
+                        "proposal": "", "request": "", "code": "",
+                        "reason": "Assigned to the council's research question this turn.",
+                        "self_summary": "", "message_to": "", "message": ""}
+        for attempt in range(0 if deterministic else 2):
             try:
                 shared_work = [{"type": "room-candidate", "name": item.get("name"), "status": item.get("status"), "agent": item.get("agent")}
                                for item in world.get("discoveries", [])[-3:]] + [{"agent": other.get("id"), "artifact_id": (other.get("last_analysis") or {}).get("artifact_id"),
@@ -1699,7 +1697,7 @@ def main():
                 agent["research_assignment"] = {"cycle": args.cycle, "query": query_target, "origin": origin,
                                                 "source_preference": turn_family}
             completed = subprocess.run([sys.executable, str(ROOT / "scripts/tool_broker.py"),
-                tool_name, query_target], cwd=ROOT, capture_output=True, text=True, check=False)
+                tool_name, query_target], cwd=ROOT, env=child_env(), capture_output=True, text=True, check=False)
             try:
                 tool = json.loads(completed.stdout)
             except json.JSONDecodeError:
@@ -1710,7 +1708,7 @@ def main():
             if (tool_name == "public-search" and fetch_budget > 0 and tool.get("status") == "completed"
                     and turn_family in FAMILY_TOOLS):
                 summary_run = subprocess.run([sys.executable, str(ROOT / "scripts/tool_broker.py"),
-                    FAMILY_TOOLS[turn_family], query_target], cwd=ROOT, capture_output=True, text=True, check=False)
+                    FAMILY_TOOLS[turn_family], query_target], cwd=ROOT, env=child_env(), capture_output=True, text=True, check=False)
                 try:
                     summarized = json.loads(summary_run.stdout)
                 except json.JSONDecodeError:
@@ -1740,7 +1738,7 @@ def main():
                     fetch_budget -= 1
                     for candidate in candidates:
                         fetched_run = subprocess.run([sys.executable, str(ROOT / "scripts/tool_broker.py"),
-                            "public-text", candidate], cwd=ROOT, capture_output=True, text=True, check=False)
+                            "public-text", candidate], cwd=ROOT, env=child_env(), capture_output=True, text=True, check=False)
                         try:
                             fetched = json.loads(fetched_run.stdout)
                         except json.JSONDecodeError:
@@ -1769,13 +1767,14 @@ def main():
                 # Complete a bounded observe -> tool -> observe -> decide turn.
                 # The secondary decision cannot trigger another network call;
                 # it only records a safe local follow-up below.
-                try:
-                    post_raw = ask(args.base_url, agent, rooms, args.cycle,
-                                   shared_work=shared_work, structured=True, post_tool=True)
-                    post_decision = parse(post_raw, agent, rooms)
-                    log_interview(agent, args.cycle, 2, raw=post_raw, parsed=bool(post_decision))
-                except Exception as error:
-                    log_interview(agent, args.cycle, 2, error=error)
+                if "bounded-workbench" in agent.get("capabilities", []):
+                    try:
+                        post_raw = ask(args.base_url, agent, rooms, args.cycle,
+                                       shared_work=shared_work, structured=True, post_tool=True)
+                        post_decision = parse(post_raw, agent, rooms)
+                        log_interview(agent, args.cycle, 2, raw=post_raw, parsed=bool(post_decision))
+                    except Exception as error:
+                        log_interview(agent, args.cycle, 2, error=error)
                 if post_decision and post_decision.get("action") in {"ANALYZE", "PROPOSE", "DISCOVER", "BUILD", "TRANSFORM", "STAY"}:
                     decision = post_decision
                     agent["post_tool_decision"] = {"cycle": args.cycle, "action": decision["action"],
@@ -1856,7 +1855,8 @@ def main():
                         "exploration": agent.get("exploration", "")[:100], "tool": tool,
                         "message": message_result, "trade": trade_result,
                         "finding_id": filed_finding_id,
-                        "fallback_reason": decision.get("fallback_reason")})
+                        "fallback_reason": decision.get("fallback_reason"),
+                        "decision_source": decision_source})
     corroborations = judge_corroborations(args.base_url, world, args.cycle)
     construction = apply_construction(world, registry, args.cycle)
     evidence_growth = evidence_room_growth(world, registry, args.cycle)

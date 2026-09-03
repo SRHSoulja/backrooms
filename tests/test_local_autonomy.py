@@ -29,6 +29,11 @@ class LocalAutonomyTests(unittest.TestCase):
         local_autonomy.TRADES = Path(self.archive_dir.name) / "trades.json"
         self.original_corroborations = local_autonomy.CORROBORATIONS
         local_autonomy.CORROBORATIONS = Path(self.archive_dir.name) / "corroborations.jsonl"
+        from scripts import model_client
+        self.original_usage = model_client.USAGE
+        model_client.USAGE = Path(self.archive_dir.name) / "provider-usage.json"
+        self.original_secrets = dict(model_client.SECRETS)
+        model_client.SECRETS.clear()
 
     def tearDown(self):
         local_autonomy.ARCHIVE = self.original_archive
@@ -41,6 +46,10 @@ class LocalAutonomyTests(unittest.TestCase):
         local_autonomy.FRONTIER = self.original_frontier
         local_autonomy.TRADES = self.original_trades
         local_autonomy.CORROBORATIONS = self.original_corroborations
+        from scripts import model_client
+        model_client.USAGE = self.original_usage
+        model_client.SECRETS.clear()
+        model_client.SECRETS.update(self.original_secrets)
         self.archive_dir.cleanup()
 
     def test_build_creates_one_connected_room_and_event(self):

@@ -50,7 +50,7 @@ def log(message, **fields):
 def run_daemon():
     LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     with LOG_PATH.open("a") as log_handle:
-        return subprocess.Popen([sys.executable, str(ROOT / "scripts/local_daemon.py"), "--interval", "900", "--publish"],
+        return subprocess.Popen([sys.executable, str(ROOT / "scripts/local_daemon.py"), "--interval", str(os.getenv("BACKROOMS_CYCLE_SECONDS", "1800")), "--publish"],
                                 cwd=ROOT, stdout=log_handle, stderr=subprocess.STDOUT, start_new_session=True)
 
 

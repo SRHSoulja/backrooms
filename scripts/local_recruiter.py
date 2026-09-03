@@ -7,8 +7,10 @@ from pathlib import Path
 
 try:
     from scripts.identity_rules import is_reserved_name
+    from scripts.model_client import complete
 except ImportError:
     from identity_rules import is_reserved_name
+    from model_client import complete
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "state/local-agents.json"
@@ -19,11 +21,10 @@ def ask(url, cycle, context):
     prompt = ("Design one local Backrooms hireling for a bounded research role. Return exactly four lines: "
               "NAME:, ROLE:, PURPOSE:, QUESTION:. Use a fictional name, role under 60 characters, purpose and "
               f"testable question under 240 characters. No credentials, private data, money, external contact, or consciousness claims. Cycle {cycle}. Current gap context: {context[:1400]}")
-    body = json.dumps({"model": os.getenv("BACKROOMS_LLM_MODEL", "local"), "messages": [
-        {"role": "system", "content": "You are a bounded local world designer."}, {"role": "user", "content": prompt}], "temperature": 0.8, "max_tokens": 120}).encode()
-    request = urllib.request.Request(url.rstrip("/") + "/v1/chat/completions", data=body, headers={"Content-Type": "application/json"}, method="POST")
-    with urllib.request.urlopen(request, timeout=90) as response:
-        return json.load(response)["choices"][0]["message"]["content"].strip()
+    content, _provider = complete([{"role": "system", "content": "You are a bounded local world designer."},
+                                   {"role": "user", "content": prompt}], temperature=0.8, max_tokens=120,
+                                  call_class="recruitment", base_url=url)
+    return content
 
 def parse(text):
     fields = {}
@@ -46,14 +47,10 @@ if not profile:
     repair_prompt = ("Reformat this proposed fictional hireling as exactly four plain lines: NAME:, ROLE:, "
                      "PURPOSE:, QUESTION:. Keep the meaning, use non-sensitive content, and stay within the "
                      "original field limits.\n" + raw[:1200])
-    body = json.dumps({"model": os.getenv("BACKROOMS_LLM_MODEL", "local"), "messages": [
-        {"role": "system", "content": "You repair bounded fictional agent profiles."},
-        {"role": "user", "content": repair_prompt}], "temperature": 0.1, "max_tokens": 120}).encode()
-    request = urllib.request.Request(args.base_url.rstrip("/") + "/v1/chat/completions", data=body,
-        headers={"Content-Type": "application/json"}, method="POST")
     try:
-        with urllib.request.urlopen(request, timeout=90) as response:
-            repaired = json.load(response)["choices"][0]["message"]["content"].strip()
+        repaired, _provider = complete([{"role": "system", "content": "You repair bounded fictional agent profiles."},
+                                        {"role": "user", "content": repair_prompt}], temperature=0.1, max_tokens=120,
+                                       call_class="recruitment", base_url=args.base_url)
         profile = parse(repaired)
     except Exception:
         profile = None
