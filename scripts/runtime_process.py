@@ -166,3 +166,20 @@ def startup_delay(last_completed_at, interval, now):
     if interval <= 0 or last <= 0 or now < last:
         return 0.0
     return max(0.0, interval - (now - last))
+
+
+def rotate_log(path, limit_bytes=20_000_000):
+    """Keep an append-only log from growing without bound: once it passes the
+    limit, move it aside as ``<name>.1`` (replacing the previous one) so the
+    runtime can run for months unattended. Returns True when rotated."""
+    path = Path(path)
+    try:
+        if not path.exists() or path.stat().st_size < limit_bytes:
+            return False
+        previous = path.with_name(path.name + ".1")
+        if previous.exists():
+            previous.unlink()
+        path.rename(previous)
+        return True
+    except OSError:
+        return False

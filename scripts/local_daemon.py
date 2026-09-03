@@ -33,9 +33,9 @@ try:
 except ImportError:
     from capability_policy import public_catalog
 try:
-    from scripts.runtime_process import port_in_use, reap_recorded_model, startup_delay
+    from scripts.runtime_process import port_in_use, reap_recorded_model, startup_delay, rotate_log
 except ImportError:
-    from runtime_process import port_in_use, reap_recorded_model, startup_delay
+    from runtime_process import port_in_use, reap_recorded_model, startup_delay, rotate_log
 try:
     from scripts.evidence import classify_finding, is_accepted
     from scripts.corroboration import corroboration_index, load_records
@@ -1317,6 +1317,7 @@ def start_local_model():
     else:
         raise SystemExit(f"model port {args.port} is still owned by another listener after {PORT_RELEASE_GRACE_SECONDS}s; refusing to start a duplicate llama-server")
     MODEL_LOG.parent.mkdir(parents=True, exist_ok=True)
+    rotate_log(MODEL_LOG)
     log_handle = MODEL_LOG.open("a")
     process = subprocess.Popen(["llama-server", "-hf", "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
                                 "--host", "127.0.0.1", "--port", str(args.port), "--ctx-size", "4096",

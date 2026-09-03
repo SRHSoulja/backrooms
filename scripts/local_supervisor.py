@@ -18,9 +18,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 try:
-    from scripts.runtime_process import ReloadWatcher, reap_recorded_model, stop_process_group
+    from scripts.runtime_process import ReloadWatcher, reap_recorded_model, stop_process_group, rotate_log
 except ImportError:
-    from runtime_process import ReloadWatcher, reap_recorded_model, stop_process_group
+    from runtime_process import ReloadWatcher, reap_recorded_model, stop_process_group, rotate_log
 
 ROOT = Path(__file__).resolve().parents[1]
 LOG_PATH = ROOT / "state/daemon.log"
@@ -49,6 +49,8 @@ def log(message, **fields):
 
 def run_daemon():
     LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    if rotate_log(LOG_PATH):
+        log("daemon log rotated", kept=LOG_PATH.name + ".1")
     with LOG_PATH.open("a") as log_handle:
         return subprocess.Popen([sys.executable, str(ROOT / "scripts/local_daemon.py"), "--interval", str(os.getenv("BACKROOMS_CYCLE_SECONDS", "1800")), "--publish"],
                                 cwd=ROOT, stdout=log_handle, stderr=subprocess.STDOUT, start_new_session=True)

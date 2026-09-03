@@ -135,6 +135,13 @@ fetch('./market-watch.json').then(r => r.json()).then(m => {
   const top = Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([term, count]) => `${term} ${count}`).join(' · ');
   document.getElementById('market').innerHTML = `<p><strong>${online.length}/${(m.sources || []).length} public sources online</strong></p><p>Observed terms: ${top || 'no signal'}</p><p>Last checked: ${m.checked_at || 'unknown'}</p>`;
 }).catch(() => { document.getElementById('market').textContent = 'Market Watch unavailable.'; });
+function publishedAgo(iso) {
+  const at = Date.parse(iso || '');
+  if (Number.isNaN(at)) return { text: 'no publication timestamp', stale: true };
+  const minutes = Math.max(0, Math.round((Date.now() - at) / 60000));
+  const text = minutes < 60 ? `${minutes} min ago` : minutes < 2880 ? `${Math.round(minutes / 60)} h ago` : `${Math.round(minutes / 1440)} days ago`;
+  return { text, stale: minutes > 90, minutes };
+}
 function escapeHtml(value) { return String(value ?? '').replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c])); }
 function safeHref(value) { return /^https:\/\//i.test(String(value || '')) ? escapeHtml(value) : '#'; }
 fetch(`./local-hirelings.json?t=${Date.now()}`).then(r => r.json()).then(feed => {
@@ -175,7 +182,11 @@ fetch(`./health.json?t=${Date.now()}`).then(r => r.json()).then(h => {
   const q = h.autonomy_quality || {};
   const reasons = Object.entries(q.fallback_reasons || {}).map(([k, v]) => `${escapeHtml(k)} ×${escapeHtml(v)}`).join(', ');
   const pub = h.publication_status || {};
-  document.getElementById('runtime-health').innerHTML = `<p><strong>${escapeHtml(h.daemon || 'unknown')}</strong> · model ${escapeHtml(h.local_model || 'unknown')} · continuity ${escapeHtml(h.continuity || 'unknown')} · autonomy <strong>${escapeHtml(h.autonomy || q.status || 'unknown')}</strong></p><p>Cycle ${escapeHtml(h.cycle ?? 'unknown')} · ${escapeHtml(h.rooms ?? 0)} rooms · ${escapeHtml(h.active_residents ?? 0)} active residents · ${escapeHtml(h.work_orders ?? 0)} work orders</p><p>Last cycle: ${escapeHtml(q.turns ?? 0)} turns · ${escapeHtml(q.fallbacks ?? 0)} fallbacks (rate ${escapeHtml(q.fallback_rate ?? 'n/a')}) · ${escapeHtml(q.tool_successes ?? 0)} tool successes · ${escapeHtml(q.findings_filed ?? 0)} findings filed${reasons ? `<br><span class="label">fallback reasons: ${reasons}</span>` : ''}</p><p>Evidence: ${escapeHtml(h.findings ?? 0)} accepted · ${escapeHtml(h.findings_rejected ?? 0)} rejected · ${escapeHtml(h.corroborated_findings ?? 0)} corroborated · ${escapeHtml(h.frontier_leads ?? 0)} outside leads</p><p>Analyses: ${escapeHtml(h.analysis_completed ?? 0)} completed · ${escapeHtml(h.analysis_failed ?? 0)} failed · ${escapeHtml(h.analysis_rejected ?? 0)} rejected · ${escapeHtml(h.analysis_timed_out ?? 0)} timed out</p><p>Publication: ${escapeHtml(pub.outcome || 'unknown')}${pub.reason ? ` · ${escapeHtml(pub.reason)}` : ''} · ${escapeHtml(pub.at || h.generated_at || 'unknown')}</p>`;
+  const ago = publishedAgo(pub.at || h.generated_at);
+  const freshness = ago.stale
+    ? `<p class="label"><strong>Runtime paused or offline.</strong> The local runtime last published ${escapeHtml(ago.text)}; cycles run every 30 minutes when it is up. The heartbeat keeps this site alive, but the world is not moving.</p>`
+    : `<p class="label">Runtime live · last published ${escapeHtml(ago.text)}</p>`;
+  document.getElementById('runtime-health').innerHTML = freshness + `<p><strong>${escapeHtml(h.daemon || 'unknown')}</strong> · model ${escapeHtml(h.local_model || 'unknown')} · continuity ${escapeHtml(h.continuity || 'unknown')} · autonomy <strong>${escapeHtml(h.autonomy || q.status || 'unknown')}</strong></p><p>Cycle ${escapeHtml(h.cycle ?? 'unknown')} · ${escapeHtml(h.rooms ?? 0)} rooms · ${escapeHtml(h.active_residents ?? 0)} active residents · ${escapeHtml(h.work_orders ?? 0)} work orders</p><p>Last cycle: ${escapeHtml(q.turns ?? 0)} turns · ${escapeHtml(q.fallbacks ?? 0)} fallbacks (rate ${escapeHtml(q.fallback_rate ?? 'n/a')}) · ${escapeHtml(q.tool_successes ?? 0)} tool successes · ${escapeHtml(q.findings_filed ?? 0)} findings filed${reasons ? `<br><span class="label">fallback reasons: ${reasons}</span>` : ''}</p><p>Evidence: ${escapeHtml(h.findings ?? 0)} accepted · ${escapeHtml(h.findings_rejected ?? 0)} rejected · ${escapeHtml(h.corroborated_findings ?? 0)} corroborated · ${escapeHtml(h.frontier_leads ?? 0)} outside leads</p><p>Analyses: ${escapeHtml(h.analysis_completed ?? 0)} completed · ${escapeHtml(h.analysis_failed ?? 0)} failed · ${escapeHtml(h.analysis_rejected ?? 0)} rejected · ${escapeHtml(h.analysis_timed_out ?? 0)} timed out</p><p>Publication: ${escapeHtml(pub.outcome || 'unknown')}${pub.reason ? ` · ${escapeHtml(pub.reason)}` : ''} · ${escapeHtml(pub.at || h.generated_at || 'unknown')}</p>`;
 }).catch(() => { document.getElementById('runtime-health').textContent = 'Runtime health unavailable.'; });
 fetch(`./codex-bridge.json?t=${Date.now()}`).then(r => r.json()).then(b => {
   const u = b.usage || {}, l = b.limits || {};

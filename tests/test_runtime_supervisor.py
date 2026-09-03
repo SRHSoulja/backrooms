@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.runtime_process import startup_delay, ReloadWatcher, port_has_listener, port_in_use, process_alive, reap_recorded_model
+from scripts.runtime_process import rotate_log, startup_delay, ReloadWatcher, port_has_listener, port_in_use, process_alive, reap_recorded_model
 
 
 class ReloadWatcherTests(unittest.TestCase):
@@ -98,6 +98,21 @@ class ProcessOwnershipTests(unittest.TestCase):
         self.assertEqual(startup_delay(None, 600, 1100.0), 0.0)
         self.assertEqual(startup_delay("bad", 600, 1100.0), 0.0)
         self.assertEqual(startup_delay(2000.0, 600, 1100.0), 0.0)
+
+
+    def test_logs_rotate_once_past_the_limit_and_keep_one_previous(self):
+        import tempfile
+        root = Path(tempfile.mkdtemp(prefix="backrooms-log-"))
+        log = root / "daemon.log"
+        log.write_text("x" * 100)
+        self.assertFalse(rotate_log(log, limit_bytes=1000))
+        self.assertTrue(rotate_log(log, limit_bytes=50))
+        self.assertFalse(log.exists())
+        self.assertEqual((root / "daemon.log.1").read_text(), "x" * 100)
+        log.write_text("y" * 100)
+        self.assertTrue(rotate_log(log, limit_bytes=50))
+        self.assertEqual((root / "daemon.log.1").read_text(), "y" * 100)
+        self.assertFalse(rotate_log(root / "missing.log"))
 
 
 if __name__ == "__main__":
