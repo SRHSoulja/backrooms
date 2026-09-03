@@ -1080,6 +1080,10 @@ try:
                               "autonomy": result["autonomy"], "recruitment": result["recruitment"]}), flush=True)
         else:
             print(json.dumps({"error": "roundtable failed", "returncode": completed.returncode}), flush=True)
+            if server is not None and server.poll() is not None:
+                stop_local_model(server)
+                server = None
+                raise RuntimeError("local model exited during roundtable")
         if args.once:
             break
         time.sleep(args.interval)
