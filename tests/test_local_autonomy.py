@@ -337,6 +337,9 @@ class LocalAutonomyTests(unittest.TestCase):
         schema = local_autonomy.decision_schema(["atrium", "archive"])
         self.assertEqual(schema["properties"]["room"]["enum"], ["atrium", "archive"])
         self.assertIn("BUILD", schema["properties"]["action"]["enum"])
+        self.assertNotIn("ANALYZE", schema["properties"]["action"]["enum"])
+        with_workbench = local_autonomy.decision_schema(["atrium"], {"capabilities": ["bounded-workbench"]})
+        self.assertIn("ANALYZE", with_workbench["properties"]["action"]["enum"])
         self.assertIn("self_summary", schema["required"])
         self.assertEqual(schema["properties"]["code"]["maxLength"], 800)
 
@@ -524,9 +527,12 @@ class LocalAutonomyTests(unittest.TestCase):
         for expected in ("catalogue temporal anomalies", "which anomalies repeat", "I have catalogued three anomalies.",
                          "A prior approved work record is available", "temporal anomaly catalogue", "analysis-local-001-4",
                          "Dedicated frontier context", "What repeats?", "Please share the catalogue.", "trade-1",
-                         "not a biological body", "Use ANALYZE when your bounded-workbench role", "ACCEPT_TRADE"):
+                         "not a biological body", "ANALYZE is not available to you", "ACCEPT_TRADE"):
             self.assertIn(expected, prompt, expected)
-        self.assertEqual(captured["body"]["response_format"]["json_schema"]["schema"]["properties"]["room"]["enum"], ["atrium", "relay"])
+        self.assertNotIn("print(sum(range(3)))", prompt)
+        schema = captured["body"]["response_format"]["json_schema"]["schema"]
+        self.assertEqual(schema["properties"]["room"]["enum"], ["atrium", "relay"])
+        self.assertNotIn("ANALYZE", schema["properties"]["action"]["enum"])
 
     def test_physical_need_pattern_matches_biological_requests_only(self):
         self.assertTrue(local_autonomy.PHYSICAL_NEEDS.search("I need clean water and shelter"))
