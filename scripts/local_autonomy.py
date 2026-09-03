@@ -71,7 +71,7 @@ def decision_schema(rooms):
                 "message": {"type": "string", "maxLength": 240}}}
 
 
-def ask(url, agent, rooms, cycle, repair=False, shared_work=None, structured=True):
+def ask(url, agent, rooms, cycle, repair=False, shared_work=None, structured=True, post_tool=False):
     prior_tool = agent.get("last_tool") or {}
     prior_analysis = agent.get("last_analysis") or {}
     prior_research = ""
@@ -109,6 +109,8 @@ def ask(url, agent, rooms, cycle, repair=False, shared_work=None, structured=Tru
               "Use TRADE only for a non-financial exchange with an active reachable resident: put the recipient id in message_to, the work or evidence you offer in proposal, and what you request in request. Never use it for money, wallets, credentials, or external transactions. "
               "The Backrooms is intended to expand: when the work supports it, prefer DISCOVER to record a new room candidate, BUILD to request a new connected room, or TRANSFORM to repurpose an existing room. A room proposal needs a concrete TARGET and short PROPOSAL description. "
               + prior_research
+              + (" This is a post-tool decision: the fetched result above is now observed. Choose a concrete follow-up or STAY based on that evidence; do not request another external fetch in this pass."
+                 if post_tool else "")
               + ("Repair the format: emit only the JSON object with all eight fields."
                  if repair else "Keep every field short."))
     payload = {"model": os.getenv("BACKROOMS_LLM_MODEL", "local"), "messages": [
@@ -1160,6 +1162,25 @@ def main():
             }
         message_result = send_resident_message(world, registry, agent, decision, args.cycle)
         trade_result = record_trade(world, registry, agent, decision, args.cycle) if decision["action"] == "TRADE" else None
+        if post_decision and post_decision.get("action") == "ANALYZE":
+            analysis = run_analysis(post_decision.get("code", ""), (agent.get("last_tool") or {}).get("excerpt", ""))
+            artifact = record_analysis(agent, args.cycle, post_decision.get("code", ""), analysis)
+            agent["last_analysis"] = {"artifact_id": artifact["id"], "code_hash": artifact["code_hash"],
+                                       "status": analysis.get("status", "failed"), "returncode": analysis.get("returncode"),
+                                       "output_chars": len(analysis.get("output", "")), "summary": artifact["summary"],
+                                       "contract": analysis.get("contract", {})}
+            agent["analysis_followup_completed"] = True
+            emit_event(world, args.cycle, "post-tool-analysis", agent.get("id", "resident"),
+                       "Resident inspected fetched evidence and ran a bounded follow-up analysis.",
+                       status=analysis.get("status", "failed"), output_chars=len(analysis.get("output", "")))
+        elif post_decision and post_decision.get("action") == "PROPOSE":
+            agent["proposal"] = post_decision.get("proposal", "")[:220]
+        elif post_decision and post_decision.get("action") in {"DISCOVER", "BUILD", "TRANSFORM"}:
+            agent["room_proposal"] = {"kind": post_decision["action"].lower(),
+                "name": post_decision.get("target", "")[:80],
+                "description": post_decision.get("proposal", "")[:220], "source_room": agent["room"],
+                "status": "construction-requested" if post_decision["action"] in {"BUILD", "TRANSFORM"} else "discovered",
+                "cycle": args.cycle}
         if complete_frontier_task(agent, args.cycle, decision):
             emit_event(world, args.cycle, "frontier-task-completed", agent.get("id", "resident"),
                        "Resident completed a claimed frontier task with bounded evidence or a proposal.",
@@ -1199,6 +1220,7 @@ def main():
             agent["request_status"] = "closed"
         agent["interviewed_at"] = datetime.now(timezone.utc).isoformat()
         tool = {"status": "not-requested"}
+        post_decision = None
         if decision["action"] == "EXPLORE" and "public-web-read" in agent.get("capabilities", []):
             target = agent.get("exploration", "")
             if target.lower().startswith(("code:", "source:")):
@@ -1261,6 +1283,21 @@ def main():
                                        "fetched_at": datetime.now(timezone.utc).isoformat(),
                                        "source_hash": hashlib.sha256(excerpt.encode()).hexdigest() if source and excerpt else "",
                                        "contract": tool.get("contract", {})}
+                # Complete a bounded observe -> tool -> observe -> decide turn.
+                # The secondary decision cannot trigger another network call;
+                # it only records a safe local follow-up below.
+                post_decision = None
+                try:
+                    post_raw = ask(args.base_url, agent, rooms, args.cycle,
+                                   shared_work=shared_work, structured=True, post_tool=True)
+                    post_decision = parse(post_raw, agent, rooms)
+                    log_interview(agent, args.cycle, 2, raw=post_raw, parsed=bool(post_decision))
+                except Exception as error:
+                    log_interview(agent, args.cycle, 2, error=error)
+                if post_decision and post_decision.get("action") in {"ANALYZE", "PROPOSE", "DISCOVER", "BUILD", "TRANSFORM", "STAY"}:
+                    decision = post_decision
+                    agent["post_tool_decision"] = {"cycle": args.cycle, "action": decision["action"],
+                                                    "reason": decision.get("reason", "")[:220]}
                 if source and excerpt:
                     finding = extract_finding(args.base_url, agent, args.cycle, agent["last_tool"])
                     if record_finding(finding):
