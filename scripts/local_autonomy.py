@@ -271,13 +271,37 @@ def extract_finding(url, agent, cycle, tool):
     return record
 
 
+def claim_key(finding):
+    """Same source and the same claim in different punctuation or case is the same finding."""
+    claim = re.sub(r"[^a-z0-9 ]+", " ", str(finding.get("claim", "")).lower())
+    return (str(finding.get("url", "")).strip().rstrip("/"), " ".join(claim.split()))
+
+
 def record_finding(finding):
+    """Append a finding unless the ledger already holds it: the same id, or the
+    same claim from the same source filed by anyone. A duplicate is marked on
+    the finding (status ``duplicate``, ``duplicate_of``) and not written, so two
+    residents sent to one source in the same cycle yield one row."""
     if not finding:
         return False
     FINDINGS.parent.mkdir(parents=True, exist_ok=True)
     existing = FINDINGS.read_text().splitlines() if FINDINGS.exists() else []
     if any(f'"id":"{finding["id"]}"' in line for line in existing):
         return False
+    key = claim_key(finding)
+    if key[1] and is_accepted(finding):
+        # Only accepted rows dedupe: every failed attempt stays on the ledger so
+        # the public record shows how often the evidence standard is enforced.
+        for line in existing:
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if is_accepted(row) and claim_key(row) == key:
+                finding["status"] = "duplicate"
+                finding["duplicate_of"] = row.get("id")
+                finding["rejection_reason"] = "duplicate-of-" + str(row.get("id"))
+                return False
     with FINDINGS.open("a") as handle:
         handle.write(json.dumps(finding, separators=(",", ":")) + "\n")
     return True
@@ -1853,6 +1877,13 @@ def main():
                                    "Resident filed a source-backed finding from a fetched public excerpt.",
                                    finding_id=finding["id"], source_hash=finding["content_hash"])
                         grant_earned_capabilities(agent, world, args.cycle)
+                    elif finding and finding.get("status") == "duplicate":
+                        # The claim is already on the ledger from this source; count it as a
+                        # repeat so the resident rotates to a fresh source next turn.
+                        agent["target_repeats"] = int(agent.get("target_repeats", 0)) + 1
+                        emit_event(world, args.cycle, "finding-duplicate", agent.get("id", "resident"),
+                                   "Resident reached a source whose claim is already on the ledger; no new row was filed.",
+                                   finding_id=finding.get("duplicate_of"), source_hash=finding.get("content_hash"))
                     elif finding:
                         agent["last_rejected_finding"] = {"id": finding["id"], "cycle": args.cycle,
                                                           "reason": finding.get("rejection_reason", "rejected")}

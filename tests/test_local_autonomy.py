@@ -749,6 +749,19 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertFalse(local_autonomy.grant_earned_capabilities(agent, world, 7))
         self.assertEqual(local_autonomy.evidence_room_growth({"rooms": [{"id": "atrium"}], "events": []}, {"agents": []}, 7), [])
 
+    def test_same_claim_from_same_source_is_filed_once(self):
+        first = {"id": "finding-a", "agent": "local-001", "cycle": 5, "url": "https://example.org/page/", "content_hash": "h1",
+                 "claim": "Cite This For Me was launched in October 2010.", "quote": "launched in October 2010", "status": "accepted"}
+        again = {"id": "finding-b", "agent": "local-003", "cycle": 5, "url": "https://example.org/page", "content_hash": "h1",
+                 "claim": "cite this for me was launched in october 2010", "quote": "launched in October 2010", "status": "accepted"}
+        other = {"id": "finding-c", "agent": "local-003", "cycle": 5, "url": "https://example.org/page", "content_hash": "h1",
+                 "claim": "The service has a citation generator.", "quote": "citation generator", "status": "accepted"}
+        self.assertTrue(local_autonomy.record_finding(first))
+        self.assertFalse(local_autonomy.record_finding(again))
+        self.assertEqual((again["status"], again["duplicate_of"]), ("duplicate", "finding-a"))
+        self.assertTrue(local_autonomy.record_finding(other))
+        self.assertEqual([row["id"] for row in local_autonomy.all_findings()], ["finding-a", "finding-c"])
+
     def test_workbench_is_earned_from_three_verified_findings(self):
         for index in range(3):
             with local_autonomy.FINDINGS.open("a") as handle:

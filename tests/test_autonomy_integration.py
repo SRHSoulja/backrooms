@@ -249,7 +249,8 @@ class AutonomyIntegrationTests(unittest.TestCase):
         self.assertEqual((tool["query"], tool["source"], tool["verified"]), ("agent card discovery no-wiki", "https://spec.example/a2a", True))
         self.assertEqual(len(tool["source_hash"]), 64)
         ledger = [json.loads(line) for line in (self.root / "state/findings.jsonl").read_text().splitlines()]
-        self.assertEqual([item["status"] for item in ledger], ["unreviewed", "unreviewed"])
+        # both residents reached the same source and extracted the same claim: one row, one duplicate event
+        self.assertEqual([item["status"] for item in ledger], ["unreviewed"])
         self.assertEqual(ledger[0]["quote_match"], "quote-exact")
         first = next(item for item in output["decisions"] if item["id"] == "local-001")
         self.assertTrue(first["finding_id"].startswith("finding-"))
@@ -259,6 +260,7 @@ class AutonomyIntegrationTests(unittest.TestCase):
         world = json.loads((self.root / "state/world.json").read_text())
         kinds = [event["kind"] for event in world["events"]]
         self.assertIn("finding-filed", kinds)
+        self.assertIn("finding-duplicate", kinds)
         self.assertIn("tool-used", kinds)
         self.assertEqual(output["corroborations"], [])
 
