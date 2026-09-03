@@ -59,7 +59,13 @@ MAX_REGROUNDS_PER_CYCLE = 2
 QUESTION_STOPWORDS = {"about", "after", "also", "from", "into", "that", "this", "with", "what", "which", "where",
                       "when", "does", "did", "have", "their", "there", "these", "those", "than", "between",
                       "should", "could", "would", "current", "public", "evidence", "sources", "source", "independent",
-                      "confirm", "challenge", "which", "does", "say"}
+                      "confirm", "challenge", "say",
+                      # generic research-question filler that names no subject
+                      "recent", "findings", "finding", "messages", "message", "influence", "influences", "affect",
+                      "affects", "definition", "define", "defines", "specific", "criteria", "conditions", "practices",
+                      "techniques", "approaches", "different", "differ", "various", "published", "documented",
+                      "maintain", "prevent", "enable", "explain", "compare", "distinguish", "count", "record",
+                      "records", "review", "material", "untrusted", "residents", "resident", "backrooms"}
 
 
 def question_terms(question, limit=8):

@@ -544,17 +544,17 @@ class LocalAutonomyTests(unittest.TestCase):
     def test_shared_target_finishes_a_question_with_one_accepted_finding(self):
         self._write_findings({"id": "finding-w", "agent": "local-001", "url": "https://en.wikipedia.org/wiki/Agent",
                               "content_hash": "h", "quote": "q", "claim": "c", "status": "unreviewed",
-                              "topic": "multi-agent systems maintain distinct voices agents designed neutral"})
+                              "topic": "multi-agent systems distinct voices agents designed neutral"})
         frontier = {"open_questions": [
             {"id": "q1", "question": "How do multi-agent systems maintain distinct voices when agents are designed to be neutral?", "status": "open"},
             {"id": "q2", "question": "What sandboxing techniques are documented for tools used by language-model agents?", "status": "open"}]}
         query, family, avoid = local_autonomy.shared_research_target("Which specifications define agent discovery documents?", frontier)
-        self.assertEqual(query, "multi-agent systems maintain distinct voices agents designed neutral")
+        self.assertEqual(query, "multi-agent systems distinct voices agents designed neutral")
         self.assertEqual(family, "papers")
         self.assertEqual(avoid, {"en.wikipedia.org"})
         self._write_findings({"id": "finding-x", "agent": "local-002", "url": "https://arxiv.org/abs/1", "content_hash": "h2",
                               "quote": "q", "claim": "c", "status": "unreviewed",
-                              "topic": "multi-agent systems maintain distinct voices agents designed neutral"})
+                              "topic": "multi-agent systems distinct voices agents designed neutral"})
         query, family, avoid = local_autonomy.shared_research_target("Which specifications define agent discovery documents?", frontier)
         self.assertEqual((family, avoid), ("code", {"en.wikipedia.org", "arxiv.org"}))
         from scripts.corroboration import append_record, make_record
@@ -562,7 +562,7 @@ class LocalAutonomyTests(unittest.TestCase):
         second = {"id": "finding-x", "url": "https://arxiv.org/abs/1", "topic": "t", "claim": "c"}
         append_record(local_autonomy.CORROBORATIONS, make_record(first, second, "pair-1", "supports", "", 3))
         query, family, avoid = local_autonomy.shared_research_target("Which specifications define agent discovery documents?", frontier)
-        self.assertEqual((query, family, avoid), ("specifications define agent discovery documents", None, set()))
+        self.assertEqual((query, family, avoid), ("specifications agent discovery documents", None, set()))
         self.assertEqual([local_autonomy.family_of_domain(d) for d in ("en.wikipedia.org", "arxiv.org", "github.com", "raw.githubusercontent.com", "spec.example")],
                          ["encyclopedia", "papers", "code", "code", "web"])
 
@@ -570,6 +570,8 @@ class LocalAutonomyTests(unittest.TestCase):
         query = local_autonomy.question_terms("What does current public evidence say about persistent memory designs for autonomous agents, and which two independent sources could confirm it?")
         self.assertEqual(query, "persistent memory designs autonomous agents")
         self.assertEqual(local_autonomy.question_terms(""), "")
+        query = local_autonomy.question_terms("How do recent findings and messages influence the definition of agent-to-agent interoperability protocols?")
+        self.assertEqual(query, "agent-to-agent interoperability protocols")
 
     def test_select_agents_reserves_half_for_open_work_and_rotates_the_rest(self):
         candidates = []

@@ -279,7 +279,7 @@ class AutonomyIntegrationTests(unittest.TestCase):
                          ["council-question", "resident-target", "council-question", "resident-target"])
         self.assertEqual([item["source_preference"] for item in assignments],
                          ["encyclopedia", "encyclopedia", "papers", "papers"])
-        self.assertEqual(assignments[0]["query"], "agent discovery cards enable interoperability agents")
+        self.assertEqual(assignments[0]["query"], "agent discovery cards interoperability agents")
         self.assertTrue(any("assigned_research" in body and "agent discovery cards" in body for body in self.server.bodies))
         ledger = [json.loads(line) for line in (self.root / "state/findings.jsonl").read_text().splitlines()]
         council_domains = {item["url"].split("/")[2] for item in ledger if item["topic"] == assignments[0]["query"]}
