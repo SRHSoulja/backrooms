@@ -297,6 +297,27 @@ class AutonomyIntegrationTests(unittest.TestCase):
         self.assertIn("findings-corroborated", kinds)
         self.assertIn("room-built-from-evidence", kinds)
 
+    def test_completed_task_is_printed_and_pinned_with_real_content(self):
+        (self.root / "state/frontier.json").write_text(json.dumps({
+            "open_questions": [], "findings": [], "contradictions": [], "activity": [], "leads": [],
+            "tasks": [{"id": "question-task-9", "agent": None, "room": None,
+                       "request": "Which specifications define agent discovery documents?", "status": "open"}]}))
+        self.server.decision = {**BASE_DECISION, "action": "EXPLORE", "target": "agent card discovery", "reason": "lead"}
+        completed = self.run_autonomy()
+        self.assertEqual(completed.returncode, 0, completed.stderr[-1500:])
+        frontier = json.loads((self.root / "state/frontier.json").read_text())
+        self.assertEqual(frontier["tasks"][0]["status"], "completed")
+        self.assertTrue(frontier["tasks"][0]["evidence"].startswith("finding-"))
+        jobs = json.loads((self.root / "state/printer-queue.json").read_text())["jobs"]
+        self.assertEqual(jobs[-1]["title"], "Completed frontier task")
+        self.assertIn("Which specifications define agent discovery documents?", jobs[-1]["preview"])
+        self.assertIn("Finding: The A2A protocol publishes an Agent Card for discovery.", jobs[-1]["preview"])
+        printed = (self.root / "state/printed" / f"{jobs[-1]['id']}.txt").read_text()
+        self.assertIn("Source: https://en.wikipedia.org/wiki/Agent_card", printed)
+        board = json.loads((self.root / "state/whiteboard.json").read_text())["entries"]
+        self.assertEqual(board[-1]["title"], "Completed task")
+        self.assertIn("Finding:", board[-1]["body"])
+
     def test_frontier_question_and_outside_lead_reach_the_prompt(self):
         (self.root / "state/frontier.json").write_text(json.dumps({
             "open_questions": [{"id": "frontier-question-3", "cycle": 3, "source": "council",

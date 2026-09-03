@@ -348,13 +348,13 @@ def sync_digital_resources(world=None, registry=None, result=None):
         "schema_version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "privacy": "Sanitized note text and metadata only; blocked sensitive content is withheld.",
-        "entries": [{**{key: item.get(key) for key in ("id", "cycle", "author", "title", "status", "content_hash")}, "body": public_event_text(item.get("body", ""))} for item in board.get("entries", [])[-50:]],
+        "entries": [{**{key: item.get(key) for key in ("id", "cycle", "author", "title", "status", "content_hash")}, "body": public_event_text(item.get("body", ""), 500)} for item in board.get("entries", [])[-50:]],
     })
     atomic_write_json(PUBLIC_PRINTER, {
         "schema_version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "privacy": "Sanitized print previews and metadata only; rendered local artifacts are not uploaded.",
-        "jobs": [{**{key: item.get(key) for key in ("id", "cycle", "requester", "format", "status", "content_hash")}, "preview": public_event_text(item.get("preview", ""))} for item in jobs.get("jobs", [])[-50:]],
+        "jobs": [{**{key: item.get(key) for key in ("id", "cycle", "requester", "format", "status", "content_hash")}, "preview": public_event_text(item.get("preview", ""), 700)} for item in jobs.get("jobs", [])[-50:]],
     })
     records = []
     allowed_agents = {agent.get("id") for agent in (registry or {}).get("agents", []) if agent.get("status") not in {"fired", "retired"}}
@@ -539,11 +539,13 @@ def sync_research(registry):
             "research_feed": "docs/research.json"}
 
 
-def sync_code_proposals():
+def sync_code_proposals(registry=None):
+    from code_proposal import publishable
     local = json.loads(LOCAL_CODE_PROPOSALS.read_text()) if LOCAL_CODE_PROPOSALS.exists() else {"proposals": []}
+    known = {agent.get("id") for agent in (registry or {}).get("agents", [])} | {"echo", "morrow"}
     records = [{key: item.get(key) for key in
                 ("id", "resident", "status", "reason", "files", "changed_lines", "sha256", "recorded_at")}
-               for item in local.get("proposals", [])[-100:]]
+               for item in publishable(local.get("proposals", []), known)[-100:]]
     public = {"schema_version": 1, "generated_at": datetime.now(timezone.utc).isoformat(),
               "privacy": "Proposal metadata only; raw diffs remain local and are never auto-applied.",
               "records": records}
@@ -1000,7 +1002,7 @@ def publish(result, world, model_health=True):
         "self_prompt_accepted": result.get("self_prompt_accepted", 0),
         "activity_feed": "docs/activity.json",
         "feed_freshness_seconds": 0
-        ,**resource_health, **analysis_health, **research_health, **findings_health, **frontier_health, **sync_code_proposals(), **sync_outside_signals(), **sync_codex_bridge(), **sync_messages(world), **sync_trades(world["cycle"]),
+        ,**resource_health, **analysis_health, **research_health, **findings_health, **frontier_health, **sync_code_proposals(registry), **sync_outside_signals(), **sync_codex_bridge(), **sync_messages(world), **sync_trades(world["cycle"]),
         "dropped_events": 0
     }
     safe = {
@@ -1143,7 +1145,7 @@ def publish(result, world, model_health=True):
     atomic_write_json(PUBLIC_WORLD, public_world)
     atomic_write_json(PUBLIC_AUDIT, safe["continuity_audit"])
     atomic_write_json(PUBLIC_HEALTH, health)
-    sync_code_proposals()
+    sync_code_proposals(registry)
     sync_outside_signals()
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}

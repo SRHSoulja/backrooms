@@ -35,6 +35,12 @@ class CodeToolTests(unittest.TestCase):
         self.assertTrue(all(Path(root).exists() for root in bound))
         self.assertNotIn("--share-net", prefix)
 
+    def test_only_known_residents_proposals_are_publishable(self):
+        records = [{"id": "p1", "resident": "test-resident"}, {"id": "p2", "resident": "tool-request"},
+                   {"id": "p3", "resident": "local-004"}, {"id": "p4", "resident": "echo"}]
+        kept = code_proposal.publishable(records, {"local-004", "echo", "morrow"})
+        self.assertEqual([item["id"] for item in kept], ["p3", "p4"])
+
     def test_code_view_rejects_private_paths(self):
         result = code_view.run("../.env")
         self.assertEqual(result["status"], "rejected")

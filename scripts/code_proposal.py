@@ -62,6 +62,17 @@ def validate(patch):
     return ""
 
 
+def publishable(records, known_residents):
+    """Only proposals attributed to a known resident belong in the public feed.
+
+    Test fixtures and ad-hoc tool invocations once leaked into the local ledger
+    before test isolation existed; they stay local for audit but are not
+    presented as resident work.
+    """
+    known = {str(item) for item in known_residents}
+    return [item for item in records if str(item.get("resident", "")) in known]
+
+
 def archive(patch, status, reason, resident):
     ARCHIVE.parent.mkdir(parents=True, exist_ok=True)
     data = json.loads(ARCHIVE.read_text()) if ARCHIVE.exists() else {"proposals": []}

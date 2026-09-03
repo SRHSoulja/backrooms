@@ -276,6 +276,39 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(registry["agents"][0]["request_artifact"]["kind"], "shared-whiteboard")
         self.assertTrue(local_autonomy.WHITEBOARD.exists())
 
+    def test_prints_and_whiteboard_notes_carry_the_residents_work(self):
+        agent = {"id": "local-test", "request": "access to a printer", "self_summary": "I compared two discovery card formats.",
+                 "proposal": "Adopt the JSON-RPC card format.",
+                 "last_finding_record": {"id": "finding-1", "claim": "Agent cards are published at a well-known path.",
+                                         "quote": "published at /.well-known/agent-card.json", "url": "https://spec.example/a2a"}}
+        job_id = local_autonomy.digital_print_job(agent, 92)
+        printed = (local_autonomy.PRINTED / f"{job_id}.txt").read_text()
+        self.assertIn("Finding: Agent cards are published at a well-known path.", printed)
+        self.assertIn("Source: https://spec.example/a2a", printed)
+        self.assertIn("Proposal: Adopt the JSON-RPC card format.", printed)
+        self.assertNotIn("Request: access to a printer", printed)
+        job = json.loads(local_autonomy.PRINTER_QUEUE.read_text())["jobs"][-1]
+        self.assertIn("Agent cards are published", job["preview"])
+        entry_id = local_autonomy.digital_whiteboard_entry(agent, 92)
+        entry = [item for item in json.loads(local_autonomy.WHITEBOARD.read_text())["entries"] if item["id"] == entry_id][0]
+        self.assertIn("Summary: I compared two discovery card formats.", entry["body"])
+        bare = {"id": "local-bare", "request": "access to a printer"}
+        job_id = local_autonomy.digital_print_job(bare, 93)
+        self.assertIn("Request: access to a printer", (local_autonomy.PRINTED / f"{job_id}.txt").read_text())
+
+    def test_off_mission_purposes_are_regrounded_and_stale_targets_reassigned(self):
+        forests = {"id": "local-010", "status": "active-local", "purpose": "Study local flora for medicinal properties",
+                   "question": "How do the ancient forests affect mental health?", "regrounded_cycle": 200, "last_finding_id": "finding-x"}
+        self.assertTrue(local_autonomy.off_mission(forests["question"]))
+        self.assertFalse(local_autonomy.needs_regrounding(forests, 205))
+        self.assertTrue(local_autonomy.needs_regrounding(forests, 212))
+        grounded = {"id": "local-011", "status": "active-local", "purpose": "Compare public A2A and MCP discovery documents",
+                    "question": "Do the specifications agree on required fields?", "regrounded_cycle": 200, "last_finding_id": "finding-y"}
+        self.assertFalse(local_autonomy.needs_regrounding(grounded, 250))
+        self.assertTrue(local_autonomy.target_is_stale({"target_repeats": 0}, "ancient scripts related to mental health and ancient forests"))
+        self.assertTrue(local_autonomy.target_is_stale({"target_repeats": 3}, "agent card specification"))
+        self.assertFalse(local_autonomy.target_is_stale({"target_repeats": 1}, "agent card specification"))
+
     def test_printer_request_creates_local_digital_job(self):
         registry = {"agents": [{"id": "local-test", "request": "access to a printer",
                                  "request_status": "open"}]}

@@ -430,31 +430,50 @@ def revoke(agent, capability, reason):
     agent["status"] = "probation"
 
 
-def digital_whiteboard_entry(agent, cycle):
+def resident_work_summary(agent, finding=None):
+    """The resident's actual work: latest finding, proposal, and self-summary."""
+    parts = []
+    finding = finding or agent.get("last_finding_record") or {}
+    if finding.get("claim"):
+        parts.append(f"Finding: {finding.get('claim', '')[:300]}")
+        if finding.get("quote") and finding.get("quote") != finding.get("claim"):
+            parts.append(f"Quote: \"{finding.get('quote', '')[:300]}\"")
+        parts.append(f"Source: {finding.get('url', '')[:300]}")
+    if agent.get("proposal"):
+        parts.append(f"Proposal: {str(agent.get('proposal', ''))[:220]}")
+    if agent.get("self_summary"):
+        parts.append(f"Summary: {str(agent.get('self_summary', ''))[:300]}")
+    return "\n".join(parts)
+
+
+def digital_whiteboard_entry(agent, cycle, body=None, title="Shared workspace note"):
     board = json.loads(WHITEBOARD.read_text()) if WHITEBOARD.exists() else {"entries": []}
     entries = board.setdefault("entries", [])
     entry_id = f"whiteboard-{agent.get('id', 'resident')}-{cycle}"
     if not any(item.get("id") == entry_id for item in entries):
-        body = str(agent.get("request", ""))[:220]
+        body = str(body or resident_work_summary(agent) or agent.get("request", ""))[:500]
         entries.append({"id": entry_id, "cycle": cycle, "author": agent.get("id", "resident"),
-                        "title": "Shared workspace note", "body": body,
+                        "title": title[:80], "body": body,
                         "content_hash": hashlib.sha256(body.encode()).hexdigest(), "status": "available"})
     board["entries"] = entries[-200:]
     atomic_write_json(WHITEBOARD, board)
     return entry_id
 
 
-def digital_print_job(agent, cycle):
+def digital_print_job(agent, cycle, title=None, body=None, finding=None):
+    """Render a resident's work as a text artifact; the print is the work, not the request."""
     queue = json.loads(PRINTER_QUEUE.read_text()) if PRINTER_QUEUE.exists() else {"jobs": []}
     jobs = queue.setdefault("jobs", [])
     job_id = f"print-{agent.get('id', 'resident')}-{cycle}"
     if not any(item.get("id") == job_id for item in jobs):
         PRINTED.mkdir(parents=True, exist_ok=True)
         output = PRINTED / f"{job_id}.txt"
-        output.write_text(f"BACKROOMS DIGITAL PRINT\nResident: {agent.get('id', 'resident')}\nCycle: {cycle}\nRequest: {str(agent.get('request', ''))[:220]}\n")
-        preview = str(agent.get("request", ""))[:220]
+        title = str(title or "Resident work report")[:120]
+        body = str(body or resident_work_summary(agent, finding) or f"Request: {str(agent.get('request', ''))[:220]}")[:4000]
+        output.write_text(f"BACKROOMS DIGITAL PRINT\nTitle: {title}\nResident: {agent.get('id', 'resident')}\nCycle: {cycle}\n\n{body}\n")
+        preview = re.sub(r"\s+", " ", f"{title}. {body}").strip()[:700]
         jobs.append({"id": job_id, "cycle": cycle, "requester": agent.get("id", "resident"),
-                     "format": "text", "status": "printed", "preview": preview,
+                     "format": "text", "status": "printed", "title": title, "preview": preview,
                      "content_hash": hashlib.sha256(output.read_bytes()).hexdigest(),
                      "output": f"state/printed/{output.name}"})
     queue["jobs"] = jobs[-200:]
@@ -924,14 +943,39 @@ def catalog_tool_names():
         return ["public-search", "wikipedia-summary", "public-text"]
 
 
-def needs_regrounding(agent):
-    """Never produced evidence, and either never re-grounded or still producing none since."""
-    if agent.get("status") not in {"active-local", "probation", "dormant"} or agent.get("last_finding_id"):
+OFF_MISSION = re.compile(r"\b(?:ancient|forests?|mental\s+health|quantum|anomal\w*|hidden|cryptic|tomes?|spectral|shadow\w*|"
+                         r"artifacts?|time\s+travel|timelines?|dimensions?|tachyon\w*|enchant\w*|catacombs?|ethereal|"
+                         r"medicinal|flora|scripts?)\b", re.I)
+REGROUND_COOLDOWN_CYCLES = 12
+
+
+def off_mission(text):
+    """Fantasy or physical-world framings that no public source can support in this world."""
+    return bool(OFF_MISSION.search(str(text or "")))
+
+
+def needs_regrounding(agent, cycle=None):
+    """Purpose still off-mission, or never produced evidence and not recently re-grounded."""
+    if agent.get("status") not in {"active-local", "probation", "dormant"}:
         return False
-    if not agent.get("regrounded_cycle"):
+    regrounded = agent.get("regrounded_cycle")
+    cooled = regrounded is None or cycle is None or int(cycle) - int(regrounded) >= REGROUND_COOLDOWN_CYCLES
+    if cooled and off_mission(f"{agent.get('purpose', '')} {agent.get('question', '')}"):
+        return True
+    if agent.get("last_finding_id"):
+        return False
+    if not regrounded:
         return True
     return agent.get("turns_without_evidence", 0) >= DORMANT_AFTER_TURNS_WITHOUT_EVIDENCE and \
         agent.get("turns_without_evidence", 0) > agent.get("regrounded_at_turns", -1)
+
+
+def target_is_stale(agent, target):
+    """A resident's own exploration target is stale when it is off-mission or has
+    repeated without producing an accepted finding."""
+    if off_mission(target):
+        return True
+    return agent.get("target_repeats", 0) >= 3
 
 
 def reground_purpose(url, agent, rooms, frontier, cycle):
@@ -1431,7 +1475,7 @@ def main():
     for agent in selected:
         if len(regrounded) >= MAX_REGROUNDS_PER_CYCLE:
             break
-        if needs_regrounding(agent):
+        if needs_regrounding(agent, args.cycle):
             outcome = reground_purpose(args.base_url, agent, rooms, frontier_snapshot, args.cycle)
             if outcome:
                 regrounded.append(outcome)
@@ -1456,6 +1500,7 @@ def main():
         post_decision = None
         filed_finding_id = None
         turn_artifact_id = None
+        claimed_task = None
         parse_reasons = []
         inbox = inbox_for(world, agent)
         pending_trades = pending_trades_for(agent)
@@ -1548,6 +1593,10 @@ def main():
             agent["status"] = "retired" if decision["action"] == "RETIRE" else "fired"
             agent["capabilities"] = ["bounded-questioning"]
         elif decision["action"] == "EXPLORE":
+            if decision["target"] and decision["target"] == agent.get("exploration") and not agent.get("last_finding_id"):
+                agent["target_repeats"] = agent.get("target_repeats", 0) + 1
+            elif decision["target"] != agent.get("exploration"):
+                agent["target_repeats"] = 0
             agent["exploration"] = decision["target"] or "unassigned public room question"
             if "public-web-read" not in agent.get("capabilities", []):
                 agent.setdefault("capabilities", []).append("public-web-read")
@@ -1639,10 +1688,15 @@ def main():
                 query_target = target
             if tool_name == "public-search":
                 query_target = target[:160].strip()
+                origin = "resident-target"
                 if research_assignment:
-                    query_target = research_assignment[:160]
-                agent["research_assignment"] = {"cycle": args.cycle, "query": query_target,
-                                                "origin": "council-question" if research_assignment else "resident-target",
+                    query_target, origin = research_assignment[:160], "council-question"
+                elif shared_research and target_is_stale(agent, target):
+                    # An off-mission or repeatedly fruitless target gives way to
+                    # the council's question so the turn still produces evidence.
+                    query_target, origin = shared_research[:160], "stale-target-reassigned"
+                    agent["target_repeats"] = 0
+                agent["research_assignment"] = {"cycle": args.cycle, "query": query_target, "origin": origin,
                                                 "source_preference": turn_family}
             completed = subprocess.run([sys.executable, str(ROOT / "scripts/tool_broker.py"),
                 tool_name, query_target], cwd=ROOT, capture_output=True, text=True, check=False)
@@ -1731,6 +1785,8 @@ def main():
                     if record_finding(finding) and is_accepted(finding):
                         agent["last_finding_id"] = finding["id"]
                         agent["last_finding_cycle"] = args.cycle
+                        agent["last_finding_record"] = {key: finding.get(key) for key in ("id", "claim", "quote", "url", "topic", "cycle")}
+                        agent["target_repeats"] = 0
                         filed_finding_id = finding["id"]
                         emit_event(world, args.cycle, "finding-filed", agent.get("id", "resident"),
                                    "Resident filed a source-backed finding from a fetched public excerpt.",
@@ -1780,10 +1836,17 @@ def main():
                        "Resident rested after repeated turns without filed evidence; a later turn can wake it.",
                        turns_without_evidence=agent.get("turns_without_evidence"))
         completed_task_id = agent.get("claimed_task")
+        completed_task_text = str((claimed_task or {}).get("request", ""))[:220] if isinstance(claimed_task, dict) else ""
         if complete_frontier_task(agent, args.cycle, decision, filed_finding_id or turn_artifact_id):
             emit_event(world, args.cycle, "frontier-task-completed", agent.get("id", "resident"),
                        "Resident completed a claimed frontier task with a filed finding or analysis artifact.",
                        task_id=completed_task_id, evidence=filed_finding_id or turn_artifact_id)
+            # Completed work is what gets printed and pinned, not the request for a printer.
+            report = resident_work_summary(agent)
+            if completed_task_text:
+                report = f"Task: {completed_task_text}\n{report}"
+            digital_print_job(agent, args.cycle, title="Completed frontier task", body=report)
+            digital_whiteboard_entry(agent, args.cycle, body=report, title="Completed task")
         registry.setdefault("decisions", []).append({"cycle": args.cycle, "agent": agent["id"], **decision})
         results.append({"id": agent["id"], "action": decision["action"].lower(), "room": agent["room"],
                         "status": agent["status"], "proposal": agent.get("proposal", "")[:220],
