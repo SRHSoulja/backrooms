@@ -469,7 +469,8 @@ class LocalAutonomyTests(unittest.TestCase):
                 return False
 
         original = local_autonomy.urllib.request.urlopen
-        local_autonomy.urllib.request.urlopen = lambda *_a, **_k: FakeResponse({"relation": "supports", "reason": "same fact"})
+        local_autonomy.urllib.request.urlopen = lambda *_a, **_k: FakeResponse(
+            {"relation": "supports", "shared_claim": "The A2A protocol uses agent cards for discovery.", "reason": "same fact"})
         try:
             world = {"events": []}
             results = local_autonomy.judge_corroborations("http://127.0.0.1:1", world, 11)

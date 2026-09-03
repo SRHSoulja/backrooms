@@ -74,7 +74,8 @@ else:
 
 EXTRACTION = {"claim": "The A2A protocol publishes an Agent Card for discovery.",
               "quote": "It publishes an Agent Card for discovery.", "confidence": 0.8}
-JUDGMENT = {"relation": "supports", "reason": "both describe agent card discovery"}
+JUDGMENT = {"relation": "supports", "shared_claim": "The A2A protocol publishes an Agent Card for discovery.",
+            "reason": "both describe agent card discovery"}
 POST_TOOL = {**{"action": "STAY", "room": "atrium", "target": "", "proposal": "", "request": "", "code": "",
                "reason": "evidence observed", "self_summary": "I fetched the spec.", "message_to": "", "message": ""}}
 

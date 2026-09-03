@@ -825,7 +825,7 @@ def sync_frontier(result, world, registry):
             "topic": str(record.get("topic", ""))[:160], "finding_ids": list(record.get("finding_ids", []))[:8],
             "domains": list(record.get("domains", [])), "reason": str(record.get("reason", ""))[:200], "status": "open"})
         known_contradictions.add(contradiction_id)
-    frontier["corroborations"] = [{key: record.get(key) for key in ("id", "relation", "finding_ids", "topic", "domains", "cycle")}
+    frontier["corroborations"] = [{key: record.get(key) for key in ("id", "relation", "model_relation", "shared_claim", "judge", "finding_ids", "topic", "domains", "cycle")}
                                   for record in corroborations[-100:]]
     previous_tasks = {item.get("id"): item for item in frontier.get("tasks", []) if item.get("id")}
     tasks = []

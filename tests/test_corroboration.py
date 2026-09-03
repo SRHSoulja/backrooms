@@ -2,8 +2,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.corroboration import (append_record, candidate_pairs, corroboration_index, growth_candidates,
-                                   load_records, make_record, pair_id)
+from scripts.corroboration import (append_record, candidate_pairs, claims_overlap, corroboration_index, growth_candidates,
+                                   judge_verdict, judgment_schema, load_records, make_record, pair_id)
 
 
 def finding(identifier, url, claim, topic="agent interoperability standards", status="unreviewed"):
@@ -62,6 +62,38 @@ class CorroborationTests(unittest.TestCase):
         self.assertEqual([record["id"] for record, _pair in growth_candidates([support, conflict], by_id, [])], ["pair-1"])
         self.assertEqual(growth_candidates([support], by_id, [support["topic"]]), [])
         self.assertEqual(growth_candidates([support], {"f1": first}, []), [])
+
+    def test_claims_with_no_shared_vocabulary_are_never_sent_to_the_model(self):
+        launch = {"id": "f-launch", "claim": "Cite This For Me was launched in October 2010 to help students create citations.",
+                  "url": "https://www.citethisforme.com/", "status": "accepted"}
+        redaction = {"id": "f-redact", "claim": "Redaction is the process of removing sensitive information from a document.",
+                     "url": "https://en.wikipedia.org/wiki/Redaction", "status": "accepted"}
+        self.assertEqual(claims_overlap(launch, redaction), set())
+        founded = {"id": "f-founded", "claim": "The citation tool Cite This For Me was founded in 2010.",
+                   "url": "https://example.org/history", "status": "accepted"}
+        self.assertTrue(claims_overlap(launch, founded))
+
+    def test_supports_needs_a_shared_fact_grounded_in_both_claims(self):
+        launch = {"id": "f-launch", "claim": "Cite This For Me was launched in October 2010 to help students create citations.",
+                  "url": "https://www.citethisforme.com/"}
+        redaction = {"id": "f-redact", "claim": "Redaction is the process of removing sensitive information from a document.",
+                     "url": "https://en.wikipedia.org/wiki/Redaction"}
+        lenient = judge_verdict(launch, redaction, {"relation": "supports", "shared_claim": "Both concern citing sanitized reports.",
+                                                    "reason": "same theme"})
+        self.assertEqual((lenient["relation"], lenient["model_relation"]), ("unrelated", "supports"))
+        self.assertTrue(lenient["reason"].startswith("shared fact not grounded"))
+        founded = {"id": "f-founded", "claim": "The citation tool Cite This For Me was founded in 2010.",
+                   "url": "https://example.org/history"}
+        grounded = judge_verdict(launch, founded, {"relation": "supports", "shared_claim": "Cite This For Me started in 2010.",
+                                                   "reason": "same launch year"})
+        self.assertEqual((grounded["relation"], grounded["shared_claim"]), ("supports", "Cite This For Me started in 2010."))
+        record = make_record(launch, founded, "pair-g", grounded["relation"], grounded["reason"], 9, 0.4,
+                             shared_claim=grounded["shared_claim"], model_relation=grounded["model_relation"])
+        self.assertEqual(record["topic"], "Cite This For Me started in 2010.")
+        self.assertEqual(record["judge"], "local-model")
+        self.assertIn("shared_claim", judgment_schema()["required"])
+        contradicts = judge_verdict(launch, founded, {"relation": "contradicts", "shared_claim": "", "reason": "dates differ"})
+        self.assertEqual((contradicts["relation"], contradicts["shared_claim"]), ("contradicts", ""))
 
 
 if __name__ == "__main__":

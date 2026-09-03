@@ -24,14 +24,14 @@ except ImportError:
     from model_client import complete, complete_json, child_env
 try:
     from scripts.evidence import clamp_confidence, classify_finding, is_accepted
-    from scripts.corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, corroboration_index,
-                                       growth_candidates, judgment_prompt, judgment_schema, load_records, make_record)
+    from scripts.corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, claims_overlap, corroboration_index,
+                                       growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record)
     from scripts.self_prompt_rules import research_themes
     from scripts.world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes)
 except ImportError:
     from evidence import clamp_confidence, classify_finding, is_accepted
-    from corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, corroboration_index,
-                               growth_candidates, judgment_prompt, judgment_schema, load_records, make_record)
+    from corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, claims_overlap, corroboration_index,
+                               growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record)
     from self_prompt_rules import research_themes
     from world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes)
 ROOT = Path(__file__).resolve().parents[1]
@@ -1194,16 +1194,26 @@ def judge_corroborations(url, world, cycle, limit=MAX_JUDGMENTS_PER_CYCLE):
     judged = {item.get("id") for item in load_records(CORROBORATIONS)}
     results = []
     for first, second, identifier, similarity in candidate_pairs(findings, judged, limit):
+        if not claims_overlap(first, second):
+            # No shared vocabulary between the claims themselves: they cannot assert
+            # the same fact, so the pair is settled without spending a model call.
+            record = make_record(first, second, identifier, "unrelated", "claims share no vocabulary", cycle, similarity,
+                                 judge="term-gate")
+            if append_record(CORROBORATIONS, record):
+                results.append({key: record[key] for key in ("id", "relation", "finding_ids", "topic", "domains")})
+            continue
         messages = [{"role": "system", "content": "You compare two pieces of public evidence carefully and answer only with the JSON object."},
                     {"role": "user", "content": judgment_prompt(first, second)}]
         try:
-            verdict, _provider = complete_json(messages, temperature=0.1, max_tokens=120, schema=judgment_schema(),
+            verdict, _provider = complete_json(messages, temperature=0.1, max_tokens=160, schema=judgment_schema(),
                                                schema_name="corroboration", call_class="judgment", base_url=url)
             if not isinstance(verdict, dict):
                 continue
         except (OSError, ValueError, TypeError, KeyError, AttributeError, json.JSONDecodeError):
             continue
-        record = make_record(first, second, identifier, verdict.get("relation"), verdict.get("reason"), cycle, similarity)
+        judged_verdict = judge_verdict(first, second, verdict)
+        record = make_record(first, second, identifier, judged_verdict["relation"], judged_verdict["reason"], cycle, similarity,
+                             shared_claim=judged_verdict["shared_claim"], model_relation=judged_verdict["model_relation"])
         if not append_record(CORROBORATIONS, record):
             continue
         if record["relation"] == "supports":
@@ -1216,6 +1226,13 @@ def judge_corroborations(url, world, cycle, limit=MAX_JUDGMENTS_PER_CYCLE):
                        corroboration=record["id"], finding_ids=record["finding_ids"], domains=record["domains"])
         results.append({key: record[key] for key in ("id", "relation", "finding_ids", "topic", "domains")})
     return results
+
+
+def room_name(topic):
+    """A room is named by the fact that founded it: the first few content words, title-cased."""
+    words = [word for word in re.findall(r"[A-Za-z0-9][A-Za-z0-9'\-]*", str(topic or "")) if word.lower() not in QUESTION_STOPWORDS]
+    name = " ".join(words[:7]).strip(" ,.;:")
+    return (name[:60].rstrip(" ,.;:-") or "Research Room").title()
 
 
 def evidence_room_growth(world, registry, cycle):
@@ -1234,13 +1251,13 @@ def evidence_room_growth(world, registry, cycle):
     if not candidates:
         return []
     record, pair = candidates[0]
-    topic = str(record.get("topic") or pair[0].get("topic") or "research frontier")[:160]
+    topic = str(record.get("shared_claim") or record.get("topic") or pair[0].get("topic") or "research frontier")[:160]
     source_room = next((room for room in rooms if room.get("id") in (pair[0].get("relates_to") or [])),
                        rooms[0] if rooms else None)
     if source_room is None:
         return []
     room_id = safe_room_id(topic, {room.get("id") for room in rooms})
-    room = {"id": room_id, "name": topic[:60].title(),
+    room = {"id": room_id, "name": room_name(topic),
             "description": f"Connected research room for corroborated findings about {topic[:120]}.",
             "charter": f"Compare and preserve public evidence about {topic[:180]}.",
             "growth_topic": topic, "founded_by": sorted({item.get("agent") for item in pair if item.get("agent")}),
