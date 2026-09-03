@@ -996,8 +996,9 @@ def shared_research_target(current_question, frontier):
     A council question that already has exactly one accepted finding is
     finished first, from the other source family, so a cross-domain pair
     forms instead of every cycle starting a new topic. Otherwise the current
-    question is used. Returns (query, preferred_family) where the family is
-    'encyclopedia', 'web', or None for the default alternation.
+    question is used. Returns (query, preferred_family, avoid_domains) where
+    the family is 'encyclopedia', 'web', or None for the default alternation,
+    and avoid_domains already hold an accepted finding on that topic.
     """
     findings = accepted_findings()
     by_topic = {}
@@ -1013,8 +1014,8 @@ def shared_research_target(current_question, frontier):
         domains = by_topic.get(query.lower(), set())
         if len(domains) == 1:
             only = next(iter(domains))
-            return query, ("web" if "wikipedia.org" in only else "encyclopedia")
-    return question_terms(current_question), None
+            return query, ("web" if "wikipedia.org" in only else "encyclopedia"), set(domains)
+    return question_terms(current_question), None, set()
 
 
 def accepted_findings():
@@ -1393,7 +1394,7 @@ def main():
             frontier_snapshot = json.loads(FRONTIER.read_text())
         except json.JSONDecodeError:
             frontier_snapshot = {}
-    shared_research, shared_family = shared_research_target(args.question, frontier_snapshot)
+    shared_research, shared_family, shared_avoid = shared_research_target(args.question, frontier_snapshot)
     regrounded = []
     for agent in selected:
         if len(regrounded) >= MAX_REGROUNDS_PER_CYCLE:
@@ -1641,6 +1642,12 @@ def main():
                     isinstance(tool.get("results"), list)):
                 candidates = [item.get("url", "") for item in tool["results"]
                               if re.match(r"https://", str(item.get("url", "")), re.I)]
+                if research_assignment and shared_avoid:
+                    # A second finding from the same domain cannot corroborate
+                    # the first; prefer any other domain when one exists.
+                    fresh = [url for url in candidates
+                             if urllib.parse.urlparse(url).netloc.lower() not in shared_avoid]
+                    candidates = fresh or candidates
                 candidates.sort(key=lambda value: (0 if any(host in value.lower() for host in
                                   ("wikipedia.org", "github.com", "arxiv.org", "crossref.org")) else 1, value))
                 candidates = candidates[:3]
@@ -1777,7 +1784,8 @@ def main():
     print(json.dumps({"status": "completed", "active": active, "decisions": results,
                       "construction": construction, "requests": requests, "trades_settled": settled_trades,
                       "corroborations": corroborations, "regrounded": regrounded,
-                      "shared_research": {"query": shared_research, "family": shared_family},
+                      "shared_research": {"query": shared_research, "family": shared_family,
+                                          "avoid_domains": sorted(shared_avoid)},
                       "dormant": sum(agent.get("status") == "dormant" for agent in registry.get("agents", []))}))
 
 

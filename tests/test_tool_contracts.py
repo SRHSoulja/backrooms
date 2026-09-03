@@ -94,6 +94,25 @@ class ToolContractTests(unittest.TestCase):
         long_word = "a" * 70
         self.assertIn(long_word, clean_excerpt("x " + long_word + " y"))
 
+    def test_wikipedia_summary_retries_shorter_queries(self):
+        from scripts import tool_broker
+        calls = []
+        def fake_fetch(url, max_bytes=None):
+            calls.append(url)
+            if "list=search" in url:
+                hits = [] if "prevent" in url else [{"title": "Provenance"}]
+                return json.dumps({"query": {"search": hits}})
+            return json.dumps({"extract": "Provenance is the chronology of ownership.", "content_urls": {"desktop": {"page": "https://en.wikipedia.org/wiki/Provenance"}}})
+        original = tool_broker.fetch
+        tool_broker.fetch = fake_fetch
+        try:
+            result = tool_broker.wikipedia_summary("quarantine provenance practices prevent untrusted material entering record")
+        finally:
+            tool_broker.fetch = original
+        self.assertEqual(result["status"], "completed")
+        self.assertEqual(result["url"], "https://en.wikipedia.org/wiki/Provenance")
+        self.assertEqual(sum("list=search" in url for url in calls), 3)
+
     def test_wikipedia_summary_is_a_text_read_contract(self):
         self.assertEqual(TOOL_CONTRACTS["wikipedia-summary"]["capability"], "public-text-read")
         self.assertTrue(TOOL_CONTRACTS["wikipedia-summary"]["untrusted_content"])

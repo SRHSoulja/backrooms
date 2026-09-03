@@ -86,10 +86,19 @@ def wikipedia_summary(query):
     """
     if not query or len(query) > 160 or BLOCKED.search(query):
         raise ValueError("query failed bounded validation")
-    params = urllib.parse.urlencode({"action": "query", "list": "search", "srsearch": query,
-                                     "srlimit": 1, "format": "json", "utf8": 1})
-    data = json.loads(fetch("https://en.wikipedia.org/w/api.php?" + params))
-    hits = data.get("query", {}).get("search", [])
+    # A long council phrase rarely names an article; retry with shorter
+    # prefixes of the content words so a topical article can still anchor
+    # the evidence.
+    words = query.split()
+    attempts = [query] + [" ".join(words[:count]) for count in (4, 2) if count < len(words)]
+    hits = []
+    for attempt in attempts:
+        params = urllib.parse.urlencode({"action": "query", "list": "search", "srsearch": attempt,
+                                         "srlimit": 1, "format": "json", "utf8": 1})
+        data = json.loads(fetch("https://en.wikipedia.org/w/api.php?" + params))
+        hits = data.get("query", {}).get("search", [])
+        if hits:
+            break
     if not hits:
         return {"tool": "wikipedia-summary", "query": query, "status": "no-match",
                 "source": "https://en.wikipedia.org/", "contract": TOOL_CONTRACTS["wikipedia-summary"]}

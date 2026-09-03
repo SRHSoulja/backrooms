@@ -548,14 +548,15 @@ class LocalAutonomyTests(unittest.TestCase):
         frontier = {"open_questions": [
             {"id": "q1", "question": "How do multi-agent systems maintain distinct voices when agents are designed to be neutral?", "status": "open"},
             {"id": "q2", "question": "What sandboxing techniques are documented for tools used by language-model agents?", "status": "open"}]}
-        query, family = local_autonomy.shared_research_target("Which specifications define agent discovery documents?", frontier)
+        query, family, avoid = local_autonomy.shared_research_target("Which specifications define agent discovery documents?", frontier)
         self.assertEqual(query, "multi-agent systems maintain distinct voices agents designed neutral")
         self.assertEqual(family, "web")
+        self.assertEqual(avoid, {"en.wikipedia.org"})
         self._write_findings({"id": "finding-x", "agent": "local-002", "url": "https://spec.example/a", "content_hash": "h2",
                               "quote": "q", "claim": "c", "status": "unreviewed",
                               "topic": "multi-agent systems maintain distinct voices agents designed neutral"})
-        query, family = local_autonomy.shared_research_target("Which specifications define agent discovery documents?", frontier)
-        self.assertEqual((query, family), ("specifications define agent discovery documents", None))
+        query, family, avoid = local_autonomy.shared_research_target("Which specifications define agent discovery documents?", frontier)
+        self.assertEqual((query, family, avoid), ("specifications define agent discovery documents", None, set()))
 
     def test_question_terms_keep_content_words_in_order(self):
         query = local_autonomy.question_terms("What does current public evidence say about persistent memory designs for autonomous agents, and which two independent sources could confirm it?")
