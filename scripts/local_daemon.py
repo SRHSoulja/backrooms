@@ -901,15 +901,57 @@ def record(result):
     return world
 
 
+PUBLISH_STATUS = {"outcome": "not-run", "reason": "", "at": None}
+
+
+def note_publish(outcome, reason=""):
+    """Record the publication outcome in the log and in the public health feed.
+
+    The health feed is patched in place so a skipped publication is visible
+    the next time anything reaches the site, instead of leaving only a log line.
+    """
+    PUBLISH_STATUS.update({"outcome": outcome, "reason": reason, "at": datetime.now(timezone.utc).isoformat()})
+    print(json.dumps({"publish": outcome, **({"reason": reason} if reason else {})}), flush=True)
+    try:
+        health = json.loads(PUBLIC_HEALTH.read_text()) if PUBLIC_HEALTH.exists() else {}
+        health["publication_status"] = dict(PUBLISH_STATUS)
+        atomic_write_json(PUBLIC_HEALTH, health)
+    except (OSError, json.JSONDecodeError):
+        pass
+
+
+def synchronize_with_origin():
+    """Bring the checkout up to date with origin/main without ever losing local commits.
+
+    The public heartbeat workflow commits to main every 15 minutes, so a local
+    commit made between two cycles makes a fast-forward impossible. Rebase the
+    local commits onto origin in that case; if the rebase cannot complete
+    cleanly it is aborted and the reason is published instead of retried
+    silently forever.
+    """
+    fetch = subprocess.run(["git", "fetch", "origin", "main"], cwd=ROOT, capture_output=True, text=True)
+    if fetch.returncode:
+        return False, "fetch failed"
+    sync = subprocess.run(["git", "merge", "--ff-only", "origin/main"], cwd=ROOT, capture_output=True, text=True)
+    if not sync.returncode:
+        return True, ""
+    ancestor = subprocess.run(["git", "merge-base", "--is-ancestor", "origin/main", "HEAD"], cwd=ROOT, capture_output=True)
+    if not ancestor.returncode:
+        return True, ""  # origin has nothing new; local is simply ahead
+    rebase = subprocess.run(["git", "rebase", "--autostash", "origin/main"], cwd=ROOT, capture_output=True, text=True)
+    if not rebase.returncode:
+        print(json.dumps({"publish": "rebased local commits onto origin/main"}), flush=True)
+        return True, ""
+    subprocess.run(["git", "rebase", "--abort"], cwd=ROOT, capture_output=True)
+    detail = (rebase.stderr.strip().splitlines() or ["unknown"])[-1][:120]
+    return False, "checkout diverged from origin/main and rebase failed: " + detail
+
+
 def publish(result, world, model_health=True):
     """Publish only safe metadata, and only when this checkout is clean."""
-    fetch = subprocess.run(["git", "fetch", "origin", "main"], cwd=ROOT, capture_output=True)
-    if fetch.returncode:
-        print(json.dumps({"publish": "skipped", "reason": "fetch failed"}), flush=True)
-        return
-    sync = subprocess.run(["git", "merge", "--ff-only", "origin/main"], cwd=ROOT, capture_output=True)
-    if sync.returncode:
-        print(json.dumps({"publish": "skipped", "reason": "checkout not fast-forwardable"}), flush=True)
+    synced, reason = synchronize_with_origin()
+    if not synced:
+        note_publish("skipped", reason)
         return
     registry = json.loads(LOCAL_REGISTRY.read_text()) if LOCAL_REGISTRY.exists() else {"agents": []}
     work_orders = sync_work_orders(registry, world["cycle"])
@@ -934,6 +976,7 @@ def publish(result, world, model_health=True):
         **autonomy_summary(result),
         "publication": "sanitized GitHub Pages snapshot",
         "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
+        "publication_status": dict(PUBLISH_STATUS),
         "activity_feed": "docs/activity.json",
         "feed_freshness_seconds": 0
         ,**resource_health, **analysis_health, **research_health, **findings_health, **frontier_health, **sync_code_proposals(), **sync_outside_signals(), **sync_codex_bridge(), **sync_messages(world), **sync_trades(world["cycle"]),
@@ -1082,13 +1125,14 @@ def publish(result, world, model_health=True):
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}
     if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/trades.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json", "state/frontier.json", "state/codex-bridge-status.json"}:
-        print(json.dumps({"publish": "skipped", "reason": "other local changes present"}), flush=True)
+        note_publish("skipped", "other local changes present: " + ", ".join(sorted(changed - {"docs/local-cycle.json"})[:5])[:160])
         return
     subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/trades.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json"], cwd=ROOT, check=True)
     commit = subprocess.run(["git", "commit", "-m", "chore: publish local council signal"], cwd=ROOT, capture_output=True)
     if commit.returncode == 0:
-        pushed = subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=ROOT, capture_output=True)
-        print(json.dumps({"publish": "pushed" if pushed.returncode == 0 else "push-failed"}), flush=True)
+        pushed = subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=ROOT, capture_output=True, text=True)
+        note_publish("pushed" if pushed.returncode == 0 else "push-failed",
+                     "" if pushed.returncode == 0 else (pushed.stderr.strip().splitlines() or ["unknown"])[-1][:120])
 
 
 parser = argparse.ArgumentParser()
