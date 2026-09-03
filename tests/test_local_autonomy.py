@@ -390,6 +390,27 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(result["status"], "completed")
         self.assertIn("14", result["output"])
 
+    def test_parse_decision_names_the_rejection_reason(self):
+        agent = {"room": "atrium", "capabilities": []}
+        good = json.dumps({"action": "PROPOSE", "room": "atrium", "target": "", "proposal": "compare specs",
+                           "request": "", "code": "", "reason": "lead", "self_summary": "", "message_to": "", "message": ""})
+        decision, reason = local_autonomy.parse_decision(good, agent, ["atrium"])
+        self.assertEqual((decision["action"], reason), ("PROPOSE", "ok"))
+        cases = {
+            "free text with no labels at all": "unstructured-output",
+            json.dumps({"action": "FLY", "room": "atrium"}): "unknown-action",
+            json.dumps({"action": "MOVE", "room": "basement"}): "unknown-room",
+            json.dumps({"action": "ANALYZE", "room": "atrium", "code": "print(1)"}): "analyze-without-workbench",
+            json.dumps({"action": "EXPLORE", "room": "atrium", "target": ""}): "explore-without-target",
+            json.dumps({"action": "BUILD", "room": "atrium", "target": "x", "proposal": ""}): "room-proposal-incomplete",
+            json.dumps({"action": "STAY", "room": "atrium", "reason": "r" * 300}): "field-too-long:reason",
+            json.dumps({"action": "STAY", "room": "atrium", "request": "wallet access please"}): "forbidden-term",
+        }
+        for text, expected in cases.items():
+            decision, reason = local_autonomy.parse_decision(text, agent, ["atrium"])
+            self.assertIsNone(decision, text)
+            self.assertEqual(reason, expected, text)
+
     def test_rejected_extraction_is_kept_with_reason_and_never_counts(self):
         excerpt = ("The Agent2Agent protocol is an open standard that lets agents exchange tasks. "
                    "It publishes an Agent Card for discovery.")

@@ -129,6 +129,7 @@ class AutonomyIntegrationTests(unittest.TestCase):
         output = json.loads(completed.stdout)
         self.assertEqual(output["status"], "completed")
         self.assertEqual(output["decisions"][0]["status"], "awaiting-retry")
+        self.assertEqual(output["decisions"][0]["parse_reason"], "unstructured-output")
 
 
 if __name__ == "__main__":

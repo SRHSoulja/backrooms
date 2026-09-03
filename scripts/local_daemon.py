@@ -195,8 +195,14 @@ def autonomy_quality(result):
     fallbacks = sum("fallback" in str(item.get("reason", "")).lower() or item.get("status") == "awaiting-retry"
                     for item in decisions)
     tools = [item.get("tool") or {} for item in decisions]
+    reasons = {}
+    for item in decisions:
+        reason = item.get("fallback_reason") or item.get("parse_reason")
+        if reason and ("fallback" in str(item.get("reason", "")).lower() or item.get("status") == "awaiting-retry"):
+            reasons[str(reason)[:60]] = reasons.get(str(reason)[:60], 0) + 1
     return {"status": "active", "turns": len(decisions), "fallbacks": fallbacks,
             "fallback_rate": round(fallbacks / len(decisions), 3),
+            "fallback_reasons": dict(sorted(reasons.items(), key=lambda pair: -pair[1])),
             "tool_successes": sum(item.get("status") == "completed" for item in tools),
             "findings_filed": sum(bool(item.get("finding_id")) for item in decisions)}
 

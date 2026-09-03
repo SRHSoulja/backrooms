@@ -93,20 +93,29 @@ def claim_grounded(claim, quote):
     return True, "grounded"
 
 
+def clamp_confidence(value):
+    """Fold a model-reported confidence into [0, 1]; unparseable values become 0.0.
+
+    The JSON grammar cannot enforce numeric ranges, so a well-quoted finding
+    must not be thrown away merely because the model wrote 1.5 or "high".
+    """
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+    if number != number:
+        return 0.0
+    return max(0.0, min(1.0, number))
+
+
 def classify_finding(claim, quote, excerpt=None, confidence=None):
     """Return (status, reason, quote_score) for a candidate finding.
 
     ``excerpt`` may be None when re-checking a stored record whose page text is
     no longer available; the stored quote-to-excerpt verdict is then trusted and
-    only claim grounding is re-evaluated.
+    only claim grounding is re-evaluated. Confidence never rejects a finding;
+    callers store ``clamp_confidence`` of it.
     """
-    if confidence is not None:
-        try:
-            value = float(confidence)
-        except (TypeError, ValueError):
-            return "rejected", "invalid-confidence", 0.0
-        if not 0 <= value <= 1:
-            return "rejected", "invalid-confidence", 0.0
     grounded, reason = claim_grounded(claim, quote)
     if not grounded:
         return "rejected", reason, 0.0

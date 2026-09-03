@@ -1,6 +1,6 @@
 import unittest
 
-from scripts.evidence import claim_grounded, classify_finding, is_accepted, quote_support
+from scripts.evidence import claim_grounded, clamp_confidence, classify_finding, is_accepted, quote_support
 
 
 EXCERPT = ("The Agent2Agent (A2A) protocol is an open standard that enables AI agents to communicate "
@@ -53,7 +53,16 @@ class EvidenceRuleTests(unittest.TestCase):
         status, reason, _score = classify_finding("A2A agents communicate using JSON-RPC 2.0 over HTTP(S).",
                                                   "agents pay a registry subscription fee", EXCERPT, 0.7)
         self.assertEqual((status, reason), ("rejected", "claim-not-grounded-in-quote"))
-        self.assertEqual(classify_finding("claim", "quote", EXCERPT, 1.5)[0], "rejected")
+        status, _reason, _score = classify_finding("A2A agents communicate using JSON-RPC 2.0 over HTTP(S).",
+                                                   "uses JSON-RPC 2.0 over HTTP(S)", EXCERPT, 1.5)
+        self.assertEqual(status, "unreviewed")
+
+    def test_confidence_is_clamped_not_fatal(self):
+        self.assertEqual(clamp_confidence(1.5), 1.0)
+        self.assertEqual(clamp_confidence(-3), 0.0)
+        self.assertEqual(clamp_confidence("0.4"), 0.4)
+        self.assertEqual(clamp_confidence("high"), 0.0)
+        self.assertEqual(clamp_confidence(None), 0.0)
 
     def test_rejected_rows_never_count_as_evidence(self):
         self.assertTrue(is_accepted({"status": "unreviewed"}))

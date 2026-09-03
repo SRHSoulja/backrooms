@@ -19,9 +19,9 @@ try:
 except ImportError:
     from storage import atomic_write_json
 try:
-    from scripts.evidence import classify_finding, is_accepted
+    from scripts.evidence import clamp_confidence, classify_finding, is_accepted
 except ImportError:
-    from evidence import classify_finding, is_accepted
+    from evidence import clamp_confidence, classify_finding, is_accepted
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "state/local-agents.json"
 ARCHIVE = ROOT / "state/archive/events.jsonl"
@@ -173,11 +173,8 @@ def extract_finding(url, agent, cycle, tool):
         return None
     claim = re.sub(r"\s+", " ", str(finding.get("claim", "")).strip())[:300]
     quote = re.sub(r"\s+", " ", str(finding.get("quote", "")).strip())[:300]
-    status, reason, quote_score = classify_finding(claim, quote, excerpt, finding.get("confidence", 0))
-    try:
-        confidence = float(finding.get("confidence", 0))
-    except (TypeError, ValueError):
-        confidence = 0.0
+    status, reason, quote_score = classify_finding(claim, quote, excerpt)
+    confidence = clamp_confidence(finding.get("confidence", 0))
     source_hash = str(tool.get("source_hash"))
     lineage = f"{agent.get('id')}:{source}:{source_hash}"
     if status == "rejected":
@@ -187,7 +184,7 @@ def extract_finding(url, agent, cycle, tool):
     record = {"id": finding_id, "agent": agent.get("id"), "cycle": cycle,
               "topic": str(tool.get("query") or agent.get("exploration") or "research frontier")[:160],
               "claim": claim, "quote": quote, "url": source[:500], "content_hash": source_hash,
-              "confidence": confidence if 0 <= confidence <= 1 else 0.0, "quote_score": quote_score,
+              "confidence": confidence, "quote_score": quote_score,
               "quote_match": reason, "relates_to": [agent.get("room") or "unassigned"], "status": status}
     if status == "rejected":
         record["rejection_reason"] = reason
@@ -244,13 +241,13 @@ def accepted_outside_signals():
             for item in inbox.get("messages", []) if item.get("status") == "accepted-exchange"][-5:]
 
 
-def log_interview(agent, cycle, attempt, raw=None, error=None, parsed=False):
+def log_interview(agent, cycle, attempt, raw=None, error=None, parsed=False, reason=None):
     """Keep private turn diagnostics; never publish prompts or raw responses."""
     INTERVIEW_LOG.mkdir(parents=True, exist_ok=True)
     path = INTERVIEW_LOG / f"cycle-{cycle:06d}.jsonl"
     record = {"recorded_at": datetime.now(timezone.utc).isoformat(), "cycle": cycle,
               "agent_id": agent.get("id"), "attempt": attempt, "parsed": parsed,
-              "raw_response": str(raw or "")[:12000]}
+              "reason": reason, "raw_response": str(raw or "")[:12000]}
     if error:
         record["error"] = str(error)[:300]
     with path.open("a") as handle:
@@ -258,6 +255,17 @@ def log_interview(agent, cycle, attempt, raw=None, error=None, parsed=False):
 
 
 def parse(text, agent, rooms):
+    """Backward-compatible wrapper: the decision only, or None."""
+    return parse_decision(text, agent, rooms)[0]
+
+
+def parse_decision(text, agent, rooms):
+    """Return (decision, reason). ``reason`` names why a turn was rejected, or ``ok``.
+
+    Publishing these reasons in aggregate is how the observatory can tell a
+    model that cannot hold the format apart from a validator that is too
+    strict, without anyone reading raw model output.
+    """
     try:
         structured = json.loads(text)
         if isinstance(structured, dict) and isinstance(structured.get("action"), str):
@@ -268,31 +276,36 @@ def parse(text, agent, rooms):
     except (json.JSONDecodeError, TypeError, ValueError):
         fields = {}
         labels = r"ACTION|ROOM|TARGET|PROPOSAL|REQUEST|CODE|REASON|SELF_SUMMARY|MESSAGE_TO|MESSAGE"
-        matches = re.finditer(rf"(?is)\b({labels})\s*[:\-]\s*(.*?)(?=\b(?:{labels})\s*[:\-]|\Z)", text)
+        matches = re.finditer(rf"(?is)\b({labels})\s*[:\-]\s*(.*?)(?=\b(?:{labels})\s*[:\-]|\Z)", str(text or ""))
         for match in matches:
             if match:
                 fields[match.group(1).upper()] = match.group(2).strip().strip("`*")
+        if not fields:
+            return None, "unstructured-output"
     # Models often echo the interviewer’s boundary sentence. Inspect only
     # parsed decision fields so that safe decisions are not rejected merely
     # because the model repeated a forbidden word in an unstructured preface.
     if FORBIDDEN.search(" ".join(fields.values())):
-        return None
-    action = re.match(r"[A-Z]+", fields.get("ACTION", "").upper().strip())
+        return None, "forbidden-term"
+    action = re.match(r"[A-Z_]+", fields.get("ACTION", "").upper().strip())
     action = action.group(0) if action else ""
     room_match = re.search(r"[a-z0-9_-]+", fields.get("ROOM", agent["room"]).lower())
     room = room_match.group(0) if room_match else agent["room"]
-    if action not in ALLOWED or room not in rooms:
-        return None
+    if action not in ALLOWED:
+        return None, "unknown-action"
+    if room not in rooms:
+        return None, "unknown-room"
     if action == "ANALYZE" and "bounded-workbench" not in agent.get("capabilities", []):
-        return None
+        return None, "analyze-without-workbench"
     limits = {"TARGET": 100, "PROPOSAL": 220, "REQUEST": 220, "CODE": 8000, "REASON": 220}
-    if any(len(fields.get(key, "")) > limit for key, limit in limits.items() for _ in [0]):
-        return None
+    for key, limit in limits.items():
+        if len(fields.get(key, "")) > limit:
+            return None, f"field-too-long:{key.lower()}"
     target = fields.get("TARGET", "").strip()
     if action == "EXPLORE" and not target:
-        return None
+        return None, "explore-without-target"
     if action in {"DISCOVER", "BUILD", "TRANSFORM"} and (not target or not fields.get("PROPOSAL", "").strip()):
-        return None
+        return None, "room-proposal-incomplete"
     request = fields.get("REQUEST", "").strip()
     if re.fullmatch(r"(?:NONE|N/A|NO REQUEST)[\s,.;:!?]*", request, re.I):
         request = ""
@@ -302,13 +315,13 @@ def parse(text, agent, rooms):
     if re.fullmatch(r"(?:NONE|N/A)[\s,.;:!?]*", code, re.I):
         code = ""
     if action == "ANALYZE" and not code:
-        return None
+        return None, "analyze-without-code"
     return {"action": action, "room": room, "target": target,
             "proposal": fields.get("PROPOSAL", "").strip(), "request": request, "code": code,
             "reason": fields.get("REASON", "").strip(),
             "self_summary": fields.get("SELF_SUMMARY", "").strip()[:500],
             "message_to": fields.get("MESSAGE_TO", "").strip()[:80],
-            "message": fields.get("MESSAGE", "").strip()[:240]}
+            "message": fields.get("MESSAGE", "").strip()[:240]}, "ok"
 
 
 def deduplicate(registry):
@@ -1081,6 +1094,7 @@ def main():
         decision = None
         post_decision = None
         filed_finding_id = None
+        parse_reasons = []
         for attempt in range(2):
             try:
                 shared_work = [{"type": "room-candidate", "name": item.get("name"), "status": item.get("status"), "agent": item.get("agent")}
@@ -1105,11 +1119,13 @@ def main():
                                         "request": claimed_task.get("request"), "status": "claimed"})
                 interview = ask(args.base_url, agent, rooms, args.cycle, repair=attempt == 1,
                                 shared_work=shared_work, structured=attempt == 0)
-                decision = parse(interview, agent, rooms)
-                log_interview(agent, args.cycle, attempt, raw=interview, parsed=bool(decision))
+                decision, parse_reason = parse_decision(interview, agent, rooms)
+                parse_reasons.append(parse_reason)
+                log_interview(agent, args.cycle, attempt, raw=interview, parsed=bool(decision), reason=parse_reason)
                 if decision:
                     break
             except Exception as error:
+                parse_reasons.append("model-error:" + type(error).__name__)
                 log_interview(agent, args.cycle, attempt, error=error)
         # A completed artifact must receive its continuity follow-up even if the
         # model is temporarily unavailable; the follow-up itself is still run
@@ -1123,7 +1139,8 @@ def main():
         if not decision and agent.get("interview_attempts", 0) >= 2:
             decision = {"action": "STAY", "room": agent.get("room", rooms[0]), "target": "",
                         "proposal": "", "request": "", "code": "",
-                        "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."}
+                        "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
+                        "fallback_reason": parse_reasons[-1] if parse_reasons else "unknown"}
         if not decision:
             release_frontier_task(agent)
             agent["interview_status"] = "awaiting-retry"
@@ -1135,7 +1152,8 @@ def main():
             agent["interviewed_at"] = datetime.now(timezone.utc).isoformat()
             registry.setdefault("decisions", []).append({"cycle": args.cycle, "agent": agent["id"],
                                                            "action": "interview-retry"})
-            results.append({"id": agent["id"], "status": "awaiting-retry", "attempts": agent["interview_attempts"]})
+            results.append({"id": agent["id"], "status": "awaiting-retry", "attempts": agent["interview_attempts"],
+                            "parse_reason": parse_reasons[-1] if parse_reasons else "unknown"})
             continue
         if decision.get("action") == "STAY" and "fallback" in decision.get("reason", "").lower():
             agent["fallback_streak"] = agent.get("fallback_streak", 0) + 1
@@ -1365,7 +1383,8 @@ def main():
                         "request_status": agent.get("request_status", "none"),
                         "exploration": agent.get("exploration", "")[:100], "tool": tool,
                         "message": message_result, "trade": trade_result,
-                        "finding_id": filed_finding_id})
+                        "finding_id": filed_finding_id,
+                        "fallback_reason": decision.get("fallback_reason")})
     construction = apply_construction(world, registry, args.cycle)
     evidence_growth = evidence_room_growth(world, registry, args.cycle)
     if evidence_growth:
