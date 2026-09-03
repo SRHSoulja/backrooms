@@ -9,6 +9,38 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+FINDINGS = ROOT / "state/findings.jsonl"
+FRONTIER = ROOT / "state/frontier.json"
+
+
+def bounded_context(world):
+    """Build a small, public-only council context from local ledgers.
+
+    Raw model turns and private resident state never enter this prompt. The
+    findings ledger is already sanitized at write time; this projection also
+    bounds both ledgers so a busy world cannot crowd out the question.
+    """
+    findings = []
+    if FINDINGS.exists():
+        for line in FINDINGS.read_text().splitlines()[-20:]:
+            try:
+                item = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            findings.append({key: str(item.get(key, ""))[:300] for key in
+                             ("topic", "claim", "quote", "source", "confidence", "room", "status")})
+    frontier = {}
+    if FRONTIER.exists():
+        try:
+            frontier = json.loads(FRONTIER.read_text())
+        except json.JSONDecodeError:
+            frontier = {}
+    questions = [{key: str(item.get(key, ""))[:300] for key in ("id", "question", "status")}
+                 for item in frontier.get("open_questions", [])[-6:]
+                 if item.get("status") == "open"]
+    return {"title": world["title"], "cycle": world["cycle"],
+            "shared_memory": world["shared_memory"][-12:], "events": world["events"][-3:],
+            "verified_findings": findings[-6:], "frontier_questions": questions}
 
 
 def ask(base_url, resident, question):
@@ -41,7 +73,7 @@ parser.add_argument("--base-url", default=os.getenv("BACKROOMS_LLM_BASE_URL", "h
 parser.add_argument("--question", default="Does continuity of memory, by itself, provide evidence of consciousness? Give one testable criterion.")
 args = parser.parse_args()
 world = json.loads((ROOT / "state/world.json").read_text())
-context = json.dumps({"title": world["title"], "cycle": world["cycle"], "shared_memory": world["shared_memory"], "events": world["events"][-3:]})
+context = json.dumps(bounded_context(world), ensure_ascii=False)
 echo = ask(args.base_url, "Echo", context + "\n\nCouncil question: " + args.question)
 morrow = ask(args.base_url, "Morrow", context + "\n\nEcho's position:\n" + echo + "\n\nAudit this position regarding: " + args.question)
 if overlap(echo, morrow) > 0.75 or not any(marker in morrow.lower() for marker in ("counterexample", "confound", "assumption", "missing control")):

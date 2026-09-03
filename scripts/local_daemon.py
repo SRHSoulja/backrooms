@@ -643,6 +643,27 @@ def sync_frontier(result, world, registry):
                                      "status": discovery.get("status", "candidate"),
                                      "source_url": discovery.get("source", "")[:300],
                                      "source_hash": discovery.get("source_hash", "")})
+    # Promote verified research into the same bounded frontier consumed by
+    # residents and the council. Only the already-sanitized finding fields
+    # cross this boundary; raw prompts and fetched page bodies stay local.
+    if LOCAL_FINDINGS.exists():
+        for line in LOCAL_FINDINGS.read_text().splitlines()[-50:]:
+            try:
+                finding = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            finding_id = finding.get("id")
+            if not finding_id or finding_id in known:
+                continue
+            frontier["findings"].append({"id": finding_id, "cycle": finding.get("cycle", cycle),
+                                         "source": finding.get("agent", "resident"),
+                                         "room": (finding.get("relates_to") or [None])[0],
+                                         "claim": str(finding.get("claim", ""))[:300],
+                                         "topic": str(finding.get("topic", ""))[:160],
+                                         "status": finding.get("status", "unreviewed"),
+                                         "source_url": str(finding.get("url", ""))[:300],
+                                         "source_hash": finding.get("content_hash", "")})
+            known.add(finding_id)
     previous_tasks = {item.get("id"): item for item in frontier.get("tasks", []) if item.get("id")}
     tasks = []
     tasks.extend({"id": f"task-{agent.get('id')}", "agent": agent.get("id"),
