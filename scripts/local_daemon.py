@@ -26,6 +26,10 @@ try:
     from scripts.storage import atomic_write_json
 except ImportError:
     from storage import atomic_write_json
+try:
+    from scripts.capability_policy import public_catalog
+except ImportError:
+    from capability_policy import public_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 STATE = ROOT / "state/world.json"
@@ -626,7 +630,10 @@ def recruit(base_url, cycle):
         return {"status": "capacity-reached", "active": active, "capacity": MAX_LOCAL_HIRELINGS}
     context = json.dumps({"open_tasks": open_tasks[:6],
                           "existing_names": [agent.get("name") for agent in registry.get("agents", [])[-40:]],
-                          "rooms": [room.get("id") for room in world.get("rooms", [])]})
+                          "rooms": [room.get("id") for room in world.get("rooms", [])],
+                          "capabilities": [{"name": item.get("name"), "capability": item.get("capability"),
+                                            "grant": item.get("grant"), "scope": item.get("scope")}
+                                           for item in public_catalog().get("tools", [])]})
     completed = subprocess.run([sys.executable, str(ROOT / "scripts/local_recruiter.py"),
         "--base-url", base_url, "--cycle", str(cycle), "--context", context], cwd=ROOT,
         capture_output=True, text=True, check=False)
