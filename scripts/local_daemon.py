@@ -73,6 +73,7 @@ LOCAL_TRADES = ROOT / "state/trades.json"
 PUBLIC_TRADES = ROOT / "docs/trades.json"
 LOCAL_FINDINGS = ROOT / "state/findings.jsonl"
 PUBLIC_FINDINGS = ROOT / "docs/findings.json"
+LOCAL_AUTONOMY_ERRORS = ROOT / "state/autonomy-errors.log"
 LOCAL_CODEX_INBOX = ROOT / "state/codex-inbox"
 LOCAL_CODEX_OUTBOX = ROOT / "state/codex-outbox"
 LOCAL_INBOX = ROOT / "state/quarantine-inbox.json"
@@ -670,6 +671,11 @@ def recruit(base_url, cycle):
 def govern(base_url, cycle):
     completed = subprocess.run([sys.executable, str(ROOT / "scripts/local_autonomy.py"),
         "--base-url", base_url, "--cycle", str(cycle)], cwd=ROOT, capture_output=True, text=True, check=False)
+    if completed.returncode != 0:
+        LOCAL_AUTONOMY_ERRORS.parent.mkdir(parents=True, exist_ok=True)
+        with LOCAL_AUTONOMY_ERRORS.open("a") as handle:
+            handle.write(f"cycle={cycle} returncode={completed.returncode}\n{completed.stderr[-4000:]}\n")
+        return {"status": "failed", "active": 0, "decisions": [], "error": "autonomy subprocess failed; local diagnostics recorded"}
     try:
         return json.loads(completed.stdout)
     except json.JSONDecodeError:
