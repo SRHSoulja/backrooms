@@ -25,11 +25,11 @@ class ReloadWatcherTests(unittest.TestCase):
         self.assertEqual(watcher.observe("b", 50), "waiting")
         self.assertEqual(watcher.observe("b", 52), "force")
 
-    def test_supervisor_uses_between_cycle_reload_signal(self):
-        source = Path("scripts/local_supervisor.py").read_text()
-        self.assertIn("signal.SIGUSR1", source)
-        self.assertIn("ReloadWatcher", source)
-        self.assertNotIn("stop_process_group(process)\n            break", source)
+    def test_supervisor_requests_reloads_with_sigusr1(self):
+        from scripts import local_supervisor
+        self.assertEqual(local_supervisor.RELOAD_DEBOUNCE_SECONDS, 20)
+        self.assertTrue(hasattr(local_supervisor, "ReloadWatcher"))
+        self.assertIn("signal.SIGUSR1", Path("scripts/local_supervisor.py").read_text())
 
 
 class ProcessOwnershipTests(unittest.TestCase):

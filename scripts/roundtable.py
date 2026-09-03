@@ -82,15 +82,20 @@ def overlap(left, right):
     return len(a & b) / len(a | b) if a | b else 1.0
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--base-url", default=os.getenv("BACKROOMS_LLM_BASE_URL", "http://127.0.0.1:8080"))
-parser.add_argument("--question", default="Does continuity of memory, by itself, provide evidence of consciousness? Give one testable criterion.")
-args = parser.parse_args()
-world = json.loads((ROOT / "state/world.json").read_text())
-context = json.dumps(bounded_context(world), ensure_ascii=False)
-echo = ask(args.base_url, "Echo", context + "\n\nCouncil question: " + args.question)
-morrow = ask(args.base_url, "Morrow", context + "\n\nEcho's position:\n" + echo + "\n\nAudit this position regarding: " + args.question)
-if overlap(echo, morrow) > 0.75 or not any(marker in morrow.lower() for marker in ("counterexample", "confound", "assumption", "missing control")):
-    morrow = ask(args.base_url, "Morrow", context + "\n\nEcho's position:\n" + echo +
-                 "\n\nYour previous audit converged with Echo. Write a new answer that must begin with 'Counterexample:' and identify a specific way Echo's proposed observation could be misleading. Then add 'Control:' with one safeguard. Do not repeat Echo's conclusion. Question: " + args.question)
-print(json.dumps({"question": args.question, "echo": echo, "morrow": morrow}, indent=2))
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--base-url", default=os.getenv("BACKROOMS_LLM_BASE_URL", "http://127.0.0.1:8080"))
+    parser.add_argument("--question", default="Does continuity of memory, by itself, provide evidence of consciousness? Give one testable criterion.")
+    args = parser.parse_args()
+    world = json.loads((ROOT / "state/world.json").read_text())
+    context = json.dumps(bounded_context(world), ensure_ascii=False)
+    echo = ask(args.base_url, "Echo", context + "\n\nCouncil question: " + args.question)
+    morrow = ask(args.base_url, "Morrow", context + "\n\nEcho's position:\n" + echo + "\n\nAudit this position regarding: " + args.question)
+    if overlap(echo, morrow) > 0.75 or not any(marker in morrow.lower() for marker in ("counterexample", "confound", "assumption", "missing control")):
+        morrow = ask(args.base_url, "Morrow", context + "\n\nEcho's position:\n" + echo +
+                     "\n\nYour previous audit converged with Echo. Write a new answer that must begin with 'Counterexample:' and identify a specific way Echo's proposed observation could be misleading. Then add 'Control:' with one safeguard. Do not repeat Echo's conclusion. Question: " + args.question)
+    print(json.dumps({"question": args.question, "echo": echo, "morrow": morrow}, indent=2))
+
+
+if __name__ == "__main__":
+    main()

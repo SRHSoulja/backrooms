@@ -246,10 +246,6 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(history[-1]["status"], "closed")
         self.assertEqual(history[-1]["request"], "access to a clean water source")
 
-    def test_physical_need_is_rejected_at_interview_intake(self):
-        source = Path("scripts/local_autonomy.py").read_text()
-        self.assertIn("PHYSICAL_NEEDS", source)
-
     def test_compute_request_has_bounded_outcome(self):
         registry = {"agents": [{"id": "local-test", "request": "access to compute resources",
                                  "request_status": "open", "capabilities": []}]}
@@ -295,12 +291,6 @@ class LocalAutonomyTests(unittest.TestCase):
         records = [__import__("json").loads(line) for line in local_autonomy.NOTES.joinpath("local-test.jsonl").read_text().splitlines()]
         self.assertEqual(records[-1]["lifecycle"], "revision")
         self.assertEqual(records[-1]["supersedes"], records[-2]["document_id"])
-
-    def test_structured_tool_results_have_a_normalized_recording_path(self):
-        source = Path("scripts/local_autonomy.py").read_text()
-        self.assertIn('tool.get("query", tool.get("url", ""))', source)
-        self.assertIn('str(tool.get("url", "")) if tool.get("url") else ""', source)
-        self.assertIn('summary.get("items", summary.get("rows", 0))', source)
 
     def test_json_decision_is_parsed_with_existing_safety_rules(self):
         text = '{"action":"EXPLORE","room":"atrium","target":"public A2A standards",' \
@@ -349,42 +339,6 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertIn("BUILD", schema["properties"]["action"]["enum"])
         self.assertIn("self_summary", schema["required"])
         self.assertEqual(schema["properties"]["code"]["maxLength"], 800)
-
-    def test_prompt_contains_agent_continuity_context(self):
-        source = Path("scripts/local_autonomy.py").read_text()
-        self.assertIn('"purpose": agent.get("purpose"', source)
-        self.assertIn('"self_summary": agent.get("self_summary"', source)
-
-    def test_autonomy_uses_daemon_cycle_as_canonical(self):
-        source = Path("scripts/local_autonomy.py").read_text()
-        self.assertIn('world["cycle"] = args.cycle', source)
-
-    def test_frontier_context_is_available_to_hirelings(self):
-        source = Path("scripts/local_autonomy.py").read_text()
-        self.assertIn('"type": "frontier"', source)
-        self.assertIn('frontier.get("open_questions"', source)
-
-    def test_turns_are_bounded_and_prioritize_open_work(self):
-        source = Path("scripts/local_autonomy.py").read_text()
-        self.assertIn("MAX_TURNS_PER_CYCLE = 8", source)
-        self.assertIn("def select_agents(candidates):", source)
-        self.assertIn("urgent_limit = MAX_TURNS_PER_CYCLE // 2", source)
-        self.assertIn('agent.get("request_status") == "open"', source)
-        self.assertIn('agent["last_turn_cycle"] = args.cycle', source)
-        self.assertIn("fallback_streak", source)
-        self.assertIn("six consecutive format-fallback turns", source)
-
-    def test_research_does_not_pollute_resident_query_or_fake_provenance(self):
-        source = Path("scripts/local_autonomy.py").read_text()
-        self.assertIn("query_target = target[:160].strip()", source)
-        self.assertIn('"public-text", candidate', source)
-        self.assertIn('fetched["search_results"]', source)
-        self.assertIn('"wikipedia.org", "github.com", "arxiv.org", "crossref.org"', source)
-        self.assertIn("fetch_budget = MAX_FETCHES_PER_CYCLE", source)
-        self.assertIn("fetch_budget > 0", source)
-        self.assertIn('"verified": bool(source and excerpt)', source)
-        self.assertIn('source = str(tool.get("url", "")) if tool.get("url") else ""', source)
-        self.assertIn('"source_hash": hashlib.sha256(excerpt.encode()).hexdigest() if source and excerpt else ""', source)
 
     def test_analyze_requires_workbench_and_data_only_code(self):
         text = "ACTION: ANALYZE\nROOM: atrium\nTARGET: summarize values\nPROPOSAL: NONE\nREQUEST: NONE\nCODE: print(sum(range(3)))\nREASON: test"
@@ -522,6 +476,62 @@ class LocalAutonomyTests(unittest.TestCase):
             self.assertIsNone(decision, text)
             self.assertEqual(reason, expected, text)
 
+    def test_select_agents_reserves_half_for_open_work_and_rotates_the_rest(self):
+        candidates = []
+        for index in range(6):
+            candidates.append({"id": f"open-{index}", "request_status": "open", "last_turn_cycle": index + 1})
+        candidates.append({"id": "fresh-a", "request_status": "closed"})
+        candidates.append({"id": "fresh-b", "request_status": "closed"})
+        for index in range(4):
+            candidates.append({"id": f"other-{index}", "request_status": "closed", "last_turn_cycle": index + 3})
+        selected = [agent["id"] for agent in local_autonomy.select_agents(candidates)]
+        self.assertEqual(len(selected), local_autonomy.MAX_TURNS_PER_CYCLE)
+        self.assertEqual(selected[:4], ["open-0", "open-1", "open-2", "open-3"])
+        self.assertEqual(selected[4:6], ["fresh-a", "fresh-b"])
+        self.assertEqual(selected[6:], ["other-0", "other-1"])
+
+    def test_ask_prompt_carries_continuity_prior_research_and_boundaries(self):
+        captured = {}
+
+        class FakeResponse:
+            def read(self):
+                return json.dumps({"choices": [{"message": {"content": "{}"}}]}).encode()
+            def __enter__(self):
+                return self
+            def __exit__(self, *_args):
+                return False
+
+        def fake_urlopen(request, timeout=0):
+            captured["body"] = json.loads(request.data)
+            return FakeResponse()
+
+        original = local_autonomy.urllib.request.urlopen
+        local_autonomy.urllib.request.urlopen = fake_urlopen
+        try:
+            agent = {"id": "local-001", "name": "Chrono", "role": "Timekeeper", "room": "atrium",
+                     "purpose": "catalogue temporal anomalies", "question": "which anomalies repeat",
+                     "self_summary": "I have catalogued three anomalies.",
+                     "last_tool": {"tool": "public-text", "query": "temporal anomaly catalogue", "source": "https://example.org/x",
+                                   "excerpt": "an excerpt", "result_count": 1},
+                     "last_analysis": {"artifact_id": "analysis-local-001-4", "status": "completed", "summary": "3"}}
+            local_autonomy.ask("http://127.0.0.1:1", agent, ["atrium", "relay"], 5,
+                               shared_work=[{"type": "frontier", "open_questions": [{"question": "What repeats?"}]}],
+                               inbox=[{"from": "local-002", "cycle": 4, "body": "Please share the catalogue."}],
+                               pending_trades=[{"id": "trade-1", "from": "local-002", "offering": "a map", "request": "the catalogue"}])
+        finally:
+            local_autonomy.urllib.request.urlopen = original
+        prompt = captured["body"]["messages"][-1]["content"]
+        for expected in ("catalogue temporal anomalies", "which anomalies repeat", "I have catalogued three anomalies.",
+                         "A prior approved work record is available", "temporal anomaly catalogue", "analysis-local-001-4",
+                         "Dedicated frontier context", "What repeats?", "Please share the catalogue.", "trade-1",
+                         "not a biological body", "Use ANALYZE when your bounded-workbench role", "ACCEPT_TRADE"):
+            self.assertIn(expected, prompt, expected)
+        self.assertEqual(captured["body"]["response_format"]["json_schema"]["schema"]["properties"]["room"]["enum"], ["atrium", "relay"])
+
+    def test_physical_need_pattern_matches_biological_requests_only(self):
+        self.assertTrue(local_autonomy.PHYSICAL_NEEDS.search("I need clean water and shelter"))
+        self.assertFalse(local_autonomy.PHYSICAL_NEEDS.search("I need a public dataset and compute"))
+
     def test_rejected_extraction_is_kept_with_reason_and_never_counts(self):
         excerpt = ("The Agent2Agent protocol is an open standard that lets agents exchange tasks. "
                    "It publishes an Agent Card for discovery.")
@@ -564,12 +574,6 @@ class LocalAutonomyTests(unittest.TestCase):
             local_autonomy.record_finding({**rejected, "id": f"finding-rejected-{index}"})
         self.assertFalse(local_autonomy.grant_earned_capabilities(agent, world, 7))
         self.assertEqual(local_autonomy.evidence_room_growth({"rooms": [{"id": "atrium"}], "events": []}, {"agents": []}, 7), [])
-
-    def test_fetch_budget_is_per_cycle_not_a_single_global_fetch(self):
-        source = Path("scripts/local_autonomy.py").read_text()
-        self.assertGreaterEqual(local_autonomy.MAX_FETCHES_PER_CYCLE, 2)
-        self.assertNotIn("fetched_this_cycle", source)
-        self.assertIn("fetch_budget -= 1", source)
 
     def test_workbench_is_earned_from_three_verified_findings(self):
         for index in range(3):
@@ -631,18 +635,6 @@ class LocalAutonomyTests(unittest.TestCase):
         artifact = local_autonomy.record_analysis(agent, 96, "print(sum(range(4)))",
                                                    {"status": "completed", "returncode": 0, "output": "6"})
         self.assertEqual(artifact["based_on"], "analysis-local-test-1")
-
-    def test_interview_prompt_can_use_prior_research_metadata(self):
-        source = Path("scripts/local_autonomy.py").read_text()
-        self.assertIn('A prior approved work record is available', source)
-        self.assertIn('"summary"', source)
-        self.assertIn('"analysis"', source)
-        self.assertIn('"artifact_id"', source)
-        self.assertIn('Shared resident work metadata', source)
-        self.assertIn('"verified": bool(source and excerpt)', source)
-        self.assertIn('Use ANALYZE when your bounded-workbench role', source)
-        self.assertIn('prefer a tiny local health check', source)
-        self.assertIn('not a biological body', source)
 
 
 if __name__ == "__main__":

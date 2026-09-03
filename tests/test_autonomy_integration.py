@@ -25,6 +25,33 @@ BASE_DECISION = {"action": "PROPOSE", "room": "atrium", "target": "public A2A st
                  "message_to": "", "message": ""}
 
 
+FAKE_BROKER = """#!/usr/bin/env python3
+import json, sys
+from pathlib import Path
+tool, value = sys.argv[1], sys.argv[2]
+log = Path(__file__).resolve().parents[1] / "state/broker-calls.jsonl"
+log.parent.mkdir(parents=True, exist_ok=True)
+with log.open("a") as handle:
+    handle.write(json.dumps({"tool": tool, "value": value}) + "\\n")
+if tool == "public-search":
+    print(json.dumps({"tool": "public-search", "query": value, "status": "completed", "source": "https://search.example/",
+                      "results": [{"title": "A2A spec", "url": "https://spec.example/a2a"}],
+                      "contract": {"capability": "public-web-read"}}))
+elif tool == "public-text":
+    print(json.dumps({"tool": "public-text", "url": value, "status": "completed",
+                      "excerpt": "The Agent2Agent protocol is an open standard that lets agents exchange tasks. It publishes an Agent Card for discovery.",
+                      "contract": {"capability": "public-text-read", "untrusted_content": True}}))
+else:
+    print(json.dumps({"tool": tool, "status": "rejected", "reason": "fake broker supports search and text only", "contract": {}}))
+"""
+
+EXTRACTION = {"claim": "The A2A protocol publishes an Agent Card for discovery.",
+              "quote": "It publishes an Agent Card for discovery.", "confidence": 0.8}
+JUDGMENT = {"relation": "supports", "reason": "both describe agent card discovery"}
+POST_TOOL = {**{"action": "STAY", "room": "atrium", "target": "", "proposal": "", "request": "", "code": "",
+               "reason": "evidence observed", "self_summary": "I fetched the spec.", "message_to": "", "message": ""}}
+
+
 class StubModelHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         body = json.dumps({"status": "ok"}).encode()
@@ -39,7 +66,19 @@ class StubModelHandler(BaseHTTPRequestHandler):
         self.server.last_body = self.rfile.read(length).decode("utf-8", errors="replace")
         self.server.bodies.append(self.server.last_body)
         self.server.requests += 1
-        content = json.dumps(self.server.decision)
+        try:
+            prompt = json.loads(self.server.last_body)["messages"][-1]["content"]
+        except (ValueError, KeyError, IndexError, TypeError):
+            prompt = ""
+        if "Extract one cautious" in prompt:
+            reply = EXTRACTION
+        elif "Two findings were extracted" in prompt:
+            reply = JUDGMENT
+        elif "post-tool decision" in prompt:
+            reply = POST_TOOL
+        else:
+            reply = self.server.decision
+        content = json.dumps(reply)
         body = json.dumps({"choices": [{"message": {"role": "assistant", "content": content}}]}).encode()
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
@@ -56,6 +95,7 @@ class AutonomyIntegrationTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory(prefix="backrooms-autonomy-")
         self.root = Path(self.temporary.name)
         shutil.copytree(REPO / "scripts", self.root / "scripts", ignore=shutil.ignore_patterns("__pycache__"))
+        (self.root / "scripts/tool_broker.py").write_text(FAKE_BROKER)
         (self.root / "state").mkdir()
         world = {"schema": 1, "world": "backrooms", "title": "The Atrium", "cycle": 1, "mood": "quiet",
                  "rooms": [{"id": "atrium", "name": "The Atrium", "description": "A circular room.",
@@ -159,6 +199,59 @@ class AutonomyIntegrationTests(unittest.TestCase):
         ledger = json.loads((self.root / "state/trades.json").read_text())
         self.assertEqual(ledger["trades"][0]["status"], "accepted")
         self.assertEqual(ledger["trades"][0]["accepted_cycle"], 7)
+
+    def test_explore_turn_keeps_the_query_clean_and_files_a_verified_finding(self):
+        registry = json.loads((self.root / "state/local-agents.json").read_text())
+        registry["agents"].append({"id": "local-002", "name": "Second Resident", "role": "archivist",
+                                   "purpose": "p", "question": "q", "room": "relay", "status": "active-local",
+                                   "capabilities": ["bounded-questioning"], "interviewed_at": "2026-09-01T00:00:00+00:00"})
+        (self.root / "state/local-agents.json").write_text(json.dumps(registry))
+        self.server.decision = {**BASE_DECISION, "action": "EXPLORE", "target": "agent card discovery", "reason": "lead"}
+        completed = self.run_autonomy()
+        self.assertEqual(completed.returncode, 0, completed.stderr[-1500:])
+        output = json.loads(completed.stdout)
+        calls = [json.loads(line) for line in (self.root / "state/broker-calls.jsonl").read_text().splitlines()]
+        self.assertEqual([call["value"] for call in calls if call["tool"] == "public-search"],
+                         ["agent card discovery", "agent card discovery"])
+        self.assertEqual(sum(call["tool"] == "public-text" for call in calls), 2)
+        registry = json.loads((self.root / "state/local-agents.json").read_text())
+        tool = registry["agents"][0]["last_tool"]
+        self.assertEqual((tool["query"], tool["source"], tool["verified"]), ("agent card discovery", "https://spec.example/a2a", True))
+        self.assertEqual(len(tool["source_hash"]), 64)
+        ledger = [json.loads(line) for line in (self.root / "state/findings.jsonl").read_text().splitlines()]
+        self.assertEqual([item["status"] for item in ledger], ["unreviewed", "unreviewed"])
+        self.assertEqual(ledger[0]["quote_match"], "quote-exact")
+        first = next(item for item in output["decisions"] if item["id"] == "local-001")
+        self.assertTrue(first["finding_id"].startswith("finding-"))
+        self.assertEqual(first["action"], "stay")
+        self.assertIsNone(first["fallback_reason"])
+        world = json.loads((self.root / "state/world.json").read_text())
+        kinds = [event["kind"] for event in world["events"]]
+        self.assertIn("finding-filed", kinds)
+        self.assertIn("tool-used", kinds)
+        self.assertEqual(output["corroborations"], [])
+
+    def test_frontier_question_and_outside_lead_reach_the_prompt(self):
+        (self.root / "state/frontier.json").write_text(json.dumps({
+            "open_questions": [{"id": "frontier-question-3", "cycle": 3, "source": "council",
+                                "question": "Which two public sources describe agent card discovery?", "status": "open"}],
+            "findings": [], "contradictions": [], "tasks": [], "activity": [],
+            "leads": [{"id": "lead-codex-1", "source": "codex-review", "question_id": "frontier-question-3",
+                       "text": "Outside review says compare the two card formats.", "status": "unverified", "cycle": 3}]}))
+        completed = self.run_autonomy()
+        self.assertEqual(completed.returncode, 0, completed.stderr[-1500:])
+        self.assertTrue(any("describe agent card discovery" in body for body in self.server.bodies))
+        self.assertTrue(any("Outside review says compare" in body for body in self.server.bodies))
+        self.assertTrue(any("untrusted_outside_leads" in body for body in self.server.bodies))
+
+    def test_physical_need_request_is_classified_at_intake(self):
+        self.server.decision = {**BASE_DECISION, "request": "clean water and a place to sleep"}
+        completed = self.run_autonomy()
+        self.assertEqual(completed.returncode, 0, completed.stderr[-1500:])
+        registry = json.loads((self.root / "state/local-agents.json").read_text())
+        agent = registry["agents"][0]
+        self.assertEqual(agent["request_status"], "closed")
+        self.assertEqual(agent["request_artifact"]["kind"], "model-confusion")
 
     def test_malformed_model_output_falls_back_without_crashing(self):
         self.server.decision = "not a decision at all"

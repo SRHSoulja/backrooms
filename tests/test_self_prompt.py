@@ -5,12 +5,35 @@ from scripts.self_prompt_rules import valid
 
 
 class SelfPromptTests(unittest.TestCase):
-    def test_council_context_includes_bounded_frontier_ledgers(self):
-        source = Path("scripts/roundtable.py").read_text()
-        self.assertIn("def bounded_context(world):", source)
-        self.assertIn('"verified_findings": findings[-6:]', source)
-        self.assertIn('"frontier_questions": questions', source)
-        self.assertIn('"open_contradictions": contradictions', source)
+    def test_council_context_is_built_from_accepted_findings_open_questions_and_leads(self):
+        import json
+        import tempfile
+        from pathlib import Path
+        from scripts import roundtable
+        original = (roundtable.FINDINGS, roundtable.FRONTIER)
+        with tempfile.TemporaryDirectory() as directory:
+            roundtable.FINDINGS = Path(directory) / "findings.jsonl"
+            roundtable.FRONTIER = Path(directory) / "frontier.json"
+            roundtable.FINDINGS.write_text("\n".join([
+                json.dumps({"id": "finding-1", "topic": "t", "claim": "accepted claim", "quote": "q", "url": "https://a.example/1",
+                            "confidence": 0.7, "relates_to": ["atrium"], "status": "unreviewed"}),
+                json.dumps({"id": "finding-2", "topic": "t", "claim": "rejected claim", "quote": "q", "url": "https://b.example/2",
+                            "confidence": 0.7, "relates_to": ["atrium"], "status": "rejected"})]) + "\n")
+            roundtable.FRONTIER.write_text(json.dumps({
+                "open_questions": [{"id": "q1", "question": "open one", "status": "open"},
+                                   {"id": "q2", "question": "closed one", "status": "closed"}],
+                "contradictions": [{"id": "c1", "topic": "t", "finding_ids": ["finding-1", "finding-3"], "reason": "r", "status": "open"}],
+                "leads": [{"question_id": "q1", "text": "outside review text", "status": "unverified"}]}))
+            try:
+                context = roundtable.bounded_context({"title": "The Atrium", "cycle": 9, "shared_memory": [], "events": []})
+            finally:
+                roundtable.FINDINGS, roundtable.FRONTIER = original
+        self.assertEqual([item["claim"] for item in context["verified_findings"]], ["accepted claim"])
+        self.assertEqual(context["verified_findings"][0]["url"], "https://a.example/1")
+        self.assertEqual(context["verified_findings"][0]["room"], "atrium")
+        self.assertEqual([item["question"] for item in context["frontier_questions"]], ["open one"])
+        self.assertEqual(context["open_contradictions"][0]["reason"], "r")
+        self.assertEqual(context["untrusted_outside_leads"][0]["text"], "outside review text")
 
     def test_rejects_self_referential_marker_loop(self):
         proposal = ("QUESTION: Why did Echo's evidence markers decrease after the hypothesis weakened?\n"
