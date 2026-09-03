@@ -768,6 +768,10 @@ def sync_frontier(result, world, registry):
         if old.get("status") in {"claimed", "completed"}:
             task["status"] = old["status"]
         tasks.append(task)
+        if old.get("status") == "completed":
+            contradiction["status"] = "adjudicated"
+            contradiction["adjudicated_by"] = old.get("claimed_by") or "council"
+            contradiction["adjudicated_cycle"] = old.get("completed_cycle", cycle)
     frontier["tasks"] = tasks
     frontier["activity"].append({"cycle": cycle, "question": bool(question),
                                   "resident_actions": len(result.get("autonomy", {}).get("decisions", [])),
