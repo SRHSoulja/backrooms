@@ -20,13 +20,13 @@ except ImportError:
     from storage import atomic_write_json
 try:
     from scripts.evidence import clamp_confidence, classify_finding, is_accepted
-    from scripts.corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, growth_candidates,
-                                       judgment_prompt, judgment_schema, load_records, make_record)
+    from scripts.corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, corroboration_index,
+                                       growth_candidates, judgment_prompt, judgment_schema, load_records, make_record)
     from scripts.self_prompt_rules import research_themes
 except ImportError:
     from evidence import clamp_confidence, classify_finding, is_accepted
-    from corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, growth_candidates,
-                               judgment_prompt, judgment_schema, load_records, make_record)
+    from corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, corroboration_index,
+                               growth_candidates, judgment_prompt, judgment_schema, load_records, make_record)
     from self_prompt_rules import research_themes
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "state/local-agents.json"
@@ -997,31 +997,50 @@ def update_evidence_activity(agent, filed, cycle):
     return None
 
 
+SOURCE_FAMILIES = ("encyclopedia", "papers", "code", "web")
+FAMILY_TOOLS = {"encyclopedia": "wikipedia-summary", "papers": "arxiv-summary", "code": "github-readme"}
+
+
+def family_of_domain(domain):
+    domain = str(domain or "").lower()
+    if "wikipedia.org" in domain:
+        return "encyclopedia"
+    if "arxiv.org" in domain:
+        return "papers"
+    if domain.endswith("github.com") or "githubusercontent.com" in domain:
+        return "code"
+    return "web"
+
+
 def shared_research_target(current_question, frontier):
     """Pick the research topic residents should converge on this cycle.
 
-    A council question that already has exactly one accepted finding is
-    finished first, from the other source family, so a cross-domain pair
-    forms instead of every cycle starting a new topic. Otherwise the current
-    question is used. Returns (query, preferred_family, avoid_domains) where
-    the family is 'encyclopedia', 'web', or None for the default alternation,
-    and avoid_domains already hold an accepted finding on that topic.
+    A recent council question that already has accepted findings but no
+    judged support keeps being pursued through the source families it has
+    not reached yet (encyclopedia, papers, code, web), so agreement between
+    independent sources is actually tested instead of every cycle starting
+    a fresh topic. Returns (query, family, avoid_domains); family is None
+    when the current question is used with the default rotation.
     """
     findings = accepted_findings()
+    supported = corroboration_index(load_records(CORROBORATIONS))
     by_topic = {}
     for item in findings:
         topic = str(item.get("topic", "")).strip().lower()
-        domain = urllib.parse.urlparse(str(item.get("url", ""))).netloc.lower()
-        if topic and domain:
-            by_topic.setdefault(topic, set()).add(domain)
+        if topic:
+            by_topic.setdefault(topic, []).append(item)
     for question in reversed(list((frontier or {}).get("open_questions", []))[-6:]):
         if question.get("status") != "open":
             continue
         query = question_terms(question.get("question", ""))
-        domains = by_topic.get(query.lower(), set())
-        if len(domains) == 1:
-            only = next(iter(domains))
-            return query, ("web" if "wikipedia.org" in only else "encyclopedia"), set(domains)
+        items = by_topic.get(query.lower(), [])
+        if not items or any(item.get("id") in supported for item in items):
+            continue
+        domains = {urllib.parse.urlparse(str(item.get("url", ""))).netloc.lower() for item in items}
+        used = {family_of_domain(domain) for domain in domains}
+        unused = [family for family in SOURCE_FAMILIES if family not in used]
+        if unused:
+            return query, unused[0], domains
     return question_terms(current_question), None, set()
 
 
@@ -1423,9 +1442,9 @@ def main():
         # arrive from more than one resident; source families alternate on a
         # slower cadence so the same topic is reached through two domains.
         research_assignment = shared_research if (shared_research and turn_index % 2 == 0) else None
-        prefer_encyclopedia = (turn_index // 2) % 2 == 0
+        turn_family = SOURCE_FAMILIES[(turn_index // 2) % len(SOURCE_FAMILIES)]
         if research_assignment and shared_family:
-            prefer_encyclopedia = shared_family == "encyclopedia"
+            turn_family = shared_family
         agent["last_turn_cycle"] = args.cycle
         decision = None
         post_decision = None
@@ -1618,20 +1637,20 @@ def main():
                     query_target = research_assignment[:160]
                 agent["research_assignment"] = {"cycle": args.cycle, "query": query_target,
                                                 "origin": "council-question" if research_assignment else "resident-target",
-                                                "source_preference": "encyclopedia-first" if prefer_encyclopedia else "web-first"}
+                                                "source_preference": turn_family}
             completed = subprocess.run([sys.executable, str(ROOT / "scripts/tool_broker.py"),
                 tool_name, query_target], cwd=ROOT, capture_output=True, text=True, check=False)
             try:
                 tool = json.loads(completed.stdout)
             except json.JSONDecodeError:
                 tool = {"status": "failed"}
-            # Prefer an encyclopedic summary as the first evidence source: it
-            # is clean, quotable prose with a canonical page URL, and it adds a
-            # second domain to any later web fetch on the same topic.
+            # Structured source families (encyclopedia, papers, code) give
+            # clean, quotable prose with canonical URLs; the family rotates so
+            # one topic is reached through independent kinds of sources.
             if (tool_name == "public-search" and fetch_budget > 0 and tool.get("status") == "completed"
-                    and prefer_encyclopedia):
+                    and turn_family in FAMILY_TOOLS):
                 summary_run = subprocess.run([sys.executable, str(ROOT / "scripts/tool_broker.py"),
-                    "wikipedia-summary", query_target], cwd=ROOT, capture_output=True, text=True, check=False)
+                    FAMILY_TOOLS[turn_family], query_target], cwd=ROOT, capture_output=True, text=True, check=False)
                 try:
                     summarized = json.loads(summary_run.stdout)
                 except json.JSONDecodeError:

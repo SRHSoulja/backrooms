@@ -116,6 +116,44 @@ class ToolContractTests(unittest.TestCase):
         self.assertEqual(result["url"], "https://en.wikipedia.org/wiki/Provenance")
         self.assertEqual(sum("list=search" in url for url in calls), 3)
 
+    def test_arxiv_summary_picks_the_best_matching_abstract(self):
+        from scripts import tool_broker
+        atom = ("<feed xmlns='http://www.w3.org/2005/Atom'>"
+                "<entry><id>http://arxiv.org/abs/1111.1111v1</id><title>Bread baking dynamics</title><summary>Yeast and ovens.</summary></entry>"
+                "<entry><id>http://arxiv.org/abs/2222.2222v2</id><title>Agent discovery cards for interoperability</title>"
+                "<summary>We study how agents publish discovery documents to interoperate.</summary></entry></feed>")
+        original = tool_broker.fetch
+        tool_broker.fetch = lambda url, max_bytes=None: atom
+        try:
+            result = tool_broker.arxiv_summary("agent discovery cards interoperability")
+        finally:
+            tool_broker.fetch = original
+        self.assertEqual(result["status"], "completed")
+        self.assertEqual(result["url"], "https://arxiv.org/abs/2222.2222v2")
+        self.assertIn("publish discovery documents", result["excerpt"])
+
+    def test_github_readme_returns_repository_prose(self):
+        from scripts import tool_broker
+        def fake_fetch(url, max_bytes=None):
+            if "api.github.com" in url:
+                return json.dumps({"items": [{"full_name": "acme/agent-cards", "description": "Discovery cards for agents",
+                                              "html_url": "https://github.com/acme/agent-cards"}]})
+            if "raw.githubusercontent.com" in url:
+                assert url.endswith("/HEAD/README.md"), url
+                return "# Agent cards\n\nThis library publishes a [discovery document](docs/x.md) for every agent.\n```py\nprint(1)\n```\n"
+            raise AssertionError(url)
+        original = tool_broker.fetch
+        tool_broker.fetch = fake_fetch
+        try:
+            result = tool_broker.github_readme("agent discovery cards")
+        finally:
+            tool_broker.fetch = original
+        self.assertEqual(result["status"], "completed")
+        self.assertEqual(result["url"], "https://github.com/acme/agent-cards")
+        self.assertIn("publishes a discovery document for every agent", result["excerpt"])
+        self.assertNotIn("print(1)", result["excerpt"])
+        self.assertNotIn("](", result["excerpt"])
+
     def test_wikipedia_summary_is_a_text_read_contract(self):
         self.assertEqual(TOOL_CONTRACTS["wikipedia-summary"]["capability"], "public-text-read")
         self.assertTrue(TOOL_CONTRACTS["wikipedia-summary"]["untrusted_content"])

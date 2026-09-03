@@ -44,6 +44,14 @@ elif tool == "wikipedia-summary":
         print(json.dumps({"tool": "wikipedia-summary", "query": value, "title": "Agent card", "url": "https://en.wikipedia.org/wiki/Agent_card", "status": "completed",
                           "excerpt": "An agent card is a public discovery document. It publishes an Agent Card for discovery.",
                           "contract": {"capability": "public-text-read", "untrusted_content": True}}))
+elif tool == "arxiv-summary":
+    print(json.dumps({"tool": "arxiv-summary", "query": value, "title": "Agent cards", "url": "https://arxiv.org/abs/2401.00001v1", "status": "completed",
+                      "excerpt": "Agent cards. We show that an agent card is a public discovery document. It publishes an Agent Card for discovery.",
+                      "contract": {"capability": "public-text-read", "untrusted_content": True}}))
+elif tool == "github-readme":
+    print(json.dumps({"tool": "github-readme", "query": value, "title": "acme/cards", "url": "https://github.com/acme/cards", "status": "completed",
+                      "excerpt": "acme/cards: discovery cards. It publishes an Agent Card for discovery.",
+                      "contract": {"capability": "public-text-read", "untrusted_content": True}}))
 elif tool == "public-text":
     print(json.dumps({"tool": "public-text", "url": value, "status": "completed",
                       "excerpt": "The Agent2Agent protocol is an open standard that lets agents exchange tasks. It publishes an Agent Card for discovery.",
@@ -222,6 +230,7 @@ class AutonomyIntegrationTests(unittest.TestCase):
                          ["agent card discovery no-wiki", "agent card discovery no-wiki"])
         self.assertEqual(sum(call["tool"] == "wikipedia-summary" for call in calls), 2)
         self.assertEqual(sum(call["tool"] == "public-text" for call in calls), 2)
+        # turn 0 and 1 (encyclopedia family, no article) fall back to web fetches
         registry = json.loads((self.root / "state/local-agents.json").read_text())
         tool = registry["agents"][0]["last_tool"]
         self.assertEqual((tool["query"], tool["source"], tool["verified"]), ("agent card discovery no-wiki", "https://spec.example/a2a", True))
@@ -269,12 +278,12 @@ class AutonomyIntegrationTests(unittest.TestCase):
         self.assertEqual([item["origin"] for item in assignments],
                          ["council-question", "resident-target", "council-question", "resident-target"])
         self.assertEqual([item["source_preference"] for item in assignments],
-                         ["encyclopedia-first", "encyclopedia-first", "web-first", "web-first"])
+                         ["encyclopedia", "encyclopedia", "papers", "papers"])
         self.assertEqual(assignments[0]["query"], "agent discovery cards enable interoperability agents")
         self.assertTrue(any("assigned_research" in body and "agent discovery cards" in body for body in self.server.bodies))
         ledger = [json.loads(line) for line in (self.root / "state/findings.jsonl").read_text().splitlines()]
         council_domains = {item["url"].split("/")[2] for item in ledger if item["topic"] == assignments[0]["query"]}
-        self.assertEqual(council_domains, {"en.wikipedia.org", "spec.example"})
+        self.assertEqual(council_domains, {"en.wikipedia.org", "arxiv.org"})
         self.assertEqual(output["corroborations"][0]["relation"], "supports")
         self.assertEqual([item["action"] for item in output["construction"]], ["build"])
         self.assertEqual(output["construction"][0]["corroboration"], output["corroborations"][0]["id"])

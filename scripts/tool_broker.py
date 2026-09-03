@@ -2,6 +2,7 @@
 """Safe, read-only internet broker for local hireling research."""
 
 import argparse, csv, html, ipaddress, io, json, re, socket, urllib.parse, urllib.request
+import xml.etree.ElementTree as ElementTree
 from pathlib import Path
 
 MAX_BYTES = 32_000
@@ -13,6 +14,8 @@ SENSITIVE_ASSIGNMENT = re.compile(r"(?i)\b(?:api[_ -]?key|password|secret|creden
 TOOL_CONTRACTS = {
     "wikipedia-search": {"capability": "public-web-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES},
     "wikipedia-summary": {"capability": "public-text-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES, "raw_data": False, "untrusted_content": True},
+    "arxiv-summary": {"capability": "public-text-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES, "raw_data": False, "untrusted_content": True},
+    "github-readme": {"capability": "public-text-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES, "raw_data": False, "untrusted_content": True},
     "public-https": {"capability": "public-web-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES},
     "public-search": {"capability": "public-web-read", "access": "read-only", "network": "public HTTPS search", "side_effects": False, "max_bytes": MAX_BYTES},
     "public-json": {"capability": "public-data-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": RESEARCH_MAX_BYTES, "raw_data": False},
@@ -123,6 +126,100 @@ def wikipedia_summary(query):
                 "source": "https://en.wikipedia.org/", "contract": TOOL_CONTRACTS["wikipedia-summary"]}
     return {"tool": "wikipedia-summary", "query": query, "title": title, "url": page_url,
             "excerpt": extract[:2400], "status": "completed", "contract": TOOL_CONTRACTS["wikipedia-summary"]}
+
+
+def _query_terms(query):
+    return {term for term in re.findall(r"[a-z0-9]{4,}", str(query).lower())}
+
+
+def _overlap(text, query_terms):
+    return len(query_terms & set(re.findall(r"[a-z0-9]{4,}", str(text).lower())))
+
+
+def _clean_prose(text):
+    text = SENSITIVE_ASSIGNMENT.sub("[withheld]", re.sub(r"\s+", " ", html.unescape(str(text))).strip())
+    return BLOCKED.sub("[withheld]", text)
+
+
+ARXIV_ATOM = "{http://www.w3.org/2005/Atom}"
+
+
+def arxiv_summary(query):
+    """Resolve a query to one arXiv paper and return its abstract as evidence."""
+    if not query or len(query) > 160 or BLOCKED.search(query):
+        raise ValueError("query failed bounded validation")
+    terms = [term for term in re.findall(r"[a-z0-9-]{4,}", query.lower())]
+    query_terms = _query_terms(query)
+    entries = []
+    for count in (3, 2, 1):
+        if not terms[:count]:
+            continue
+        search = " AND ".join(f"all:{term}" for term in terms[:count])
+        params = urllib.parse.urlencode({"search_query": search, "max_results": 3})
+        try:
+            root = ElementTree.fromstring(fetch("https://export.arxiv.org/api/query?" + params))
+        except ElementTree.ParseError:
+            continue
+        entries = root.findall(ARXIV_ATOM + "entry")
+        if entries:
+            break
+    if not entries:
+        return {"tool": "arxiv-summary", "query": query, "status": "no-match",
+                "source": "https://arxiv.org/", "contract": TOOL_CONTRACTS["arxiv-summary"]}
+    def fields(entry):
+        title = re.sub(r"\s+", " ", (entry.findtext(ARXIV_ATOM + "title") or "")).strip()
+        summary = re.sub(r"\s+", " ", (entry.findtext(ARXIV_ATOM + "summary") or "")).strip()
+        link = (entry.findtext(ARXIV_ATOM + "id") or "").strip().replace("http://", "https://")
+        return title, summary, link
+    best = max(entries, key=lambda entry: _overlap(" ".join(fields(entry)[:2]), query_terms))
+    title, summary, link = fields(best)
+    if not summary or not link.startswith("https://arxiv.org/"):
+        return {"tool": "arxiv-summary", "query": query, "status": "no-match",
+                "source": "https://arxiv.org/", "contract": TOOL_CONTRACTS["arxiv-summary"]}
+    return {"tool": "arxiv-summary", "query": query, "title": title, "url": link,
+            "excerpt": _clean_prose(f"{title}. {summary}")[:2400], "status": "completed",
+            "contract": TOOL_CONTRACTS["arxiv-summary"]}
+
+
+def _strip_markdown(text):
+    text = re.sub(r"```.*?```", " ", text, flags=re.S)
+    text = re.sub(r"!\[[^\]]*\]\([^)]*\)", " ", text)
+    text = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", text)
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = re.sub(r"^[#>*\-|\s]+", "", text, flags=re.M)
+    return re.sub(r"[`*_]{1,3}", "", text)
+
+
+def github_readme(query):
+    """Resolve a query to one public repository and return its README prose as evidence."""
+    if not query or len(query) > 160 or BLOCKED.search(query):
+        raise ValueError("query failed bounded validation")
+    query_terms = _query_terms(query)
+    params = urllib.parse.urlencode({"q": query, "per_page": 3, "sort": "stars"})
+    data = json.loads(fetch("https://api.github.com/search/repositories?" + params))
+    items = [item for item in data.get("items", []) if isinstance(item, dict) and item.get("full_name")]
+    if not items:
+        return {"tool": "github-readme", "query": query, "status": "no-match",
+                "source": "https://github.com/", "contract": TOOL_CONTRACTS["github-readme"]}
+    best = max(items, key=lambda item: _overlap(f"{item.get('full_name', '')} {item.get('description', '')}", query_terms))
+    full_name = str(best.get("full_name", ""))
+    if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", full_name):
+        raise ValueError("repository name failed bounded validation")
+    readme = ""
+    for ref in ("HEAD", "main", "master"):
+        try:
+            readme = fetch(f"https://raw.githubusercontent.com/{full_name}/{ref}/README.md")
+            break
+        except Exception:
+            continue
+    description = str(best.get("description") or "").strip()
+    prose = _clean_prose(f"{full_name}: {description}. {_strip_markdown(readme)}")
+    page_url = str(best.get("html_url") or f"https://github.com/{full_name}")
+    if len(prose) < 80 or not page_url.startswith("https://github.com/"):
+        return {"tool": "github-readme", "query": query, "status": "no-match", "title": full_name,
+                "source": "https://github.com/", "contract": TOOL_CONTRACTS["github-readme"]}
+    return {"tool": "github-readme", "query": query, "title": full_name, "url": page_url,
+            "excerpt": prose[:2400], "status": "completed", "contract": TOOL_CONTRACTS["github-readme"]}
 
 
 def public_search(query):
@@ -252,6 +349,10 @@ def run(tool, value):
             return wikipedia(value)
         if tool == "wikipedia-summary":
             return wikipedia_summary(value)
+        if tool == "arxiv-summary":
+            return arxiv_summary(value)
+        if tool == "github-readme":
+            return github_readme(value)
         if tool == "public-search":
             return public_search(value)
         if tool == "public-json":
