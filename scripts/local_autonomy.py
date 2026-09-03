@@ -37,6 +37,21 @@ ALLOWED = {"STAY", "MOVE", "EXPLORE", "ANALYZE", "PROPOSE", "DISCOVER", "BUILD",
 MAX_TURNS_PER_CYCLE = 8
 
 
+def select_agents(candidates):
+    """Reserve half the turn budget for open work, then rotate everyone else."""
+    ordered = sorted(candidates, key=lambda agent: (
+        0 if not agent.get("last_turn_cycle") else 1,
+        agent.get("last_turn_cycle", 0), agent.get("id", "")))
+    open_work = [agent for agent in ordered if agent.get("request_status") == "open"]
+    other_work = [agent for agent in ordered if agent.get("request_status") != "open"]
+    urgent_limit = MAX_TURNS_PER_CYCLE // 2
+    selected = open_work[:urgent_limit] + other_work[:MAX_TURNS_PER_CYCLE - min(len(open_work), urgent_limit)]
+    if len(selected) < MAX_TURNS_PER_CYCLE:
+        needed = MAX_TURNS_PER_CYCLE - len(selected)
+        selected.extend(open_work[urgent_limit:urgent_limit + needed])
+    return selected
+
+
 def decision_schema(rooms):
     return {"type": "object", "additionalProperties": False,
             "required": ["action", "room", "target", "proposal", "request", "code", "reason", "self_summary"],
@@ -962,10 +977,7 @@ def main():
     results = []
     candidates = [agent for agent in registry.get("agents", [])
                   if agent.get("status") in {"active-local", "probation"}]
-    selected = sorted(candidates, key=lambda agent: (
-        0 if agent.get("request_status") == "open" else 1,
-        0 if not agent.get("last_turn_cycle") else 1,
-        agent.get("last_turn_cycle", 0), agent.get("id", "")))[:MAX_TURNS_PER_CYCLE]
+    selected = select_agents(candidates)
     selected_ids = {agent.get("id") for agent in selected}
     fetched_this_cycle = False
     for agent in registry.get("agents", []):

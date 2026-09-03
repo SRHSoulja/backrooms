@@ -344,7 +344,9 @@ class LocalAutonomyTests(unittest.TestCase):
     def test_turns_are_bounded_and_prioritize_open_work(self):
         source = Path("scripts/local_autonomy.py").read_text()
         self.assertIn("MAX_TURNS_PER_CYCLE = 8", source)
-        self.assertIn('0 if agent.get("request_status") == "open" else 1', source)
+        self.assertIn("def select_agents(candidates):", source)
+        self.assertIn("urgent_limit = MAX_TURNS_PER_CYCLE // 2", source)
+        self.assertIn('agent.get("request_status") == "open"', source)
         self.assertIn('agent["last_turn_cycle"] = args.cycle', source)
 
     def test_research_does_not_pollute_resident_query_or_fake_provenance(self):
