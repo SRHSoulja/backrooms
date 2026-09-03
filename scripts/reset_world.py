@@ -27,6 +27,8 @@ ARCHIVE_ONLY = ("local-agents.json", "findings.jsonl", "corroborations.jsonl", "
                 "core-notes.jsonl", "action-log.json", "provider-usage.json", "recruitment.json",
                 "code-proposals.json", "autonomy-errors.log")
 ARCHIVE_DIRS = ("printed", "agent-notes", "interviews")
+# The original research: with --keep-research these stay live (and are also copied to the archive).
+RESEARCH = ("findings.jsonl", "corroborations.jsonl")
 KEEP = ("quarantine-inbox.json", "quarantine-inbox.lock", "codex-inbox", "codex-outbox", "codex-consumed.json",
         "codex-bridge-log.jsonl", "codex-bridge-status.json", "treasury-intents.json", "daemon.log",
         "llama-server.log", "archive")
@@ -73,7 +75,7 @@ def founding_world(world, cycle, stamp):
             "events": [event], "connections": connections, "discoveries": [], "messages": []}
 
 
-def reset_world(root, stamp=None, dry_run=False):
+def reset_world(root, stamp=None, dry_run=False, keep_research=False):
     root = Path(root)
     state = root / "state"
     if daemon_running(root):
@@ -82,9 +84,9 @@ def reset_world(root, stamp=None, dry_run=False):
     archive = state / "archive" / f"reset-{stamp}"
     plan = {"archive": str(archive.relative_to(root)), "archived": [], "kept": [], "restored": [], "untouched": list(UNTOUCHED)}
     for name in ARCHIVE_ONLY + ARCHIVE_DIRS:
-        if (state / name).exists():
+        if (state / name).exists() and not (keep_research and name in RESEARCH):
             plan["archived"].append(name)
-    for name in KEEP:
+    for name in KEEP + (RESEARCH if keep_research else ()):
         if (state / name).exists():
             plan["kept"].append(name)
     runtime = state / "local-runtime.json"
@@ -102,6 +104,9 @@ def reset_world(root, stamp=None, dry_run=False):
     archive.mkdir(parents=True, exist_ok=False)
     for name in plan["archived"]:
         shutil.move(str(state / name), str(archive / name))
+    for name in RESEARCH if keep_research else ():
+        if (state / name).exists():
+            shutil.copy2(state / name, archive / name)
     shutil.copy2(world_path, archive / "world.json") if world_path.exists() else None
     if runtime.exists():
         shutil.copy2(runtime, archive / "local-runtime.json")
@@ -111,7 +116,8 @@ def reset_world(root, stamp=None, dry_run=False):
     (archive / "RESET.md").write_text(
         f"# World reset {stamp}\n\nArchived: {', '.join(plan['archived']) or 'nothing'}.\nKept in place: {', '.join(plan['kept']) or 'nothing'}.\n"
         f"Cycle counter kept at {cycle}. Founding rooms restored with Echo and Morrow.\n"
-        f"Never touched: {'; '.join(UNTOUCHED)}.\n")
+        + ("Original research kept live (findings and corroborations); safety copies are in this archive.\n" if keep_research else "")
+        +         f"Never touched: {'; '.join(UNTOUCHED)}.\n")
     return plan
 
 
@@ -119,9 +125,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--yes", action="store_true", help="perform the reset (otherwise only the plan is printed)")
+    parser.add_argument("--keep-research", action="store_true",
+                        help="keep the findings and corroboration ledgers live so new residents inherit the original research")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
-    plan = reset_world(root, dry_run=not args.yes)
+    plan = reset_world(root, dry_run=not args.yes, keep_research=args.keep_research)
     print(json.dumps(plan, indent=2))
     if not args.yes:
         print("dry run only; rerun with --yes to reset", flush=True)

@@ -114,6 +114,24 @@ class ResetWorldTests(unittest.TestCase):
         world = json.loads((state / "world.json").read_text())
         self.assertEqual(world["rooms"][0]["doors"], ["relay-gate"])
 
+    def test_keep_research_leaves_findings_and_corroborations_live_with_safety_copies(self):
+        root = self.make_root()
+        state = root / "state"
+        before = {name: hashlib.sha256((state / name).read_bytes()).hexdigest() for name in ("findings.jsonl", "corroborations.jsonl")}
+        plan = reset_world.reset_world(root, stamp="research", keep_research=True)
+        self.assertNotIn("findings.jsonl", plan["archived"])
+        self.assertIn("findings.jsonl", plan["kept"])
+        self.assertIn("corroborations.jsonl", plan["kept"])
+        self.assertEqual({name: hashlib.sha256((state / name).read_bytes()).hexdigest() for name in before}, before)
+        archive = state / "archive/reset-research"
+        self.assertTrue((archive / "findings.jsonl").exists())
+        self.assertTrue((archive / "corroborations.jsonl").exists())
+        self.assertFalse((state / "frontier.json").exists())
+        self.assertIn("Original research kept live", (archive / "RESET.md").read_text())
+        world = json.loads((state / "world.json").read_text())
+        self.assertEqual([room["id"] for room in world["rooms"]], ["atrium", "relay"])
+        self.assertEqual(json.loads((state / "local-agents.json").read_text())["agents"], [])
+
 
 if __name__ == "__main__":
     unittest.main()
