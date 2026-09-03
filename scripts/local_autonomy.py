@@ -1362,7 +1362,10 @@ def main():
                         "request": agent.get("request", "")[:220],
                         "request_status": agent.get("request_status", "none"),
                         "exploration": agent.get("exploration", "")[:100], "tool": tool,
-                        "message": message_result, "trade": trade_result})
+                        "message": message_result, "trade": trade_result,
+                        "finding_id": agent.get("last_finding_id") if (agent.get("last_finding_id") and
+                                                                       (agent.get("last_tool") or {}).get("fetched_at", "").startswith(datetime.now(timezone.utc).date().isoformat())
+                                                                       and decision["action"] == "EXPLORE") else None})
     construction = apply_construction(world, registry, args.cycle)
     evidence_growth = evidence_room_growth(world, registry, args.cycle)
     if evidence_growth:

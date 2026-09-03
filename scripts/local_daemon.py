@@ -176,18 +176,37 @@ def metrics(result):
 
 
 def autonomy_quality(result):
-    decisions = result.get("autonomy", {}).get("decisions", [])
+    """Measure the resident turns of one cycle; ``status`` separates failed, idle, and active.
+
+    ``failed`` means the autonomy subprocess did not complete, ``idle`` means it
+    completed with no eligible resident turns, and ``active`` means turns ran.
+    Rates are null rather than zero when there were no turns, so a dead cycle
+    can never look like a perfect one.
+    """
+    autonomy = result.get("autonomy", {})
+    decisions = autonomy.get("decisions", [])
+    if autonomy.get("status") == "failed":
+        return {"status": "failed", "turns": 0, "fallbacks": None, "fallback_rate": None,
+                "tool_successes": None, "findings_filed": None}
     if not decisions:
-        failed = result.get("autonomy", {}).get("status") == "failed"
-        return {"turns": 0, "fallbacks": None if failed else 0,
-                "fallback_rate": None if failed else 0.0,
-                "tool_successes": 0, "status": "failed" if failed else "idle"}
+        return {"status": "idle", "turns": 0, "fallbacks": 0, "fallback_rate": None,
+                "tool_successes": 0, "findings_filed": 0}
     fallbacks = sum("fallback" in str(item.get("reason", "")).lower() or item.get("status") == "awaiting-retry"
                     for item in decisions)
-    tools = [item.get("tool", {}) for item in decisions]
-    return {"turns": len(decisions), "fallbacks": fallbacks,
+    tools = [item.get("tool") or {} for item in decisions]
+    return {"status": "active", "turns": len(decisions), "fallbacks": fallbacks,
             "fallback_rate": round(fallbacks / len(decisions), 3),
-            "tool_successes": sum(item.get("status") == "completed" for item in tools)}
+            "tool_successes": sum(item.get("status") == "completed" for item in tools),
+            "findings_filed": sum(bool(item.get("finding_id")) for item in decisions)}
+
+
+def autonomy_summary(result):
+    quality = autonomy_quality(result)
+    summary = {"autonomy": quality["status"], "autonomy_quality": quality}
+    error = result.get("autonomy", {}).get("error")
+    if error:
+        summary["autonomy_error"] = str(error)[:200]
+    return summary
 
 
 def public_voice(text):
@@ -904,7 +923,7 @@ def publish(result, world, model_health=True):
         "active_residents": core_residents + sum(agent.get("status") not in {"fired", "retired"} for agent in registry.get("agents", [])),
         "work_orders": len(work_orders.get("orders", [])),
         "continuity": audit["status"],
-        "autonomy_quality": autonomy_quality(result),
+        **autonomy_summary(result),
         "publication": "sanitized GitHub Pages snapshot",
         "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
         "activity_feed": "docs/activity.json",
