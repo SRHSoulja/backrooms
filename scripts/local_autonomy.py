@@ -27,11 +27,13 @@ try:
     from scripts.corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, corroboration_index,
                                        growth_candidates, judgment_prompt, judgment_schema, load_records, make_record)
     from scripts.self_prompt_rules import research_themes
+    from scripts.world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes)
 except ImportError:
     from evidence import clamp_confidence, classify_finding, is_accepted
     from corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, corroboration_index,
                                growth_candidates, judgment_prompt, judgment_schema, load_records, make_record)
     from self_prompt_rules import research_themes
+    from world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes)
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "state/local-agents.json"
 ARCHIVE = ROOT / "state/archive/events.jsonl"
@@ -100,9 +102,11 @@ def select_agents(candidates):
     if len(awake) < MAX_TURNS_PER_CYCLE:
         awake = awake + sorted(dormant, key=lambda agent: (agent.get("last_turn_cycle", 0), agent.get("id", "")))[:MAX_TURNS_PER_CYCLE - len(awake)]
     candidates = awake
+    # Fair rotation first; among residents equally overdue, evidence standing decides.
     ordered = sorted(candidates, key=lambda agent: (
         0 if not agent.get("last_turn_cycle") else 1,
-        agent.get("last_turn_cycle", 0), agent.get("id", "")))
+        int(agent.get("last_turn_cycle", 0)) // 3,
+        -float((agent.get("standing") or {}).get("score", 0)), agent.get("id", "")))
     open_work = [agent for agent in ordered if agent.get("request_status") == "open"]
     other_work = [agent for agent in ordered if agent.get("request_status") != "open"]
     urgent_limit = MAX_TURNS_PER_CYCLE // 2
@@ -607,7 +611,7 @@ def room_reachable(world, start, target):
             continue
         graph[link["from"]].add(link["to"])
         graph[link["to"]].add(link["from"])
-    if start not in graph or target not in graph:
+    if start not in graph or target not in graph or target in sealed_room_ids(world):
         return False
     pending, seen = [start], {start}
     while pending:
@@ -1085,6 +1089,59 @@ def shared_research_target(current_question, frontier):
     return question_terms(current_question), None, set()
 
 
+def all_findings():
+    rows = []
+    if not FINDINGS.exists():
+        return rows
+    for line in FINDINGS.read_text().splitlines():
+        try:
+            item = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if item.get("id"):
+            rows.append(item)
+    return rows
+
+
+def settle_ledger_disputes(world, cycle):
+    """Retract findings that a third independent source has ruled against, and record it."""
+    rows = all_findings()
+    if not rows or not CORROBORATIONS.exists():
+        return []
+    retractions = settle_disputes(rows, load_records(CORROBORATIONS))
+    if not retractions:
+        return []
+    changed = apply_retractions(rows, retractions, cycle)
+    if changed:
+        with FINDINGS.open("w") as handle:
+            for row in rows:
+                handle.write(json.dumps(row, separators=(",", ":")) + "\n")
+        for entry in retractions:
+            if entry["finding_id"] in changed:
+                emit_event(world, cycle, "finding-retracted", "evidence-ledger",
+                           "A finding was retracted after a third independent source supported the competing finding.",
+                           finding_id=entry["finding_id"], kept=entry["kept_id"], settled_by=entry["settled_by"],
+                           contradiction=entry.get("contradiction_id"))
+                for room in world.get("rooms", []):
+                    if entry["finding_id"] in (room.get("artifacts") or []):
+                        room.setdefault("retracted_artifacts", []).append(entry["finding_id"])
+    return [entry for entry in retractions if entry["finding_id"] in changed]
+
+
+def refresh_standing(registry):
+    """Recompute every resident's evidence standing from the ledgers."""
+    rows = all_findings()
+    records = load_records(CORROBORATIONS) if CORROBORATIONS.exists() else []
+    tasks = []
+    if FRONTIER.exists():
+        try:
+            tasks = json.loads(FRONTIER.read_text()).get("tasks", [])
+        except json.JSONDecodeError:
+            tasks = []
+    for agent in registry.get("agents", []):
+        agent["standing"] = compute_standing(agent.get("id"), rows, records, tasks)
+
+
 def accepted_findings():
     findings = []
     if not FINDINGS.exists():
@@ -1160,8 +1217,9 @@ def evidence_room_growth(world, registry, cycle):
     room = {"id": room_id, "name": topic[:60].title(),
             "description": f"Connected research room for corroborated findings about {topic[:120]}.",
             "charter": f"Compare and preserve public evidence about {topic[:180]}.",
-            "growth_topic": topic, "founded_by": "evidence-ledger", "founded_cycle": cycle,
-            "corroboration_id": record.get("id"),
+            "growth_topic": topic, "founded_by": sorted({item.get("agent") for item in pair if item.get("agent")}),
+            "founded_via": "evidence-ledger", "founded_cycle": cycle,
+            "founded_at": datetime.now(timezone.utc).isoformat(), "corroboration_id": record.get("id"),
             "artifacts": [item["id"] for item in pair],
             "board": [{"task": "Review the corroborating sources and record the next question.", "claimed_by": None, "status": "open"}],
             "activity": {"last_cycle": cycle, "score": len(pair)}, "doors": [f"{room_id}-gate"], "occupants": []}
@@ -1590,6 +1648,8 @@ def main():
         elif decision["action"] in {"RETIRE", "FIRE"}:
             agent["status"] = "retired" if decision["action"] == "RETIRE" else "fired"
             agent["capabilities"] = ["bounded-questioning"]
+            agent["record"] = {**(agent.get("standing") or {}), "retired_cycle": args.cycle,
+                               "reason": decision.get("reason", "")[:200]}
         elif decision["action"] == "EXPLORE":
             if decision["target"] and decision["target"] == agent.get("exploration") and not agent.get("last_finding_id"):
                 agent["target_repeats"] = agent.get("target_repeats", 0) + 1
@@ -1858,8 +1918,19 @@ def main():
                         "fallback_reason": decision.get("fallback_reason"),
                         "decision_source": decision_source})
     corroborations = judge_corroborations(args.base_url, world, args.cycle)
+    retractions = settle_ledger_disputes(world, args.cycle)
     construction = apply_construction(world, registry, args.cycle)
     evidence_growth = evidence_room_growth(world, registry, args.cycle)
+    room_changes = room_lifecycle(world, accepted_findings(), args.cycle)
+    for change in room_changes:
+        emit_event(world, args.cycle, "room-" + change["to"], "evidence-ledger",
+                   f"Room {change['room']} moved from {change['from']} to {change['to']} after {change['idle_cycles']} idle cycles.",
+                   **change)
+        if change["to"] == "sealed":
+            for agent in registry.get("agents", []):
+                if agent.get("room") == change["room"]:
+                    agent["room"] = next((room.get("sealed_from") for room in world.get("rooms", []) if room.get("id") == change["room"]), None) or "atrium"
+    refresh_standing(registry)
     if evidence_growth:
         construction.extend(evidence_growth)
     requests = resolve_requests(registry, world, args.cycle)
@@ -1878,6 +1949,7 @@ def main():
     print(json.dumps({"status": "completed", "active": active, "decisions": results,
                       "construction": construction, "requests": requests, "trades_settled": settled_trades,
                       "corroborations": corroborations, "regrounded": regrounded,
+                      "retractions": retractions, "room_changes": room_changes,
                       "shared_research": {"query": shared_research, "family": shared_family,
                                           "avoid_domains": sorted(shared_avoid)},
                       "dormant": sum(agent.get("status") == "dormant" for agent in registry.get("agents", []))}))

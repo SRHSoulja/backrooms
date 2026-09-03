@@ -6,6 +6,7 @@ import json
 import os
 import re
 import urllib.request
+from pathlib import Path
 try:
     from scripts.self_prompt_rules import FORBIDDEN, research_themes, theme_questions, valid
     from scripts.model_client import complete
@@ -16,7 +17,7 @@ except ImportError:
 
 def ask(url, resident, context):
     role = "find a surprising but testable question" if resident == "Echo" else "find the most important unresolved weakness or confound"
-    prompt = (f"You are {resident}. From the public context below, {role}. Prefer a question about one of the public research_themes that residents can investigate with public sources, over questions about the rooms themselves or the system's own telemetry. If a recent aggregate hypothesis was weakened, prioritize a reversible follow-up that could distinguish competing explanations. "
+    prompt = (f"You are {resident}. From the public context below, {role}. Prefer a question that follows from a recent_finding or an open_contradiction (what other independent sources say, what would settle it); otherwise take one of the research_themes. Never ask about the rooms themselves or the system's own telemetry. "
               "Return exactly three lines: QUESTION:, WHY:, TEST:. "
               "The test must be reversible, non-sensitive, and require no external contact. "
               "Do not mention credentials or private memory.\n\n" + context)
@@ -39,7 +40,25 @@ try:
         actions = json.load(action_file)
 except FileNotFoundError:
     pass
-context = json.dumps({"research_themes": research_themes(world.get("cycle", 0)),
+findings_path = Path(args.state).resolve().parent / "findings.jsonl"
+recent_findings = []
+try:
+    for line in findings_path.read_text().splitlines()[-40:]:
+        item = json.loads(line)
+        if item.get("status") not in {"rejected", "retracted"} and item.get("claim"):
+            recent_findings.append({"claim": str(item.get("claim", ""))[:200], "topic": str(item.get("topic", ""))[:100],
+                                    "source": str(item.get("url", ""))[:120]})
+except (OSError, ValueError):
+    recent_findings = []
+frontier_path = Path(args.state).resolve().parent / "frontier.json"
+open_contradictions = []
+try:
+    open_contradictions = [{"topic": item.get("topic"), "reason": str(item.get("reason", ""))[:160]}
+                           for item in json.loads(frontier_path.read_text()).get("contradictions", []) if item.get("status") == "open"][-3:]
+except (OSError, ValueError):
+    open_contradictions = []
+context = json.dumps({"recent_findings": recent_findings[-5:], "open_contradictions": open_contradictions,
+                      "research_themes": research_themes(world.get("cycle", 0)),
                       "suggested_questions": theme_questions(world.get("cycle", 0), count=2),
                       "shared_memory": world.get("shared_memory", []),
                       "rooms": [{"id": room.get("id"), "description": room.get("description", "")}

@@ -403,6 +403,29 @@ class LocalAutonomyTests(unittest.TestCase):
             for record in records:
                 handle.write(json.dumps(record) + "\n")
 
+    def test_ledger_disputes_are_settled_and_standing_refreshed(self):
+        from scripts.corroboration import append_record, make_record
+        rows = [
+            {"id": "finding-a", "agent": "local-001", "url": "https://a.example/1", "content_hash": "h", "quote": "q", "claim": "the card lives at a well-known path", "topic": "cards", "relates_to": ["atrium"], "status": "unreviewed"},
+            {"id": "finding-b", "agent": "local-002", "url": "https://b.example/2", "content_hash": "h", "quote": "q", "claim": "the card is only in a registry", "topic": "cards", "relates_to": ["atrium"], "status": "unreviewed"},
+            {"id": "finding-c", "agent": "local-003", "url": "https://c.example/3", "content_hash": "h", "quote": "q", "claim": "cards are served at the well-known path", "topic": "cards", "relates_to": ["atrium"], "status": "unreviewed"}]
+        self._write_findings(*rows)
+        append_record(local_autonomy.CORROBORATIONS, make_record(rows[0], rows[1], "pair-ab", "contradicts", "cannot both hold", 5))
+        append_record(local_autonomy.CORROBORATIONS, make_record(rows[0], rows[2], "pair-ac", "supports", "same fact", 6))
+        append_record(local_autonomy.CORROBORATIONS, make_record(rows[1], rows[2], "pair-bc", "contradicts", "disagree", 6))
+        world = {"rooms": [{"id": "atrium", "artifacts": ["finding-b"]}], "events": []}
+        retractions = local_autonomy.settle_ledger_disputes(world, 7)
+        self.assertEqual([item["finding_id"] for item in retractions], ["finding-b"])
+        ledger = {item["id"]: item for item in local_autonomy.all_findings()}
+        self.assertEqual(ledger["finding-b"]["status"], "retracted")
+        self.assertEqual(world["events"][-1]["kind"], "finding-retracted")
+        self.assertEqual(world["rooms"][0]["retracted_artifacts"], ["finding-b"])
+        registry = {"agents": [{"id": "local-001"}, {"id": "local-002"}]}
+        local_autonomy.refresh_standing(registry)
+        self.assertEqual(registry["agents"][0]["standing"]["corroborated"], 1)
+        self.assertEqual(registry["agents"][1]["standing"]["retracted"], 1)
+        self.assertGreater(registry["agents"][0]["standing"]["score"], registry["agents"][1]["standing"]["score"])
+
     def test_rooms_grow_only_from_judged_cross_domain_support(self):
         first = {"id": "finding-a", "agent": "local-001", "url": "https://a.example/one", "content_hash": "h1",
                  "claim": "The A2A protocol publishes an agent card for discovery.", "quote": "publishes an agent card",

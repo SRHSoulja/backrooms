@@ -294,7 +294,12 @@ class AutonomyIntegrationTests(unittest.TestCase):
         world = json.loads((self.root / "state/world.json").read_text())
         self.assertEqual(len(world["rooms"]), 4)
         new_room = world["rooms"][-1]
-        self.assertEqual(new_room["founded_by"], "evidence-ledger")
+        self.assertEqual(new_room["founded_by"], ["local-001", "local-003"])
+        self.assertEqual(new_room["founded_via"], "evidence-ledger")
+        registry = json.loads((self.root / "state/local-agents.json").read_text())
+        standing = {agent["id"]: agent["standing"] for agent in registry["agents"]}
+        self.assertGreaterEqual(standing["local-001"]["corroborated"], 1)
+        self.assertGreaterEqual(standing["local-001"]["score"], 5.0)
         self.assertEqual(len(new_room["artifacts"]), 2)
         self.assertTrue(any(link["to"] == new_room["id"] and link["from"] == "atrium" for link in world["connections"]))
         kinds = [event["kind"] for event in world["events"]]

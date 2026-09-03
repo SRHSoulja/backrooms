@@ -40,14 +40,16 @@ try:
     from scripts.evidence import classify_finding, is_accepted
     from scripts.corroboration import corroboration_index, load_records
     from scripts.codex_reviews import consume_outbox
-    from scripts.self_prompt_rules import research_themes, theme_questions
+    from scripts.self_prompt_rules import finding_followup_question, research_themes, theme_questions
     from scripts import model_client
+    from scripts import journal as journal_module
 except ImportError:
     from evidence import classify_finding, is_accepted
     from corroboration import corroboration_index, load_records
     from codex_reviews import consume_outbox
-    from self_prompt_rules import research_themes, theme_questions
+    from self_prompt_rules import finding_followup_question, research_themes, theme_questions
     import model_client
+    import journal as journal_module
 
 ROOT = Path(__file__).resolve().parents[1]
 STATE = ROOT / "state/world.json"
@@ -683,6 +685,20 @@ def next_question(base_url):
         cycle = json.loads(RUNTIME_STATE.read_text()).get("cycle", 0)
     except (OSError, json.JSONDecodeError, TypeError):
         cycle = 0
+    # A finding leaves a question behind; the world's own record comes before the theme list.
+    latest = None
+    if LOCAL_FINDINGS.exists():
+        for line in LOCAL_FINDINGS.read_text().splitlines()[-40:]:
+            try:
+                item = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if item.get("status") not in {"rejected", "retracted"} and item.get("claim"):
+                latest = item
+    if latest and int(cycle) % 2 == 0:
+        followup = finding_followup_question(latest)
+        if followup:
+            return followup[:300], "finding-followup", accepted
     questions = theme_questions(cycle, count=1)
     if questions:
         return questions[0][:300], "theme-fallback", accepted
@@ -901,6 +917,45 @@ def queue_codex_frontier_review(frontier):
     return {"codex_task": "queued", "codex_task_id": task_id}
 
 
+JOURNAL_DIR = ROOT / "journal"
+PUBLIC_JOURNAL = ROOT / "docs/journal.json"
+
+
+def sync_journal(world, registry, result):
+    """Write yesterday's journal entry once the UTC day has turned; publish the last thirty."""
+    from datetime import timedelta
+    day = (datetime.now(timezone.utc).date() - timedelta(days=1)).isoformat()
+    path = JOURNAL_DIR / f"{day}.md"
+    written = None
+    if not path.exists():
+        findings = []
+        if LOCAL_FINDINGS.exists():
+            for line in LOCAL_FINDINGS.read_text().splitlines():
+                try:
+                    findings.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+        corroborations = load_records(LOCAL_CORROBORATIONS)
+        frontier = json.loads(LOCAL_FRONTIER.read_text()) if LOCAL_FRONTIER.exists() else {}
+        digest = journal_module.daily_digest(day, findings, corroborations, world, registry, frontier.get("tasks", []),
+                                             retractions=result.get("autonomy", {}).get("retractions", []),
+                                             room_changes=result.get("autonomy", {}).get("room_changes", []))
+        if any(digest["counts"].values()):
+            text, author = journal_module.compose_entry(digest, base_url)
+            JOURNAL_DIR.mkdir(parents=True, exist_ok=True)
+            path.write_text(journal_module.render_markdown(digest, text, author))
+            written = {"date": day, "author": author}
+    entries = []
+    for item in sorted(JOURNAL_DIR.glob("*.md"))[-30:]:
+        body = item.read_text()
+        entries.append({"date": item.stem, "title": body.splitlines()[0].lstrip("# ").strip() if body else item.stem,
+                        "text": public_text(body.split("\n\n", 1)[1] if "\n\n" in body else body, 1600)})
+    atomic_write_json(PUBLIC_JOURNAL, {"schema_version": 1, "generated_at": datetime.now(timezone.utc).isoformat(),
+        "privacy": "Daily entries written from public ledgers; a model may phrase them but every name and number is checked against the digest.",
+        "entries": entries})
+    return {"journal_entries": len(entries), "journal_written": written}
+
+
 def record(result):
     world = runtime_world()
     world["cycle"] += 1
@@ -1008,7 +1063,8 @@ def publish(result, world, model_health=True):
         "self_prompt_accepted": result.get("self_prompt_accepted", 0),
         "activity_feed": "docs/activity.json",
         "feed_freshness_seconds": 0
-        ,**resource_health, **analysis_health, **research_health, **findings_health, **frontier_health, **sync_code_proposals(registry), **sync_outside_signals(), **sync_codex_bridge(), **sync_messages(world), **sync_trades(world["cycle"]),
+        ,**resource_health, **analysis_health, **research_health, **findings_health, **frontier_health, **sync_code_proposals(registry), **sync_outside_signals(), **sync_codex_bridge(), **sync_messages(world), **sync_trades(world["cycle"]), **sync_journal(world, registry, result),
+        "retractions": len(result.get("autonomy", {}).get("retractions", [])), "room_changes": result.get("autonomy", {}).get("room_changes", []),
         "dropped_events": 0
     }
     safe = {
@@ -1053,6 +1109,8 @@ def publish(result, world, model_health=True):
                 "room_proposal": agent.get("room_proposal", {}),
                 "research_assignment": {key: str(value)[:160] for key, value in (agent.get("research_assignment") or {}).items()
                                         if key in ("cycle", "query", "origin", "source_preference")},
+                "standing": agent.get("standing", {}),
+                "record": agent.get("record", {}),
                 "safety_incidents": agent.get("safety_incidents", 0),
             }
             for agent in registry.get("agents", [])[-100:]
@@ -1123,7 +1181,7 @@ def publish(result, world, model_health=True):
     historical_world = json.loads(PUBLIC_WORLD.read_text()) if PUBLIC_WORLD.exists() else {}
     public_rooms = []
     for room in world.get("rooms", []):
-        room_copy = {key: room.get(key) for key in ("id", "name", "description", "doors") if key in room}
+        room_copy = {key: room.get(key) for key in ("id", "name", "description", "doors", "charter", "status", "founded_by", "founded_cycle", "growth_topic", "retracted_artifacts") if key in room}
         occupants = list(room.get("occupants", []))
         occupants.extend(agent.get("id") for agent in registry.get("agents", [])
                          if agent.get("status") not in {"fired", "retired"} and agent.get("room") == room.get("id"))
@@ -1157,10 +1215,11 @@ def publish(result, world, model_health=True):
     sync_outside_signals()
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}
-    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/trades.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json", "state/frontier.json", "state/codex-bridge-status.json"}:
+    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/trades.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json", "docs/journal.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json", "state/frontier.json", "state/codex-bridge-status.json"}:
         note_publish("skipped", "other local changes present: " + ", ".join(sorted(changed - {"docs/local-cycle.json"})[:5])[:160])
         return
-    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/trades.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json"], cwd=ROOT, check=True)
+    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/trades.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json", "docs/journal.json"], cwd=ROOT, check=True)
+    subprocess.run(["git", "add", "journal"], cwd=ROOT, check=False)
     commit = subprocess.run(["git", "commit", "-m", "chore: publish local council signal"], cwd=ROOT, capture_output=True)
     if commit.returncode == 0:
         pushed = subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=ROOT, capture_output=True, text=True)

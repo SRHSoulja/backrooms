@@ -7,6 +7,14 @@ from pathlib import Path
 THEMES = Path(__file__).resolve().parents[1] / "docs/research-themes.json"
 
 
+def finding_followup_question(finding):
+    try:
+        from scripts.world_rules import finding_followup_question as followup
+    except ImportError:
+        from world_rules import finding_followup_question as followup
+    return followup(finding)
+
+
 def theme_questions(cycle, count=1, path=THEMES):
     """Rotate concrete, source-answerable questions from the public research themes."""
     try:
