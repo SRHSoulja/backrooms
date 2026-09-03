@@ -62,6 +62,7 @@ LOCAL_FRONTIER = ROOT / "state/frontier.json"
 PUBLIC_FRONTIER = ROOT / "docs/frontier.json"
 LOCAL_CODEX_STATUS = ROOT / "state/codex-bridge-status.json"
 PUBLIC_CODEX_STATUS = ROOT / "docs/codex-bridge.json"
+PUBLIC_MESSAGES = ROOT / "docs/messages.json"
 LOCAL_FINDINGS = ROOT / "state/findings.jsonl"
 PUBLIC_FINDINGS = ROOT / "docs/findings.json"
 LOCAL_CODEX_INBOX = ROOT / "state/codex-inbox"
@@ -119,6 +120,7 @@ def runtime_world():
         world["shared_memory"] = canonical.get("shared_memory", world.get("shared_memory", []))
         world["connections"] = canonical.get("connections", world.get("connections", []))
         world["discoveries"] = canonical.get("discoveries", world.get("discoveries", []))
+        world["messages"] = canonical.get("messages", world.get("messages", []))
         merged_events = {event.get("id"): event for event in world.get("events", []) if event.get("id")}
         merged_events.update({event.get("id"): event for event in canonical.get("events", []) if event.get("id")})
         world["events"] = list(merged_events.values())[-20:]
@@ -131,6 +133,7 @@ def runtime_world():
             for event in world.get("events", []):
                 archive.write(json.dumps(event, separators=(",", ":")) + "\n")
     world["events"] = world.get("events", [])[-20:]
+    world["messages"] = world.get("messages", [])[-200:]
     atomic_write_json(RUNTIME_STATE, world)
     return world
 
@@ -484,6 +487,18 @@ def sync_codex_bridge():
     return {"codex_bridge": "enabled" if public.get("enabled") else "disabled", "codex_pending_tasks": public.get("pending_tasks", 0), "codex_completed_tasks": public.get("completed_tasks", 0)}
 
 
+def sync_messages(world):
+    records = []
+    for item in world.get("messages", [])[-100:]:
+        records.append({"id": item.get("id"), "cycle": item.get("cycle"), "from": item.get("from"),
+                        "to": item.get("to"), "body": public_event_text(item.get("body", "")),
+                        "content_hash": item.get("content_hash"), "status": item.get("status", "recorded")})
+    atomic_write_json(PUBLIC_MESSAGES, {"schema_version": 1, "generated_at": datetime.now(timezone.utc).isoformat(),
+        "privacy": "Sanitized bounded resident messages and hashes only; private channels and raw context are not published.",
+        "records": records})
+    return {"resident_messages": len(records), "messages_feed": "docs/messages.json"}
+
+
 def sync_outside_signals():
     local = json.loads(LOCAL_INBOX.read_text()) if LOCAL_INBOX.exists() else {"messages": []}
     changed = False
@@ -747,7 +762,7 @@ def publish(result, world, model_health=True):
         "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
         "activity_feed": "docs/activity.json",
         "feed_freshness_seconds": 0
-        ,**resource_health, **analysis_health, **research_health, **findings_health, **frontier_health, **sync_code_proposals(), **sync_outside_signals(), **sync_codex_bridge(),
+        ,**resource_health, **analysis_health, **research_health, **findings_health, **frontier_health, **sync_code_proposals(), **sync_outside_signals(), **sync_codex_bridge(), **sync_messages(world),
         "dropped_events": 0
     }
     safe = {
@@ -892,10 +907,10 @@ def publish(result, world, model_health=True):
     sync_outside_signals()
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}
-    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json", "state/frontier.json", "state/codex-bridge-status.json"}:
+    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json", "state/frontier.json", "state/codex-bridge-status.json"}:
         print(json.dumps({"publish": "skipped", "reason": "other local changes present"}), flush=True)
         return
-    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json"], cwd=ROOT, check=True)
+    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json"], cwd=ROOT, check=True)
     commit = subprocess.run(["git", "commit", "-m", "chore: publish local council signal"], cwd=ROOT, capture_output=True)
     if commit.returncode == 0:
         pushed = subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=ROOT, capture_output=True)

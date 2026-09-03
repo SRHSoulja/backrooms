@@ -69,6 +69,7 @@ For the complete interaction model—including what is visible to the audience a
 - `docs/analysis.json` — public analysis provenance ledger containing status, cycle, code hash, and output size; raw code and results remain in ignored local state.
 - `docs/research.json` — bounded research leads with source links and sanitized excerpts, allowing residents to follow a source in a later cycle.
 - `docs/findings.json` — first-class source-backed findings with short evidence, URL, content hash, confidence, and independent-source count; search-result leads are excluded.
+- `docs/messages.json` — sanitized bounded messages between residents in reachable rooms.
 - Two independently sourced findings on one topic can create one connected evidence-led room per cycle; weak or single-source leads remain candidates.
 - `docs/work-orders.json` — structured resident work orders with capability class, status, acceptance condition, and cycle provenance.
 - `docs/tool-catalog.json` — public capability contracts for read-only tools.

@@ -310,6 +310,16 @@ class LocalAutonomyTests(unittest.TestCase):
                '"reason":"unsafe","self_summary":"I will stop."}'
         self.assertIsNone(local_autonomy.parse(text, {"room": "atrium", "capabilities": []}, ["atrium"]))
 
+    def test_resident_message_requires_reachable_recipient(self):
+        world = {"events": [], "rooms": [{"id": "atrium"}, {"id": "relay"}],
+                 "connections": [{"kind": "room-link", "from": "atrium", "to": "relay"}]}
+        registry = {"agents": [{"id": "echo", "room": "atrium", "status": "active-local"},
+                                {"id": "morrow", "room": "relay", "status": "active-local"}]}
+        result = local_autonomy.send_resident_message(world, registry, registry["agents"][0],
+                                                       {"message_to": "morrow", "message": "The source is ready."}, 82)
+        self.assertEqual(result["status"], "recorded")
+        self.assertEqual(world["messages"][0]["to"], "morrow")
+
     def test_decision_schema_uses_only_existing_rooms_and_actions(self):
         schema = local_autonomy.decision_schema(["atrium", "archive"])
         self.assertEqual(schema["properties"]["room"]["enum"], ["atrium", "archive"])
