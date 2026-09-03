@@ -118,6 +118,10 @@ python3 scripts/local_supervisor.py      # or the backrooms-local.service unit
 python3 -m unittest discover -s tests    # 150+ behavioral tests, no network, no model needed
 ```
 
+## Starting fresh
+
+`python3 scripts/reset_world.py` prints the plan; `--yes` performs it. It archives every internal ledger to `state/archive/reset-<stamp>/`, restores the four founding rooms with Echo and Morrow, empties the roster and the evidence ledgers, and keeps the cycle counter, the journal, and the quarantine records. Stop the supervisor first; the script refuses to run while the daemon holds its lock. The next cycle recruits a new roster against the research themes.
+
 ## Quick start
 
 ```bash
