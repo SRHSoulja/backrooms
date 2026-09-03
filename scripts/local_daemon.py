@@ -404,7 +404,15 @@ def sync_findings(registry, cycle):
                 item = json.loads(line)
             except json.JSONDecodeError:
                 continue
-            if item.get("id"):
+            claim = str(item.get("claim", "")).strip()
+            quote = re.sub(r"\s+", " ", str(item.get("quote", "")).strip())
+            claim_terms = {term for term in re.findall(r"[a-z0-9]{4,}", claim.lower())
+                           if term not in {"about", "after", "also", "from", "into", "that", "this", "with"}}
+            quote_terms = set(re.findall(r"[a-z0-9]{4,}", quote.lower()))
+            supported = len(claim_terms & quote_terms) >= min(2, len(claim_terms))
+            imperative = re.match(r"^(?:explore|search|analyze|identify|continue|find|review|investigate|look)\b", claim, re.I)
+            if (item.get("id") and str(item.get("url", "")).startswith("https://") and
+                    item.get("content_hash") and quote and claim and supported and not imperative):
                 records.append(item)
     # Findings enter through local_autonomy.extract_finding(), which validates
     # an exact quote and a claim supported by that quote. Do not promote a
