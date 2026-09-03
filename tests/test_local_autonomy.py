@@ -370,6 +370,7 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertIn("query_target = target[:160].strip()", source)
         self.assertIn('"public-text", candidate', source)
         self.assertIn('fetched["search_results"]', source)
+        self.assertIn('"wikipedia.org", "github.com", "arxiv.org", "crossref.org"', source)
         self.assertIn("fetched_this_cycle = False", source)
         self.assertIn("not fetched_this_cycle", source)
         self.assertIn('"verified": bool(source and excerpt)', source)

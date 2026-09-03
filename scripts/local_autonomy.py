@@ -1193,7 +1193,10 @@ def main():
                     tool.get("status") == "completed" and
                     isinstance(tool.get("results"), list)):
                 candidates = [item.get("url", "") for item in tool["results"]
-                              if re.match(r"https://", str(item.get("url", "")), re.I)][:3]
+                              if re.match(r"https://", str(item.get("url", "")), re.I)]
+                candidates.sort(key=lambda value: (0 if any(host in value.lower() for host in
+                                  ("wikipedia.org", "github.com", "arxiv.org", "crossref.org")) else 1, value))
+                candidates = candidates[:3]
                 if candidates:
                     fetched_this_cycle = True
                     for candidate in candidates:
