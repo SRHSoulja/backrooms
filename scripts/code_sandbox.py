@@ -5,6 +5,7 @@ import ast
 import json
 import subprocess
 import tempfile
+import shutil
 from pathlib import Path
 
 MAX_CODE = 8000
@@ -31,6 +32,19 @@ def validate_tree(tree):
             raise ValueError("dunder names are not allowed")
 
 
+def sandbox_command(work, script):
+    """Use Bubblewrap when available, with no host-network or host-write view."""
+    python = ["python3", "-I", "/work/task.py"]
+    if not shutil.which("bwrap"):
+        return python, "language-isolated-fallback"
+    return (["bwrap", "--unshare-all", "--die-with-parent", "--new-session",
+             "--ro-bind", "/usr", "/usr", "--ro-bind", "/bin", "/bin",
+             "--ro-bind", "/lib", "/lib", "--ro-bind", "/lib64", "/lib64",
+             "--ro-bind", "/etc", "/etc", "--proc", "/proc", "--dev", "/dev",
+             "--tmpfs", "/tmp", "--ro-bind", work, "/work", "--chdir", "/work"] + python,
+            "bubblewrap-unshare-all")
+
+
 def run(code, data=""):
     if not code.strip() or len(code) > MAX_CODE:
         return {"status": "rejected", "reason": "code is empty or exceeds bounded length", "contract": CONTRACT}
@@ -44,7 +58,7 @@ def run(code, data=""):
     with tempfile.TemporaryDirectory(prefix="backrooms-code-") as work:
         script = Path(work) / "task.py"
         script.write_text("import builtins\n__builtins__ = {name: getattr(builtins, name) for name in " + repr(sorted(SAFE_CALLS)) + "}\ndata = " + repr(data) + "\n" + code)
-        command = ["python3", "-I", str(script)]
+        command, isolation = sandbox_command(work, str(script))
         try:
             completed = subprocess.run(command, capture_output=True, text=True, timeout=5,
                                        cwd=work, env={"PATH": "/usr/bin:/bin", "LANG": "C"})
@@ -53,7 +67,7 @@ def run(code, data=""):
         output = (completed.stdout + completed.stderr)[:MAX_OUTPUT]
         return {"status": "completed" if completed.returncode == 0 else "failed",
                 "returncode": completed.returncode, "output": output,
-                "contract": CONTRACT, "workspace": "temporary-and-destroyed"}
+                "contract": CONTRACT, "workspace": "temporary-and-destroyed", "isolation": isolation}
 
 
 if __name__ == "__main__":

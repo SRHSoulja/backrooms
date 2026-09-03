@@ -2,10 +2,16 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts import code_proposal, code_view
+from scripts import code_proposal, code_view, code_sandbox
 
 
 class CodeToolTests(unittest.TestCase):
+    def test_sandbox_uses_networkless_isolation_and_bounded_data(self):
+        result = code_sandbox.run("print(len(data))", "public excerpt")
+        self.assertEqual(result["status"], "completed")
+        self.assertEqual(result["isolation"], "bubblewrap-unshare-all")
+        self.assertIn("14", result["output"])
+
     def test_code_view_rejects_private_paths(self):
         result = code_view.run("../.env")
         self.assertEqual(result["status"], "rejected")
