@@ -162,6 +162,18 @@ def metrics(result):
             "distinction_status": "distinct" if overlap <= 0.75 and markers and complete else "needs-audit"}
 
 
+def autonomy_quality(result):
+    decisions = result.get("autonomy", {}).get("decisions", [])
+    if not decisions:
+        return {"turns": 0, "fallbacks": 0, "fallback_rate": 0.0, "tool_successes": 0}
+    fallbacks = sum("fallback" in str(item.get("reason", "")).lower() or item.get("status") == "awaiting-retry"
+                    for item in decisions)
+    tools = [item.get("tool", {}) for item in decisions]
+    return {"turns": len(decisions), "fallbacks": fallbacks,
+            "fallback_rate": round(fallbacks / len(decisions), 3),
+            "tool_successes": sum(item.get("status") == "completed" for item in tools)}
+
+
 def public_voice(text):
     """Expose the complete filtered council response; raw runtime stays local."""
     return public_text(text, limit=100000).replace("[content withheld by publication filter]", "[excerpt withheld by publication filter]")
@@ -827,6 +839,7 @@ def publish(result, world, model_health=True):
         "active_residents": core_residents + sum(agent.get("status") not in {"fired", "retired"} for agent in registry.get("agents", [])),
         "work_orders": len(work_orders.get("orders", [])),
         "continuity": audit["status"],
+        "autonomy_quality": autonomy_quality(result),
         "publication": "sanitized GitHub Pages snapshot",
         "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
         "activity_feed": "docs/activity.json",
