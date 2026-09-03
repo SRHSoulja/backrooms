@@ -41,8 +41,19 @@ def pair_id(first_id, second_id):
     return "pair-" + hashlib.sha256(":".join(sorted((str(first_id), str(second_id)))).encode()).hexdigest()[:20]
 
 
+def same_topic(first, second):
+    left = re.sub(r"\s+", " ", str(first.get("topic", ""))).strip().lower()
+    right = re.sub(r"\s+", " ", str(second.get("topic", ""))).strip().lower()
+    return bool(left) and left == right
+
+
 def candidate_pairs(findings, judged_ids=(), limit=MAX_JUDGMENTS_PER_CYCLE):
-    """Return [(first, second, pair_id, similarity)] worth one model judgment each."""
+    """Return [(first, second, pair_id, similarity)] worth one model judgment each.
+
+    Findings gathered for the same council question are always judged against
+    each other (similarity 1.0), whatever their wording; other pairs need
+    shared claim vocabulary. Cross-domain is required in both cases.
+    """
     accepted = [item for item in findings if is_accepted(item) and item.get("id") and domain_of(item)]
     scored = []
     for index, first in enumerate(accepted):
@@ -53,7 +64,7 @@ def candidate_pairs(findings, judged_ids=(), limit=MAX_JUDGMENTS_PER_CYCLE):
             identifier = pair_id(first["id"], second["id"])
             if identifier in judged_ids:
                 continue
-            similarity = jaccard(first_terms, finding_terms(second))
+            similarity = 1.0 if same_topic(first, second) else jaccard(first_terms, finding_terms(second))
             if similarity >= PAIR_MIN_SIMILARITY:
                 scored.append((first, second, identifier, round(similarity, 3)))
     scored.sort(key=lambda item: (-item[3], item[2]))

@@ -28,6 +28,17 @@ class CorroborationTests(unittest.TestCase):
         judged = {pair_id("f1", "f2")}
         self.assertNotIn(("f1", "f2"), [(a["id"], b["id"]) for a, b, _i, _s in candidate_pairs(findings, judged)])
 
+    def test_same_question_findings_are_paired_first_whatever_their_wording(self):
+        findings = [
+            finding("f1", "https://en.wikipedia.org/wiki/X", "advertising american cloud commerce consumer corporation electronics email software", topic="agent interoperability protocols"),
+            finding("f2", "https://arxiv.org/abs/1", "we propose a protocol for agent interoperability", topic="agent interoperability protocols"),
+            finding("f3", "https://a.example/one", "The A2A protocol publishes an agent card for discovery.", topic="other"),
+            finding("f4", "https://b.example/two", "Agent cards enable discovery in the A2A protocol.", topic="another"),
+        ]
+        pairs = candidate_pairs(findings, limit=10)
+        self.assertEqual((pairs[0][0]["id"], pairs[0][1]["id"], pairs[0][3]), ("f1", "f2", 1.0))
+        self.assertTrue(all(score < 1.0 for _a, _b, _i, score in pairs[1:]))
+
     def test_records_are_appended_once_and_indexed_by_support(self):
         first = finding("f1", "https://a.example/one", "The A2A protocol publishes an agent card for discovery.")
         second = finding("f2", "https://b.example/two", "Agent cards enable discovery in the A2A protocol.")
