@@ -390,6 +390,33 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(result["status"], "completed")
         self.assertIn("14", result["output"])
 
+    def test_accepted_trade_completes_when_proposer_files_a_finding_and_expires_otherwise(self):
+        local_autonomy.TRADES.write_text(json.dumps({"schema_version": 1, "trades": [
+            {"id": "trade-a", "cycle": 10, "from": "local-002", "to": "local-001", "offering": "o", "request": "r",
+             "status": "accepted", "accepted_cycle": 12},
+            {"id": "trade-b", "cycle": 1, "from": "local-003", "to": "local-001", "offering": "o", "request": "r",
+             "status": "accepted", "accepted_cycle": 2},
+            {"id": "trade-c", "cycle": 1, "from": "local-003", "to": "local-001", "offering": "o", "request": "r",
+             "status": "proposed"}]}))
+        registry = {"agents": [{"id": "local-002", "last_finding_id": "finding-xyz", "last_finding_cycle": 14},
+                               {"id": "local-003"}]}
+        world = {"events": []}
+        settled = local_autonomy.settle_trades(world, registry, 30)
+        ledger = {item["id"]: item for item in json.loads(local_autonomy.TRADES.read_text())["trades"]}
+        self.assertEqual(ledger["trade-a"]["status"], "completed")
+        self.assertEqual(ledger["trade-a"]["evidence"], "finding-xyz")
+        self.assertEqual(ledger["trade-b"]["status"], "expired")
+        self.assertEqual(ledger["trade-c"]["status"], "expired")
+        self.assertEqual({item["id"] for item in settled}, {"trade-a", "trade-b", "trade-c"})
+        self.assertTrue(any(event["kind"] == "trade-completed" for event in world["events"]))
+
+    def test_reserved_core_names_are_rejected(self):
+        from scripts.identity_rules import is_reserved_name
+        self.assertTrue(is_reserved_name("Dr. Echo Lumina"))
+        self.assertTrue(is_reserved_name("morrow"))
+        self.assertFalse(is_reserved_name("Echoes of Lumina"))
+        self.assertFalse(is_reserved_name("Chrono"))
+
     def test_parse_decision_names_the_rejection_reason(self):
         agent = {"room": "atrium", "capabilities": []}
         good = json.dumps({"action": "PROPOSE", "room": "atrium", "target": "", "proposal": "compare specs",

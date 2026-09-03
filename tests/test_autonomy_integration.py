@@ -36,7 +36,8 @@ class StubModelHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         length = int(self.headers.get("Content-Length", "0"))
-        self.rfile.read(length)
+        self.server.last_body = self.rfile.read(length).decode("utf-8", errors="replace")
+        self.server.bodies.append(self.server.last_body)
         self.server.requests += 1
         content = json.dumps(self.server.decision)
         body = json.dumps({"choices": [{"message": {"role": "assistant", "content": content}}]}).encode()
@@ -78,6 +79,8 @@ class AutonomyIntegrationTests(unittest.TestCase):
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), StubModelHandler)
         self.server.decision = dict(BASE_DECISION)
         self.server.requests = 0
+        self.server.last_body = ""
+        self.server.bodies = []
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
         self.base_url = f"http://127.0.0.1:{self.server.server_address[1]}"
@@ -121,6 +124,41 @@ class AutonomyIntegrationTests(unittest.TestCase):
         self.assertEqual(registry["agents"][0]["room"], "relay")
         world = json.loads((self.root / "state/world.json").read_text())
         self.assertTrue(any(event["kind"] == "resident-moved" for event in world["events"]))
+
+    def test_inbox_messages_reach_the_prompt_and_are_marked_delivered(self):
+        world = json.loads((self.root / "state/world.json").read_text())
+        world["messages"] = [{"id": "message-abc", "cycle": 3, "from": "local-002", "to": "local-001",
+                              "body": "Please compare the two discovery card formats.", "content_hash": "h", "status": "recorded"}]
+        (self.root / "state/world.json").write_text(json.dumps(world))
+        completed = self.run_autonomy()
+        self.assertEqual(completed.returncode, 0, completed.stderr[-1500:])
+        self.assertIn("compare the two discovery card formats", self.server.last_body)
+        world = json.loads((self.root / "state/world.json").read_text())
+        self.assertEqual(world["messages"][0]["status"], "delivered")
+        self.assertEqual(world["messages"][0]["delivered_cycle"], 7)
+
+    def test_pending_trade_can_be_accepted(self):
+        registry = json.loads((self.root / "state/local-agents.json").read_text())
+        registry["agents"].append({"id": "local-002", "name": "Second Resident", "role": "archivist",
+                                   "purpose": "p", "question": "q", "room": "relay", "status": "active-local",
+                                   "capabilities": ["bounded-questioning"], "interviewed_at": "2026-09-01T00:00:00+00:00",
+                                   "last_turn_cycle": 6})
+        (self.root / "state/local-agents.json").write_text(json.dumps(registry))
+        trade = {"id": "trade-local-002-5-abc", "cycle": 5, "from": "local-002", "to": "local-001",
+                 "offering": "a sourced summary of the A2A card format", "request": "a review of the JSON-RPC section",
+                 "status": "proposed", "content_hash": "h", "recorded_at": "2026-09-01T00:00:00+00:00"}
+        (self.root / "state/trades.json").write_text(json.dumps({"schema_version": 1, "trades": [trade]}))
+        self.server.decision = {**BASE_DECISION, "action": "ACCEPT_TRADE", "target": "trade-local-002-5-abc",
+                                "reason": "the offer matches my question"}
+        completed = self.run_autonomy()
+        self.assertEqual(completed.returncode, 0, completed.stderr[-1500:])
+        self.assertTrue(any("trade-local-002-5-abc" in body for body in self.server.bodies))
+        output = json.loads(completed.stdout)
+        first = next(item for item in output["decisions"] if item["id"] == "local-001")
+        self.assertEqual(first["trade"], {"id": "trade-local-002-5-abc", "status": "accepted"})
+        ledger = json.loads((self.root / "state/trades.json").read_text())
+        self.assertEqual(ledger["trades"][0]["status"], "accepted")
+        self.assertEqual(ledger["trades"][0]["accepted_cycle"], 7)
 
     def test_malformed_model_output_falls_back_without_crashing(self):
         self.server.decision = "not a decision at all"

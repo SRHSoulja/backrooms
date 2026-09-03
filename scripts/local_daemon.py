@@ -580,15 +580,13 @@ def sync_messages(world):
 
 def sync_trades(cycle=None):
     local = json.loads(LOCAL_TRADES.read_text()) if LOCAL_TRADES.exists() else {"trades": []}
-    if cycle is not None:
-        for item in local.get("trades", []):
-            if item.get("status") == "proposed" and cycle - int(item.get("cycle", cycle)) >= 24:
-                item["status"] = "expired"
-                item["resolved_cycle"] = cycle
+    # Lifecycle transitions (accept, decline, complete, expire) are applied by
+    # the autonomy subprocess; publication only projects the ledger.
     records = []
     for item in local.get("trades", [])[-100:]:
         records.append({key: public_event_text(item.get(key, "")) if key in {"offering", "request"} else item.get(key)
-                        for key in ("id", "cycle", "from", "to", "offering", "request", "status", "content_hash", "recorded_at")})
+                        for key in ("id", "cycle", "from", "to", "offering", "request", "status", "content_hash",
+                                    "recorded_at", "accepted_cycle", "resolved_cycle", "completed_cycle", "evidence")})
     atomic_write_json(PUBLIC_TRADES, {"schema_version": 1, "generated_at": datetime.now(timezone.utc).isoformat(),
         "privacy": "Sanitized non-financial exchange metadata only; no wallets, payments, or private context.",
         "records": records})

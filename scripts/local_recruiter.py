@@ -5,6 +5,11 @@ import argparse, json, os, re, urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
+try:
+    from scripts.identity_rules import is_reserved_name
+except ImportError:
+    from identity_rules import is_reserved_name
+
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "state/local-agents.json"
 REGISTRY_RETENTION = 256
@@ -54,6 +59,8 @@ if not profile:
         profile = None
 if not profile:
     print(json.dumps({"status": "rejected", "reason": "profile failed bounded validation"})); raise SystemExit(0)
+if is_reserved_name(profile["NAME"]):
+    print(json.dumps({"status": "rejected", "reason": "reserved core resident name"})); raise SystemExit(0)
 registry = json.loads(REGISTRY.read_text()) if REGISTRY.exists() else {"privacy": "local registry; no credentials or private memory", "agents": []}
 normalized = re.sub(r"[^a-z0-9]", "", profile["NAME"].lower())
 if any((re.sub(r"[^a-z0-9]", "", str(existing.get("name", "")).lower()) == normalized or
