@@ -36,6 +36,10 @@ try:
     from scripts.runtime_process import port_in_use, reap_recorded_model
 except ImportError:
     from runtime_process import port_in_use, reap_recorded_model
+try:
+    from scripts.evidence import classify_finding, is_accepted
+except ImportError:
+    from evidence import classify_finding, is_accepted
 
 ROOT = Path(__file__).resolve().parents[1]
 STATE = ROOT / "state/world.json"
@@ -76,6 +80,7 @@ PUBLIC_MESSAGES = ROOT / "docs/messages.json"
 LOCAL_TRADES = ROOT / "state/trades.json"
 PUBLIC_TRADES = ROOT / "docs/trades.json"
 LOCAL_FINDINGS = ROOT / "state/findings.jsonl"
+FINDINGS_RETENTION = 400
 PUBLIC_FINDINGS = ROOT / "docs/findings.json"
 LOCAL_AUTONOMY_ERRORS = ROOT / "state/autonomy-errors.log"
 LOCAL_CODEX_INBOX = ROOT / "state/codex-inbox"
@@ -407,32 +412,39 @@ def sync_analysis():
 
 
 def sync_findings(registry, cycle):
-    """File only source-backed findings; search-result leads are not findings."""
-    records = []
+    """Publish the findings ledger with explicit review statuses; never delete rows.
+
+    Findings enter through local_autonomy.extract_finding(), which judged the
+    quote against the fetched excerpt at extraction time. Here only claim
+    grounding and provenance are re-checked, and a row that fails is marked
+    ``rejected`` with a reason rather than silently dropped, so the public
+    ledger shows how often the evidence standard is enforced.
+    """
+    rows = []
     if LOCAL_FINDINGS.exists():
-        for line in LOCAL_FINDINGS.read_text().splitlines()[-200:]:
+        for line in LOCAL_FINDINGS.read_text().splitlines():
             try:
                 item = json.loads(line)
             except json.JSONDecodeError:
                 continue
-            claim = str(item.get("claim", "")).strip()
-            quote = re.sub(r"\s+", " ", str(item.get("quote", "")).strip())
-            claim_terms = {term for term in re.findall(r"[a-z0-9]{4,}", claim.lower())
-                           if term not in {"about", "after", "also", "from", "into", "that", "this", "with"}}
-            quote_terms = set(re.findall(r"[a-z0-9]{4,}", quote.lower()))
-            supported = len(claim_terms & quote_terms) >= min(2, len(claim_terms))
-            imperative = re.match(r"^(?:explore|search|analyze|identify|continue|find|review|investigate|look)\b", claim, re.I)
-            if (item.get("id") and str(item.get("url", "")).startswith("https://") and
-                    item.get("content_hash") and quote and claim and supported and not imperative):
-                records.append(item)
-    # Findings enter through local_autonomy.extract_finding(), which validates
-    # an exact quote and a claim supported by that quote. Do not promote a
-    # resident's exploration target or proposal merely because a page fetched
-    # successfully; those are leads, not evidence.
+            if not item.get("id"):
+                continue
+            if is_accepted(item):
+                status, reason, _score = classify_finding(item.get("claim", ""), item.get("quote", ""),
+                                                          None, item.get("confidence"))
+                if not str(item.get("url", "")).startswith("https://") or not item.get("content_hash"):
+                    status, reason = "rejected", "missing-provenance"
+                if status == "rejected":
+                    item["status"] = "rejected"
+                    item["rejection_reason"] = reason
+                    item["rejected_cycle"] = cycle
+            rows.append(item)
+    rows = rows[-FINDINGS_RETENTION:]
     LOCAL_FINDINGS.parent.mkdir(parents=True, exist_ok=True)
     with LOCAL_FINDINGS.open("w") as handle:
-        for item in records[-200:]:
+        for item in rows:
             handle.write(json.dumps(item, separators=(",", ":")) + "\n")
+    accepted = [item for item in rows if is_accepted(item)]
     # Residents will naturally paraphrase a claim. Corroboration is therefore
     # grouped by the normalized research topic, while still requiring distinct
     # source domains; identical wording alone never counts as independence.
@@ -443,18 +455,25 @@ def sync_findings(registry, cycle):
         terms = [term for term in re.findall(r"[a-z0-9]{4,}", text) if term not in topic_stopwords]
         return " ".join(sorted(set(terms)))[:160]
     sources_by_topic = {}
-    for item in records:
+    for item in accepted:
         key = topic_key(item)
         domain = urllib.parse.urlparse(str(item.get("url", ""))).netloc.lower()
         if key and domain:
             sources_by_topic.setdefault(key, set()).add(domain)
-    public_records = [{key: item.get(key) for key in ("id", "agent", "cycle", "topic", "claim", "quote", "url", "content_hash", "confidence", "relates_to", "status")}
-                      | {"independent_sources": len(sources_by_topic.get(topic_key(item), set()))}
-                      for item in records[-100:]]
-    atomic_write_json(PUBLIC_FINDINGS, {"schema_version": 1, "generated_at": datetime.now(timezone.utc).isoformat(),
+    public_records = []
+    for item in rows[-100:]:
+        record = {key: item.get(key) for key in ("id", "agent", "cycle", "topic", "claim", "quote", "url", "content_hash",
+                                                  "confidence", "quote_score", "quote_match", "relates_to", "status")}
+        record["independent_sources"] = len(sources_by_topic.get(topic_key(item), set())) if is_accepted(item) else 0
+        if not is_accepted(item):
+            record["rejection_reason"] = item.get("rejection_reason", "rejected")
+        public_records.append(record)
+    atomic_write_json(PUBLIC_FINDINGS, {"schema_version": 2, "generated_at": datetime.now(timezone.utc).isoformat(),
         "privacy": "Sanitized claims, short quotes, URLs, hashes, and review metadata only; raw pages remain external and local context remains private.",
         "records": public_records})
-    return {"findings": len(records), "corroborated_findings": sum(item["independent_sources"] >= 2 for item in public_records), "findings_feed": "docs/findings.json"}
+    return {"findings": len(accepted), "findings_rejected": len(rows) - len(accepted), "findings_total": len(rows),
+            "corroborated_findings": sum(item["independent_sources"] >= 2 for item in public_records),
+            "findings_feed": "docs/findings.json"}
 
 
 def sync_research(registry):
@@ -722,7 +741,7 @@ def sync_frontier(result, world, registry):
             except json.JSONDecodeError:
                 continue
             finding_id = finding.get("id")
-            if not finding_id or finding_id in known:
+            if not finding_id or finding_id in known or not is_accepted(finding):
                 continue
             frontier["findings"].append({"id": finding_id, "cycle": finding.get("cycle", cycle),
                                          "source": finding.get("agent", "resident"),

@@ -371,8 +371,8 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertIn('"public-text", candidate', source)
         self.assertIn('fetched["search_results"]', source)
         self.assertIn('"wikipedia.org", "github.com", "arxiv.org", "crossref.org"', source)
-        self.assertIn("fetched_this_cycle = False", source)
-        self.assertIn("not fetched_this_cycle", source)
+        self.assertIn("fetch_budget = MAX_FETCHES_PER_CYCLE", source)
+        self.assertIn("fetch_budget > 0", source)
         self.assertIn('"verified": bool(source and excerpt)', source)
         self.assertIn('source = str(tool.get("url", "")) if tool.get("url") else ""', source)
         self.assertIn('"source_hash": hashlib.sha256(excerpt.encode()).hexdigest() if source and excerpt else ""', source)
@@ -389,6 +389,55 @@ class LocalAutonomyTests(unittest.TestCase):
         result = local_autonomy.run_analysis("print(len(data))", "public excerpt")
         self.assertEqual(result["status"], "completed")
         self.assertIn("14", result["output"])
+
+    def test_rejected_extraction_is_kept_with_reason_and_never_counts(self):
+        excerpt = ("The Agent2Agent protocol is an open standard that lets agents exchange tasks. "
+                   "It publishes an Agent Card for discovery.")
+        tool = {"source": "https://example.org/a2a", "excerpt": excerpt, "source_hash": "hash-1", "query": "a2a protocol"}
+        agent = {"id": "local-test", "room": "atrium", "capabilities": []}
+        outputs = iter([
+            {"claim": "Agents exchange tasks through the open A2A standard.", "quote": "open standard that lets agents exchange tasks", "confidence": 0.8},
+            {"claim": "Agents exchange tasks through the open A2A standard.", "quote": "agents must register with a central exchange broker", "confidence": 0.8},
+        ])
+
+        class FakeResponse:
+            def __init__(self, payload):
+                self.payload = json.dumps({"choices": [{"message": {"content": json.dumps(payload)}}]}).encode()
+            def read(self):
+                return self.payload
+            def __enter__(self):
+                return self
+            def __exit__(self, *_args):
+                return False
+
+        original = local_autonomy.urllib.request.urlopen
+        local_autonomy.urllib.request.urlopen = lambda *_args, **_kwargs: FakeResponse(next(outputs))
+        try:
+            accepted = local_autonomy.extract_finding("http://127.0.0.1:1", agent, 5, tool)
+            rejected = local_autonomy.extract_finding("http://127.0.0.1:1", agent, 6, tool)
+        finally:
+            local_autonomy.urllib.request.urlopen = original
+        self.assertEqual(accepted["status"], "unreviewed")
+        self.assertEqual(accepted["quote_match"], "quote-exact")
+        self.assertEqual(rejected["status"], "rejected")
+        self.assertTrue(rejected["rejection_reason"].startswith("quote-"), rejected)
+        self.assertNotEqual(accepted["id"], rejected["id"])
+        self.assertTrue(local_autonomy.record_finding(accepted))
+        self.assertTrue(local_autonomy.record_finding(rejected))
+        self.assertFalse(local_autonomy.record_finding(rejected))
+        ledger = [json.loads(line) for line in local_autonomy.FINDINGS.read_text().splitlines()]
+        self.assertEqual([item["status"] for item in ledger], ["unreviewed", "rejected"])
+        world = {"events": []}
+        for index in range(2):
+            local_autonomy.record_finding({**rejected, "id": f"finding-rejected-{index}"})
+        self.assertFalse(local_autonomy.grant_earned_capabilities(agent, world, 7))
+        self.assertEqual(local_autonomy.evidence_room_growth({"rooms": [{"id": "atrium"}], "events": []}, {"agents": []}, 7), [])
+
+    def test_fetch_budget_is_per_cycle_not_a_single_global_fetch(self):
+        source = Path("scripts/local_autonomy.py").read_text()
+        self.assertGreaterEqual(local_autonomy.MAX_FETCHES_PER_CYCLE, 2)
+        self.assertNotIn("fetched_this_cycle", source)
+        self.assertIn("fetch_budget -= 1", source)
 
     def test_workbench_is_earned_from_three_verified_findings(self):
         for index in range(3):

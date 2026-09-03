@@ -160,14 +160,23 @@ def public_csv(url):
             "contract": TOOL_CONTRACTS["public-csv"]}
 
 
+CODE_PUNCTUATION = re.compile(r"[{}();=<>]")
+
+
+def clean_excerpt(text):
+    """Drop template braces and minified script residue without touching prose.
+
+    Only a single whitespace-delimited token longer than 60 characters that
+    also contains code punctuation is removed; ordinary words such as
+    "dataset" or "tap" are never a reason to cut surrounding text.
+    """
+    text = re.sub(r"\{\{.*?\}\}", " ", text)
+    return re.sub(r"\S{61,}", lambda match: " " if CODE_PUNCTUATION.search(match.group(0)) else match.group(0), text)
+
+
 def public_text(url):
     raw = SCRIPT_STYLE.sub(" ", fetch(url, RESEARCH_MAX_BYTES))
-    text = re.sub(r"<[^>]+>", " ", html.unescape(raw))
-    # Some sites ship malformed/minified client-side fragments that survive
-    # tag stripping. Remove obvious script artifacts before exposing the
-    # bounded excerpt to the finding extractor.
-    text = re.sub(r"\{\{.*?\}\}|\b(?:tap|AMP|stateSearch|autocomplete|dataset)\b[^.]{0,180}", " ", text, flags=re.I)
-    text = re.sub(r"(?:[A-Za-z_$][\w$]*\.){1,}[A-Za-z_$][\w$]*\([^)]{0,240}\)", " ", text)
+    text = clean_excerpt(re.sub(r"<[^>]+>", " ", html.unescape(raw)))
     text = re.sub(r"\s+", " ", text).strip()
     text = SENSITIVE_ASSIGNMENT.sub("[withheld]", text)
     text = BLOCKED.sub("[withheld]", text)

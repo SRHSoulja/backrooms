@@ -8,6 +8,11 @@ import urllib.request
 import re
 from pathlib import Path
 
+try:
+    from scripts.evidence import is_accepted
+except ImportError:
+    from evidence import is_accepted
+
 ROOT = Path(__file__).resolve().parents[1]
 FINDINGS = ROOT / "state/findings.jsonl"
 FRONTIER = ROOT / "state/frontier.json"
@@ -27,8 +32,11 @@ def bounded_context(world):
                 item = json.loads(line)
             except json.JSONDecodeError:
                 continue
-            findings.append({key: str(item.get(key, ""))[:300] for key in
-                             ("topic", "claim", "quote", "source", "confidence", "room", "status")})
+            if not is_accepted(item):
+                continue
+            findings.append({**{key: str(item.get(key, ""))[:300] for key in
+                                ("topic", "claim", "quote", "url", "confidence", "status")},
+                             "room": str((item.get("relates_to") or [""])[0])[:60]})
     frontier = {}
     if FRONTIER.exists():
         try:

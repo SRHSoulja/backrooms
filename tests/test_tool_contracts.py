@@ -81,6 +81,19 @@ class ToolContractTests(unittest.TestCase):
         self.assertEqual(TOOL_CONTRACTS["public-json"]["raw_data"], False)
         self.assertIn("compressed responses are not accepted", Path("scripts/tool_broker.py").read_text())
 
+    def test_excerpt_cleanup_keeps_prose_and_drops_script_residue(self):
+        from scripts.tool_broker import clean_excerpt
+        prose = "The dataset covers 2019 to 2024 and remains public. Tap water quality is measured monthly."
+        self.assertEqual(clean_excerpt(prose), prose)
+        residue = "Before {{ template.value }} window.dataLayer.push({event:'view',page:'/docs',section:'intro',id:12345}); after"
+        cleaned = clean_excerpt(residue)
+        self.assertIn("Before", cleaned)
+        self.assertIn("after", cleaned)
+        self.assertNotIn("dataLayer", cleaned)
+        self.assertNotIn("template.value", cleaned)
+        long_word = "a" * 70
+        self.assertIn(long_word, clean_excerpt("x " + long_word + " y"))
+
     def test_local_code_sandbox_is_contracted(self):
         self.assertEqual(TOOL_CONTRACTS["local-code-sandbox"]["network"], "none")
         self.assertEqual(TOOL_CONTRACTS["local-code-sandbox"]["timeout_seconds"], 5)
