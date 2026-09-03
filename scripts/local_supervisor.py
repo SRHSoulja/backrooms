@@ -57,6 +57,7 @@ def run_daemon():
 def main():
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)
+    signal.signal(signal.SIGHUP, stop)  # tmux kill-session sends SIGHUP; stop the daemon and model with us
     backoff = 5
     while not stopping:
         process = run_daemon()

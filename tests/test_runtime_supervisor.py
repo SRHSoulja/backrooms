@@ -31,6 +31,11 @@ class ReloadWatcherTests(unittest.TestCase):
         self.assertTrue(hasattr(local_supervisor, "ReloadWatcher"))
         self.assertIn("signal.SIGUSR1", Path("scripts/local_supervisor.py").read_text())
 
+    def test_supervisor_stops_its_daemon_on_hangup_from_tmux(self):
+        source = Path("scripts/local_supervisor.py").read_text()
+        for name in ("signal.SIGTERM", "signal.SIGINT", "signal.SIGHUP"):
+            self.assertIn(f"signal.signal({name}, stop)", source)
+
 
 class ProcessOwnershipTests(unittest.TestCase):
     def test_port_in_use_detects_live_listener_only(self):
