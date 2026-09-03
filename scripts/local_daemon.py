@@ -1045,6 +1045,8 @@ def publish(result, world, model_health=True):
                 "skill_progress": skill_progress(agent, registry),
                 "last_tool": agent.get("last_tool", {}),
                 "room_proposal": agent.get("room_proposal", {}),
+                "research_assignment": {key: str(value)[:160] for key, value in (agent.get("research_assignment") or {}).items()
+                                        if key in ("cycle", "query", "origin", "source_preference")},
                 "safety_incidents": agent.get("safety_incidents", 0),
             }
             for agent in registry.get("agents", [])[-100:]
