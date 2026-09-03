@@ -14,6 +14,7 @@ import subprocess
 import sys
 import time
 import urllib.request
+import urllib.parse
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import re
@@ -422,12 +423,23 @@ def sync_findings(registry, cycle):
     with LOCAL_FINDINGS.open("w") as handle:
         for item in records[-200:]:
             handle.write(json.dumps(item, separators=(",", ":")) + "\n")
-    sources_by_claim = {}
+    # Residents will naturally paraphrase a claim. Corroboration is therefore
+    # grouped by the normalized research topic, while still requiring distinct
+    # source domains; identical wording alone never counts as independence.
+    topic_stopwords = {"about", "after", "also", "from", "into", "that", "this", "with",
+                       "what", "which", "where", "when", "does", "did", "have", "their"}
+    def topic_key(item):
+        text = " ".join((str(item.get("topic", "")), str(item.get("claim", "")))).lower()
+        terms = [term for term in re.findall(r"[a-z0-9]{4,}", text) if term not in topic_stopwords]
+        return " ".join(sorted(set(terms)))[:160]
+    sources_by_topic = {}
     for item in records:
-        key = re.sub(r"[^a-z0-9 ]", "", str(item.get("claim", "")).lower())[:120]
-        sources_by_claim.setdefault(key, set()).add(item.get("url"))
+        key = topic_key(item)
+        domain = urllib.parse.urlparse(str(item.get("url", ""))).netloc.lower()
+        if key and domain:
+            sources_by_topic.setdefault(key, set()).add(domain)
     public_records = [{key: item.get(key) for key in ("id", "agent", "cycle", "topic", "claim", "quote", "url", "content_hash", "confidence", "relates_to", "status")}
-                      | {"independent_sources": len(sources_by_claim.get(re.sub(r"[^a-z0-9 ]", "", str(item.get("claim", "")).lower())[:120], set()))}
+                      | {"independent_sources": len(sources_by_topic.get(topic_key(item), set()))}
                       for item in records[-100:]]
     atomic_write_json(PUBLIC_FINDINGS, {"schema_version": 1, "generated_at": datetime.now(timezone.utc).isoformat(),
         "privacy": "Sanitized claims, short quotes, URLs, hashes, and review metadata only; raw pages remain external and local context remains private.",
