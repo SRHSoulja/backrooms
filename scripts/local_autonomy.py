@@ -1214,7 +1214,10 @@ def main():
             if tool.get("status") == "completed":
                 summary = tool.get("summary", {})
                 excerpt = str(tool.get("excerpt", ""))[:2400]
-                source = str(tool.get("url", "")) if tool_name != "public-search" else ""
+                # A search may have been upgraded to a fetched public-text
+                # result above; use the concrete page URL whenever present,
+                # never the search provider URL.
+                source = str(tool.get("url", "")) if tool.get("url") else ""
                 result_count = len(tool.get("results", [])) if isinstance(tool.get("results"), list) else (
                     summary.get("items", summary.get("rows", 0)) if isinstance(summary, dict) else 0)
                 agent["last_tool"] = {"tool": tool["tool"], "query": tool.get("query", tool.get("url", "")),

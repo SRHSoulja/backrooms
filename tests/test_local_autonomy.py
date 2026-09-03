@@ -290,7 +290,7 @@ class LocalAutonomyTests(unittest.TestCase):
     def test_structured_tool_results_have_a_normalized_recording_path(self):
         source = Path("scripts/local_autonomy.py").read_text()
         self.assertIn('tool.get("query", tool.get("url", ""))', source)
-        self.assertIn('str(tool.get("url", "")) if tool_name != "public-search" else ""', source)
+        self.assertIn('str(tool.get("url", "")) if tool.get("url") else ""', source)
         self.assertIn('summary.get("items", summary.get("rows", 0))', source)
 
     def test_json_decision_is_parsed_with_existing_safety_rules(self):
@@ -374,6 +374,7 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertIn("fetched_this_cycle = False", source)
         self.assertIn("not fetched_this_cycle", source)
         self.assertIn('"verified": bool(source and excerpt)', source)
+        self.assertIn('source = str(tool.get("url", "")) if tool.get("url") else ""', source)
         self.assertIn('"source_hash": hashlib.sha256(excerpt.encode()).hexdigest() if source and excerpt else ""', source)
 
     def test_analyze_requires_workbench_and_data_only_code(self):
