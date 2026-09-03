@@ -40,10 +40,12 @@ try:
     from scripts.evidence import classify_finding, is_accepted
     from scripts.corroboration import corroboration_index, load_records
     from scripts.codex_reviews import consume_outbox
+    from scripts.self_prompt_rules import research_themes
 except ImportError:
     from evidence import classify_finding, is_accepted
     from corroboration import corroboration_index, load_records
     from codex_reviews import consume_outbox
+    from self_prompt_rules import research_themes
 
 ROOT = Path(__file__).resolve().parents[1]
 STATE = ROOT / "state/world.json"
@@ -649,14 +651,20 @@ def action(base_url, cycle):
 
 
 def next_question(base_url):
-    """Ask residents for a bounded question; fall back if validation rejects both."""
+    """Ask residents for a bounded question; fall back to a public research theme if both are rejected.
+
+    Returns (question, source, accepted_count) so the feed can show how often
+    the council's own proposals pass validation.
+    """
     completed = subprocess.run([sys.executable, str(ROOT / "scripts/self_prompt.py"),
         "--base-url", base_url, "--state", str(RUNTIME_STATE),
         "--actions", str(ROOT / "state/action-log.json")], cwd=ROOT,
         capture_output=True, text=True, check=False)
+    accepted = 0
     if completed.returncode == 0:
         try:
             proposals = json.loads(completed.stdout).get("proposals", [])
+            accepted = sum(bool(proposal.get("accepted")) for proposal in proposals)
             for resident in ("Echo", "Morrow"):
                 for proposal in proposals:
                     if proposal.get("resident") == resident and proposal.get("accepted"):
@@ -664,20 +672,19 @@ def next_question(base_url):
                             if line.upper().startswith("QUESTION:"):
                                 question = line.split(":", 1)[1].strip()
                                 if question:
-                                    return question[:300]
+                                    return question[:300], f"resident:{resident.lower()}", accepted
         except (json.JSONDecodeError, TypeError):
             pass
-    fallback_questions = [
-        "Which public finding should the Backrooms verify next, and what result would change our view?",
-        "What unexplained pattern in the current rooms deserves a reversible experiment?",
-        "Which two public sources could corroborate or challenge the newest discovery?",
-        "What room capability is missing for residents to complete their most useful open task?",
-    ]
     try:
         cycle = json.loads(RUNTIME_STATE.read_text()).get("cycle", 0)
     except (OSError, json.JSONDecodeError, TypeError):
         cycle = 0
-    return fallback_questions[int(cycle) % len(fallback_questions)]
+    themes = research_themes(cycle, count=1)
+    if themes:
+        return (f"What does current public evidence say about {themes[0]}, and which two independent sources "
+                "could confirm or challenge it?", "theme-fallback", accepted)
+    return ("Which public finding should the Backrooms verify next, and what result would change our view?",
+            "fixed-fallback", accepted)
 
 
 def recruit(base_url, cycle):
@@ -977,6 +984,8 @@ def publish(result, world, model_health=True):
         "publication": "sanitized GitHub Pages snapshot",
         "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
         "publication_status": dict(PUBLISH_STATUS),
+        "question_source": result.get("question_source", "unknown"),
+        "self_prompt_accepted": result.get("self_prompt_accepted", 0),
         "activity_feed": "docs/activity.json",
         "feed_freshness_seconds": 0
         ,**resource_health, **analysis_health, **research_health, **findings_health, **frontier_health, **sync_code_proposals(), **sync_outside_signals(), **sync_codex_bridge(), **sync_messages(world), **sync_trades(world["cycle"]),
@@ -987,6 +996,8 @@ def publish(result, world, model_health=True):
         "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
         "runtime_cycle": world["cycle"],
         "question": result.get("question", ""),
+        "question_source": result.get("question_source", "unknown"),
+        "self_prompt_accepted": result.get("self_prompt_accepted", 0),
         "action": result.get("action", {"status": "not-run"}),
         "recruitment": result.get("recruitment", {"status": "not-run"}),
         "autonomy": result.get("autonomy", {"status": "not-run"}),
@@ -1259,12 +1270,14 @@ try:
         sync_frontier({}, runtime_world(), registry)
         frontier = json.loads(LOCAL_FRONTIER.read_text()) if LOCAL_FRONTIER.exists() else {}
         codex_task = queue_codex_frontier_review(frontier)
-        question = next_question(base_url)
+        question, question_source, self_prompt_accepted = next_question(base_url)
         completed = subprocess.run([sys.executable, str(ROOT / "scripts/roundtable.py"),
             "--base-url", base_url, "--question", question], cwd=ROOT,
             capture_output=True, text=True, check=False)
         if completed.returncode == 0:
             result = json.loads(completed.stdout)
+            result["question_source"] = question_source
+            result["self_prompt_accepted"] = self_prompt_accepted
             world = record(result)
             result["action"] = action(base_url, world["cycle"])
             result["recruitment"] = recruit(base_url, world["cycle"])
