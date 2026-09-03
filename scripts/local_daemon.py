@@ -406,24 +406,10 @@ def sync_findings(registry, cycle):
                 continue
             if item.get("id"):
                 records.append(item)
-    known = {item.get("id") for item in records}
-    for agent in registry.get("agents", []):
-        tool = agent.get("last_tool") or {}
-        source = str(tool.get("source", ""))
-        excerpt = str(tool.get("excerpt", "")).strip()
-        if not tool.get("verified") or not source.startswith("https://") or not excerpt:
-            continue
-        content_hash = str(tool.get("source_hash", "")) or hashlib.sha256(excerpt.encode()).hexdigest()
-        finding_id = "finding-" + hashlib.sha256(f"{agent.get('id')}:{source}:{content_hash}".encode()).hexdigest()[:20]
-        if finding_id in known:
-            continue
-        topic = str(tool.get("query") or agent.get("exploration") or "research frontier").strip()[:160]
-        claim = str(agent.get("proposal") or topic or "Source-backed research result").strip()[:300]
-        records.append({"id": finding_id, "agent": agent.get("id"), "cycle": cycle,
-                        "topic": topic, "claim": claim, "quote": excerpt[:300], "url": source[:500],
-                        "content_hash": content_hash, "confidence": 0.5,
-                        "relates_to": [agent.get("room") or "unassigned"], "status": "unreviewed"})
-        known.add(finding_id)
+    # Findings enter through local_autonomy.extract_finding(), which validates
+    # an exact quote and a claim supported by that quote. Do not promote a
+    # resident's exploration target or proposal merely because a page fetched
+    # successfully; those are leads, not evidence.
     LOCAL_FINDINGS.parent.mkdir(parents=True, exist_ok=True)
     with LOCAL_FINDINGS.open("w") as handle:
         for item in records[-200:]:

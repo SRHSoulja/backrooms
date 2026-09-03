@@ -153,7 +153,17 @@ def extract_finding(url, agent, cycle, tool):
         quote = re.sub(r"\s+", " ", str(finding.get("quote", "")).strip())[:300]
         confidence = float(finding.get("confidence", 0))
         normalized_excerpt = re.sub(r"\s+", " ", excerpt)
-        if not claim or not quote or quote not in normalized_excerpt or not 0 <= confidence <= 1:
+        # A model can produce a fluent research instruction instead of a
+        # source-grounded claim. Require lexical support from the quoted
+        # passage so instructions such as "explore ..." cannot become facts.
+        claim_terms = {term for term in re.findall(r"[a-z0-9]{4,}", claim.lower())
+                       if term not in {"about", "after", "also", "from", "into", "that", "this", "with"}}
+        quote_terms = set(re.findall(r"[a-z0-9]{4,}", quote.lower()))
+        supported_terms = claim_terms & quote_terms
+        imperative = re.match(r"^(?:explore|search|analyze|identify|continue|find|review|investigate|look)\b", claim, re.I)
+        if (not claim or not quote or quote not in normalized_excerpt or
+                len(supported_terms) < min(2, len(claim_terms)) or imperative or
+                not 0 <= confidence <= 1):
             return None
         source_hash = str(tool.get("source_hash"))
         finding_id = "finding-" + hashlib.sha256(f"{agent.get('id')}:{source}:{source_hash}".encode()).hexdigest()[:20]
