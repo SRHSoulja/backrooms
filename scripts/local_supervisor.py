@@ -4,6 +4,7 @@
 import signal
 import subprocess
 import sys
+import os
 import time
 from pathlib import Path
 
@@ -24,6 +25,26 @@ def stop(*_args):
 
 signal.signal(signal.SIGTERM, stop)
 signal.signal(signal.SIGINT, stop)
+
+
+def stop_process_group(process):
+    """Stop the daemon and its model child together during reload/shutdown."""
+    if process.poll() is not None:
+        return
+    try:
+        os.killpg(process.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        return
+    try:
+        process.wait(timeout=20)
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        process.wait(timeout=5)
+
+
 backoff = 5
 log_path = ROOT / "state/daemon.log"
 log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -31,19 +52,17 @@ while not stopping:
     signature = source_signature()
     changed = False
     with log_path.open("a") as log_handle:
-        process = subprocess.Popen([sys.executable, str(ROOT / "scripts/local_daemon.py"), "--interval", "900", "--publish"], cwd=ROOT, stdout=log_handle, stderr=subprocess.STDOUT)
+        process = subprocess.Popen([sys.executable, str(ROOT / "scripts/local_daemon.py"), "--interval", "900", "--publish"], cwd=ROOT, stdout=log_handle, stderr=subprocess.STDOUT, start_new_session=True)
     while process.poll() is None and not stopping:
         time.sleep(1)
         if source_signature() != signature:
             changed = True
-            process.terminate()
-            process.wait(timeout=20)
+            stop_process_group(process)
             with log_path.open("a") as log_handle:
                 log_handle.write('{"supervisor": "runtime code changed; daemon restarting"}\n')
             break
     if stopping and process.poll() is None:
-        process.terminate()
-        process.wait(timeout=20)
+        stop_process_group(process)
         break
     if changed or process.returncode == 0:
         backoff = 5

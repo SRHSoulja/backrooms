@@ -10,6 +10,7 @@ import fcntl
 import hashlib
 import json
 import os
+import signal
 import subprocess
 import sys
 import time
@@ -1022,7 +1023,8 @@ def start_local_model():
     log_handle = MODEL_LOG.open("a")
     process = subprocess.Popen(["llama-server", "-hf", "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
                                 "--host", "127.0.0.1", "--port", str(args.port), "--ctx-size", "4096",
-                                "--predict", "800", "--parallel", "1"], cwd=ROOT, stdout=log_handle, stderr=subprocess.STDOUT)
+                                "--predict", "800", "--parallel", "1"], cwd=ROOT, stdout=log_handle,
+                                stderr=subprocess.STDOUT, start_new_session=True)
     try:
         wait_ready(base_url)
     except Exception:
@@ -1037,11 +1039,17 @@ def stop_local_model(process):
     if process is None:
         return
     if process.poll() is None:
-        process.terminate()
+        try:
+            os.killpg(process.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
     try:
         process.wait(timeout=15)
     except subprocess.TimeoutExpired:
-        process.kill()
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
         process.wait(timeout=5)
     log_handle = getattr(process, "_backrooms_log_handle", None)
     if log_handle:
