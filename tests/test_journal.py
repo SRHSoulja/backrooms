@@ -44,6 +44,18 @@ class JournalTests(unittest.TestCase):
         self.assertTrue(page.startswith("# Journal — 2026-09-03"))
         self.assertIn("Written by the ledgers", page)
 
+    def test_backfill_estimates_timestamps_from_the_nearest_published_cycle(self):
+        times = journal.cycle_times({"cycles": [{"runtime_cycle": 200, "generated_at": "2026-09-03T06:40:00+00:00"},
+                                                {"runtime_cycle": 210, "generated_at": "2026-09-03T15:00:00+00:00"}]})
+        rows = [{"id": "a", "cycle": 205}, {"id": "b", "cycle": 150}, {"id": "c", "cycle": 210, "recorded_at": "kept"}, {"id": "d"}]
+        self.assertEqual(journal.backfill_timestamps(rows, times), 2)
+        self.assertEqual(rows[0]["recorded_at"], "2026-09-03T06:40:00+00:00")
+        self.assertTrue(rows[0]["recorded_at_estimated"])
+        self.assertEqual(rows[1]["recorded_at"], "2026-09-03T06:40:00+00:00")
+        self.assertEqual(rows[2]["recorded_at"], "kept")
+        self.assertNotIn("recorded_at", rows[3])
+        self.assertEqual(journal.backfill_timestamps(rows, {}), 0)
+
     def test_compose_falls_back_to_ledger_text_when_the_draft_invents(self):
         d = digest()
         original = journal.draft_entry

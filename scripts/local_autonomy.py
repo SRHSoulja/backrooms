@@ -264,7 +264,8 @@ def extract_finding(url, agent, cycle, tool):
               "topic": str(tool.get("query") or agent.get("exploration") or "research frontier")[:160],
               "claim": claim, "quote": quote, "url": source[:500], "content_hash": source_hash,
               "confidence": confidence, "quote_score": quote_score, "claim_origin": claim_origin,
-              "quote_match": reason, "relates_to": [agent.get("room") or "unassigned"], "status": status}
+              "quote_match": reason, "relates_to": [agent.get("room") or "unassigned"], "status": status,
+              "recorded_at": datetime.now(timezone.utc).isoformat()}
     if status == "rejected":
         record["rejection_reason"] = reason
     return record
@@ -680,6 +681,7 @@ def complete_frontier_task(agent, cycle, decision, evidence_id=None):
         return False
     task["status"] = "completed"
     task["completed_cycle"] = cycle
+    task["completed_at"] = datetime.now(timezone.utc).isoformat()
     task["evidence"] = evidence_id
     task["completed_action"] = str(decision.get("action", ""))[:20]
     atomic_write_json(FRONTIER, frontier)

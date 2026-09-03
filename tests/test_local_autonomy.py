@@ -734,6 +734,7 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(accepted["claim_origin"], "model")
         self.assertEqual(accepted["status"], "unreviewed")
         self.assertEqual(accepted["quote_match"], "quote-exact")
+        self.assertTrue(accepted["recorded_at"].startswith("20"))
         self.assertEqual(rejected["status"], "rejected")
         self.assertTrue(rejected["rejection_reason"].startswith("quote-"), rejected)
         self.assertNotEqual(accepted["id"], rejected["id"])

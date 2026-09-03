@@ -10,6 +10,7 @@ import hashlib
 import json
 import re
 import urllib.parse
+from datetime import datetime, timezone
 from pathlib import Path
 
 try:
@@ -95,7 +96,8 @@ def make_record(first, second, identifier, relation, reason, cycle, similarity=N
             "domains": sorted({domain_of(first), domain_of(second)}), "topic": topic,
             "relation": relation if relation in RELATIONS else "unrelated",
             "reason": re.sub(r"\s+", " ", str(reason or "")).strip()[:200],
-            "similarity": similarity, "cycle": cycle, "judge": "local-model"}
+            "similarity": similarity, "cycle": cycle, "judge": "local-model",
+            "recorded_at": datetime.now(timezone.utc).isoformat()}
 
 
 def load_records(path):

@@ -19,6 +19,37 @@ except ImportError:
 MAX_WORDS = 220
 
 
+def cycle_times(history):
+    """cycle -> ISO timestamp from the public action history."""
+    times = {}
+    for item in history.get("cycles", []) if isinstance(history, dict) else []:
+        try:
+            times[int(item.get("runtime_cycle"))] = str(item.get("generated_at", ""))
+        except (TypeError, ValueError):
+            continue
+    return times
+
+
+def backfill_timestamps(rows, times, cycle_key="cycle", stamp_key="recorded_at"):
+    """Estimate a timestamp for rows that predate timestamping, from the nearest published cycle."""
+    if not times:
+        return 0
+    known = sorted(times)
+    changed = 0
+    for row in rows:
+        if row.get(stamp_key) or row.get(cycle_key) in (None, ""):
+            continue
+        try:
+            cycle = int(row.get(cycle_key))
+        except (TypeError, ValueError):
+            continue
+        nearest = max((c for c in known if c <= cycle), default=None) or min(known)
+        row[stamp_key] = times[nearest]
+        row[stamp_key + "_estimated"] = True
+        changed += 1
+    return changed
+
+
 def daily_digest(date, findings, corroborations, world, registry, tasks, retractions=(), room_changes=()):
     """Facts for one UTC day, keyed so the verifier can check a written entry against them."""
     day = str(date)

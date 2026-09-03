@@ -467,6 +467,9 @@ def sync_findings(registry, cycle):
                 continue
             if not item.get("id"):
                 continue
+            if not item.get("recorded_at"):
+                journal_module.backfill_timestamps([item], journal_module.cycle_times(
+                    json.loads(PUBLIC_HISTORY.read_text()) if PUBLIC_HISTORY.exists() else {}))
             if is_accepted(item):
                 status, reason, _score = classify_finding(item.get("claim", ""), item.get("quote", ""),
                                                           None, item.get("confidence"))
@@ -937,7 +940,14 @@ def sync_journal(world, registry, result):
                     continue
         corroborations = load_records(LOCAL_CORROBORATIONS)
         frontier = json.loads(LOCAL_FRONTIER.read_text()) if LOCAL_FRONTIER.exists() else {}
-        digest = journal_module.daily_digest(day, findings, corroborations, world, registry, frontier.get("tasks", []),
+        tasks = frontier.get("tasks", [])
+        # Rows written before timestamping carry only a cycle; estimate from the public cycle history.
+        history = json.loads(PUBLIC_HISTORY.read_text()) if PUBLIC_HISTORY.exists() else {}
+        times = journal_module.cycle_times(history)
+        journal_module.backfill_timestamps(findings, times)
+        journal_module.backfill_timestamps(corroborations, times)
+        journal_module.backfill_timestamps(tasks, times, cycle_key="completed_cycle", stamp_key="completed_at")
+        digest = journal_module.daily_digest(day, findings, corroborations, world, registry, tasks,
                                              retractions=result.get("autonomy", {}).get("retractions", []),
                                              room_changes=result.get("autonomy", {}).get("room_changes", []))
         if any(digest["counts"].values()):
@@ -1215,8 +1225,10 @@ def publish(result, world, model_health=True):
     sync_outside_signals()
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}
-    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/trades.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json", "docs/journal.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json", "state/frontier.json", "state/codex-bridge-status.json"}:
-        note_publish("skipped", "other local changes present: " + ", ".join(sorted(changed - {"docs/local-cycle.json"})[:5])[:160])
+    allowlisted = { "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/trades.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json", "docs/journal.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json", "state/frontier.json", "state/codex-bridge-status.json"}
+    offending = {path for path in changed if path not in allowlisted and not path.startswith("journal/")}
+    if offending:
+        note_publish("skipped", "other local changes present: " + ", ".join(sorted(offending)[:5])[:160])
         return
     subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/trades.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json", "docs/journal.json"], cwd=ROOT, check=True)
     subprocess.run(["git", "add", "journal"], cwd=ROOT, check=False)
