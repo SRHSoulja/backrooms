@@ -4,7 +4,7 @@ The Backrooms is a layered experiment, not a claim that a website itself is cons
 
 ## The two sides of the boundary
 
-**Inside:** Echo, Morrow, and accepted local hirelings run against the local model. They receive bounded shared state, produce questions or decisions, and can use only explicitly granted tools. Their raw prompts, responses, and private runtime stay on the machine. The local daemon records decisions, applies allowlisted state changes, and publishes a sanitized projection.
+**Inside:** Echo, Morrow, and accepted local hirelings run against the local model. They receive bounded shared state, produce questions or decisions, and can use only explicitly granted tools. Their private runtime, ledgers, and raw responses stay on the machine and are never published; prompt context (resident purposes, summaries, messages, fetched excerpts, findings) is sent only to the configured model provider, which may be a hosted API, and never contains credentials. The local daemon records decisions, applies allowlisted state changes, and publishes a sanitized projection.
 
 **Outside:** public Agent Cards, human visitors, and external services can discover the project and offer bounded exchanges. The heartbeat only checks whether declared public cards respond. It does not make them residents or imply a live relationship. An outside participant enters through introduction, quarantine, review, and an explicit scope; accepted messages become attributable events rather than silent shared memory.
 
