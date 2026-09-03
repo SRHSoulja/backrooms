@@ -19,9 +19,11 @@ class FakeResponse(io.BytesIO):
         return False
 
 
-def reply(text, prompt_tokens=100, completion_tokens=20):
-    return FakeResponse(json.dumps({"choices": [{"message": {"content": text}}],
-                                    "usage": {"prompt_tokens": prompt_tokens, "completion_tokens": completion_tokens}}).encode())
+def reply(text, prompt_tokens=100, completion_tokens=20, headers=None):
+    response = FakeResponse(json.dumps({"choices": [{"message": {"content": text}}],
+                                        "usage": {"prompt_tokens": prompt_tokens, "completion_tokens": completion_tokens}}).encode())
+    response.headers = dict(headers or {})
+    return response
 
 
 class ModelClientTests(unittest.TestCase):
@@ -164,6 +166,70 @@ class ModelClientTests(unittest.TestCase):
             model_client.complete([{"role": "user", "content": "hi"}], base_url="http://127.0.0.1:9",
                                   opener=opener, sleep=sleeps.append, clock=lambda: 1000.0)
         self.assertFalse(any(seconds > 60 for seconds in sleeps))
+
+    def test_router_learns_per_minute_limits_from_headers_and_paces_to_them(self):
+        model_client.SECRETS.clear()
+        model_client.SECRETS.update({"MISTRAL_API_KEY": "test-mistral"})
+        clock = {"now": 1000.0}
+        sleeps = []
+
+        def sleep(seconds):
+            sleeps.append(seconds)
+            clock["now"] += seconds
+
+        def opener(request, timeout=0):
+            return reply('{"ok": true}', prompt_tokens=50, completion_tokens=10,
+                         headers={"x-ratelimit-limit-req-minute": "2", "x-ratelimit-remaining-req-minute": "1",
+                                  "x-ratelimit-limit-tokens-minute": "20000", "x-ratelimit-remaining-tokens-minute": "19000"})
+
+        for _ in range(3):
+            model_client.complete([{"role": "user", "content": "hi"}], base_url="http://127.0.0.1:9",
+                                  opener=opener, sleep=sleep, clock=lambda: clock["now"])
+        summary = {item["name"]: item for item in model_client.usage_summary("http://127.0.0.1:9")["providers"]}
+        self.assertEqual((summary["mistral"]["limit_rpm"], summary["mistral"]["limit_tpm"]), (2, 20000))
+        self.assertEqual(summary["mistral"]["calls"], 3)
+        # two calls fit in a minute; the third waited for the first to age out of the window
+        self.assertTrue(any(seconds >= 30 for seconds in sleeps), sleeps)
+        self.assertGreaterEqual(clock["now"] - 1000.0, 60.0)
+
+    def test_router_waits_for_token_window_when_the_minute_budget_is_spent(self):
+        model_client.SECRETS.clear()
+        model_client.SECRETS.update({"MISTRAL_API_KEY": "test-mistral"})
+        clock = {"now": 1000.0}
+        sleeps = []
+
+        def sleep(seconds):
+            sleeps.append(seconds)
+            clock["now"] += seconds
+
+        def opener(request, timeout=0):
+            return reply('{"ok": true}', prompt_tokens=900, completion_tokens=100,
+                         headers={"x-ratelimit-limit-req-minute": "100", "x-ratelimit-limit-tokens-minute": "2500"})
+
+        for _ in range(3):
+            model_client.complete([{"role": "user", "content": "hi"}], base_url="http://127.0.0.1:9",
+                                  opener=opener, sleep=sleep, clock=lambda: clock["now"])
+        # 1000 tokens each against a 2500-token minute: the third call waits for the first to expire
+        self.assertTrue(any(seconds >= 30 for seconds in sleeps), sleeps)
+        summary = {item["name"]: item for item in model_client.usage_summary("http://127.0.0.1:9")["providers"]}
+        self.assertEqual(summary["mistral"]["limit_tpm"], 2500)
+
+    def test_remaining_zero_holds_the_provider_for_a_minute(self):
+        model_client.SECRETS.clear()
+        model_client.SECRETS.update({"MISTRAL_API_KEY": "test-mistral"})
+        clock = {"now": 1000.0}
+        sleeps = []
+
+        def sleep(seconds):
+            sleeps.append(seconds)
+            clock["now"] += seconds
+
+        def opener(request, timeout=0):
+            return reply('{"ok": true}', headers={"x-ratelimit-limit-req-minute": "10", "x-ratelimit-remaining-req-minute": "0"})
+
+        model_client.complete([{"role": "user", "content": "hi"}], base_url="http://127.0.0.1:9", opener=opener, sleep=sleep, clock=lambda: clock["now"])
+        model_client.complete([{"role": "user", "content": "hi"}], base_url="http://127.0.0.1:9", opener=opener, sleep=sleep, clock=lambda: clock["now"])
+        self.assertTrue(any(seconds >= 59 for seconds in sleeps), sleeps)
 
     def test_bad_credentials_disable_a_provider_and_all_failures_raise(self):
         def opener(request, timeout=0):

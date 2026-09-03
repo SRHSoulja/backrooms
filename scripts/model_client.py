@@ -162,11 +162,29 @@ def _available(provider, usage, now):
     return True, ""
 
 
+def _note_success(usage, name, prompt_tokens, completion_tokens, limits, now, **fields):
+    entry = _record(usage, name, calls=1, input_tokens=prompt_tokens, output_tokens=completion_tokens, last_call_at=now, **fields)
+    cost = int(prompt_tokens) + int(completion_tokens)
+    entry["last_cost"] = cost
+    _window(entry, now).append([now, cost])
+    if limits.get("rpm"):
+        entry["limit_rpm"] = limits["rpm"]
+    if limits.get("tpm"):
+        entry["limit_tpm"] = limits["tpm"]
+    # The provider says the minute is spent: hold until a fresh one, whatever the local window thinks.
+    if limits.get("remaining_rpm") == 0 or (limits.get("remaining_tpm") is not None and limits["remaining_tpm"] < cost):
+        entry["hold_until"] = now + WINDOW_SECONDS
+    return entry
+
+
 def _pace(provider, entry, now, sleep=time.sleep):
-    if provider["rpm"]:
-        wait = entry.get("last_call_at", 0) + 60.0 / provider["rpm"] - now
-        if wait > 0:
-            sleep(min(wait, 30))
+    wait = 0.0
+    rpm = min([limit for limit in (provider.get("rpm"), entry.get("limit_rpm")) if limit] or [0])
+    if rpm:
+        wait = max(wait, entry.get("last_call_at", 0) + 60.0 / rpm - now)
+    wait = max(wait, _minute_wait(provider, entry, now))
+    if wait > 0:
+        sleep(min(wait, WINDOW_SECONDS + 1))
 
 
 def _schema_hint(messages, schema):
@@ -190,9 +208,67 @@ def _request(provider, messages, temperature, max_tokens, schema, schema_name, t
                                      data=json.dumps(payload).encode(), headers=headers, method="POST")
     with (opener or urllib.request.urlopen)(request, timeout=timeout) as response:
         data = json.load(response)
+        limits = _limits_from_headers(getattr(response, "headers", None))
     content = data["choices"][0]["message"]["content"]
     usage = data.get("usage") or {}
-    return str(content or "").strip(), int(usage.get("prompt_tokens") or 0), int(usage.get("completion_tokens") or 0)
+    return str(content or "").strip(), int(usage.get("prompt_tokens") or 0), int(usage.get("completion_tokens") or 0), limits
+
+
+WINDOW_SECONDS = 60.0
+DEFAULT_CALL_COST = 1500
+
+
+def _limits_from_headers(headers):
+    """Per-minute limits the provider states on every response (OpenAI-style
+    x-ratelimit headers). Learned limits override the built-in defaults, so
+    the router paces to what the account actually has, not to the brochure."""
+    if not headers:
+        return {}
+    found = {}
+    for key, value in headers.items():
+        name = str(key).lower()
+        if not name.startswith("x-ratelimit-"):
+            continue
+        number = _int(value)
+        if number is None:
+            continue
+        if name in ("x-ratelimit-limit-req-minute", "x-ratelimit-limit-requests"):
+            found["rpm"] = number
+        elif name in ("x-ratelimit-limit-tokens-minute", "x-ratelimit-limit-tokens"):
+            found["tpm"] = number
+        elif name in ("x-ratelimit-remaining-req-minute", "x-ratelimit-remaining-requests"):
+            found["remaining_rpm"] = number
+        elif name in ("x-ratelimit-remaining-tokens-minute", "x-ratelimit-remaining-tokens"):
+            found["remaining_tpm"] = number
+    return found
+
+
+def _window(entry, now):
+    """Calls made in the last minute as [timestamp, tokens] pairs."""
+    window = [item for item in entry.get("window", []) if isinstance(item, list) and len(item) == 2 and now - float(item[0]) < WINDOW_SECONDS]
+    entry["window"] = window
+    return window
+
+
+def _minute_wait(provider, entry, now):
+    """Seconds to wait so the next call stays inside the per-minute request and
+    token limits, using the learned limits when the provider stated them."""
+    rpm = min([limit for limit in (provider.get("rpm"), entry.get("limit_rpm")) if limit] or [0])
+    tpm = entry.get("limit_tpm") or provider.get("tpm")
+    window = _window(entry, now)
+    wait = 0.0
+    if rpm and len(window) >= rpm:
+        wait = max(wait, float(window[-rpm][0]) + WINDOW_SECONDS - now)
+    if tpm:
+        expected = int(entry.get("last_cost") or DEFAULT_CALL_COST)
+        used = sum(int(item[1]) for item in window)
+        for stamp, tokens in window:
+            if used + expected <= tpm:
+                break
+            wait = max(wait, float(stamp) + WINDOW_SECONDS - now)
+            used -= int(tokens)
+    hold = float(entry.get("hold_until", 0) or 0) - now
+    return max(0.0, wait, hold)
 
 
 RETRY_429_MAX_WAIT = 10
@@ -227,8 +303,10 @@ def _error_detail(error):
 
 
 def _retry_after(error):
+    """Seconds the provider asked us to wait; a per-second limit without the
+    header needs only a short pause, not a minute."""
     headers = getattr(error, "headers", None)
-    return _int(headers.get("Retry-After"), 60) if headers else 60
+    return _int(headers.get("Retry-After"), 15) if headers else 15
 
 
 def _request_with_retry(provider, messages, temperature, max_tokens, schema, schema_name, timeout, opener, sleep):
@@ -268,7 +346,7 @@ def complete(messages, *, temperature=0.3, max_tokens=400, schema=None, schema_n
             entry = _record(usage, provider["name"])
             _pace(provider, entry, now, sleep)
             try:
-                content, prompt_tokens, completion_tokens = _request_with_retry(provider, messages, temperature, max_tokens, schema, schema_name, timeout, opener, sleep)
+                content, prompt_tokens, completion_tokens, limits = _request_with_retry(provider, messages, temperature, max_tokens, schema, schema_name, timeout, opener, sleep)
             except urllib.error.HTTPError as error:
                 status = getattr(error, "code", 0)
                 if status == 429:
@@ -282,8 +360,8 @@ def complete(messages, *, temperature=0.3, max_tokens=400, schema=None, schema_n
                 elif status == 400 and schema is not None and provider["json_schema"]:
                     # Some endpoints reject schema mode for a given model; retry once with a prompt hint.
                     try:
-                        content, prompt_tokens, completion_tokens = _request({**provider, "json_schema": False}, messages, temperature, max_tokens, schema, schema_name, timeout, opener)
-                        _record(usage, provider["name"], calls=1, input_tokens=prompt_tokens, output_tokens=completion_tokens, last_call_at=clock(), last_error="400 on schema mode; prompt hint used")
+                        content, prompt_tokens, completion_tokens, limits = _request({**provider, "json_schema": False}, messages, temperature, max_tokens, schema, schema_name, timeout, opener)
+                        _note_success(usage, provider["name"], prompt_tokens, completion_tokens, limits, clock(), last_error="400 on schema mode; prompt hint used")
                         _save_usage(usage)
                         return content, provider["name"]
                     except Exception as retry_error:  # noqa: BLE001 - recorded and passed to the next provider
@@ -296,7 +374,7 @@ def complete(messages, *, temperature=0.3, max_tokens=400, schema=None, schema_n
                 _record(usage, provider["name"], errors=1, last_error=f"{type(error).__name__} ({call_class})", cooldown_until=clock() + (5 if provider["name"] == "local" else 30))
                 failures.append(f"{provider['name']}:{type(error).__name__}")
                 continue
-            _record(usage, provider["name"], calls=1, input_tokens=prompt_tokens, output_tokens=completion_tokens, last_call_at=clock())
+            _note_success(usage, provider["name"], prompt_tokens, completion_tokens, limits, clock())
             _save_usage(usage)
             return content, provider["name"]
         if attempt == 0:
@@ -352,6 +430,8 @@ def usage_summary(local_base_url=None):
             "input_tokens": entry.get("input_tokens", 0), "output_tokens": entry.get("output_tokens", 0),
             "errors": entry.get("errors", 0), "last_error": str(entry.get("last_error", ""))[:120],
             "daily_request_budget": provider["rpd"], "daily_token_budget": provider["tpd"],
+            "limit_rpm": entry.get("limit_rpm") or provider.get("rpm"), "limit_tpm": entry.get("limit_tpm") or provider.get("tpm"),
+            "requests_last_minute": len(_window(entry, time.time())), "tokens_last_minute": sum(int(item[1]) for item in entry.get("window", [])),
             "status": ("disabled" if entry.get("disabled") else "cooldown" if entry.get("cooldown_until", 0) > time.time() else "ready")})
     return summary
 
