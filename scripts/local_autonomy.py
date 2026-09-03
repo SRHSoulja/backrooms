@@ -1427,10 +1427,25 @@ def main():
                 tool = json.loads(completed.stdout)
             except json.JSONDecodeError:
                 tool = {"status": "failed"}
+            # Prefer an encyclopedic summary as the first evidence source: it
+            # is clean, quotable prose with a canonical page URL, and it adds a
+            # second domain to any later web fetch on the same topic.
+            if tool_name == "public-search" and fetch_budget > 0 and tool.get("status") == "completed":
+                summary_run = subprocess.run([sys.executable, str(ROOT / "scripts/tool_broker.py"),
+                    "wikipedia-summary", query_target], cwd=ROOT, capture_output=True, text=True, check=False)
+                try:
+                    summarized = json.loads(summary_run.stdout)
+                except json.JSONDecodeError:
+                    summarized = {"status": "failed"}
+                if summarized.get("status") == "completed" and summarized.get("excerpt"):
+                    fetch_budget -= 1
+                    summarized["query"] = target[:160].strip()
+                    summarized["search_results"] = tool.get("results", [])[:5]
+                    tool = summarized
             # A search is only a lead. Fetch one selected HTTPS result so the
             # evidence ledger can require an actual page excerpt and hash,
             # rather than treating a search-provider homepage as provenance.
-            if (tool_name == "public-search" and fetch_budget > 0 and
+            if (tool.get("tool") == "public-search" and fetch_budget > 0 and
                     tool.get("status") == "completed" and
                     isinstance(tool.get("results"), list)):
                 candidates = [item.get("url", "") for item in tool["results"]

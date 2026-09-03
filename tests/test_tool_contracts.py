@@ -94,6 +94,10 @@ class ToolContractTests(unittest.TestCase):
         long_word = "a" * 70
         self.assertIn(long_word, clean_excerpt("x " + long_word + " y"))
 
+    def test_wikipedia_summary_is_a_text_read_contract(self):
+        self.assertEqual(TOOL_CONTRACTS["wikipedia-summary"]["capability"], "public-text-read")
+        self.assertTrue(TOOL_CONTRACTS["wikipedia-summary"]["untrusted_content"])
+
     def test_local_code_sandbox_is_contracted(self):
         self.assertEqual(TOOL_CONTRACTS["local-code-sandbox"]["network"], "none")
         self.assertEqual(TOOL_CONTRACTS["local-code-sandbox"]["timeout_seconds"], 5)

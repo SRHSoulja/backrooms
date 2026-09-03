@@ -37,6 +37,13 @@ if tool == "public-search":
     print(json.dumps({"tool": "public-search", "query": value, "status": "completed", "source": "https://search.example/",
                       "results": [{"title": "A2A spec", "url": "https://spec.example/a2a"}],
                       "contract": {"capability": "public-web-read"}}))
+elif tool == "wikipedia-summary":
+    if "no-wiki" in value:
+        print(json.dumps({"tool": "wikipedia-summary", "query": value, "status": "no-match", "source": "https://en.wikipedia.org/", "contract": {}}))
+    else:
+        print(json.dumps({"tool": "wikipedia-summary", "query": value, "title": "Agent card", "url": "https://en.wikipedia.org/wiki/Agent_card", "status": "completed",
+                          "excerpt": "An agent card is a public discovery document. It publishes an Agent Card for discovery.",
+                          "contract": {"capability": "public-text-read", "untrusted_content": True}}))
 elif tool == "public-text":
     print(json.dumps({"tool": "public-text", "url": value, "status": "completed",
                       "excerpt": "The Agent2Agent protocol is an open standard that lets agents exchange tasks. It publishes an Agent Card for discovery.",
@@ -206,17 +213,18 @@ class AutonomyIntegrationTests(unittest.TestCase):
                                    "purpose": "p", "question": "q", "room": "relay", "status": "active-local",
                                    "capabilities": ["bounded-questioning"], "interviewed_at": "2026-09-01T00:00:00+00:00"})
         (self.root / "state/local-agents.json").write_text(json.dumps(registry))
-        self.server.decision = {**BASE_DECISION, "action": "EXPLORE", "target": "agent card discovery", "reason": "lead"}
+        self.server.decision = {**BASE_DECISION, "action": "EXPLORE", "target": "agent card discovery no-wiki", "reason": "lead"}
         completed = self.run_autonomy()
         self.assertEqual(completed.returncode, 0, completed.stderr[-1500:])
         output = json.loads(completed.stdout)
         calls = [json.loads(line) for line in (self.root / "state/broker-calls.jsonl").read_text().splitlines()]
         self.assertEqual([call["value"] for call in calls if call["tool"] == "public-search"],
-                         ["agent card discovery", "agent card discovery"])
+                         ["agent card discovery no-wiki", "agent card discovery no-wiki"])
+        self.assertEqual(sum(call["tool"] == "wikipedia-summary" for call in calls), 2)
         self.assertEqual(sum(call["tool"] == "public-text" for call in calls), 2)
         registry = json.loads((self.root / "state/local-agents.json").read_text())
         tool = registry["agents"][0]["last_tool"]
-        self.assertEqual((tool["query"], tool["source"], tool["verified"]), ("agent card discovery", "https://spec.example/a2a", True))
+        self.assertEqual((tool["query"], tool["source"], tool["verified"]), ("agent card discovery no-wiki", "https://spec.example/a2a", True))
         self.assertEqual(len(tool["source_hash"]), 64)
         ledger = [json.loads(line) for line in (self.root / "state/findings.jsonl").read_text().splitlines()]
         self.assertEqual([item["status"] for item in ledger], ["unreviewed", "unreviewed"])
@@ -230,6 +238,19 @@ class AutonomyIntegrationTests(unittest.TestCase):
         self.assertIn("finding-filed", kinds)
         self.assertIn("tool-used", kinds)
         self.assertEqual(output["corroborations"], [])
+
+    def test_encyclopedic_summary_is_preferred_when_it_matches(self):
+        self.server.decision = {**BASE_DECISION, "action": "EXPLORE", "target": "agent card discovery", "reason": "lead"}
+        completed = self.run_autonomy()
+        self.assertEqual(completed.returncode, 0, completed.stderr[-1500:])
+        calls = [json.loads(line) for line in (self.root / "state/broker-calls.jsonl").read_text().splitlines()]
+        self.assertEqual([call["tool"] for call in calls], ["public-search", "wikipedia-summary"])
+        registry = json.loads((self.root / "state/local-agents.json").read_text())
+        tool = registry["agents"][0]["last_tool"]
+        self.assertEqual((tool["tool"], tool["source"], tool["verified"]), ("wikipedia-summary", "https://en.wikipedia.org/wiki/Agent_card", True))
+        ledger = [json.loads(line) for line in (self.root / "state/findings.jsonl").read_text().splitlines()]
+        self.assertEqual(ledger[0]["url"], "https://en.wikipedia.org/wiki/Agent_card")
+        self.assertEqual(ledger[0]["status"], "unreviewed")
 
     def test_frontier_question_and_outside_lead_reach_the_prompt(self):
         (self.root / "state/frontier.json").write_text(json.dumps({

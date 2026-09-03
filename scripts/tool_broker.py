@@ -12,6 +12,7 @@ SCRIPT_STYLE = re.compile(r"<(?:script|style|noscript)[^>]*>.*?</(?:script|style
 SENSITIVE_ASSIGNMENT = re.compile(r"(?i)\b(?:api[_ -]?key|password|secret|credential|token|mnemonic)\s*[:=]\s*[^\s,;]+")
 TOOL_CONTRACTS = {
     "wikipedia-search": {"capability": "public-web-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES},
+    "wikipedia-summary": {"capability": "public-text-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES, "raw_data": False, "untrusted_content": True},
     "public-https": {"capability": "public-web-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES},
     "public-search": {"capability": "public-web-read", "access": "read-only", "network": "public HTTPS search", "side_effects": False, "max_bytes": MAX_BYTES},
     "public-json": {"capability": "public-data-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": RESEARCH_MAX_BYTES, "raw_data": False},
@@ -75,6 +76,36 @@ def wikipedia(query):
     return {"tool": "wikipedia-search", "query": query, "results": results,
             "source": "https://en.wikipedia.org/", "status": "completed",
             "contract": TOOL_CONTRACTS["wikipedia-search"]}
+
+
+def wikipedia_summary(query):
+    """Resolve a query to one Wikipedia article and return its plain-text summary as evidence.
+
+    The REST summary endpoint yields clean, quotable prose with a canonical
+    page URL, which makes it the preferred first source for a research turn.
+    """
+    if not query or len(query) > 160 or BLOCKED.search(query):
+        raise ValueError("query failed bounded validation")
+    params = urllib.parse.urlencode({"action": "query", "list": "search", "srsearch": query,
+                                     "srlimit": 1, "format": "json", "utf8": 1})
+    data = json.loads(fetch("https://en.wikipedia.org/w/api.php?" + params))
+    hits = data.get("query", {}).get("search", [])
+    if not hits:
+        return {"tool": "wikipedia-summary", "query": query, "status": "no-match",
+                "source": "https://en.wikipedia.org/", "contract": TOOL_CONTRACTS["wikipedia-summary"]}
+    title = str(hits[0].get("title", "")).strip()
+    encoded = urllib.parse.quote(title.replace(" ", "_"), safe="")
+    summary = json.loads(fetch("https://en.wikipedia.org/api/rest_v1/page/summary/" + encoded))
+    extract = re.sub(r"\s+", " ", html.unescape(str(summary.get("extract", "")))).strip()
+    extract = SENSITIVE_ASSIGNMENT.sub("[withheld]", extract)
+    extract = BLOCKED.sub("[withheld]", extract)
+    page_url = str(((summary.get("content_urls") or {}).get("desktop") or {}).get("page") or
+                   "https://en.wikipedia.org/wiki/" + encoded)
+    if not extract or not page_url.startswith("https://"):
+        return {"tool": "wikipedia-summary", "query": query, "status": "no-match", "title": title,
+                "source": "https://en.wikipedia.org/", "contract": TOOL_CONTRACTS["wikipedia-summary"]}
+    return {"tool": "wikipedia-summary", "query": query, "title": title, "url": page_url,
+            "excerpt": extract[:2400], "status": "completed", "contract": TOOL_CONTRACTS["wikipedia-summary"]}
 
 
 def public_search(query):
@@ -202,6 +233,8 @@ def run(tool, value):
             return {"tool": tool, **review(str(value or "")), "contract": TOOL_CONTRACTS[tool]}
         if tool == "wikipedia-search":
             return wikipedia(value)
+        if tool == "wikipedia-summary":
+            return wikipedia_summary(value)
         if tool == "public-search":
             return public_search(value)
         if tool == "public-json":
