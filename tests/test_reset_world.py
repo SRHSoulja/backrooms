@@ -1,4 +1,6 @@
 import fcntl
+import hashlib
+import inspect
 import json
 import tempfile
 import unittest
@@ -74,6 +76,43 @@ class ResetWorldTests(unittest.TestCase):
             fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
             lock.close()
         self.assertTrue((root / "state/findings.jsonl").exists())
+
+    def test_reset_never_touches_the_wallet_public_feeds_journal_or_kept_ledgers(self):
+        root = self.make_root()
+        state = root / "state"
+        precious = {
+            "wallet/receiving.json": '{"address": "public-receiving-address"}',
+            "wallet/treasury-policy.json": '{"enabled": false}',
+            "docs/treasury.json": '{"status": "online"}',
+            "docs/findings.json": '{"findings": [1]}',
+            "journal/2026-09-02.md": "# 2026-09-02\n",
+            ".env.example": "MISTRAL_API_KEY=\n",
+            "state/treasury-intents.json": '{"intents": [{"id": "intent-1"}]}',
+            "state/archive/events.jsonl": '{"id": "event-1"}\n',
+            "state/quarantine-inbox.json": '{"messages": [{"id": "a2a-1"}]}',
+            "state/codex-outbox/review-1.json": '{"lead": "x"}',
+            "state/codex-consumed.json": '{"consumed": ["review-0"]}',
+            "state/daemon.log": "cycle 239 published\n",
+        }
+        for name, text in precious.items():
+            path = root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text)
+        digest = lambda name: hashlib.sha256((root / name).read_bytes()).hexdigest()
+        before = {name: digest(name) for name in precious}
+        plan = reset_world.reset_world(root, stamp="keep")
+        self.assertEqual({name: digest(name) for name in precious}, before)
+        self.assertTrue(any("wallet" in item for item in plan["untouched"]))
+        self.assertTrue(any(".config/backrooms" in item for item in plan["untouched"]))
+        self.assertIn("Never touched", (state / "archive/reset-keep/RESET.md").read_text())
+        # The reset must stay confined to state/: no home-directory or vault access in its source.
+        source = inspect.getsource(reset_world)
+        self.assertNotIn("Path.home", source)
+        self.assertNotIn("expanduser", source)
+        self.assertNotIn("~/.config", source.replace("~/.config/backrooms/ (the vault", ""))
+        # Founding-room charters and doors survive; only occupants and artifacts are cleared.
+        world = json.loads((state / "world.json").read_text())
+        self.assertEqual(world["rooms"][0]["doors"], ["relay-gate"])
 
 
 if __name__ == "__main__":

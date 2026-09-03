@@ -30,6 +30,12 @@ ARCHIVE_DIRS = ("printed", "agent-notes", "interviews")
 KEEP = ("quarantine-inbox.json", "quarantine-inbox.lock", "codex-inbox", "codex-outbox", "codex-consumed.json",
         "codex-bridge-log.jsonl", "codex-bridge-status.json", "treasury-intents.json", "daemon.log",
         "llama-server.log", "archive")
+# Never read, moved, or rewritten by a reset: the reset only edits files under ``state/``.
+UNTOUCHED = ("wallet/ (public receiving address and treasury policy, tracked in git)",
+             "docs/ (public feeds; the daemon rebuilds them from the fresh state)",
+             "journal/ (daily entries, tracked in git)",
+             "~/.config/backrooms/ (the vault: wallet private key and the provider key file)",
+             "git history")
 
 
 def daemon_running(root):
@@ -74,7 +80,7 @@ def reset_world(root, stamp=None, dry_run=False):
         raise SystemExit("the daemon holds state/local-daemon.lock; stop the supervisor first")
     stamp = stamp or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     archive = state / "archive" / f"reset-{stamp}"
-    plan = {"archive": str(archive.relative_to(root)), "archived": [], "kept": [], "restored": []}
+    plan = {"archive": str(archive.relative_to(root)), "archived": [], "kept": [], "restored": [], "untouched": list(UNTOUCHED)}
     for name in ARCHIVE_ONLY + ARCHIVE_DIRS:
         if (state / name).exists():
             plan["archived"].append(name)
@@ -104,7 +110,8 @@ def reset_world(root, stamp=None, dry_run=False):
     atomic_write_json(state / "local-agents.json", {"privacy": "local registry; no credentials or private memory", "agents": [], "decisions": []})
     (archive / "RESET.md").write_text(
         f"# World reset {stamp}\n\nArchived: {', '.join(plan['archived']) or 'nothing'}.\nKept in place: {', '.join(plan['kept']) or 'nothing'}.\n"
-        f"Cycle counter kept at {cycle}. Founding rooms restored with Echo and Morrow.\n")
+        f"Cycle counter kept at {cycle}. Founding rooms restored with Echo and Morrow.\n"
+        f"Never touched: {'; '.join(UNTOUCHED)}.\n")
     return plan
 
 
