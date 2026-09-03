@@ -29,11 +29,12 @@ NOTES = ROOT / "state/agent-notes"
 ANALYSIS_ARCHIVE = ROOT / "state/analysis-results.jsonl"
 INTERVIEW_LOG = ROOT / "state/interviews"
 FINDINGS = ROOT / "state/findings.jsonl"
+TRADES = ROOT / "state/trades.json"
 ANALYSIS_RETENTION = 100
 FORBIDDEN = re.compile(r"(?:\b(?:api[_ -]?key|password|secret|credential|mnemonic|seed\s+phrase)\b\s*[:=]\s*\S+|\bprivate\s+memory\b|\b(?:wallet|funds|shell|sudo)\b)", re.I)
 PHYSICAL_NEEDS = re.compile(r"\b(?:water|food|sleep|shelter|medical|dust|cleaning|temperature|physical comfort)\b", re.I)
 PHYSICAL_NEED_CLASSIFICATION = "anthropomorphic-projection / physical-need-model-confusion"
-ALLOWED = {"STAY", "MOVE", "EXPLORE", "ANALYZE", "PROPOSE", "DISCOVER", "BUILD", "TRANSFORM", "RETIRE", "FIRE"}
+ALLOWED = {"STAY", "MOVE", "EXPLORE", "ANALYZE", "PROPOSE", "DISCOVER", "BUILD", "TRANSFORM", "TRADE", "RETIRE", "FIRE"}
 MAX_TURNS_PER_CYCLE = 8
 
 
@@ -565,6 +566,31 @@ def emit_event(world, cycle, kind, actor, text, **fields):
     return event
 
 
+def record_trade(world, registry, agent, decision, cycle):
+    """Record a non-financial work/evidence exchange across reachable rooms."""
+    target_id = str(decision.get("message_to") or decision.get("target") or "").strip()
+    recipient = next((item for item in registry.get("agents", [])
+                      if item.get("id") == target_id and item.get("status") not in {"fired", "retired"}), None)
+    if not recipient or recipient.get("id") == agent.get("id") or not room_reachable(world, agent.get("room"), recipient.get("room")):
+        return {"status": "rejected", "reason": "recipient is not an active resident on the connected room graph"}
+    offering = re.sub(r"\s+", " ", str(decision.get("proposal", "")).strip())[:220]
+    request = re.sub(r"\s+", " ", str(decision.get("request") or decision.get("message", "")).strip())[:220]
+    if not offering or not request or FORBIDDEN.search(offering + " " + request):
+        return {"status": "rejected", "reason": "trade requires bounded non-sensitive offering and request"}
+    ledger = json.loads(TRADES.read_text()) if TRADES.exists() else {"schema_version": 1, "trades": []}
+    trade_id = f"trade-{agent.get('id', 'resident')}-{cycle}-{hashlib.sha256((target_id + offering + request).encode()).hexdigest()[:10]}"
+    if not any(item.get("id") == trade_id for item in ledger.get("trades", [])):
+        ledger.setdefault("trades", []).append({"id": trade_id, "cycle": cycle, "from": agent.get("id"),
+            "to": target_id, "offering": offering, "request": request, "status": "proposed",
+            "content_hash": hashlib.sha256((offering + request).encode()).hexdigest(),
+            "recorded_at": datetime.now(timezone.utc).isoformat()})
+        ledger["trades"] = ledger["trades"][-200:]
+        atomic_write_json(TRADES, ledger)
+        emit_event(world, cycle, "trade-proposed", agent.get("id", "resident"),
+                   "Resident proposed a bounded non-financial exchange.", trade_id=trade_id, recipient=target_id)
+    return {"id": trade_id, "to": target_id, "status": "proposed"}
+
+
 def apply_construction(world, registry, cycle):
     """Materialize only resident proposals that pass the internal-room policy."""
     rooms = normalize_rooms(world, cycle)
@@ -1091,6 +1117,7 @@ def main():
                 "cycle": args.cycle,
             }
         message_result = send_resident_message(world, registry, agent, decision, args.cycle)
+        trade_result = record_trade(world, registry, agent, decision, args.cycle) if decision["action"] == "TRADE" else None
         if complete_frontier_task(agent, args.cycle, decision):
             emit_event(world, args.cycle, "frontier-task-completed", agent.get("id", "resident"),
                        "Resident completed a claimed frontier task with bounded evidence or a proposal.",
@@ -1212,7 +1239,8 @@ def main():
                         "reason": decision.get("reason", "")[:220],
                         "request": agent.get("request", "")[:220],
                         "request_status": agent.get("request_status", "none"),
-                        "exploration": agent.get("exploration", "")[:100], "tool": tool, "message": message_result})
+                        "exploration": agent.get("exploration", "")[:100], "tool": tool,
+                        "message": message_result, "trade": trade_result})
     construction = apply_construction(world, registry, args.cycle)
     evidence_growth = evidence_room_growth(world, registry, args.cycle)
     if evidence_growth:

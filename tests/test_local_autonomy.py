@@ -1,4 +1,5 @@
 import copy
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -18,12 +19,14 @@ class LocalAutonomyTests(unittest.TestCase):
         self.original_analysis_archive = local_autonomy.ANALYSIS_ARCHIVE
         self.original_findings = local_autonomy.FINDINGS
         self.original_frontier = local_autonomy.FRONTIER
+        self.original_trades = local_autonomy.TRADES
         local_autonomy.WHITEBOARD = Path(self.archive_dir.name) / "whiteboard.json"
         local_autonomy.PRINTER_QUEUE = Path(self.archive_dir.name) / "printer-queue.json"
         local_autonomy.PRINTED = Path(self.archive_dir.name) / "printed"
         local_autonomy.NOTES = Path(self.archive_dir.name) / "notes"
         local_autonomy.FINDINGS = Path(self.archive_dir.name) / "findings.jsonl"
         local_autonomy.FRONTIER = Path(self.archive_dir.name) / "frontier.json"
+        local_autonomy.TRADES = Path(self.archive_dir.name) / "trades.json"
 
     def tearDown(self):
         local_autonomy.ARCHIVE = self.original_archive
@@ -34,6 +37,7 @@ class LocalAutonomyTests(unittest.TestCase):
         local_autonomy.ANALYSIS_ARCHIVE = self.original_analysis_archive
         local_autonomy.FINDINGS = self.original_findings
         local_autonomy.FRONTIER = self.original_frontier
+        local_autonomy.TRADES = self.original_trades
         self.archive_dir.cleanup()
 
     def test_build_creates_one_connected_room_and_event(self):
@@ -319,6 +323,16 @@ class LocalAutonomyTests(unittest.TestCase):
                                                        {"message_to": "morrow", "message": "The source is ready."}, 82)
         self.assertEqual(result["status"], "recorded")
         self.assertEqual(world["messages"][0]["to"], "morrow")
+
+    def test_trade_requires_reachable_resident_and_persists_nonfinancial_offer(self):
+        world = {"events": [], "rooms": [{"id": "atrium"}, {"id": "relay"}],
+                 "connections": [{"kind": "room-link", "from": "atrium", "to": "relay"}]}
+        registry = {"agents": [{"id": "echo", "room": "atrium", "status": "active-local"},
+                                {"id": "morrow", "room": "relay", "status": "active-local"}]}
+        result = local_autonomy.record_trade(world, registry, registry["agents"][0],
+            {"message_to": "morrow", "proposal": "verify source A", "request": "compare source B"}, 83)
+        self.assertEqual(result["status"], "proposed")
+        self.assertEqual(json.loads(local_autonomy.TRADES.read_text())["trades"][0]["to"], "morrow")
 
     def test_decision_schema_uses_only_existing_rooms_and_actions(self):
         schema = local_autonomy.decision_schema(["atrium", "archive"])

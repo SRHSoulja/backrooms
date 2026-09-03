@@ -63,6 +63,8 @@ PUBLIC_FRONTIER = ROOT / "docs/frontier.json"
 LOCAL_CODEX_STATUS = ROOT / "state/codex-bridge-status.json"
 PUBLIC_CODEX_STATUS = ROOT / "docs/codex-bridge.json"
 PUBLIC_MESSAGES = ROOT / "docs/messages.json"
+LOCAL_TRADES = ROOT / "state/trades.json"
+PUBLIC_TRADES = ROOT / "docs/trades.json"
 LOCAL_FINDINGS = ROOT / "state/findings.jsonl"
 PUBLIC_FINDINGS = ROOT / "docs/findings.json"
 LOCAL_CODEX_INBOX = ROOT / "state/codex-inbox"
@@ -499,6 +501,18 @@ def sync_messages(world):
     return {"resident_messages": len(records), "messages_feed": "docs/messages.json"}
 
 
+def sync_trades():
+    local = json.loads(LOCAL_TRADES.read_text()) if LOCAL_TRADES.exists() else {"trades": []}
+    records = []
+    for item in local.get("trades", [])[-100:]:
+        records.append({key: public_event_text(item.get(key, "")) if key in {"offering", "request"} else item.get(key)
+                        for key in ("id", "cycle", "from", "to", "offering", "request", "status", "content_hash", "recorded_at")})
+    atomic_write_json(PUBLIC_TRADES, {"schema_version": 1, "generated_at": datetime.now(timezone.utc).isoformat(),
+        "privacy": "Sanitized non-financial exchange metadata only; no wallets, payments, or private context.",
+        "records": records})
+    return {"trades": len(records), "trades_feed": "docs/trades.json"}
+
+
 def sync_outside_signals():
     local = json.loads(LOCAL_INBOX.read_text()) if LOCAL_INBOX.exists() else {"messages": []}
     changed = False
@@ -783,7 +797,7 @@ def publish(result, world, model_health=True):
         "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
         "activity_feed": "docs/activity.json",
         "feed_freshness_seconds": 0
-        ,**resource_health, **analysis_health, **research_health, **findings_health, **frontier_health, **sync_code_proposals(), **sync_outside_signals(), **sync_codex_bridge(), **sync_messages(world),
+        ,**resource_health, **analysis_health, **research_health, **findings_health, **frontier_health, **sync_code_proposals(), **sync_outside_signals(), **sync_codex_bridge(), **sync_messages(world), **sync_trades(),
         "dropped_events": 0
     }
     safe = {
@@ -928,10 +942,10 @@ def publish(result, world, model_health=True):
     sync_outside_signals()
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}
-    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json", "state/frontier.json", "state/codex-bridge-status.json"}:
+    if changed - {"docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/trades.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json", "state/frontier.json", "state/codex-bridge-status.json"}:
         print(json.dumps({"publish": "skipped", "reason": "other local changes present"}), flush=True)
         return
-    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json"], cwd=ROOT, check=True)
+    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/trades.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json"], cwd=ROOT, check=True)
     commit = subprocess.run(["git", "commit", "-m", "chore: publish local council signal"], cwd=ROOT, capture_output=True)
     if commit.returncode == 0:
         pushed = subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=ROOT, capture_output=True)
