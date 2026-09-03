@@ -350,6 +350,8 @@ class LocalAutonomyTests(unittest.TestCase):
     def test_research_does_not_pollute_resident_query_or_fake_provenance(self):
         source = Path("scripts/local_autonomy.py").read_text()
         self.assertIn("query_target = target[:160].strip()", source)
+        self.assertIn('"public-text", candidate', source)
+        self.assertIn('fetched["search_results"]', source)
         self.assertIn('"verified": bool(source and excerpt)', source)
         self.assertIn('"source_hash": hashlib.sha256(excerpt.encode()).hexdigest() if source and excerpt else ""', source)
 
