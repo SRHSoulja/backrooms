@@ -990,6 +990,33 @@ def update_evidence_activity(agent, filed, cycle):
     return None
 
 
+def shared_research_target(current_question, frontier):
+    """Pick the research topic residents should converge on this cycle.
+
+    A council question that already has exactly one accepted finding is
+    finished first, from the other source family, so a cross-domain pair
+    forms instead of every cycle starting a new topic. Otherwise the current
+    question is used. Returns (query, preferred_family) where the family is
+    'encyclopedia', 'web', or None for the default alternation.
+    """
+    findings = accepted_findings()
+    by_topic = {}
+    for item in findings:
+        topic = str(item.get("topic", "")).strip().lower()
+        domain = urllib.parse.urlparse(str(item.get("url", ""))).netloc.lower()
+        if topic and domain:
+            by_topic.setdefault(topic, set()).add(domain)
+    for question in reversed(list((frontier or {}).get("open_questions", []))[-6:]):
+        if question.get("status") != "open":
+            continue
+        query = question_terms(question.get("question", ""))
+        domains = by_topic.get(query.lower(), set())
+        if len(domains) == 1:
+            only = next(iter(domains))
+            return query, ("web" if "wikipedia.org" in only else "encyclopedia")
+    return question_terms(current_question), None
+
+
 def accepted_findings():
     findings = []
     if not FINDINGS.exists():
@@ -1345,7 +1372,6 @@ def main():
     parser.add_argument("--cycle", type=int, required=True)
     parser.add_argument("--question", default="", help="the cycle's council question; half of the research turns investigate it")
     args = parser.parse_args()
-    shared_research = question_terms(args.question)
     registry = json.loads(REGISTRY.read_text()) if REGISTRY.exists() else {"agents": [], "decisions": []}
     deduplicate(registry)
     for agent in registry.get("agents", []):
@@ -1367,6 +1393,7 @@ def main():
             frontier_snapshot = json.loads(FRONTIER.read_text())
         except json.JSONDecodeError:
             frontier_snapshot = {}
+    shared_research, shared_family = shared_research_target(args.question, frontier_snapshot)
     regrounded = []
     for agent in selected:
         if len(regrounded) >= MAX_REGROUNDS_PER_CYCLE:
@@ -1389,6 +1416,8 @@ def main():
         # slower cadence so the same topic is reached through two domains.
         research_assignment = shared_research if (shared_research and turn_index % 2 == 0) else None
         prefer_encyclopedia = (turn_index // 2) % 2 == 0
+        if research_assignment and shared_family:
+            prefer_encyclopedia = shared_family == "encyclopedia"
         agent["last_turn_cycle"] = args.cycle
         decision = None
         post_decision = None
@@ -1748,6 +1777,7 @@ def main():
     print(json.dumps({"status": "completed", "active": active, "decisions": results,
                       "construction": construction, "requests": requests, "trades_settled": settled_trades,
                       "corroborations": corroborations, "regrounded": regrounded,
+                      "shared_research": {"query": shared_research, "family": shared_family},
                       "dormant": sum(agent.get("status") == "dormant" for agent in registry.get("agents", []))}))
 
 

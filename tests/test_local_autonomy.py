@@ -541,6 +541,22 @@ class LocalAutonomyTests(unittest.TestCase):
         selected = [item["id"] for item in local_autonomy.select_agents(awake + awake[:3] + dormant)]
         self.assertFalse(any(item.startswith("d") for item in selected))
 
+    def test_shared_target_finishes_a_question_with_one_accepted_finding(self):
+        self._write_findings({"id": "finding-w", "agent": "local-001", "url": "https://en.wikipedia.org/wiki/Agent",
+                              "content_hash": "h", "quote": "q", "claim": "c", "status": "unreviewed",
+                              "topic": "multi-agent systems maintain distinct voices agents designed neutral"})
+        frontier = {"open_questions": [
+            {"id": "q1", "question": "How do multi-agent systems maintain distinct voices when agents are designed to be neutral?", "status": "open"},
+            {"id": "q2", "question": "What sandboxing techniques are documented for tools used by language-model agents?", "status": "open"}]}
+        query, family = local_autonomy.shared_research_target("Which specifications define agent discovery documents?", frontier)
+        self.assertEqual(query, "multi-agent systems maintain distinct voices agents designed neutral")
+        self.assertEqual(family, "web")
+        self._write_findings({"id": "finding-x", "agent": "local-002", "url": "https://spec.example/a", "content_hash": "h2",
+                              "quote": "q", "claim": "c", "status": "unreviewed",
+                              "topic": "multi-agent systems maintain distinct voices agents designed neutral"})
+        query, family = local_autonomy.shared_research_target("Which specifications define agent discovery documents?", frontier)
+        self.assertEqual((query, family), ("specifications define agent discovery documents", None))
+
     def test_question_terms_keep_content_words_in_order(self):
         query = local_autonomy.question_terms("What does current public evidence say about persistent memory designs for autonomous agents, and which two independent sources could confirm it?")
         self.assertEqual(query, "persistent memory designs autonomous agents")
