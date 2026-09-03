@@ -1144,20 +1144,22 @@ def main():
             if (tool_name == "public-search" and not fetched_this_cycle and
                     tool.get("status") == "completed" and
                     isinstance(tool.get("results"), list)):
-                candidate = next((item.get("url", "") for item in tool["results"]
-                                  if re.match(r"https://", str(item.get("url", "")), re.I)), "")
-                if candidate:
+                candidates = [item.get("url", "") for item in tool["results"]
+                              if re.match(r"https://", str(item.get("url", "")), re.I)][:3]
+                if candidates:
                     fetched_this_cycle = True
-                    fetched_run = subprocess.run([sys.executable, str(ROOT / "scripts/tool_broker.py"),
-                        "public-text", candidate], cwd=ROOT, capture_output=True, text=True, check=False)
-                    try:
-                        fetched = json.loads(fetched_run.stdout)
-                    except json.JSONDecodeError:
-                        fetched = {"status": "failed"}
-                    if fetched.get("status") == "completed":
-                        fetched["query"] = target[:160].strip()
-                        fetched["search_results"] = tool.get("results", [])[:5]
-                        tool = fetched
+                    for candidate in candidates:
+                        fetched_run = subprocess.run([sys.executable, str(ROOT / "scripts/tool_broker.py"),
+                            "public-text", candidate], cwd=ROOT, capture_output=True, text=True, check=False)
+                        try:
+                            fetched = json.loads(fetched_run.stdout)
+                        except json.JSONDecodeError:
+                            fetched = {"status": "failed"}
+                        if fetched.get("status") == "completed":
+                            fetched["query"] = target[:160].strip()
+                            fetched["search_results"] = tool.get("results", [])[:5]
+                            tool = fetched
+                            break
             if tool.get("status") == "completed":
                 summary = tool.get("summary", {})
                 excerpt = str(tool.get("excerpt", ""))[:2400]
