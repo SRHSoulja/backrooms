@@ -35,6 +35,15 @@ class SelfPromptTests(unittest.TestCase):
         self.assertEqual(context["open_contradictions"][0]["reason"], "r")
         self.assertEqual(context["untrusted_outside_leads"][0]["text"], "outside review text")
 
+    def test_research_themes_rotate_by_cycle_and_survive_a_missing_file(self):
+        from scripts.self_prompt_rules import research_themes
+        first = research_themes(0, count=2)
+        second = research_themes(1, count=2)
+        self.assertEqual(len(first), 2)
+        self.assertEqual(first[1], second[0])
+        self.assertTrue(all(isinstance(item, str) and item for item in first))
+        self.assertEqual(research_themes(3, path="/nonexistent/themes.json"), [])
+
     def test_rejects_self_referential_marker_loop(self):
         proposal = ("QUESTION: Why did Echo's evidence markers decrease after the hypothesis weakened?\n"
                     "WHY: The metric changed.\nTEST: Count markers again.")

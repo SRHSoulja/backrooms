@@ -22,10 +22,12 @@ try:
     from scripts.evidence import clamp_confidence, classify_finding, is_accepted
     from scripts.corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, growth_candidates,
                                        judgment_prompt, judgment_schema, load_records, make_record)
+    from scripts.self_prompt_rules import research_themes
 except ImportError:
     from evidence import clamp_confidence, classify_finding, is_accepted
     from corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, growth_candidates,
                                judgment_prompt, judgment_schema, load_records, make_record)
+    from self_prompt_rules import research_themes
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "state/local-agents.json"
 ARCHIVE = ROOT / "state/archive/events.jsonl"
@@ -886,8 +888,13 @@ def catalog_tool_names():
 
 
 def needs_regrounding(agent):
-    return (agent.get("status") in {"active-local", "probation", "dormant"} and not agent.get("regrounded_cycle")
-            and not agent.get("last_finding_id"))
+    """Never produced evidence, and either never re-grounded or still producing none since."""
+    if agent.get("status") not in {"active-local", "probation", "dormant"} or agent.get("last_finding_id"):
+        return False
+    if not agent.get("regrounded_cycle"):
+        return True
+    return agent.get("turns_without_evidence", 0) >= DORMANT_AFTER_TURNS_WITHOUT_EVIDENCE and \
+        agent.get("turns_without_evidence", 0) > agent.get("regrounded_at_turns", -1)
 
 
 def reground_purpose(url, agent, rooms, frontier, cycle):
@@ -903,15 +910,16 @@ def reground_purpose(url, agent, rooms, frontier, cycle):
                              "question": {"type": "string", "maxLength": 200},
                              "first_tool": {"type": "string", "enum": catalog_tool_names()},
                              "room": {"type": "string", "enum": rooms}}}
-    context = {"open_questions": [str(item.get("question", ""))[:200] for item in frontier.get("open_questions", [])[-4:]],
+    context = {"research_themes": research_themes(cycle, count=3),
+               "open_questions": [str(item.get("question", ""))[:200] for item in frontier.get("open_questions", [])[-4:]],
                "recent_findings": [str(item.get("claim", ""))[:160] for item in frontier.get("findings", [])[-3:]],
                "rooms": rooms, "tools": catalog_tool_names()}
     prompt = (f"{MISSION_LINE} Resident {agent.get('name')} ({agent.get('role')}) currently has the purpose "
               f"'{str(agent.get('purpose', ''))[:200]}' and the question '{str(agent.get('question', ''))[:200]}'. "
               "Rewrite the purpose and the question so they can be pursued with the listed public read-only tools "
-              "and advance one of the open questions or recent findings. Keep the name and role. No time travel, "
-              "quantum anomalies, hidden dimensions, secret powers, or physical needs: only claims that a public "
-              "source could support or refute. Context: " + json.dumps(context, ensure_ascii=True)[:1400] +
+              "and advance one of the research_themes or open questions. Keep the name and role. No time travel, "
+              "quantum anomalies, hidden dimensions, hidden artifacts, ancient secrets, secret powers, or physical "
+              "needs: only claims about real, documented subjects that a public source could support or refute. Context: " + json.dumps(context, ensure_ascii=True)[:1400] +
               " Return only the JSON object.")
     payload = {"model": os.getenv("BACKROOMS_LLM_MODEL", "local"), "messages": [
         {"role": "system", "content": "You ground a research resident's purpose in checkable public evidence."},
@@ -930,10 +938,14 @@ def reground_purpose(url, agent, rooms, frontier, cycle):
     question = re.sub(r"\s+", " ", str(grounded.get("question", "")).strip())[:200]
     if not purpose or not question or FORBIDDEN.search(purpose + " " + question) or PHYSICAL_NEEDS.search(purpose + " " + question):
         return None
-    agent["previous_purpose"] = {"purpose": agent.get("purpose"), "question": agent.get("question")}
+    history = agent.setdefault("purpose_history", [])
+    history.append({"purpose": agent.get("purpose"), "question": agent.get("question"), "until_cycle": cycle})
+    del history[:-5]
+    agent["previous_purpose"] = history[-1]
     agent["purpose"] = purpose
     agent["question"] = question
     agent["regrounded_cycle"] = cycle
+    agent["regrounded_at_turns"] = agent.get("turns_without_evidence", 0)
     agent["preferred_tool"] = str(grounded.get("first_tool", ""))[:40]
     return {"agent": agent.get("id"), "purpose": purpose, "question": question, "room": str(grounded.get("room", ""))[:60]}
 

@@ -513,7 +513,11 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(agent["previous_purpose"]["purpose"], "Alter timelines to observe past and future events")
         self.assertEqual(agent["regrounded_cycle"], 40)
         self.assertFalse(local_autonomy.needs_regrounding(agent))
+        agent["turns_without_evidence"] = local_autonomy.DORMANT_AFTER_TURNS_WITHOUT_EVIDENCE
+        self.assertTrue(local_autonomy.needs_regrounding(agent))
+        self.assertEqual(len(agent["purpose_history"]), 1)
         prompt = captured["body"]["messages"][-1]["content"]
+        self.assertIn("research_themes", prompt)
         self.assertIn("Are the Atrium and Relay connected?", prompt)
         self.assertIn("No time travel", prompt)
         self.assertIn("wikipedia-summary", captured["body"]["response_format"]["json_schema"]["schema"]["properties"]["first_tool"]["enum"])

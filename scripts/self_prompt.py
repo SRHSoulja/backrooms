@@ -7,14 +7,14 @@ import os
 import re
 import urllib.request
 try:
-    from scripts.self_prompt_rules import FORBIDDEN, valid
+    from scripts.self_prompt_rules import FORBIDDEN, research_themes, valid
 except ImportError:
-    from self_prompt_rules import FORBIDDEN, valid
+    from self_prompt_rules import FORBIDDEN, research_themes, valid
 
 
 def ask(url, resident, context):
     role = "find a surprising but testable question" if resident == "Echo" else "find the most important unresolved weakness or confound"
-    prompt = (f"You are {resident}. From the public context below, {role}. If a recent aggregate hypothesis was weakened, prioritize a reversible follow-up that could distinguish competing explanations. "
+    prompt = (f"You are {resident}. From the public context below, {role}. Prefer a question about one of the public research_themes that residents can investigate with public sources, over questions about the rooms themselves or the system's own telemetry. If a recent aggregate hypothesis was weakened, prioritize a reversible follow-up that could distinguish competing explanations. "
               "Return exactly three lines: QUESTION:, WHY:, TEST:. "
               "The test must be reversible, non-sensitive, and require no external contact. "
               "Do not mention credentials or private memory.\n\n" + context)
@@ -39,7 +39,8 @@ try:
         actions = json.load(action_file)
 except FileNotFoundError:
     pass
-context = json.dumps({"shared_memory": world.get("shared_memory", []),
+context = json.dumps({"research_themes": research_themes(world.get("cycle", 0)),
+                      "shared_memory": world.get("shared_memory", []),
                       "rooms": [{"id": room.get("id"), "description": room.get("description", "")}
                                for room in world.get("rooms", [])],
                       "discoveries": world.get("discoveries", [])[-5:],
