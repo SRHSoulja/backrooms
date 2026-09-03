@@ -10,10 +10,10 @@ REGISTRY = ROOT / "state/local-agents.json"
 REGISTRY_RETENTION = 256
 FORBIDDEN = re.compile(r"(api[_ -]?key|password|secret|private memory|credential|token|wallet|funds)", re.I)
 
-def ask(url, cycle):
+def ask(url, cycle, context):
     prompt = ("Design one local Backrooms hireling for a bounded research role. Return exactly four lines: "
               "NAME:, ROLE:, PURPOSE:, QUESTION:. Use a fictional name, role under 60 characters, purpose and "
-              f"testable question under 240 characters. No credentials, private data, money, external contact, or consciousness claims. Cycle {cycle}.")
+              f"testable question under 240 characters. No credentials, private data, money, external contact, or consciousness claims. Cycle {cycle}. Current gap context: {context[:1400]}")
     body = json.dumps({"model": os.getenv("BACKROOMS_LLM_MODEL", "local"), "messages": [
         {"role": "system", "content": "You are a bounded local world designer."}, {"role": "user", "content": prompt}], "temperature": 0.8, "max_tokens": 120}).encode()
     request = urllib.request.Request(url.rstrip("/") + "/v1/chat/completions", data=body, headers={"Content-Type": "application/json"}, method="POST")
@@ -34,8 +34,8 @@ def parse(text):
     fields["ROLE"] = fields["ROLE"].strip(" ,.;")
     return fields
 
-parser = argparse.ArgumentParser(); parser.add_argument("--base-url", default="http://127.0.0.1:8080"); parser.add_argument("--cycle", type=int, required=True); args = parser.parse_args()
-raw = ask(args.base_url, args.cycle)
+parser = argparse.ArgumentParser(); parser.add_argument("--base-url", default="http://127.0.0.1:8080"); parser.add_argument("--cycle", type=int, required=True); parser.add_argument("--context", default=""); args = parser.parse_args()
+raw = ask(args.base_url, args.cycle, args.context)
 profile = parse(raw)
 if not profile:
     repair_prompt = ("Reformat this proposed fictional hireling as exactly four plain lines: NAME:, ROLE:, "
@@ -56,7 +56,9 @@ if not profile:
     print(json.dumps({"status": "rejected", "reason": "profile failed bounded validation"})); raise SystemExit(0)
 registry = json.loads(REGISTRY.read_text()) if REGISTRY.exists() else {"privacy": "local registry; no credentials or private memory", "agents": []}
 normalized = re.sub(r"[^a-z0-9]", "", profile["NAME"].lower())
-if any(re.sub(r"[^a-z0-9]", "", str(existing.get("name", "")).lower()) == normalized
+if any((re.sub(r"[^a-z0-9]", "", str(existing.get("name", "")).lower()) == normalized or
+        (str(existing.get("role", "")).lower() == profile["ROLE"].lower() and
+         str(existing.get("purpose", "")).lower() == profile["PURPOSE"].lower()))
        and existing.get("status") in {"active-local", "probation"} for existing in registry.get("agents", [])):
     print(json.dumps({"status": "rejected", "reason": "duplicate active identity"})); raise SystemExit(0)
 number = len(registry["agents"]) + 1

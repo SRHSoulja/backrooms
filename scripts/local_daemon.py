@@ -608,6 +608,11 @@ def recruit(base_url, cycle):
     active = sum(agent.get("status") in {"active-local", "probation"} for agent in registry.get("agents", []))
     world = json.loads((ROOT / "state/world.json").read_text()) if (ROOT / "state/world.json").exists() else {"rooms": []}
     room_capacity = max(8, len(world.get("rooms", [])) * LOCAL_RESIDENTS_PER_ROOM)
+    frontier = json.loads(LOCAL_FRONTIER.read_text()) if LOCAL_FRONTIER.exists() else {}
+    open_tasks = [item for item in frontier.get("tasks", []) if item.get("status") == "open"]
+    if not open_tasks:
+        return {"status": "no-recruitment-demand", "active": active,
+                "rooms": len(world.get("rooms", [])), "capacity": MAX_LOCAL_HIRELINGS}
     if active >= room_capacity:
         return {"status": "room-capacity-backpressure", "active": active,
                 "room_capacity": room_capacity, "rooms": len(world.get("rooms", [])),
@@ -619,8 +624,12 @@ def recruit(base_url, cycle):
                 "capacity": MAX_LOCAL_HIRELINGS}
     if active >= MAX_LOCAL_HIRELINGS:
         return {"status": "capacity-reached", "active": active, "capacity": MAX_LOCAL_HIRELINGS}
+    context = json.dumps({"open_tasks": open_tasks[:6],
+                          "existing_names": [agent.get("name") for agent in registry.get("agents", [])[-40:]],
+                          "rooms": [room.get("id") for room in world.get("rooms", [])]})
     completed = subprocess.run([sys.executable, str(ROOT / "scripts/local_recruiter.py"),
-        "--base-url", base_url, "--cycle", str(cycle)], cwd=ROOT, capture_output=True, text=True, check=False)
+        "--base-url", base_url, "--cycle", str(cycle), "--context", context], cwd=ROOT,
+        capture_output=True, text=True, check=False)
     try:
         return json.loads(completed.stdout)
     except json.JSONDecodeError:
