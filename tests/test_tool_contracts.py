@@ -100,8 +100,11 @@ class ToolContractTests(unittest.TestCase):
         def fake_fetch(url, max_bytes=None):
             calls.append(url)
             if "list=search" in url:
-                hits = [] if "prevent" in url else [{"title": "Provenance"}]
+                hits = [] if "prevent" in url else [
+                    {"title": "Quarantine", "snippet": "isolation of people during an epidemic"},
+                    {"title": "Provenance", "snippet": "the chronology of ownership and custody of a record, used to judge untrusted material"}]
                 return json.dumps({"query": {"search": hits}})
+            assert "Provenance" in url, url
             return json.dumps({"extract": "Provenance is the chronology of ownership.", "content_urls": {"desktop": {"page": "https://en.wikipedia.org/wiki/Provenance"}}})
         original = tool_broker.fetch
         tool_broker.fetch = fake_fetch

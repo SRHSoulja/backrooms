@@ -91,10 +91,11 @@ def wikipedia_summary(query):
     # the evidence.
     words = query.split()
     attempts = [query] + [" ".join(words[:count]) for count in (4, 2) if count < len(words)]
+    query_terms = {term for term in re.findall(r"[a-z0-9]{4,}", query.lower())}
     hits = []
     for attempt in attempts:
         params = urllib.parse.urlencode({"action": "query", "list": "search", "srsearch": attempt,
-                                         "srlimit": 1, "format": "json", "utf8": 1})
+                                         "srlimit": 3, "format": "json", "utf8": 1})
         data = json.loads(fetch("https://en.wikipedia.org/w/api.php?" + params))
         hits = data.get("query", {}).get("search", [])
         if hits:
@@ -102,6 +103,13 @@ def wikipedia_summary(query):
     if not hits:
         return {"tool": "wikipedia-summary", "query": query, "status": "no-match",
                 "source": "https://en.wikipedia.org/", "contract": TOOL_CONTRACTS["wikipedia-summary"]}
+    # Among the candidate articles, prefer the one whose title and snippet
+    # share the most vocabulary with the whole query, so a shortened lookup
+    # does not drift to an unrelated sense of one word.
+    def overlap(hit):
+        text = re.sub(r"<[^>]+>", " ", html.unescape(str(hit.get("title", "")) + " " + str(hit.get("snippet", "")))).lower()
+        return len(query_terms & set(re.findall(r"[a-z0-9]{4,}", text)))
+    hits.sort(key=overlap, reverse=True)
     title = str(hits[0].get("title", "")).strip()
     encoded = urllib.parse.quote(title.replace(" ", "_"), safe="")
     summary = json.loads(fetch("https://en.wikipedia.org/api/rest_v1/page/summary/" + encoded))
