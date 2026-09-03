@@ -32,6 +32,10 @@ try:
     from scripts.capability_policy import public_catalog
 except ImportError:
     from capability_policy import public_catalog
+try:
+    from scripts.runtime_process import port_in_use, reap_recorded_model
+except ImportError:
+    from runtime_process import port_in_use, reap_recorded_model
 
 ROOT = Path(__file__).resolve().parents[1]
 STATE = ROOT / "state/world.json"
@@ -84,6 +88,7 @@ ARCHIVE = ROOT / "state/archive/events.jsonl"
 LOCAL_REGISTRY = ROOT / "state/local-agents.json"
 LOCK = ROOT / "state/local-daemon.lock"
 MODEL_LOG = ROOT / "state/llama-server.log"
+MODEL_PID = ROOT / "state/llama-server.pid"
 
 
 def acquire_lock():
@@ -1052,26 +1057,27 @@ base_url = configured_url or f"http://127.0.0.1:{args.port}"
 server = None
 
 
-def start_local_model():
-    MODEL_LOG.parent.mkdir(parents=True, exist_ok=True)
-    log_handle = MODEL_LOG.open("a")
-    process = subprocess.Popen(["llama-server", "-hf", "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
-                                "--host", "127.0.0.1", "--port", str(args.port), "--ctx-size", "4096",
-                                "--predict", "800", "--parallel", "1"], cwd=ROOT, stdout=log_handle,
-                                stderr=subprocess.STDOUT, start_new_session=True)
-    try:
-        wait_ready(base_url)
-    except Exception:
-        process.terminate()
-        process.wait(timeout=15)
-        raise
-    process._backrooms_log_handle = log_handle
-    return process
+reload_requested = False
 
 
-def stop_local_model(process):
-    if process is None:
-        return
+def request_reload(*_args):
+    """SIGUSR1 from the supervisor: finish the current cycle, then exit cleanly."""
+    global reload_requested
+    reload_requested = True
+
+
+def terminate(*_args):
+    """SIGTERM/SIGINT: unwind through ``finally`` so the model child is stopped too."""
+    raise SystemExit(0)
+
+
+signal.signal(signal.SIGUSR1, request_reload)
+signal.signal(signal.SIGTERM, terminate)
+signal.signal(signal.SIGINT, terminate)
+
+
+def stop_model_process(process, log_handle=None):
+    """Terminate only the model's own process group, then release its pidfile."""
     if process.poll() is None:
         try:
             os.killpg(process.pid, signal.SIGTERM)
@@ -1085,10 +1091,53 @@ def stop_local_model(process):
         except ProcessLookupError:
             pass
         process.wait(timeout=5)
-    log_handle = getattr(process, "_backrooms_log_handle", None)
     if log_handle:
         log_handle.close()
+    MODEL_PID.unlink(missing_ok=True)
 
+
+def start_local_model():
+    """Launch one model server in its own process group, refusing a shared port.
+
+    A model this daemon lineage recorded earlier (for example one orphaned by a
+    hard kill) is stopped first through its pidfile. If the port is still owned
+    by anything else, the daemon refuses to start a duplicate: llama-server sets
+    SO_REUSEPORT, so a second copy would silently share the port and requests
+    would be spread across servers with different states.
+    """
+    reaped = reap_recorded_model(MODEL_PID)
+    if reaped:
+        print(json.dumps({"model": "stopped stale recorded model process", "pid": reaped}), flush=True)
+    if port_in_use(args.port):
+        raise SystemExit(f"model port {args.port} is already owned by another process; refusing to start a duplicate llama-server")
+    MODEL_LOG.parent.mkdir(parents=True, exist_ok=True)
+    log_handle = MODEL_LOG.open("a")
+    process = subprocess.Popen(["llama-server", "-hf", "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
+                                "--host", "127.0.0.1", "--port", str(args.port), "--ctx-size", "4096",
+                                "--predict", "800", "--parallel", "1"], cwd=ROOT, stdout=log_handle,
+                                stderr=subprocess.STDOUT, start_new_session=True)
+    MODEL_PID.write_text(str(process.pid))
+    try:
+        wait_ready(base_url)
+    except Exception:
+        stop_model_process(process, log_handle)
+        raise
+    process._backrooms_log_handle = log_handle
+    return process
+
+
+def stop_local_model(process):
+    if process is None:
+        return
+    stop_model_process(process, getattr(process, "_backrooms_log_handle", None))
+
+
+def sleep_between_cycles(seconds):
+    """Idle in one-second steps so a reload request ends the wait promptly."""
+    for _ in range(int(seconds)):
+        if reload_requested:
+            return
+        time.sleep(1)
 
 if not configured_url:
     server = start_local_model()
@@ -1096,6 +1145,9 @@ else:
     wait_ready(base_url)
 try:
     while True:
+        if reload_requested:
+            print(json.dumps({"daemon": "reload requested; exiting after completed cycle"}), flush=True)
+            break
         if not model_probe(base_url):
             if configured_url:
                 raise RuntimeError("configured local model endpoint is unhealthy")
@@ -1134,7 +1186,7 @@ try:
                 raise RuntimeError("local model exited during roundtable")
         if args.once:
             break
-        time.sleep(args.interval)
+        sleep_between_cycles(args.interval)
 except KeyboardInterrupt:
     pass
 finally:
