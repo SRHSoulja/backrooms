@@ -362,6 +362,8 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertIn("urgent_limit = MAX_TURNS_PER_CYCLE // 2", source)
         self.assertIn('agent.get("request_status") == "open"', source)
         self.assertIn('agent["last_turn_cycle"] = args.cycle', source)
+        self.assertIn("fallback_streak", source)
+        self.assertIn("six consecutive format-fallback turns", source)
 
     def test_research_does_not_pollute_resident_query_or_fake_provenance(self):
         source = Path("scripts/local_autonomy.py").read_text()
