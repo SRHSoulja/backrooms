@@ -80,6 +80,45 @@ class ModelClientTests(unittest.TestCase):
                               sleep=self.sleeps.append, clock=lambda: 1001.0)
         self.assertTrue(all("mistral" not in url for url, _auth in calls))
 
+    def test_brief_429_retries_the_same_provider_once_and_records_no_error(self):
+        attempts = []
+
+        def opener(request, timeout=0):
+            attempts.append(request.full_url)
+            if "mistral" in request.full_url and len(attempts) == 1:
+                raise urllib.error.HTTPError(request.full_url, 429, "rate limited", {"Retry-After": "1"}, io.BytesIO(b""))
+            return reply('{"ok": true}')
+
+        content, provider = model_client.complete([{"role": "user", "content": "hi"}], base_url="http://127.0.0.1:9",
+                                                  opener=opener, sleep=self.sleeps.append, clock=lambda: 1000.0)
+        self.assertEqual(provider, "mistral")
+        self.assertEqual(len(attempts), 2)
+        self.assertTrue(all("mistral" in url for url in attempts))
+        self.assertIn(1, self.sleeps)
+        summary = {item["name"]: item for item in model_client.usage_summary("http://127.0.0.1:9")["providers"]}
+        self.assertEqual((summary["mistral"]["calls"], summary["mistral"]["errors"], summary["mistral"]["status"]), (1, 0, "ready"))
+
+    def test_repeated_brief_429_cools_down_and_falls_through(self):
+        attempts = []
+
+        def opener(request, timeout=0):
+            attempts.append(request.full_url)
+            if "mistral" in request.full_url:
+                raise urllib.error.HTTPError(request.full_url, 429, "rate limited", {}, io.BytesIO(b""))
+            return reply('{"ok": true}')
+
+        content, provider = model_client.complete([{"role": "user", "content": "hi"}], base_url="http://127.0.0.1:9",
+                                                  opener=opener, sleep=self.sleeps.append, clock=lambda: 1000.0)
+        self.assertEqual(provider, "groq")
+        self.assertEqual(sum("mistral" in url for url in attempts), 2)
+        summary = {item["name"]: item for item in model_client.usage_summary("http://127.0.0.1:9")["providers"]}
+        self.assertEqual(summary["mistral"]["errors"], 1)
+        self.assertIn("429", summary["mistral"]["last_error"])
+        attempts.clear()
+        model_client.complete([{"role": "user", "content": "again"}], base_url="http://127.0.0.1:9", opener=opener,
+                              sleep=self.sleeps.append, clock=lambda: 1001.0)
+        self.assertTrue(all("mistral" not in url for url in attempts))
+
     def test_bad_credentials_disable_a_provider_and_all_failures_raise(self):
         def opener(request, timeout=0):
             raise urllib.error.HTTPError(request.full_url, 401, "unauthorized", {}, io.BytesIO(b""))

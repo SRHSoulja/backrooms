@@ -59,7 +59,7 @@ def setting(name, default=None):
 
 BUILTIN = {
     "mistral": {"base_url": "https://api.mistral.ai", "key": "MISTRAL_API_KEY", "model": "mistral-small-latest",
-                "rpm": 50, "rpd": None, "tpd": None, "json_schema": True},
+                "rpm": 30, "rpd": None, "tpd": None, "json_schema": True},
     "gemini": {"base_url": "https://generativelanguage.googleapis.com/v1beta/openai", "key": "GEMINI_API_KEY",
                "model": "gemini-2.5-flash", "rpm": 8, "rpd": 900, "tpd": None, "json_schema": True},
     "cerebras": {"base_url": "https://api.cerebras.ai", "key": "CEREBRAS_API_KEY", "model": "qwen-3-32b",
@@ -195,6 +195,29 @@ def _request(provider, messages, temperature, max_tokens, schema, schema_name, t
     return str(content or "").strip(), int(usage.get("prompt_tokens") or 0), int(usage.get("completion_tokens") or 0)
 
 
+RETRY_429_MAX_WAIT = 10
+
+
+def _retry_after(error):
+    headers = getattr(error, "headers", None)
+    return _int(headers.get("Retry-After"), 60) if headers else 60
+
+
+def _request_with_retry(provider, messages, temperature, max_tokens, schema, schema_name, timeout, opener, sleep):
+    """A free tier's per-second limit produces brief 429s; wait once and retry the same
+    provider before treating it as a cooldown and falling through to the next one."""
+    try:
+        return _request(provider, messages, temperature, max_tokens, schema, schema_name, timeout, opener)
+    except urllib.error.HTTPError as error:
+        if getattr(error, "code", 0) != 429:
+            raise
+        wait = _retry_after(error) if getattr(error, "headers", None) and (error.headers or {}).get("Retry-After") else 2
+        if wait > RETRY_429_MAX_WAIT:
+            raise
+        sleep(max(1, wait))
+        return _request(provider, messages, temperature, max_tokens, schema, schema_name, timeout, opener)
+
+
 def complete(messages, *, temperature=0.3, max_tokens=400, schema=None, schema_name="response", call_class="general",
              base_url=None, timeout=90, opener=None, sleep=time.sleep, clock=time.time):
     """Return the model's text from the first provider that answers; raise ModelUnavailable if none does."""
@@ -209,12 +232,13 @@ def complete(messages, *, temperature=0.3, max_tokens=400, schema=None, schema_n
         entry = _record(usage, provider["name"])
         _pace(provider, entry, now, sleep)
         try:
-            content, prompt_tokens, completion_tokens = _request(provider, messages, temperature, max_tokens, schema, schema_name, timeout, opener)
+            content, prompt_tokens, completion_tokens = _request_with_retry(provider, messages, temperature, max_tokens, schema, schema_name, timeout, opener, sleep)
         except urllib.error.HTTPError as error:
             status = getattr(error, "code", 0)
             if status == 429:
-                retry_after = _int((error.headers or {}).get("Retry-After"), 60) if getattr(error, "headers", None) else 60
-                _record(usage, provider["name"], errors=1, last_error=f"429 rate limited ({call_class})", cooldown_until=clock() + max(15, min(retry_after, 900)))
+                retry_after = _retry_after(error)
+                _record(usage, provider["name"], errors=1, last_error=f"429 rate limited ({call_class})", last_call_at=clock(),
+                        cooldown_until=clock() + max(15, min(retry_after, 900)))
             elif status in (401, 403):
                 _record(usage, provider["name"], errors=1, last_error=f"{status} rejected credentials", disabled=True)
             elif status == 400 and schema is not None and provider["json_schema"]:
