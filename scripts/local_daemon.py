@@ -524,8 +524,13 @@ def sync_messages(world):
     return {"resident_messages": len(records), "messages_feed": "docs/messages.json"}
 
 
-def sync_trades():
+def sync_trades(cycle=None):
     local = json.loads(LOCAL_TRADES.read_text()) if LOCAL_TRADES.exists() else {"trades": []}
+    if cycle is not None:
+        for item in local.get("trades", []):
+            if item.get("status") == "proposed" and cycle - int(item.get("cycle", cycle)) >= 24:
+                item["status"] = "expired"
+                item["resolved_cycle"] = cycle
     records = []
     for item in local.get("trades", [])[-100:]:
         records.append({key: public_event_text(item.get(key, "")) if key in {"offering", "request"} else item.get(key)
@@ -747,6 +752,22 @@ def sync_frontier(result, world, registry):
                 task[key] = old[key]
         if old.get("status") in {"claimed", "completed"}:
             task["status"] = old["status"]
+    # Every open contradiction gets a concrete council task. It remains open
+    # until a later bounded review records a completed task; merely detecting a
+    # disagreement never silently resolves it.
+    for contradiction in frontier.get("contradictions", []):
+        if contradiction.get("status") != "open":
+            continue
+        task = {"id": f"contradiction-task-{contradiction.get('id')}", "agent": None, "room": None,
+                "request": "Adjudicate the conflicting source-backed findings for topic: " + str(contradiction.get("topic", ""))[:160],
+                "status": "open", "contradiction_id": contradiction.get("id")}
+        old = previous_tasks.get(task["id"], {})
+        for key in ("claimed_by", "claimed_cycle", "completed_cycle", "evidence"):
+            if key in old:
+                task[key] = old[key]
+        if old.get("status") in {"claimed", "completed"}:
+            task["status"] = old["status"]
+        tasks.append(task)
     frontier["tasks"] = tasks
     frontier["activity"].append({"cycle": cycle, "question": bool(question),
                                   "resident_actions": len(result.get("autonomy", {}).get("decisions", [])),
@@ -851,7 +872,7 @@ def publish(result, world, model_health=True):
         "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
         "activity_feed": "docs/activity.json",
         "feed_freshness_seconds": 0
-        ,**resource_health, **analysis_health, **research_health, **findings_health, **frontier_health, **sync_code_proposals(), **sync_outside_signals(), **sync_codex_bridge(), **sync_messages(world), **sync_trades(),
+        ,**resource_health, **analysis_health, **research_health, **findings_health, **frontier_health, **sync_code_proposals(), **sync_outside_signals(), **sync_codex_bridge(), **sync_messages(world), **sync_trades(world["cycle"]),
         "dropped_events": 0
     }
     safe = {
