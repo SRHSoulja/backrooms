@@ -371,11 +371,12 @@ def record_analysis(agent, cycle, code, analysis):
     return record
 
 
-def run_analysis(code):
+def run_analysis(code, data=""):
     """Run one bounded analysis without allowing task failure to abort the cycle."""
     try:
         completed = subprocess.run(
-            [sys.executable, str(ROOT / "scripts/code_sandbox.py"), "--code", code],
+            [sys.executable, str(ROOT / "scripts/code_sandbox.py"), "--code", code,
+             "--data", str(data or "")[:6000]],
             cwd=ROOT, capture_output=True, text=True, check=False, timeout=10)
     except subprocess.TimeoutExpired:
         return {"status": "timed-out", "output": ""}
@@ -1063,7 +1064,7 @@ def main():
                 agent.setdefault("capabilities", []).append("public-web-read")
                 agent["skill_status"] = "earned-after-interview"
         elif decision["action"] == "ANALYZE":
-            analysis = run_analysis(decision["code"])
+            analysis = run_analysis(decision["code"], (agent.get("last_tool") or {}).get("excerpt", ""))
             artifact = record_analysis(agent, args.cycle, decision["code"], analysis)
             agent["last_analysis"] = {"artifact_id": artifact["id"], "code_hash": artifact["code_hash"],
                                        "status": analysis.get("status", "failed"),

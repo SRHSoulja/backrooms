@@ -367,6 +367,11 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(allowed["action"], "ANALYZE")
         self.assertIn("sum", allowed["code"])
 
+    def test_analysis_receives_bounded_data(self):
+        result = local_autonomy.run_analysis("print(len(data))", "public excerpt")
+        self.assertEqual(result["status"], "completed")
+        self.assertIn("14", result["output"])
+
     def test_analysis_artifact_keeps_raw_local_and_creates_bounded_summary(self):
         local_autonomy.ANALYSIS_ARCHIVE = Path(self.archive_dir.name) / "analysis.jsonl"
         artifact = local_autonomy.record_analysis({"id": "local-test"}, 95, "print(42)",

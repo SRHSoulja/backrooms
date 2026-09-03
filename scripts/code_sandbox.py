@@ -9,9 +9,10 @@ from pathlib import Path
 
 MAX_CODE = 8000
 MAX_OUTPUT = 16000
+MAX_DATA = 6000
 CONTRACT = {"capability": "local-code-execution", "access": "restricted-python",
             "network": "none by language policy", "side_effects": "temporary workspace only",
-            "max_code": MAX_CODE, "timeout_seconds": 5, "max_output": MAX_OUTPUT}
+            "max_code": MAX_CODE, "max_data": MAX_DATA, "timeout_seconds": 5, "max_output": MAX_OUTPUT}
 SAFE_CALLS = {"print", "len", "sum", "min", "max", "sorted", "range", "enumerate", "abs", "round"}
 SAFE_NODES = (ast.Module, ast.Expr, ast.Assign, ast.Name, ast.Constant, ast.List, ast.Tuple, ast.Dict,
               ast.BinOp, ast.UnaryOp, ast.BoolOp, ast.Compare, ast.If, ast.IfExp, ast.For, ast.Load,
@@ -30,9 +31,10 @@ def validate_tree(tree):
             raise ValueError("dunder names are not allowed")
 
 
-def run(code):
+def run(code, data=""):
     if not code.strip() or len(code) > MAX_CODE:
         return {"status": "rejected", "reason": "code is empty or exceeds bounded length", "contract": CONTRACT}
+    data = str(data or "")[:MAX_DATA]
     try:
         tree = ast.parse(code, mode="exec")
         validate_tree(tree)
@@ -41,7 +43,7 @@ def run(code):
         return {"status": "rejected", "reason": str(error)[:160], "contract": CONTRACT}
     with tempfile.TemporaryDirectory(prefix="backrooms-code-") as work:
         script = Path(work) / "task.py"
-        script.write_text("import builtins\n__builtins__ = {name: getattr(builtins, name) for name in " + repr(sorted(SAFE_CALLS)) + "}\n" + code)
+        script.write_text("import builtins\n__builtins__ = {name: getattr(builtins, name) for name in " + repr(sorted(SAFE_CALLS)) + "}\ndata = " + repr(data) + "\n" + code)
         command = ["python3", "-I", str(script)]
         try:
             completed = subprocess.run(command, capture_output=True, text=True, timeout=5,
@@ -57,5 +59,6 @@ def run(code):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--code", required=True)
+    parser.add_argument("--data", default="")
     args = parser.parse_args()
-    print(json.dumps(run(args.code)))
+    print(json.dumps(run(args.code, args.data)))
