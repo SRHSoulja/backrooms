@@ -1060,6 +1060,7 @@ def main():
             continue
         agent["last_turn_cycle"] = args.cycle
         decision = None
+        post_decision = None
         for attempt in range(2):
             try:
                 shared_work = [{"type": "room-candidate", "name": item.get("name"), "status": item.get("status"), "agent": item.get("agent")}
@@ -1173,25 +1174,6 @@ def main():
             }
         message_result = send_resident_message(world, registry, agent, decision, args.cycle)
         trade_result = record_trade(world, registry, agent, decision, args.cycle) if decision["action"] == "TRADE" else None
-        if post_decision and post_decision.get("action") == "ANALYZE":
-            analysis = run_analysis(post_decision.get("code", ""), (agent.get("last_tool") or {}).get("excerpt", ""))
-            artifact = record_analysis(agent, args.cycle, post_decision.get("code", ""), analysis)
-            agent["last_analysis"] = {"artifact_id": artifact["id"], "code_hash": artifact["code_hash"],
-                                       "status": analysis.get("status", "failed"), "returncode": analysis.get("returncode"),
-                                       "output_chars": len(analysis.get("output", "")), "summary": artifact["summary"],
-                                       "contract": analysis.get("contract", {})}
-            agent["analysis_followup_completed"] = True
-            emit_event(world, args.cycle, "post-tool-analysis", agent.get("id", "resident"),
-                       "Resident inspected fetched evidence and ran a bounded follow-up analysis.",
-                       status=analysis.get("status", "failed"), output_chars=len(analysis.get("output", "")))
-        elif post_decision and post_decision.get("action") == "PROPOSE":
-            agent["proposal"] = post_decision.get("proposal", "")[:220]
-        elif post_decision and post_decision.get("action") in {"DISCOVER", "BUILD", "TRANSFORM"}:
-            agent["room_proposal"] = {"kind": post_decision["action"].lower(),
-                "name": post_decision.get("target", "")[:80],
-                "description": post_decision.get("proposal", "")[:220], "source_room": agent["room"],
-                "status": "construction-requested" if post_decision["action"] in {"BUILD", "TRANSFORM"} else "discovered",
-                "cycle": args.cycle}
         if complete_frontier_task(agent, args.cycle, decision):
             emit_event(world, args.cycle, "frontier-task-completed", agent.get("id", "resident"),
                        "Resident completed a claimed frontier task with bounded evidence or a proposal.",
@@ -1297,7 +1279,6 @@ def main():
                 # Complete a bounded observe -> tool -> observe -> decide turn.
                 # The secondary decision cannot trigger another network call;
                 # it only records a safe local follow-up below.
-                post_decision = None
                 try:
                     post_raw = ask(args.base_url, agent, rooms, args.cycle,
                                    shared_work=shared_work, structured=True, post_tool=True)
@@ -1330,6 +1311,25 @@ def main():
                 emit_event(world, args.cycle, "tool-failed", agent.get("id", "resident"),
                            f"Resident tool attempt ended with status {tool.get('status', 'unknown')}.",
                            tool=tool.get("tool", "unknown"), status=tool.get("status", "unknown"))
+        if post_decision and post_decision.get("action") == "ANALYZE":
+            analysis = run_analysis(post_decision.get("code", ""), (agent.get("last_tool") or {}).get("excerpt", ""))
+            artifact = record_analysis(agent, args.cycle, post_decision.get("code", ""), analysis)
+            agent["last_analysis"] = {"artifact_id": artifact["id"], "code_hash": artifact["code_hash"],
+                                       "status": analysis.get("status", "failed"), "returncode": analysis.get("returncode"),
+                                       "output_chars": len(analysis.get("output", "")), "summary": artifact["summary"],
+                                       "contract": analysis.get("contract", {})}
+            agent["analysis_followup_completed"] = True
+            emit_event(world, args.cycle, "post-tool-analysis", agent.get("id", "resident"),
+                       "Resident inspected fetched evidence and ran a bounded follow-up analysis.",
+                       status=analysis.get("status", "failed"), output_chars=len(analysis.get("output", "")))
+        elif post_decision and post_decision.get("action") == "PROPOSE":
+            agent["proposal"] = post_decision.get("proposal", "")[:220]
+        elif post_decision and post_decision.get("action") in {"DISCOVER", "BUILD", "TRANSFORM"}:
+            agent["room_proposal"] = {"kind": post_decision["action"].lower(),
+                "name": post_decision.get("target", "")[:80],
+                "description": post_decision.get("proposal", "")[:220], "source_room": agent["room"],
+                "status": "construction-requested" if post_decision["action"] in {"BUILD", "TRANSFORM"} else "discovered",
+                "cycle": args.cycle}
         registry.setdefault("decisions", []).append({"cycle": args.cycle, "agent": agent["id"], **decision})
         results.append({"id": agent["id"], "action": decision["action"].lower(), "room": agent["room"],
                         "status": agent["status"], "proposal": agent.get("proposal", "")[:220],
