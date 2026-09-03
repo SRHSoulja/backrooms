@@ -46,7 +46,7 @@ def bounded_context(world):
     questions = [{key: str(item.get(key, ""))[:300] for key in ("id", "question", "status")}
                  for item in frontier.get("open_questions", [])[-6:]
                  if item.get("status") == "open"]
-    contradictions = [{key: item.get(key) for key in ("id", "topic", "finding_ids", "status")}
+    contradictions = [{key: item.get(key) for key in ("id", "topic", "finding_ids", "reason", "status")}
                       for item in frontier.get("contradictions", [])[-4:]
                       if item.get("status") == "open"]
     return {"title": world["title"], "cycle": world["cycle"],

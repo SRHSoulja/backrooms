@@ -38,8 +38,10 @@ except ImportError:
     from runtime_process import port_in_use, reap_recorded_model
 try:
     from scripts.evidence import classify_finding, is_accepted
+    from scripts.corroboration import corroboration_index, load_records
 except ImportError:
     from evidence import classify_finding, is_accepted
+    from corroboration import corroboration_index, load_records
 
 ROOT = Path(__file__).resolve().parents[1]
 STATE = ROOT / "state/world.json"
@@ -80,6 +82,7 @@ PUBLIC_MESSAGES = ROOT / "docs/messages.json"
 LOCAL_TRADES = ROOT / "state/trades.json"
 PUBLIC_TRADES = ROOT / "docs/trades.json"
 LOCAL_FINDINGS = ROOT / "state/findings.jsonl"
+LOCAL_CORROBORATIONS = ROOT / "state/corroborations.jsonl"
 FINDINGS_RETENTION = 400
 PUBLIC_FINDINGS = ROOT / "docs/findings.json"
 LOCAL_AUTONOMY_ERRORS = ROOT / "state/autonomy-errors.log"
@@ -471,26 +474,17 @@ def sync_findings(registry, cycle):
         for item in rows:
             handle.write(json.dumps(item, separators=(",", ":")) + "\n")
     accepted = [item for item in rows if is_accepted(item)]
-    # Residents will naturally paraphrase a claim. Corroboration is therefore
-    # grouped by the normalized research topic, while still requiring distinct
-    # source domains; identical wording alone never counts as independence.
-    topic_stopwords = {"about", "after", "also", "from", "into", "that", "this", "with",
-                       "what", "which", "where", "when", "does", "did", "have", "their"}
-    def topic_key(item):
-        text = " ".join((str(item.get("topic", "")), str(item.get("claim", "")))).lower()
-        terms = [term for term in re.findall(r"[a-z0-9]{4,}", text) if term not in topic_stopwords]
-        return " ".join(sorted(set(terms)))[:160]
-    sources_by_topic = {}
-    for item in accepted:
-        key = topic_key(item)
-        domain = urllib.parse.urlparse(str(item.get("url", ""))).netloc.lower()
-        if key and domain:
-            sources_by_topic.setdefault(key, set()).add(domain)
+    # Independence is a judged relation, not shared wording: a finding counts
+    # as corroborated only when the local model recorded that a finding from a
+    # different domain supports it.
+    support_index = corroboration_index(load_records(LOCAL_CORROBORATIONS))
     public_records = []
     for item in rows[-100:]:
         record = {key: item.get(key) for key in ("id", "agent", "cycle", "topic", "claim", "quote", "url", "content_hash",
                                                   "confidence", "quote_score", "quote_match", "relates_to", "status")}
-        record["independent_sources"] = len(sources_by_topic.get(topic_key(item), set())) if is_accepted(item) else 0
+        own_domain = urllib.parse.urlparse(str(item.get("url", ""))).netloc.lower()
+        partners = support_index.get(item.get("id"), set()) - {own_domain}
+        record["independent_sources"] = (1 + len(partners)) if is_accepted(item) else 0
         if not is_accepted(item):
             record["rejection_reason"] = item.get("rejection_reason", "rejected")
         public_records.append(record)
@@ -776,22 +770,22 @@ def sync_frontier(result, world, registry):
                                          "source_url": str(finding.get("url", ""))[:300],
                                          "source_hash": finding.get("content_hash", "")})
             known.add(finding_id)
-    by_topic = {}
-    for item in frontier["findings"][-100:]:
-        topic = re.sub(r"\s+", " ", str(item.get("topic", "")).lower()).strip()
-        claim = re.sub(r"\s+", " ", str(item.get("claim", "")).lower()).strip()
-        if topic and claim:
-            by_topic.setdefault(topic, {}).setdefault(claim, []).append(item)
+    # A contradiction is a judged relation between two cross-domain findings,
+    # never merely two differently worded claims on one topic.
     known_contradictions = {item.get("id") for item in frontier["contradictions"]}
-    for topic, claims in by_topic.items():
-        if len(claims) < 2:
+    corroborations = load_records(LOCAL_CORROBORATIONS)
+    for record in corroborations:
+        if record.get("relation") != "contradicts":
             continue
-        claim_ids = sorted(item.get("id") for values in claims.values() for item in values if item.get("id"))
-        contradiction_id = "contradiction-" + hashlib.sha256((topic + ":" + ":".join(claim_ids)).encode()).hexdigest()[:20]
-        if contradiction_id not in known_contradictions:
-            frontier["contradictions"].append({"id": contradiction_id, "cycle": cycle, "topic": topic[:160],
-                "finding_ids": claim_ids[:8], "status": "open"})
-            known_contradictions.add(contradiction_id)
+        contradiction_id = "contradiction-" + str(record.get("id"))
+        if contradiction_id in known_contradictions:
+            continue
+        frontier["contradictions"].append({"id": contradiction_id, "cycle": record.get("cycle", cycle),
+            "topic": str(record.get("topic", ""))[:160], "finding_ids": list(record.get("finding_ids", []))[:8],
+            "domains": list(record.get("domains", [])), "reason": str(record.get("reason", ""))[:200], "status": "open"})
+        known_contradictions.add(contradiction_id)
+    frontier["corroborations"] = [{key: record.get(key) for key in ("id", "relation", "finding_ids", "topic", "domains", "cycle")}
+                                  for record in corroborations[-100:]]
     previous_tasks = {item.get("id"): item for item in frontier.get("tasks", []) if item.get("id")}
     tasks = []
     tasks.extend({"id": f"task-{agent.get('id')}", "agent": agent.get("id"),
@@ -825,7 +819,7 @@ def sync_frontier(result, world, registry):
         if old.get("status") in {"claimed", "completed"}:
             task["status"] = old["status"]
         tasks.append(task)
-        if old.get("status") == "completed":
+        if old.get("status") == "completed" and str(old.get("evidence", "")).startswith(("finding-", "analysis-")):
             contradiction["status"] = "adjudicated"
             contradiction["adjudicated_by"] = old.get("claimed_by") or "council"
             contradiction["adjudicated_cycle"] = old.get("completed_cycle", cycle)
@@ -844,6 +838,7 @@ def sync_frontier(result, world, registry):
               "findings": [{key: item.get(key) for key in ("id", "cycle", "source", "room", "claim", "status", "source_url", "source_hash")}
                            for item in frontier["findings"][-50:]],
               "contradictions": frontier["contradictions"][-50:],
+              "corroborations": frontier.get("corroborations", [])[-50:],
               "tasks": frontier["tasks"][-50:], "activity": frontier["activity"][-50:]}
     atomic_write_json(PUBLIC_FRONTIER, public)
     return {"frontier_questions": len(frontier["open_questions"]),

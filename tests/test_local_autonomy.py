@@ -27,6 +27,8 @@ class LocalAutonomyTests(unittest.TestCase):
         local_autonomy.FINDINGS = Path(self.archive_dir.name) / "findings.jsonl"
         local_autonomy.FRONTIER = Path(self.archive_dir.name) / "frontier.json"
         local_autonomy.TRADES = Path(self.archive_dir.name) / "trades.json"
+        self.original_corroborations = local_autonomy.CORROBORATIONS
+        local_autonomy.CORROBORATIONS = Path(self.archive_dir.name) / "corroborations.jsonl"
 
     def tearDown(self):
         local_autonomy.ARCHIVE = self.original_archive
@@ -38,6 +40,7 @@ class LocalAutonomyTests(unittest.TestCase):
         local_autonomy.FINDINGS = self.original_findings
         local_autonomy.FRONTIER = self.original_frontier
         local_autonomy.TRADES = self.original_trades
+        local_autonomy.CORROBORATIONS = self.original_corroborations
         self.archive_dir.cleanup()
 
     def test_build_creates_one_connected_room_and_event(self):
@@ -102,14 +105,20 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertIn(changes[0]["discovery"], world["rooms"][0]["artifacts"])
 
     def test_evidence_room_growth_requires_independent_domains(self):
+        from scripts.corroboration import append_record, make_record
         world = {"events": [], "rooms": [{"id": "relay", "occupants": []}], "connections": []}
-        self.archive_dir  # keep the temporary directory alive for the redirected path
-        local_autonomy.FINDINGS.write_text("\n".join([
-            '{"id":"f1","topic":"ancient scripts","url":"https://one.example/a","content_hash":"a","quote":"first","relates_to":["relay"]}',
-            '{"id":"f2","topic":"ancient scripts","url":"https://two.example/b","content_hash":"b","quote":"second","relates_to":["relay"]}'
-        ]) + "\n")
+        same_domain = [
+            {"id": "f1", "topic": "ancient scripts", "url": "https://one.example/a", "content_hash": "a", "quote": "first", "claim": "ancient scripts used symbols", "relates_to": ["relay"]},
+            {"id": "f2", "topic": "ancient scripts", "url": "https://one.example/b", "content_hash": "b", "quote": "second", "claim": "ancient scripts used symbols", "relates_to": ["relay"]}]
+        local_autonomy.FINDINGS.write_text("\n".join(json.dumps(item) for item in same_domain) + "\n")
+        append_record(local_autonomy.CORROBORATIONS, make_record(same_domain[0], same_domain[1], "pair-same", "supports", "", 80))
+        self.assertEqual(local_autonomy.evidence_room_growth(world, {"agents": []}, 80), [])
+        cross_domain = [same_domain[0], {**same_domain[1], "url": "https://two.example/b"}]
+        local_autonomy.FINDINGS.write_text("\n".join(json.dumps(item) for item in cross_domain) + "\n")
+        append_record(local_autonomy.CORROBORATIONS, make_record(cross_domain[0], cross_domain[1], "pair-cross", "supports", "", 80))
         changes = local_autonomy.evidence_room_growth(world, {"agents": []}, 80)
         self.assertEqual(changes[0]["action"], "build")
+        self.assertEqual(changes[0]["corroboration"], "pair-cross")
         self.assertEqual(len(world["rooms"]), 2)
         self.assertEqual(world["events"][0]["kind"], "room-built-from-evidence")
 
@@ -118,8 +127,8 @@ class LocalAutonomyTests(unittest.TestCase):
         agent = {"id": "local-test", "room": "relay"}
         claimed = local_autonomy.claim_frontier_task(agent, 81)
         self.assertEqual(claimed["id"], "question-task-1")
-        agent["last_finding_id"] = "finding-1"
-        self.assertTrue(local_autonomy.complete_frontier_task(agent, 81, {"action": "EXPLORE"}))
+        self.assertFalse(local_autonomy.complete_frontier_task(agent, 81, {"action": "EXPLORE"}))
+        self.assertTrue(local_autonomy.complete_frontier_task(agent, 81, {"action": "EXPLORE"}, "finding-1"))
         task = __import__("json").loads(local_autonomy.FRONTIER.read_text())["tasks"][0]
         self.assertEqual(task["status"], "completed")
         self.assertEqual(task["evidence"], "finding-1")
@@ -389,6 +398,81 @@ class LocalAutonomyTests(unittest.TestCase):
         result = local_autonomy.run_analysis("print(len(data))", "public excerpt")
         self.assertEqual(result["status"], "completed")
         self.assertIn("14", result["output"])
+
+    def _write_findings(self, *records):
+        with local_autonomy.FINDINGS.open("a") as handle:
+            for record in records:
+                handle.write(json.dumps(record) + "\n")
+
+    def test_rooms_grow_only_from_judged_cross_domain_support(self):
+        first = {"id": "finding-a", "agent": "local-001", "url": "https://a.example/one", "content_hash": "h1",
+                 "claim": "The A2A protocol publishes an agent card for discovery.", "quote": "publishes an agent card",
+                 "topic": "a2a agent card discovery", "relates_to": ["atrium"], "status": "unreviewed"}
+        second = {"id": "finding-b", "agent": "local-002", "url": "https://b.example/two", "content_hash": "h2",
+                  "claim": "Agent cards enable discovery in the A2A protocol.", "quote": "agent cards enable discovery",
+                  "topic": "a2a agent card discovery", "relates_to": ["atrium"], "status": "unreviewed"}
+        self._write_findings(first, second)
+        world = {"rooms": [{"id": "atrium", "doors": [], "occupants": []}], "connections": [], "events": []}
+        self.assertEqual(local_autonomy.evidence_room_growth(world, {"agents": []}, 9), [])
+        from scripts.corroboration import append_record, make_record
+        append_record(local_autonomy.CORROBORATIONS, make_record(first, second, "pair-c", "contradicts", "cannot both hold", 9))
+        self.assertEqual(local_autonomy.evidence_room_growth(world, {"agents": []}, 9), [])
+        append_record(local_autonomy.CORROBORATIONS, make_record(first, second, "pair-s", "supports", "same fact", 9))
+        changes = local_autonomy.evidence_room_growth(world, {"agents": []}, 9)
+        self.assertEqual(len(changes), 1)
+        self.assertEqual(changes[0]["corroboration"], "pair-s")
+        self.assertEqual(len(world["rooms"]), 2)
+        self.assertEqual(world["rooms"][1]["corroboration_id"], "pair-s")
+        self.assertEqual(world["connections"][0]["from"], "atrium")
+        self.assertEqual(world["events"][-1]["kind"], "room-built-from-evidence")
+        self.assertEqual(local_autonomy.evidence_room_growth(world, {"agents": []}, 10), [])
+
+    def test_judgments_are_recorded_once_with_events(self):
+        first = {"id": "finding-a", "agent": "local-001", "url": "https://a.example/one", "content_hash": "h1",
+                 "claim": "The A2A protocol publishes an agent card for discovery.", "quote": "publishes an agent card",
+                 "topic": "a2a agent card discovery", "relates_to": ["atrium"], "status": "unreviewed"}
+        second = {"id": "finding-b", "agent": "local-002", "url": "https://b.example/two", "content_hash": "h2",
+                  "claim": "Agent cards enable discovery in the A2A protocol.", "quote": "agent cards enable discovery",
+                  "topic": "a2a agent card discovery", "relates_to": ["atrium"], "status": "unreviewed"}
+        self._write_findings(first, second)
+
+        class FakeResponse:
+            def __init__(self, payload):
+                self.payload = json.dumps({"choices": [{"message": {"content": json.dumps(payload)}}]}).encode()
+            def read(self):
+                return self.payload
+            def __enter__(self):
+                return self
+            def __exit__(self, *_args):
+                return False
+
+        original = local_autonomy.urllib.request.urlopen
+        local_autonomy.urllib.request.urlopen = lambda *_a, **_k: FakeResponse({"relation": "supports", "reason": "same fact"})
+        try:
+            world = {"events": []}
+            results = local_autonomy.judge_corroborations("http://127.0.0.1:1", world, 11)
+            self.assertEqual(results[0]["relation"], "supports")
+            self.assertEqual(world["events"][-1]["kind"], "findings-corroborated")
+            self.assertEqual(local_autonomy.judge_corroborations("http://127.0.0.1:1", world, 12), [])
+        finally:
+            local_autonomy.urllib.request.urlopen = original
+
+    def test_claims_are_reused_and_completion_requires_evidence(self):
+        local_autonomy.FRONTIER.write_text(json.dumps({"tasks": [
+            {"id": "task-1", "room": None, "request": "first", "status": "open"},
+            {"id": "task-2", "room": None, "request": "second", "status": "open"}]}))
+        agent = {"id": "local-001", "room": "atrium"}
+        self.assertEqual(local_autonomy.claim_frontier_task(agent, 5)["id"], "task-1")
+        self.assertEqual(local_autonomy.claim_frontier_task(agent, 6)["id"], "task-1")
+        frontier = json.loads(local_autonomy.FRONTIER.read_text())
+        self.assertEqual(frontier["tasks"][1]["status"], "open")
+        self.assertFalse(local_autonomy.complete_frontier_task(agent, 6, {"action": "PROPOSE", "proposal": "words"}))
+        self.assertFalse(local_autonomy.complete_frontier_task(agent, 6, {"action": "EXPLORE"}, ""))
+        self.assertTrue(local_autonomy.complete_frontier_task(agent, 6, {"action": "EXPLORE"}, "finding-xyz"))
+        frontier = json.loads(local_autonomy.FRONTIER.read_text())
+        self.assertEqual((frontier["tasks"][0]["status"], frontier["tasks"][0]["evidence"]), ("completed", "finding-xyz"))
+        self.assertNotIn("claimed_task", agent)
+        self.assertEqual(local_autonomy.claim_frontier_task(agent, 7)["id"], "task-2")
 
     def test_accepted_trade_completes_when_proposer_files_a_finding_and_expires_otherwise(self):
         local_autonomy.TRADES.write_text(json.dumps({"schema_version": 1, "trades": [

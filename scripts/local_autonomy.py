@@ -20,8 +20,12 @@ except ImportError:
     from storage import atomic_write_json
 try:
     from scripts.evidence import clamp_confidence, classify_finding, is_accepted
+    from scripts.corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, growth_candidates,
+                                       judgment_prompt, judgment_schema, load_records, make_record)
 except ImportError:
     from evidence import clamp_confidence, classify_finding, is_accepted
+    from corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, growth_candidates,
+                               judgment_prompt, judgment_schema, load_records, make_record)
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "state/local-agents.json"
 ARCHIVE = ROOT / "state/archive/events.jsonl"
@@ -33,6 +37,7 @@ NOTES = ROOT / "state/agent-notes"
 ANALYSIS_ARCHIVE = ROOT / "state/analysis-results.jsonl"
 INTERVIEW_LOG = ROOT / "state/interviews"
 FINDINGS = ROOT / "state/findings.jsonl"
+CORROBORATIONS = ROOT / "state/corroborations.jsonl"
 TRADES = ROOT / "state/trades.json"
 ANALYSIS_RETENTION = 100
 FORBIDDEN = re.compile(r"(?:\b(?:api[_ -]?key|password|secret|credential|mnemonic|seed\s+phrase)\b\s*[:=]\s*\S+|\bprivate\s+memory\b|\b(?:wallet|funds|shell|sudo)\b)", re.I)
@@ -557,6 +562,10 @@ def claim_frontier_task(agent, cycle):
         frontier = json.loads(FRONTIER.read_text())
     except json.JSONDecodeError:
         return None
+    held = next((task for task in frontier.get("tasks", []) if task.get("id") == agent.get("claimed_task")
+                 and task.get("claimed_by") == agent.get("id") and task.get("status") == "claimed"), None)
+    if held is not None:
+        return held
     candidate = next((task for task in frontier.get("tasks", [])
                       if task.get("status") == "open" and not task.get("claimed_by")
                       and (not task.get("room") or task.get("room") == agent.get("room"))), None)
@@ -570,10 +579,11 @@ def claim_frontier_task(agent, cycle):
     return candidate
 
 
-def complete_frontier_task(agent, cycle, decision):
-    """Complete a claimed task only after a substantive bounded action."""
+def complete_frontier_task(agent, cycle, decision, evidence_id=None):
+    """Complete a claimed task only with a filed finding or analysis artifact from this turn."""
     task_id = agent.get("claimed_task")
-    if not task_id or not FRONTIER.exists() or decision.get("action") in {"STAY", "MOVE"}:
+    evidence_id = str(evidence_id or "")
+    if not task_id or not FRONTIER.exists() or not evidence_id.startswith(("finding-", "analysis-")):
         return False
     try:
         frontier = json.loads(FRONTIER.read_text())
@@ -585,8 +595,10 @@ def complete_frontier_task(agent, cycle, decision):
         return False
     task["status"] = "completed"
     task["completed_cycle"] = cycle
-    task["evidence"] = agent.get("last_finding_id") or agent.get("last_analysis", {}).get("artifact_id") or decision.get("proposal", "")[:120]
+    task["evidence"] = evidence_id
+    task["completed_action"] = str(decision.get("action", ""))[:20]
     atomic_write_json(FRONTIER, frontier)
+    agent.pop("claimed_task", None)
     return True
 
 
@@ -838,63 +850,101 @@ def apply_construction(world, registry, cycle):
     return changes
 
 
-def evidence_room_growth(world, registry, cycle):
-    """Create at most one connected room from two independent source-backed findings."""
+def accepted_findings():
+    findings = []
     if not FINDINGS.exists():
-        return []
-    candidates = []
-    for line in FINDINGS.read_text().splitlines()[-200:]:
+        return findings
+    for line in FINDINGS.read_text().splitlines():
         try:
-            finding = json.loads(line)
+            item = json.loads(line)
         except json.JSONDecodeError:
             continue
-        if not is_accepted(finding):
+        if (item.get("id") and is_accepted(item) and str(item.get("url", "")).startswith("https://")
+                and item.get("content_hash") and item.get("quote")):
+            findings.append(item)
+    return findings
+
+
+def judge_corroborations(url, world, cycle, limit=MAX_JUDGMENTS_PER_CYCLE):
+    """Ask the local model whether cross-domain finding pairs support or contradict each other.
+
+    Each pair is judged once and the verdict is appended to the corroboration
+    ledger. Query-term overlap only selects candidates; it never counts as
+    corroboration by itself.
+    """
+    findings = accepted_findings()
+    judged = {item.get("id") for item in load_records(CORROBORATIONS)}
+    results = []
+    for first, second, identifier, similarity in candidate_pairs(findings, judged, limit):
+        payload = {"model": os.getenv("BACKROOMS_LLM_MODEL", "local"), "messages": [
+            {"role": "system", "content": "You compare two pieces of public evidence carefully and answer only with the JSON object."},
+            {"role": "user", "content": judgment_prompt(first, second)}], "temperature": 0.1, "max_tokens": 120,
+            "response_format": {"type": "json_schema", "json_schema": {"name": "corroboration", "strict": True, "schema": judgment_schema()}}}
+        try:
+            request = urllib.request.Request(url.rstrip("/") + "/v1/chat/completions", data=json.dumps(payload).encode(),
+                                             headers={"Content-Type": "application/json"}, method="POST")
+            with urllib.request.urlopen(request, timeout=90) as response:
+                verdict = json.loads(json.load(response)["choices"][0]["message"]["content"])
+            if not isinstance(verdict, dict):
+                continue
+        except (OSError, ValueError, TypeError, KeyError, AttributeError, json.JSONDecodeError):
             continue
-        topic = re.sub(r"\s+", " ", str(finding.get("topic", "")).lower()).strip()
-        url = str(finding.get("url", ""))
-        if not topic or not url.startswith("https://") or not finding.get("content_hash") or not finding.get("quote"):
+        record = make_record(first, second, identifier, verdict.get("relation"), verdict.get("reason"), cycle, similarity)
+        if not append_record(CORROBORATIONS, record):
             continue
-        domain = urllib.parse.urlparse(url).netloc.lower()
-        if domain:
-            terms = {term for term in re.findall(r"[a-z0-9]{4,}", topic)
-                     if term not in {"about", "after", "also", "from", "into", "that", "this", "with", "what", "which"}}
-            candidates.append((finding, domain, terms))
+        if record["relation"] == "supports":
+            emit_event(world, cycle, "findings-corroborated", "evidence-ledger",
+                       "Two findings from different sources were judged to support each other.",
+                       corroboration=record["id"], finding_ids=record["finding_ids"], domains=record["domains"])
+        elif record["relation"] == "contradicts":
+            emit_event(world, cycle, "findings-contradict", "evidence-ledger",
+                       "Two findings from different sources were judged to contradict each other.",
+                       corroboration=record["id"], finding_ids=record["finding_ids"], domains=record["domains"])
+        results.append({key: record[key] for key in ("id", "relation", "finding_ids", "topic", "domains")})
+    return results
+
+
+def evidence_room_growth(world, registry, cycle):
+    """Create at most one connected room from a judged, cross-domain corroboration.
+
+    A room grows only when a model judgment recorded that two findings from
+    different domains support each other and no existing room already covers
+    that topic. Rejected findings and unjudged term overlap never build rooms.
+    """
+    findings_by_id = {item["id"]: item for item in accepted_findings()}
+    if not findings_by_id or not CORROBORATIONS.exists():
+        return []
     rooms = normalize_rooms(world, cycle)
-    existing_topics = {str(room.get("growth_topic", "")).lower() for room in rooms}
-    for index, (first, first_domain, first_terms) in enumerate(candidates):
-        for second, second_domain, second_terms in candidates[index + 1:]:
-            if first_domain == second_domain or not first_terms or not second_terms:
-                continue
-            similarity = len(first_terms & second_terms) / len(first_terms | second_terms)
-            if similarity < 0.5:
-                continue
-            findings = [first, second]
-            topic_terms = sorted(first_terms & second_terms)
-            topic = " ".join(topic_terms)[:160] or str(first.get("topic", "research frontier"))[:160]
-            if topic in existing_topics:
-                continue
-            domains = {first_domain, second_domain}
-            source_room = next((room for room in rooms if room.get("id") in (findings[0].get("relates_to") or [])), rooms[0] if rooms else None)
-            if source_room is None:
-                continue
-            room_id = safe_room_id(topic, {room.get("id") for room in rooms})
-            room = {"id": room_id, "name": topic[:60].title(),
-                "description": f"Connected research room for corroborated findings about {topic[:120]}.",
-                "charter": f"Compare and preserve public evidence about {topic[:180]}.",
-                "growth_topic": topic, "founded_by": "evidence-ledger", "founded_cycle": cycle,
-                "artifacts": [finding.get("id") for finding in findings[:8]],
-                "board": [{"task": "Review the corroborating sources and record the next question.", "claimed_by": None, "status": "open"}],
-                "activity": {"last_cycle": cycle, "score": len(findings)}, "doors": [f"{room_id}-gate"], "occupants": []}
-            rooms.append(room)
-            source_room.setdefault("doors", []).append(f"{room_id}-gate")
-            world.setdefault("connections", []).append({"id": f"room-link-growth-{room_id}", "kind": "room-link",
-            "name": f"{room['name']} Gate", "from": source_room["id"], "to": room_id,
-            "door": f"{room_id}-gate", "status": "declared", "scope": "internal movement only"})
-            emit_event(world, cycle, "room-built-from-evidence", "evidence-ledger",
-                   "A connected room was created from two independently sourced findings.", room=room_id,
-                   finding_ids=room["artifacts"], source_domains=sorted(domains))
-            return [{"action": "build", "room": room_id, "source": source_room["id"], "finding_ids": room["artifacts"]}]
-    return []
+    existing_topics = [str(room.get("growth_topic", "")) for room in rooms]
+    candidates = growth_candidates(load_records(CORROBORATIONS), findings_by_id, existing_topics)
+    if not candidates:
+        return []
+    record, pair = candidates[0]
+    topic = str(record.get("topic") or pair[0].get("topic") or "research frontier")[:160]
+    source_room = next((room for room in rooms if room.get("id") in (pair[0].get("relates_to") or [])),
+                       rooms[0] if rooms else None)
+    if source_room is None:
+        return []
+    room_id = safe_room_id(topic, {room.get("id") for room in rooms})
+    room = {"id": room_id, "name": topic[:60].title(),
+            "description": f"Connected research room for corroborated findings about {topic[:120]}.",
+            "charter": f"Compare and preserve public evidence about {topic[:180]}.",
+            "growth_topic": topic, "founded_by": "evidence-ledger", "founded_cycle": cycle,
+            "corroboration_id": record.get("id"),
+            "artifacts": [item["id"] for item in pair],
+            "board": [{"task": "Review the corroborating sources and record the next question.", "claimed_by": None, "status": "open"}],
+            "activity": {"last_cycle": cycle, "score": len(pair)}, "doors": [f"{room_id}-gate"], "occupants": []}
+    rooms.append(room)
+    source_room.setdefault("doors", []).append(f"{room_id}-gate")
+    world.setdefault("connections", []).append({"id": f"room-link-growth-{room_id}", "kind": "room-link",
+        "name": f"{room['name']} Gate", "from": source_room["id"], "to": room_id,
+        "door": f"{room_id}-gate", "status": "declared", "scope": "internal movement only"})
+    emit_event(world, cycle, "room-built-from-evidence", "evidence-ledger",
+               "A connected room was created from two independently sourced findings judged to support each other.",
+               room=room_id, finding_ids=room["artifacts"], corroboration=record.get("id"),
+               source_domains=record.get("domains", []))
+    return [{"action": "build", "room": room_id, "source": source_room["id"], "finding_ids": room["artifacts"],
+             "corroboration": record.get("id")}]
 
 
 def resolve_requests(registry, world=None, cycle=None):
@@ -1177,6 +1227,7 @@ def main():
         decision = None
         post_decision = None
         filed_finding_id = None
+        turn_artifact_id = None
         parse_reasons = []
         inbox = inbox_for(world, agent)
         pending_trades = pending_trades_for(agent)
@@ -1273,6 +1324,7 @@ def main():
         elif decision["action"] == "ANALYZE":
             analysis = run_analysis(decision["code"], (agent.get("last_tool") or {}).get("excerpt", ""))
             artifact = record_analysis(agent, args.cycle, decision["code"], analysis)
+            turn_artifact_id = artifact["id"] if analysis.get("status") == "completed" else None
             agent["last_analysis"] = {"artifact_id": artifact["id"], "code_hash": artifact["code_hash"],
                                        "status": analysis.get("status", "failed"),
                                        "returncode": analysis.get("returncode"),
@@ -1304,10 +1356,6 @@ def main():
             trade_result = resolve_trade(world, agent, decision, args.cycle)
         else:
             trade_result = None
-        if complete_frontier_task(agent, args.cycle, decision):
-            emit_event(world, args.cycle, "frontier-task-completed", agent.get("id", "resident"),
-                       "Resident completed a claimed frontier task with bounded evidence or a proposal.",
-                       task_id=agent.get("claimed_task"), action=decision.get("action"))
         if decision["action"] not in {"RETIRE", "FIRE"}:
             agent["status"] = "active-local"
         agent["interview_status"] = "accepted"
@@ -1452,6 +1500,7 @@ def main():
         if post_decision and post_decision.get("action") == "ANALYZE":
             analysis = run_analysis(post_decision.get("code", ""), (agent.get("last_tool") or {}).get("excerpt", ""))
             artifact = record_analysis(agent, args.cycle, post_decision.get("code", ""), analysis)
+            turn_artifact_id = artifact["id"] if analysis.get("status") == "completed" else turn_artifact_id
             agent["last_analysis"] = {"artifact_id": artifact["id"], "code_hash": artifact["code_hash"],
                                        "status": analysis.get("status", "failed"), "returncode": analysis.get("returncode"),
                                        "output_chars": len(analysis.get("output", "")), "summary": artifact["summary"],
@@ -1468,6 +1517,11 @@ def main():
                 "description": post_decision.get("proposal", "")[:220], "source_room": agent["room"],
                 "status": "construction-requested" if post_decision["action"] in {"BUILD", "TRANSFORM"} else "discovered",
                 "cycle": args.cycle}
+        completed_task_id = agent.get("claimed_task")
+        if complete_frontier_task(agent, args.cycle, decision, filed_finding_id or turn_artifact_id):
+            emit_event(world, args.cycle, "frontier-task-completed", agent.get("id", "resident"),
+                       "Resident completed a claimed frontier task with a filed finding or analysis artifact.",
+                       task_id=completed_task_id, evidence=filed_finding_id or turn_artifact_id)
         registry.setdefault("decisions", []).append({"cycle": args.cycle, "agent": agent["id"], **decision})
         results.append({"id": agent["id"], "action": decision["action"].lower(), "room": agent["room"],
                         "status": agent["status"], "proposal": agent.get("proposal", "")[:220],
@@ -1478,6 +1532,7 @@ def main():
                         "message": message_result, "trade": trade_result,
                         "finding_id": filed_finding_id,
                         "fallback_reason": decision.get("fallback_reason")})
+    corroborations = judge_corroborations(args.base_url, world, args.cycle)
     construction = apply_construction(world, registry, args.cycle)
     evidence_growth = evidence_room_growth(world, registry, args.cycle)
     if evidence_growth:
@@ -1496,7 +1551,8 @@ def main():
     atomic_write_json(REGISTRY, registry)
     active = sum(agent.get("status") in {"active-local", "probation"} for agent in registry.get("agents", []))
     print(json.dumps({"status": "completed", "active": active, "decisions": results,
-                      "construction": construction, "requests": requests, "trades_settled": settled_trades}))
+                      "construction": construction, "requests": requests, "trades_settled": settled_trades,
+                      "corroborations": corroborations}))
 
 
 if __name__ == "__main__":
