@@ -1080,6 +1080,7 @@ def main():
         agent["last_turn_cycle"] = args.cycle
         decision = None
         post_decision = None
+        filed_finding_id = None
         for attempt in range(2):
             try:
                 shared_work = [{"type": "room-candidate", "name": item.get("name"), "status": item.get("status"), "agent": item.get("agent")}
@@ -1313,6 +1314,7 @@ def main():
                     finding = extract_finding(args.base_url, agent, args.cycle, agent["last_tool"])
                     if record_finding(finding) and is_accepted(finding):
                         agent["last_finding_id"] = finding["id"]
+                        filed_finding_id = finding["id"]
                         emit_event(world, args.cycle, "finding-filed", agent.get("id", "resident"),
                                    "Resident filed a source-backed finding from a fetched public excerpt.",
                                    finding_id=finding["id"], source_hash=finding["content_hash"])
@@ -1363,9 +1365,7 @@ def main():
                         "request_status": agent.get("request_status", "none"),
                         "exploration": agent.get("exploration", "")[:100], "tool": tool,
                         "message": message_result, "trade": trade_result,
-                        "finding_id": agent.get("last_finding_id") if (agent.get("last_finding_id") and
-                                                                       (agent.get("last_tool") or {}).get("fetched_at", "").startswith(datetime.now(timezone.utc).date().isoformat())
-                                                                       and decision["action"] == "EXPLORE") else None})
+                        "finding_id": filed_finding_id})
     construction = apply_construction(world, registry, args.cycle)
     evidence_growth = evidence_room_growth(world, registry, args.cycle)
     if evidence_growth:
