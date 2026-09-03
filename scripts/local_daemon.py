@@ -168,7 +168,10 @@ def metrics(result):
 def autonomy_quality(result):
     decisions = result.get("autonomy", {}).get("decisions", [])
     if not decisions:
-        return {"turns": 0, "fallbacks": 0, "fallback_rate": 0.0, "tool_successes": 0}
+        failed = result.get("autonomy", {}).get("status") == "failed"
+        return {"turns": 0, "fallbacks": None if failed else 0,
+                "fallback_rate": None if failed else 0.0,
+                "tool_successes": 0, "status": "failed" if failed else "idle"}
     fallbacks = sum("fallback" in str(item.get("reason", "")).lower() or item.get("status") == "awaiting-retry"
                     for item in decisions)
     tools = [item.get("tool", {}) for item in decisions]
