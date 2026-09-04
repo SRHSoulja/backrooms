@@ -212,8 +212,29 @@ def retract_unfounded_rooms(world, records_by_id, findings_by_id, cycle, stands)
     return changes
 
 
+def _stems(text):
+    return {term[:6] if len(term) > 6 else term for term in claim_terms(text)}
+
+
+def finding_on_topic(finding):
+    """A finding is on topic when its claim shares content words with the query
+    that produced it. A finding with no recorded topic is not held to this."""
+    topic = _stems(str(finding.get("topic", "")))
+    return not topic or bool(topic & _stems(str(finding.get("claim", ""))))
+
+
 def finding_followup_question(finding):
-    """The question a finding leaves open: what other independent sources say, and whether any disagree."""
+    """The question a finding leaves open: what other independent sources say, and whether any disagree.
+
+    Only a finding that is on the topic that produced it, from a source that is
+    not a dictionary, leaves a question behind; otherwise the council does not
+    follow it, and research does not drift by word association."""
+    try:
+        from scripts.corroboration import definition_source
+    except ImportError:
+        from corroboration import definition_source
+    if definition_source(finding) or not finding_on_topic(finding):
+        return ""
     topic = re.sub(r"\s+", " ", str(finding.get("topic", ""))).strip()
     claim = re.sub(r"\s+", " ", str(finding.get("claim", ""))).strip()
     if not topic and not claim:

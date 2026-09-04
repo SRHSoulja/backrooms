@@ -59,11 +59,20 @@ class WorldRuleTests(unittest.TestCase):
         self.assertEqual(world["rooms"][0].get("status"), None)
 
     def test_followup_question_comes_from_the_finding(self):
-        question = finding_followup_question({"topic": "under corroboration journalism scientific", "claim": "Cards are published at a well-known path."})
+        question = finding_followup_question({"topic": "agent discovery cards under review", "claim": "Cards are published at a well-known path.",
+                                              "url": "https://spec.example/a2a"})
         self.assertIn("support or contradict the finding that Cards are published at a well-known path", question)
-        self.assertNotIn("under corroboration journalism", question)  # never a bag of search terms
+        self.assertNotIn("agent discovery cards under review", question)  # never a bag of search terms
         self.assertEqual(finding_followup_question({}), "")
         self.assertEqual(finding_followup_question({"topic": "only a topic"}), "")
+        # a dictionary definition or an off-topic finding leaves no question behind
+        self.assertEqual(finding_followup_question({"topic": "corroboration journalism", "claim": "The word wall means a vertical structure.",
+                                                    "url": "https://dictionary.cambridge.org/dictionary/english/wall"}), "")
+        self.assertEqual(finding_followup_question({"topic": "corroboration journalism scientific", "claim": "BlackRock manages 15 trillion dollars.",
+                                                    "url": "https://en.wikipedia.org/wiki/BlackRock"}), "")
+        self.assertIn("support or contradict", finding_followup_question({"topic": "corroboration journalism scientific",
+                                                                          "claim": "Journalism standards require corroboration by a second source.",
+                                                                          "url": "https://example.org/standards"}))
 
     def test_day_zero_is_the_latest_world_reset(self):
         lines = ['{"id": "e1", "kind": "arrival", "cycle": 1}', "not json",

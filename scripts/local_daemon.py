@@ -685,7 +685,7 @@ def next_question(base_url):
                             if line.upper().startswith("QUESTION:"):
                                 question = line.split(":", 1)[1].strip()
                                 if question:
-                                    return question[:300], f"resident:{resident.lower()}", accepted
+                                    return question[:300], f"resident:{resident.lower()}", accepted, ""
         except (json.JSONDecodeError, TypeError):
             pass
     try:
@@ -693,7 +693,7 @@ def next_question(base_url):
     except (OSError, json.JSONDecodeError, TypeError):
         cycle = 0
     # A finding leaves a question behind; the world's own record comes before the theme list.
-    latest = None
+    candidates = []
     if LOCAL_FINDINGS.exists():
         for line in LOCAL_FINDINGS.read_text().splitlines()[-40:]:
             try:
@@ -701,11 +701,14 @@ def next_question(base_url):
             except json.JSONDecodeError:
                 continue
             if item.get("status") not in {"rejected", "retracted"} and item.get("claim"):
-                latest = item
-    if latest and int(cycle) % 2 == 0:
-        followup = finding_followup_question(latest)
-        if followup:
-            return followup[:300], "finding-followup", accepted
+                candidates.append(item)
+    if int(cycle) % 2 == 0:
+        # The newest finding that is on the topic that produced it leaves a question;
+        # off-topic and dictionary findings leave none, so research cannot drift by word association.
+        for item in reversed(candidates):
+            followup = finding_followup_question(item)
+            if followup:
+                return followup[:300], "finding-followup", accepted, str(item.get("topic") or "")[:160]
     # No list a human wrote: when the residents produce nothing valid and no
     # finding is there to follow, the council carries its own newest open
     # question forward; failing even that, it repeats the last cycle's question.
@@ -715,15 +718,16 @@ def next_question(base_url):
         frontier_items = []
     carried = carry_forward(frontier_items)
     if carried:
-        return str(carried.get("question", ""))[:300], "carried:" + str(carried.get("id", "frontier")), accepted
+        return (str(carried.get("question", ""))[:300], "carried:" + str(carried.get("id", "frontier")), accepted,
+                str(carried.get("research_topic") or "")[:160])
     try:
         previous = str(json.loads(PUBLIC_CYCLE.read_text()).get("question", "")).strip() if PUBLIC_CYCLE.exists() else ""
     except (OSError, json.JSONDecodeError):
         previous = ""
     if previous:
-        return previous[:300], "carried:previous-cycle", accepted
+        return previous[:300], "carried:previous-cycle", accepted, ""
     return ("Which claim in the open record is least supported by an independent public source, and which source could settle it?",
-            "fixed-fallback", accepted)
+            "fixed-fallback", accepted, "")
 
 
 def recruit(base_url, cycle):
@@ -762,9 +766,10 @@ def recruit(base_url, cycle):
         return {"status": "failed", "active": active, "capacity": MAX_LOCAL_HIRELINGS}
 
 
-def govern(base_url, cycle, question=""):
+def govern(base_url, cycle, question="", research_topic=""):
     completed = subprocess.run([sys.executable, str(ROOT / "scripts/local_autonomy.py"),
-        "--base-url", base_url, "--cycle", str(cycle), "--question", str(question or "")[:300]],
+        "--base-url", base_url, "--cycle", str(cycle), "--question", str(question or "")[:300],
+        "--topic", str(research_topic or "")[:160]],
         cwd=ROOT, capture_output=True, text=True, check=False)
     if completed.returncode != 0:
         LOCAL_AUTONOMY_ERRORS.parent.mkdir(parents=True, exist_ok=True)
@@ -789,6 +794,7 @@ def sync_frontier(result, world, registry):
     if question and not any(item.get("id") == f"frontier-question-{cycle}" for item in frontier["open_questions"]):
         frontier["open_questions"].append({"id": f"frontier-question-{cycle}", "cycle": cycle,
                                            "source": "council", "question_source": str(result.get("question_source") or ""),
+                                           "research_topic": str(result.get("research_topic") or "")[:160],
                                            "question": question, "status": "open"})
     known = {item.get("id") for item in frontier["findings"]}
     for discovery in world.get("discoveries", [])[-20:]:
@@ -1514,19 +1520,20 @@ try:
         sync_frontier({}, runtime_world(), registry)
         frontier = json.loads(LOCAL_FRONTIER.read_text()) if LOCAL_FRONTIER.exists() else {}
         codex_task = queue_codex_frontier_review(frontier)
-        question, question_source, self_prompt_accepted = next_question(base_url)
+        question, question_source, self_prompt_accepted, research_topic = next_question(base_url)
         completed = subprocess.run([sys.executable, str(ROOT / "scripts/roundtable.py"),
             "--base-url", base_url, "--question", question], cwd=ROOT,
             capture_output=True, text=True, check=False)
         if completed.returncode == 0:
             result = json.loads(completed.stdout)
             result["question_source"] = question_source
+            result["research_topic"] = research_topic
             result["self_prompt_accepted"] = self_prompt_accepted
             world = record(result)
             result["action"] = (action(base_url, world["cycle"]) if world["cycle"] % 4 == 0
                                 else {"action": "local-behavioral-probe", "status": "skipped-this-cycle"})
             result["recruitment"] = recruit(base_url, world["cycle"])
-            result["autonomy"] = govern(base_url, world["cycle"], question)
+            result["autonomy"] = govern(base_url, world["cycle"], question, research_topic)
             # Autonomy may have constructed or transformed internal rooms.
             # Reload the canonical topology before publishing this cycle.
             world = runtime_world()

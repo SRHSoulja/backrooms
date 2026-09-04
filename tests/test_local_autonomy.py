@@ -825,5 +825,16 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(artifact["based_on"], "analysis-local-test-1")
 
 
+    def test_follow_up_research_keeps_the_topic_that_produced_the_finding(self):
+        query, family, avoid = local_autonomy.shared_research_target(
+            "Do other independent public sources support or contradict the finding that the Wall Street Journal is published six days a week?",
+            {"open_questions": []}, topic_hint="editorial process scientific journals")
+        self.assertEqual((query, family, avoid), ("editorial process scientific journals", None, set()))
+        query, _family, _avoid = local_autonomy.shared_research_target(
+            "Do other independent public sources support or contradict the finding that X?", {"open_questions": []})
+        self.assertNotIn("support", query.split())
+        self.assertNotIn("contradict", query.split())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -25,12 +25,12 @@ except ImportError:
 try:
     from scripts.evidence import clamp_confidence, classify_finding, is_accepted, FUNCTION_WORDS
     from scripts.corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, claims_overlap, corroboration_index,
-                                       growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records)
+                                       growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source)
     from scripts.world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes, retract_unfounded_rooms, collapse_withdrawn_rooms)
 except ImportError:
     from evidence import clamp_confidence, classify_finding, is_accepted, FUNCTION_WORDS
     from corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, claims_overlap, corroboration_index,
-                               growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records)
+                               growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source)
     from world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes, retract_unfounded_rooms, collapse_withdrawn_rooms)
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "state/local-agents.json"
@@ -60,7 +60,8 @@ MAX_FETCHES_PER_CYCLE = 4
 # evidence. Re-ground a few such purposes per cycle against the frontier, and
 # rest residents that keep producing nothing so turns go to productive work.
 MAX_REGROUNDS_PER_CYCLE = 2
-QUESTION_STOPWORDS = FUNCTION_WORDS | {"about", "after", "also", "from", "into", "that", "this", "with", "what", "which", "where",
+QUESTION_STOPWORDS = FUNCTION_WORDS | {"support", "supports", "contradict", "contradicts", "settle", "finding", "findings", "them",
+                      "about", "after", "also", "from", "into", "that", "this", "with", "what", "which", "where",
                       "when", "does", "did", "have", "their", "there", "these", "those", "than", "between",
                       "should", "could", "would", "current", "public", "evidence", "sources", "source", "independent",
                       "confirm", "challenge", "say",
@@ -266,6 +267,10 @@ def extract_finding(url, agent, cycle, tool):
               "recorded_at": datetime.now(timezone.utc).isoformat()}
     if status == "rejected":
         record["rejection_reason"] = reason
+    elif definition_source(record):
+        # Dictionaries define words; a definition is kept for audit but is never evidence.
+        record["status"] = "rejected"
+        record["rejection_reason"] = "definition-source"
     return record
 
 
@@ -1083,7 +1088,7 @@ def family_of_domain(domain):
     return "web"
 
 
-def shared_research_target(current_question, frontier):
+def shared_research_target(current_question, frontier, topic_hint=""):
     """Pick the research topic residents should converge on this cycle.
 
     A recent council question that already has accepted findings but no
@@ -1103,7 +1108,7 @@ def shared_research_target(current_question, frontier):
     for question in reversed(list((frontier or {}).get("open_questions", []))[-6:]):
         if question.get("status") != "open":
             continue
-        query = question_terms(question.get("question", ""))
+        query = str(question.get("research_topic") or "").strip() or question_terms(question.get("question", ""))
         items = by_topic.get(query.lower(), [])
         if not items or any(item.get("id") in supported for item in items):
             continue
@@ -1112,7 +1117,9 @@ def shared_research_target(current_question, frontier):
         unused = [family for family in SOURCE_FAMILIES if family not in used]
         if unused:
             return query, unused[0], domains
-    return question_terms(current_question), None, set()
+    # A follow-up question carries the topic that produced the finding it follows,
+    # so the search stays on that subject instead of on the question's own words.
+    return (str(topic_hint or "").strip() or question_terms(current_question)), None, set()
 
 
 def all_findings():
@@ -1536,6 +1543,7 @@ def main():
     parser.add_argument("--base-url", default="http://127.0.0.1:8080")
     parser.add_argument("--cycle", type=int, required=True)
     parser.add_argument("--question", default="", help="the cycle's council question; half of the research turns investigate it")
+    parser.add_argument("--topic", default="", help="research topic behind a follow-up question (the query that produced the finding)")
     args = parser.parse_args()
     registry = json.loads(REGISTRY.read_text()) if REGISTRY.exists() else {"agents": [], "decisions": []}
     deduplicate(registry)
@@ -1558,7 +1566,7 @@ def main():
             frontier_snapshot = json.loads(FRONTIER.read_text())
         except json.JSONDecodeError:
             frontier_snapshot = {}
-    shared_research, shared_family, shared_avoid = shared_research_target(args.question, frontier_snapshot)
+    shared_research, shared_family, shared_avoid = shared_research_target(args.question, frontier_snapshot, topic_hint=args.topic)
     regrounded = []
     for agent in selected:
         if len(regrounded) >= MAX_REGROUNDS_PER_CYCLE:
@@ -1828,7 +1836,8 @@ def main():
                     tool.get("status") == "completed" and
                     isinstance(tool.get("results"), list)):
                 candidates = [item.get("url", "") for item in tool["results"]
-                              if re.match(r"https://", str(item.get("url", "")), re.I)]
+                              if re.match(r"https://", str(item.get("url", "")), re.I)
+                              and not definition_source({"url": item.get("url", "")})]
                 if research_assignment and shared_avoid:
                     # A second finding from the same domain cannot corroborate
                     # the first; prefer any other domain when one exists.
