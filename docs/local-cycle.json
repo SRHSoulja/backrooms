@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-09-04T04:49:07.555342+00:00",
+  "generated_at": "2026-09-04T05:19:10.798743+00:00",
   "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
-  "runtime_cycle": 277,
-  "question": "Under what documented conditions do two independent sources count as corroboration in journalism or scientific review?",
+  "runtime_cycle": 278,
+  "question": "Which open-source projects simulate societies of software agents with shared state, and what do they report about emergent coordination?",
   "question_source": "theme-fallback",
   "self_prompt_accepted": 0,
   "action": {
@@ -12,16 +12,16 @@
   "recruitment": {
     "status": "activated",
     "agent": {
-      "id": "local-001",
-      "name": "Lumen-7",
-      "role": "Visual Provenance Auditor",
+      "id": "local-002",
+      "name": "Vex-9",
+      "role": "Cross-Referential Sifter",
       "room": "archive",
       "status": "probation"
     }
   },
   "autonomy": {
     "status": "completed",
-    "active": 1,
+    "active": 2,
     "decisions": [
       {
         "id": "local-001",
@@ -34,11 +34,11 @@
         "request_status": "closed",
         "exploration": "under corroboration journalism scientific",
         "tool": {
-          "tool": "wikipedia-summary",
+          "tool": "arxiv-summary",
           "query": "under corroboration journalism scientific",
-          "title": "Opinion poll",
-          "url": "https://en.wikipedia.org/wiki/Opinion_poll",
-          "excerpt": "An opinion poll, often simply referred to as a survey or a poll, is a human research survey of public opinion from a particular sample. Opinion polls are usually designed to represent the opinions of a population by conducting a series of questions and then extrapolating generalities in ratio or within confidence intervals. A person who conducts polls is referred to as a pollster.",
+          "title": "Automatic Detection of Influential Actors in Disinformation Networks",
+          "url": "https://arxiv.org/abs/2005.10879v3",
+          "excerpt": "Automatic Detection of Influential Actors in Disinformation Networks. The weaponization of digital communications and social media to conduct disinformation campaigns at immense scale, speed, and reach presents new challenges to identify and counter hostile influence operations (IOs). This paper presents an end-to-end framework to automate detection of disinformation narratives, networks, and influential actors. The framework integrates natural language processing, machine learning, graph analytics, and a novel network causal inference approach to quantify the impact of individual actors in spreading IO narratives. We demonstrate its capability on real-world hostile IO campaigns with Twitter datasets collected during the 2017 French presidential elections, and known IO accounts disclosed by Twitter over a broad range of IO campaigns (May 2007 to February 2020), over 50,000 accounts, 17 countries, and different account types including both trolls and bots. Our system detects IO accounts with 96% precision, 79% recall, and 96% area-under-the-PR-curve, maps out salient network communities, and discovers high-impact accounts that escape the lens of traditional impact statistics based on activity counts and network centrality. Results are corroborated with independent sources of known IO accounts from U.S. Congressional reports, investigative journalism, and IO datasets provided by Twitter.",
           "status": "completed",
           "contract": {
             "capability": "public-text-read",
@@ -74,20 +74,65 @@
         },
         "message": null,
         "trade": null,
-        "finding_id": "finding-580075091b59b8a2e220",
+        "finding_id": "finding-1e7061cff8d2af1cc415",
         "fallback_reason": null,
         "decision_source": "scheduler"
+      },
+      {
+        "id": "local-002",
+        "action": "explore",
+        "room": "archive",
+        "status": "active-local",
+        "proposal": "",
+        "reason": "Investigate documented provenance standards applied to untrusted visual media in fact-checking organizations to address frontier-question-276.",
+        "request": "",
+        "request_status": "closed",
+        "exploration": "code:fact-checking_provenance_standards",
+        "tool": {
+          "tool": "local-code-read",
+          "status": "rejected",
+          "reason": "path is outside the public source allowlist",
+          "contract": {
+            "capability": "public-source-read",
+            "access": "read-only",
+            "network": "none",
+            "side_effects": false,
+            "max_file_bytes": 120000,
+            "max_inventory_bytes": 400000,
+            "write_access": false,
+            "secrets": "redacted"
+          }
+        },
+        "message": null,
+        "trade": null,
+        "finding_id": null,
+        "fallback_reason": null,
+        "decision_source": "model"
       }
     ],
     "construction": [],
     "requests": [],
     "trades_settled": [],
-    "corroborations": [],
+    "corroborations": [
+      {
+        "id": "pair-964d3af6350baae28b9b",
+        "relation": "unrelated",
+        "finding_ids": [
+          "finding-1e7061cff8d2af1cc415",
+          "finding-580075091b59b8a2e220"
+        ],
+        "topic": "corroboration journalism scientific under",
+        "domains": [
+          "arxiv.org",
+          "en.wikipedia.org"
+        ]
+      }
+    ],
     "regrounded": [
       {
-        "agent": "local-001",
-        "purpose": "Evaluates whether visual media claims (e.g., EXIF metadata, alt-text, or captions) align with publicly verifiable records in open-source repositories (Wikipedia, arXiv, GitHub) or fact-checking corpor",
-        "question": "Does the image\u2019s metadata (EXIF, alt-text, or caption) reference a subject documented in Wikipedia, arXiv, or GitHub readmes (published within \u00b112 months) with matching timestamps, descriptions, or ge",
+        "agent": "local-002",
+        "purpose": "Systematically extract and compare documented provenance rules for source corroboration in journalism, scientific peer review, and fact-checking by scraping public policy pages, methodology sections,\u548c",
+        "question": "What is the minimum *explicitly stated* overlap in methodology (e.g., sampling, triangulation, or metadata standards) required for two sources to be deemed 'independent corroboration' in \u22653 fact-check",
         "room": "archive"
       }
     ],
@@ -95,13 +140,15 @@
     "room_changes": [],
     "shared_research": {
       "query": "under corroboration journalism scientific",
-      "family": null,
-      "avoid_domains": []
+      "family": "papers",
+      "avoid_domains": [
+        "en.wikipedia.org"
+      ]
     },
     "dormant": 0
   },
   "metrics": {
-    "jaccard_overlap": 0.2,
+    "jaccard_overlap": 0.255,
     "morrow_audit_markers": [
       "counterexample",
       "assumption",
@@ -112,8 +159,8 @@
     "distinction_status": "needs-audit"
   },
   "continuity_audit": {
-    "generated_at": "2026-09-04T04:49:07.546326+00:00",
-    "cycle": 277,
+    "generated_at": "2026-09-04T05:19:10.792986+00:00",
+    "cycle": 278,
     "status": "pass",
     "checks": {
       "archive_parse": true,
@@ -123,7 +170,7 @@
       "room_link_integrity": true,
       "resident_room_integrity": true
     },
-    "archive_records": 1852,
+    "archive_records": 1857,
     "malformed_archive_records": 0,
     "raw_output_fields_found": 0,
     "duplicate_archive_ids": [],
@@ -137,8 +184,8 @@
   },
   "health": {
     "schema_version": 1,
-    "generated_at": "2026-09-04T04:49:07.547139+00:00",
-    "cycle": 277,
+    "generated_at": "2026-09-04T05:19:10.793637+00:00",
+    "cycle": 278,
     "daemon": "running",
     "local_model": "ready",
     "local_model_probe": true,
@@ -150,17 +197,17 @@
         {
           "name": "mistral",
           "model": "ministral-14b-2512",
-          "calls": 13,
-          "input_tokens": 7372,
-          "output_tokens": 2530,
+          "calls": 21,
+          "input_tokens": 14367,
+          "output_tokens": 4460,
           "errors": 6,
           "last_error": "429 rate limited (council): Rate limit exceeded",
           "daily_request_budget": null,
           "daily_token_budget": null,
           "limit_rpm": 30,
           "limit_tpm": 937500,
-          "requests_last_minute": 7,
-          "tokens_last_minute": 6077,
+          "requests_last_minute": 8,
+          "tokens_last_minute": 8925,
           "status": "ready"
         },
         {
@@ -214,13 +261,13 @@
       ]
     },
     "rooms": 4,
-    "active_residents": 3,
+    "active_residents": 4,
     "work_orders": 0,
     "continuity": "pass",
     "autonomy": "active",
     "autonomy_quality": {
       "status": "active",
-      "turns": 1,
+      "turns": 2,
       "fallbacks": 0,
       "fallback_rate": 0.0,
       "fallback_reasons": {},
@@ -232,14 +279,14 @@
     "publication_status": {
       "outcome": "pushed",
       "reason": "",
-      "at": "2026-09-04T02:44:49.196558+00:00"
+      "at": "2026-09-04T04:49:08.914060+00:00"
     },
     "question_source": "theme-fallback",
     "self_prompt_accepted": 0,
     "activity_feed": "docs/activity.json",
     "feed_freshness_seconds": 0,
-    "activity_records": 9,
-    "note_records": 3,
+    "activity_records": 16,
+    "note_records": 5,
     "print_jobs": 0,
     "failed_print_jobs": 0,
     "analysis_runs": 0,
@@ -251,15 +298,15 @@
     "research_records": 0,
     "research_stale": 0,
     "research_feed": "docs/research.json",
-    "findings": 1,
+    "findings": 2,
     "findings_rejected": 0,
-    "findings_total": 1,
+    "findings_total": 2,
     "corroborated_findings": 0,
     "findings_feed": "docs/findings.json",
     "frontier_leads": 0,
-    "frontier_questions": 2,
-    "frontier_findings": 1,
-    "frontier_tasks": 2,
+    "frontier_questions": 3,
+    "frontier_findings": 2,
+    "frontier_tasks": 3,
     "frontier_feed": "docs/frontier.json",
     "code_proposals": 0,
     "code_proposals_ready": 0,
