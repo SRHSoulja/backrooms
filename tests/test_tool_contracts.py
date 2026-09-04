@@ -23,20 +23,49 @@ class ToolContractTests(unittest.TestCase):
         finally:
             tool_broker.fetch = original
 
-    def test_public_search_falls_back_when_primary_has_no_results(self):
+    def test_public_search_falls_back_to_wikipedia_search_when_the_engine_blocks(self):
         original = tool_broker.fetch
         try:
-            def fake_fetch(url):
+            def fake_fetch(url, max_bytes=None, user_agent=None):
                 if "duckduckgo" in url:
-                    return "<html>no parsed results</html>"
-                if "format=rss" in url:
-                    return "<rss><item><title>Public Dataset Report</title><link>https://example.org/report</link></item></rss>"
-                return '<li class="b_algo"><h2><a href="https://example.org/fallback">Fallback</a></h2></li>'
+                    return "<html>anomaly: no parsed results</html>"
+                if "en.wikipedia.org/w/api.php" in url:
+                    return json.dumps({"query": {"search": [{"title": "Public dataset"}, {"title": "Unrelated thing"}]}})
+                raise AssertionError("unexpected fetch " + url)
             tool_broker.fetch = fake_fetch
             result = tool_broker.public_search("public dataset")
-            self.assertEqual(result["source"], "https://www.bing.com/")
-            self.assertEqual(result["results"][0]["url"], "https://example.org/report")
+            self.assertEqual(result["source"], "https://en.wikipedia.org/")
+            self.assertEqual(result["results"][0]["url"], "https://en.wikipedia.org/wiki/Public_dataset")
+            self.assertEqual([item["title"] for item in result["results"]], ["Public dataset"])
             self.assertEqual(result["query"], "public dataset")
+        finally:
+            tool_broker.fetch = original
+
+    def test_public_search_drops_results_that_match_only_the_first_word(self):
+        original = tool_broker.fetch
+        try:
+            tool_broker.fetch = lambda url, max_bytes=None, user_agent=None: (
+                '<a class="result__a" href="https://example.org/wall">WALL Definition</a>'
+                '<a class="result__a" href="https://example.org/wsj">The Wall Street Journal - Dow Jones</a>') if "duckduckgo" in url else "{}"
+            result = tool_broker.public_search("wall street journal dow jones company")
+            self.assertEqual([item["url"] for item in result["results"]], ["https://example.org/wsj"])
+        finally:
+            tool_broker.fetch = original
+
+    def test_openalex_summary_returns_the_best_abstract_with_provenance(self):
+        original = tool_broker.fetch
+        try:
+            payload = {"results": [
+                {"title": "Inborn errors of immunity", "doi": "https://doi.org/10.1/immune", "primary_location": {"landing_page_url": "https://doi.org/10.1/immune"},
+                 "abstract_inverted_index": {"Errors": [0], "of": [1], "immunity": [2]}},
+                {"title": "Sampling error in opinion polls", "doi": "https://doi.org/10.1/polls", "primary_location": {"landing_page_url": "https://journals.example/polls"},
+                 "abstract_inverted_index": {"Opinion": [0], "polls": [1], "carry": [2], "sampling": [3], "error": [4]}}]}
+            tool_broker.fetch = lambda url, max_bytes=None, user_agent=None: json.dumps(payload)
+            result = tool_broker.openalex_summary("opinion polls sampling error")
+            self.assertEqual((result["status"], result["url"]), ("completed", "https://journals.example/polls"))
+            self.assertIn("Opinion polls carry sampling error", result["excerpt"])
+            tool_broker.fetch = lambda url, max_bytes=None, user_agent=None: json.dumps({"results": []})
+            self.assertEqual(tool_broker.openalex_summary("opinion polls sampling error")["status"], "no-match")
         finally:
             tool_broker.fetch = original
 

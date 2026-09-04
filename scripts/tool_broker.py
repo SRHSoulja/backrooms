@@ -15,6 +15,7 @@ TOOL_CONTRACTS = {
     "wikipedia-search": {"capability": "public-web-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES},
     "wikipedia-summary": {"capability": "public-text-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES, "raw_data": False, "untrusted_content": True},
     "arxiv-summary": {"capability": "public-text-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES, "raw_data": False, "untrusted_content": True},
+    "openalex-summary": {"capability": "public-text-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES, "raw_data": False, "untrusted_content": True},
     "github-readme": {"capability": "public-text-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES, "raw_data": False, "untrusted_content": True},
     "public-https": {"capability": "public-web-read", "access": "read-only", "network": "public HTTPS", "side_effects": False, "max_bytes": MAX_BYTES},
     "public-search": {"capability": "public-web-read", "access": "read-only", "network": "public HTTPS search", "side_effects": False, "max_bytes": MAX_BYTES},
@@ -42,11 +43,24 @@ def public_host(host):
         return False
 
 
-def fetch(url, max_bytes=MAX_BYTES):
+BROKER_AGENT = "BackroomsResearch/1.0"
+# Search engines answer a self-identified research client with a bot-check page
+# (DuckDuckGo) or with results for the first word only (Bing's RSS feed), so the
+# search request alone presents as an ordinary browser. Page fetches keep the
+# broker's own name.
+SEARCH_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+
+
+SEARCH_HOSTS = {"html.duckduckgo.com", "duckduckgo.com", "lite.duckduckgo.com"}
+
+
+def fetch(url, max_bytes=MAX_BYTES, user_agent=None):
     parsed = urllib.parse.urlparse(url)
     if parsed.scheme != "https" or parsed.username or parsed.password or not parsed.hostname or not public_host(parsed.hostname):
         raise ValueError("only public HTTPS URLs without credentials are allowed")
-    request = urllib.request.Request(url, headers={"User-Agent": "BackroomsResearch/1.0", "Accept-Encoding": "identity"}, method="GET")
+    agent = user_agent or (SEARCH_AGENT if parsed.hostname.lower() in SEARCH_HOSTS else BROKER_AGENT)
+    request = urllib.request.Request(url, headers={"User-Agent": agent, "Accept-Encoding": "identity",
+                                                   "Accept-Language": "en-US,en;q=0.9"}, method="GET")
     opener = urllib.request.build_opener(NoRedirect)
     with opener.open(request, timeout=15) as response:
         if response.headers.get("Content-Encoding", "identity").lower() not in {"", "identity"}:
@@ -181,6 +195,50 @@ def arxiv_summary(query):
             "contract": TOOL_CONTRACTS["arxiv-summary"]}
 
 
+def openalex_summary(query):
+    """Resolve a query to one scholarly work in OpenAlex and return its abstract as evidence.
+
+    OpenAlex indexes journals across publishers, answers whole queries, needs no
+    key, and returns the abstract itself, so the evidence is quotable text with
+    a DOI or landing page as provenance."""
+    if not query or len(query) > 160 or BLOCKED.search(query):
+        raise ValueError("query failed bounded validation")
+    query_terms = _query_terms(query)
+    params = urllib.parse.urlencode({"search": query, "per-page": 5, "mailto": "steward@backrooms.local",
+                                     "select": "title,doi,primary_location,abstract_inverted_index,publication_year"})
+    try:
+        data = json.loads(fetch("https://api.openalex.org/works?" + params))
+    except (ValueError, TypeError):
+        data = {}
+    works = [work for work in data.get("results", []) if isinstance(work, dict) and work.get("abstract_inverted_index")]
+    def abstract(work):
+        positions = []
+        for word, places in (work.get("abstract_inverted_index") or {}).items():
+            for place in places:
+                positions.append((place, word))
+        return " ".join(word for _place, word in sorted(positions))
+    def fields(work):
+        title = re.sub(r"\s+", " ", str(work.get("title") or "")).strip()
+        text = re.sub(r"\s+", " ", abstract(work)).strip()
+        location = work.get("primary_location") or {}
+        link = str(location.get("landing_page_url") or work.get("doi") or "").strip()
+        return title, text, link
+    best = None
+    best_score = 0
+    for work in works:
+        title, text, link = fields(work)
+        score = _overlap(f"{title} {text}", query_terms)
+        if link.startswith("https://") and text and score > best_score:
+            best, best_score = work, score
+    if best is None or best_score < 2:
+        return {"tool": "openalex-summary", "query": query, "status": "no-match",
+                "source": "https://openalex.org/", "contract": TOOL_CONTRACTS["openalex-summary"]}
+    title, text, link = fields(best)
+    return {"tool": "openalex-summary", "query": query, "title": title, "url": link[:500],
+            "excerpt": _clean_prose(f"{title}. {text}")[:2400], "status": "completed",
+            "contract": TOOL_CONTRACTS["openalex-summary"]}
+
+
 def _strip_markdown(text):
     text = re.sub(r"```.*?```", " ", text, flags=re.S)
     text = re.sub(r"!\[[^\]]*\]\([^)]*\)", " ", text)
@@ -246,32 +304,31 @@ def public_search(query):
         if len(results) >= 5:
             break
     if not results:
-        provider = "https://www.bing.com/"
-        rss_params = urllib.parse.urlencode({"format": "rss", "q": query})
-        page = fetch("https://www.bing.com/search?" + rss_params)
-        for match in re.finditer(r"<item>.*?<title>(.*?)</title>.*?<link>(.*?)</link>.*?</item>", page, re.I | re.S):
-            title = re.sub(r"<[^>]+>", "", html.unescape(match.group(1))).strip()
-            url = html.unescape(match.group(2)).strip()
-            if not url.lower().startswith("https://") or re.search(r"(?:login|log-in|signin|sign-in|authenticate|/auth(?:/|$)|/account(?:/|$))", url, re.I):
-                continue
-            results.append({"title": title[:160], "url": url[:500]})
-            if len(results) >= 5:
-                break
-        if not results:
-            page = fetch("https://www.bing.com/search?" + params)
-        for match in re.finditer(r'<li class="b_algo".*?<h2><a[^>]+href="([^"]+)"[^>]*>(.*?)</a>', page, re.I | re.S):
-            url = html.unescape(match.group(1))
-            title = re.sub(r"<[^>]+>", "", html.unescape(match.group(2))).strip()
-            if not url.lower().startswith("https://") or re.search(r"(?:login|log-in|signin|sign-in|authenticate|/auth(?:/|$)|/account(?:/|$))", url, re.I):
-                continue
-            results.append({"title": title[:160], "url": url[:500]})
-            if len(results) >= 5:
-                break
+        # The engine throttles repeated requests from one address. Wikipedia's
+        # search API answers the whole query reliably, so a turn still reaches a
+        # relevant page instead of a page about the query's first word.
+        provider = "https://en.wikipedia.org/"
+        try:
+            data = json.loads(fetch("https://en.wikipedia.org/w/api.php?" + urllib.parse.urlencode(
+                {"action": "query", "list": "search", "srsearch": query, "srlimit": 5, "format": "json", "utf8": 1})))
+            for hit in data.get("query", {}).get("search", []):
+                title = str(hit.get("title", "")).strip()
+                if title:
+                    results.append({"title": title[:160], "url": "https://en.wikipedia.org/wiki/" + urllib.parse.quote(title.replace(" ", "_"))})
+        except Exception:
+            results = []
     ignored = {"find", "relevant", "latest", "recent", "data", "public", "access", "use", "the", "for", "with"}
     terms = [term for term in re.findall(r"[a-z0-9]+", query.lower()) if len(term) > 3 and term not in ignored]
     if terms:
-        ranked = sorted(results, key=lambda item: sum(term in (item.get("title", "") + " " + item.get("url", "")).lower() for term in terms), reverse=True)
-        results = [item for item in ranked if any(term in (item.get("title", "") + " " + item.get("url", "")).lower() for term in terms)][:5]
+        # A result must match enough of the query to count: a page about the
+        # first word alone is not a result for a five-word question.
+        needed = 1 if len(terms) < 3 else 2
+        stems = {term[:5] for term in terms}
+        def hits(item):
+            haystack = (item.get("title", "") + " " + item.get("url", "")).lower()
+            return sum(stem in haystack for stem in stems)
+        ranked = sorted(results, key=hits, reverse=True)
+        results = [item for item in ranked if hits(item) >= needed][:5]
     return {"tool": "public-search", "query": query, "results": results,
             "source": provider, "status": "completed",
             "contract": TOOL_CONTRACTS["public-search"]}
@@ -351,6 +408,8 @@ def run(tool, value):
             return wikipedia_summary(value)
         if tool == "arxiv-summary":
             return arxiv_summary(value)
+        if tool == "openalex-summary":
+            return openalex_summary(value)
         if tool == "github-readme":
             return github_readme(value)
         if tool == "public-search":

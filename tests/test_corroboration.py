@@ -126,5 +126,14 @@ class CorroborationTests(unittest.TestCase):
         self.assertEqual(founding_pair_stands(None, journalism, science)[0], False)
 
 
+    def test_a_verification_pair_is_judged_before_any_other(self):
+        base = {"topic": "journalism corroboration standards", "status": "accepted", "claim": "Two independent sources are required before publication."}
+        first = {**base, "id": "f1", "url": "https://a.example/one"}
+        verifier = {**base, "id": "f2", "url": "https://b.example/two", "verifies": "f1"}
+        other = {**base, "id": "f3", "url": "https://c.example/three"}
+        pairs = candidate_pairs([first, other, verifier])
+        self.assertEqual((pairs[0][0]["id"], pairs[0][1]["id"], pairs[0][3]), ("f1", "f2", 1.5))
+
+
 if __name__ == "__main__":
     unittest.main()

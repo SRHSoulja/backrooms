@@ -73,7 +73,8 @@ def candidate_pairs(findings, judged_ids=(), limit=MAX_JUDGMENTS_PER_CYCLE):
             identifier = pair_id(first["id"], second["id"])
             if identifier in judged_ids:
                 continue
-            similarity = 1.0 if same_topic(first, second) else jaccard(first_terms, finding_terms(second))
+            linked = first.get("verifies") == second.get("id") or second.get("verifies") == first.get("id")
+            similarity = 1.5 if linked else 1.0 if same_topic(first, second) else jaccard(first_terms, finding_terms(second))
             if similarity >= PAIR_MIN_SIMILARITY:
                 scored.append((first, second, identifier, round(similarity, 3)))
     scored.sort(key=lambda item: (-item[3], item[2]))

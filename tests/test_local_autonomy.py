@@ -860,5 +860,23 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertNotIn("capabilities", registry["agents"][2])
 
 
+    def test_verification_turns_aim_at_a_colleagues_claim(self):
+        query = local_autonomy.verification_query(
+            "The Wall Street Journal is published six days a week by Dow Jones & Company, a division of News Corp.",
+            "wall street journal editorial process")
+        self.assertTrue(query.startswith("wall street journal dow jones"), query)
+        self.assertNotIn("the", query.split())
+        self.assertEqual(local_autonomy.families_for_topic("wall street journal editorial process"), ["encyclopedia", "papers", "web"])
+        self.assertEqual(local_autonomy.families_for_topic("agent discovery card protocol"), ["encyclopedia", "papers", "code", "web"])
+        first = {"id": "finding-a", "agent": "local-001", "cycle": 5, "url": "https://a.example/one", "content_hash": "h1",
+                 "claim": "Journalism standards require two independent sources before publication.", "quote": "two independent sources",
+                 "topic": "journalism corroboration standards", "status": "unreviewed"}
+        self._write_findings(first)
+        target = local_autonomy.target_claim_for("journalism corroboration standards")
+        self.assertEqual(target["id"], "finding-a")
+        self.assertIsNone(local_autonomy.target_claim_for("something else"))
+        self.assertIsNone(local_autonomy.target_claim_for(""))
+
+
 if __name__ == "__main__":
     unittest.main()

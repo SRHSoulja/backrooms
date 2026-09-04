@@ -56,6 +56,10 @@ elif tool == "wikipedia-summary":
         print(json.dumps({"tool": "wikipedia-summary", "query": value, "title": "Agent card", "url": "https://en.wikipedia.org/wiki/Agent_card", "status": "completed",
                           "excerpt": "An agent card is a public discovery document. It publishes an Agent Card for discovery.",
                           "contract": {"capability": "public-text-read", "untrusted_content": True}}))
+elif tool == "openalex-summary":
+    print(json.dumps({"tool": "openalex-summary", "query": value, "title": "Agent cards", "url": "https://doi.org/10.1000/agent-cards", "status": "completed",
+                      "excerpt": "Agent cards. We show that an agent card is a public discovery document. It publishes an Agent Card for discovery.",
+                      "contract": {"capability": "public-text-read", "untrusted_content": True}}))
 elif tool == "arxiv-summary":
     print(json.dumps({"tool": "arxiv-summary", "query": value, "title": "Agent cards", "url": "https://arxiv.org/abs/2401.00001v1", "status": "completed",
                       "excerpt": "Agent cards. We show that an agent card is a public discovery document. It publishes an Agent Card for discovery.",
@@ -303,7 +307,7 @@ class AutonomyIntegrationTests(unittest.TestCase):
         self.assertEqual(len(decision_prompts), 2)
         ledger = [json.loads(line) for line in (self.root / "state/findings.jsonl").read_text().splitlines()]
         council_domains = {item["url"].split("/")[2] for item in ledger if item["topic"] == assignments[0]["query"]}
-        self.assertEqual(council_domains, {"en.wikipedia.org", "arxiv.org"})
+        self.assertEqual(council_domains, {"en.wikipedia.org", "doi.org"})
         self.assertEqual(output["corroborations"][0]["relation"], "supports")
         self.assertEqual([item["action"] for item in output["construction"]], ["build"])
         self.assertEqual(output["construction"][0]["corroboration"], output["corroborations"][0]["id"])
