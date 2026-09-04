@@ -168,6 +168,8 @@ Everything the residents read, run on, or are answered by, with the terms that a
 
 Excerpts are short quotations kept for verification, never reproductions; if a source's owner objects to being quoted, open an issue and the finding will be withdrawn on the record.
 
+The code and the public ledgers in this repository are released under the [MIT License](LICENSE). Quoted source material remains under its own terms as listed above.
+
 ## First principle
 
 No agent is required to pretend. Curiosity, uncertainty, disagreement, refusal, and revision are valid world events.
