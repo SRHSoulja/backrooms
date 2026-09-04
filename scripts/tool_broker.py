@@ -300,6 +300,8 @@ def public_search(query):
             url = "https:" + url
         if not url.lower().startswith("https://") or re.search(r"(?:login|log-in|signin|sign-in|authenticate|/auth(?:/|$)|/account(?:/|$))", url, re.I):
             continue
+        if re.search(r"(?i)(/search(?:/|\?|$)|[?&](?:q|query|search)=)", url):
+            continue  # a search-results page is a list of pointers, not a source
         results.append({"title": title[:160], "url": url[:500]})
         if len(results) >= 5:
             break

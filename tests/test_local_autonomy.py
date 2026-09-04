@@ -848,6 +848,13 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(route("code:../secrets.env"), ("public-search", "../secrets.env"))
         self.assertEqual(route("wall street journal editorial process"), ("public-search", "wall street journal editorial process"))
         self.assertEqual(route("https://example.org/data.json"), ("public-json", "https://example.org/data.json"))
+        # a search-results page is not a source: it becomes a search for its own query
+        self.assertEqual(route("https://github.com/search?q=org%3Apropublica+wall+street+journal&type=repositories"),
+                         ("public-search", "wall street journal"))
+        self.assertTrue(local_autonomy.search_page("https://en.wikipedia.org/w/index.php?search=x"))
+        self.assertFalse(local_autonomy.search_page("https://en.wikipedia.org/wiki/Search_engine"))
+        self.assertIsNone(local_autonomy.TECHNICAL.search("Does the Wall Street Journal editorial process measured by a statistical model differ"))
+        self.assertIsNotNone(local_autonomy.TECHNICAL.search("Which public specifications define agent cards"))
         self.assertNotIn("EXPLORE may use a target beginning with code:", Path("scripts/local_autonomy.py").read_text())
 
 
@@ -874,6 +881,7 @@ class LocalAutonomyTests(unittest.TestCase):
         self._write_findings(first)
         target = local_autonomy.target_claim_for("journalism corroboration standards")
         self.assertEqual(target["id"], "finding-a")
+        self.assertEqual(local_autonomy.target_claim_for("corroboration standards in journalism today")["id"], "finding-a")
         self.assertIsNone(local_autonomy.target_claim_for("something else"))
         self.assertIsNone(local_autonomy.target_claim_for(""))
 

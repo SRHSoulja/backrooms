@@ -276,6 +276,9 @@ def extract_finding(url, agent, cycle, tool, target_claim=None, topic_override=N
         record["verifies"] = target_claim.get("id")
     if status == "rejected":
         record["rejection_reason"] = reason
+    elif search_page(record.get("url")):
+        record["status"] = "rejected"
+        record["rejection_reason"] = "search-page"
     elif definition_source(record):
         # Dictionaries define words; a definition is kept for audit but is never evidence.
         record["status"] = "rejected"
@@ -1088,7 +1091,13 @@ def update_evidence_activity(agent, filed, cycle):
 
 
 SOURCE_FAMILIES = ("encyclopedia", "papers", "code", "web")
-TECHNICAL = re.compile(r"(?i)\b(protocol|software|librar(y|ies)|code|api|github|agent|specification|spec|framework|algorithm|dataset|model|open[- ]source|repositor(y|ies))\b")
+TECHNICAL = re.compile(r"(?i)\b(protocol|software|librar(y|ies)|source code|codebase|api|apis|github|agents?|interoperab\w*|specification|spec|algorithm|open[- ]source|repositor(y|ies)|programming|compiler|sdk)\b")
+SEARCH_PAGE = re.compile(r"(?i)(/search(?:/|\?|$)|[?&](?:q|query|search|srsearch)=)")
+
+
+def search_page(url):
+    """A search-results page is a list of pointers, not a source."""
+    return bool(SEARCH_PAGE.search(str(url or "")))
 
 
 def families_for_topic(topic):
@@ -1127,9 +1136,11 @@ def target_claim_for(topic):
     if not topic:
         return None
     supported = corroboration_index(load_records(CORROBORATIONS))
-    wanted = str(topic).strip().lower()
+    wanted = {term[:6] for term in question_terms(topic, limit=12).split()}
     for item in reversed(accepted_findings()):
-        if str(item.get("topic", "")).strip().lower() != wanted or item.get("id") in supported:
+        have = {term[:6] for term in question_terms(str(item.get("topic", "")), limit=12).split()}
+        overlap = len(wanted & have) / len(wanted | have) if (wanted | have) else 0.0
+        if overlap < 0.5 or item.get("id") in supported:
             continue
         if definition_source(item) or not finding_on_topic(item):
             continue
@@ -1180,6 +1191,11 @@ def route_exploration(target, root=None):
                 and (base / candidate).is_file():
             return "local-code-read", candidate
     value = stripped or raw
+    if re.match(r"https://", value, re.I) and search_page(value):
+        params = urllib.parse.parse_qs(urllib.parse.urlparse(value).query)
+        query = " ".join(params.get("q") or params.get("query") or params.get("search") or [""])
+        query = re.sub(r"\b(?:org|repo|user|language|type|site):\S*", " ", query)
+        return "public-search", re.sub(r"\s+", " ", query).strip()[:160] or re.sub(r"https?://", "", value)[:160]
     if re.match(r"https://", value, re.I):
         path = value.lower().split("?", 1)[0]
         return ("public-json" if path.endswith(".json") else "public-csv" if path.endswith(".csv") else "public-text"), value
@@ -1944,7 +1960,8 @@ def main():
                     isinstance(tool.get("results"), list)):
                 candidates = [item.get("url", "") for item in tool["results"]
                               if re.match(r"https://", str(item.get("url", "")), re.I)
-                              and not definition_source({"url": item.get("url", "")})]
+                              and not definition_source({"url": item.get("url", "")})
+                              and not search_page(item.get("url", ""))]
                 if research_assignment and shared_avoid:
                     # A second finding from the same domain cannot corroborate
                     # the first; prefer any other domain when one exists.
