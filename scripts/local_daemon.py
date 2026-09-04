@@ -102,6 +102,8 @@ LOCAL_CODEX_OUTBOX = ROOT / "state/codex-outbox"
 LOCAL_CODEX_CONSUMED = ROOT / "state/codex-consumed.json"
 LOCAL_INBOX = ROOT / "state/quarantine-inbox.json"
 PUBLIC_CODE_PROPOSALS = ROOT / "docs/code-proposals.json"
+LOCAL_TOOL_PROPOSALS = ROOT / "state/tool-proposals.json"
+PUBLIC_TOOL_PROPOSALS = ROOT / "docs/tool-proposals.json"
 LOCAL_CODE_PROPOSALS = ROOT / "state/code-proposals.json"
 PUBLIC_VOICE_BLOCKED = BLOCKED
 ARCHIVE = ROOT / "state/archive/events.jsonl"
@@ -548,6 +550,28 @@ def sync_research(registry):
     atomic_write_json(PUBLIC_RESEARCH, public)
     return {"research_records": len(records), "research_stale": sum(item.get("stale", False) for item in records),
             "research_feed": "docs/research.json"}
+
+
+def sync_tool_proposals():
+    """Publish resident tool proposals (code included: it passed the sandbox gate and
+    is meant to be read) and the approved toolkit."""
+    try:
+        from scripts.resident_tools import approved_tools
+    except ImportError:
+        from resident_tools import approved_tools
+    try:
+        local = json.loads(LOCAL_TOOL_PROPOSALS.read_text()) if LOCAL_TOOL_PROPOSALS.exists() else {"proposals": []}
+    except (OSError, json.JSONDecodeError):
+        local = {"proposals": []}
+    records = [{key: item.get(key) for key in ("id", "name", "description", "resident", "cycle", "code", "status", "reason",
+                                               "tests_passed", "tests_total", "recorded_at", "approved_at", "approved_by", "path")}
+               for item in local.get("proposals", [])[-100:]]
+    public = {"schema_version": 1, "generated_at": datetime.now(timezone.utc).isoformat(),
+              "privacy": "Resident tool proposals with their sandbox-tested code; a tool runs in the world only after a human approves it into tools/.",
+              "proposals": records, "approved": [{"name": tool["name"], "description": tool["description"]} for tool in approved_tools()]}
+    atomic_write_json(PUBLIC_TOOL_PROPOSALS, public)
+    return {"tool_proposals": len(records), "tool_proposals_ready": sum(item.get("status") == "ready-for-review" for item in records),
+            "approved_tools": len(public["approved"]), "tool_proposals_feed": "docs/tool-proposals.json"}
 
 
 def sync_code_proposals(registry=None):
@@ -1343,15 +1367,16 @@ def publish(result, world, model_health=True):
     health["day_zero"] = day_zero_record(world)
     atomic_write_json(PUBLIC_HEALTH, health)
     sync_code_proposals(registry)
+    health.update(sync_tool_proposals())
     sync_outside_signals()
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}
-    allowlisted = {"docs/local-cycle.json",  "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/trades.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json", "docs/journal.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json", "state/frontier.json", "state/codex-bridge-status.json"}
+    allowlisted = {"docs/local-cycle.json",  "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/trades.json", "docs/code-proposals.json", "docs/tool-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json", "docs/journal.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json", "state/frontier.json", "state/codex-bridge-status.json"}
     offending = {path for path in changed if path not in allowlisted and not path.startswith("journal/")}
     if offending:
         note_publish("skipped", "other local changes present: " + ", ".join(sorted(offending)[:5])[:160])
         return
-    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/trades.json", "docs/code-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json", "docs/journal.json"], cwd=ROOT, check=True)
+    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/trades.json", "docs/code-proposals.json", "docs/tool-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json", "docs/journal.json"], cwd=ROOT, check=True)
     subprocess.run(["git", "add", "journal"], cwd=ROOT, check=False)
     commit = subprocess.run(["git", "commit", "-m", "chore: publish local council signal"], cwd=ROOT, capture_output=True)
     if commit.returncode == 0:

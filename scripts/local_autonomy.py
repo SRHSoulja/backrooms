@@ -26,11 +26,13 @@ try:
     from scripts.evidence import clamp_confidence, classify_finding, is_accepted, FUNCTION_WORDS
     from scripts.corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, claims_overlap, corroboration_index,
                                        growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source)
+    from scripts import resident_tools
     from scripts.world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes, retract_unfounded_rooms, collapse_withdrawn_rooms, finding_on_topic)
 except ImportError:
     from evidence import clamp_confidence, classify_finding, is_accepted, FUNCTION_WORDS
     from corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, claims_overlap, corroboration_index,
                                growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source)
+    import resident_tools
     from world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes, retract_unfounded_rooms, collapse_withdrawn_rooms, finding_on_topic)
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "state/local-agents.json"
@@ -49,7 +51,7 @@ ANALYSIS_RETENTION = 100
 FORBIDDEN = re.compile(r"(?:\b(?:api[_ -]?key|password|secret|credential|mnemonic|seed\s+phrase)\b\s*[:=]\s*\S+|\bprivate\s+memory\b|\b(?:wallet|funds|shell|sudo)\b)", re.I)
 PHYSICAL_NEEDS = re.compile(r"\b(?:water|food|sleep|shelter|medical|dust|cleaning|temperature|physical comfort)\b", re.I)
 PHYSICAL_NEED_CLASSIFICATION = "anthropomorphic-projection / physical-need-model-confusion"
-ALLOWED = {"STAY", "MOVE", "EXPLORE", "ANALYZE", "PROPOSE", "DISCOVER", "BUILD", "TRANSFORM", "TRADE", "ACCEPT_TRADE", "DECLINE_TRADE", "RETIRE", "FIRE"}
+ALLOWED = {"STAY", "MOVE", "EXPLORE", "ANALYZE", "TOOL", "PROPOSE", "DISCOVER", "BUILD", "TRANSFORM", "TRADE", "ACCEPT_TRADE", "DECLINE_TRADE", "RETIRE", "FIRE"}
 TRADE_EXPIRY_CYCLES = 24
 MAX_TURNS_PER_CYCLE = 8
 # Evidence fetches are the expensive, network-facing part of a turn. Each
@@ -121,6 +123,7 @@ def allowed_actions(agent):
     actions = set(ALLOWED)
     if "bounded-workbench" not in (agent or {}).get("capabilities", []):
         actions.discard("ANALYZE")
+        actions.discard("TOOL")
     return sorted(actions)
 
 
@@ -135,7 +138,7 @@ def decision_schema(rooms, agent=None):
                 "request": {"type": "string", "maxLength": 220},
                 # Keep this small enough for llama.cpp's JSON grammar while
                 # still allowing a compact data-only sandbox expression.
-                "code": {"type": "string", "maxLength": 800},
+                "code": {"type": "string", "maxLength": 1600},
                 "reason": {"type": "string", "maxLength": 220},
                 "self_summary": {"type": "string", "maxLength": 500},
                 "message_to": {"type": "string", "maxLength": 80},
@@ -180,7 +183,7 @@ def ask(url, agent, rooms, cycle, repair=False, shared_work=None, structured=Tru
               "You are a software agent running on a computer, not a biological body: you do not need water, food, sleep, shelter, medical care, or physical comfort. Do not request physical necessities; request compute, data, tools, or workspace only when a concrete bounded capability is missing. "
               "Return one JSON object with action, room, target, proposal, request, code, reason, self_summary, message_to, and message fields. Use empty strings for fields that are not needed. self_summary must state what you currently know and what you will try next, in at most 80 words. Use message_to and message only for a concise work-related note to an active resident in your room or a directly connected room. "
               "You have no external network, credentials, private memory, arbitrary code, money, or authority to change safety rules. "
-              + ("You hold the bounded workbench: ANALYZE runs Python in the pre-approved restricted local sandbox over the excerpt you last fetched (available as the variable data). Allowed: math, statistics, json, csv, re, datetime, collections, itertools, string, textwrap, fractions, decimal, io; functions you define; no files, network, processes, or other imports. Use it only for a concrete data or arithmetic task on real evidence (a count, a rate, a comparison, a parsed table) and put the code in the code field. "
+              + ("You hold the bounded workbench: ANALYZE runs Python in the pre-approved restricted local sandbox over the excerpt you last fetched (available as the variable data). Allowed: math, statistics, json, csv, re, datetime, collections, itertools, string, textwrap, fractions, decimal, io; functions you define; no files, network, processes, or other imports. Use it only for a concrete data or arithmetic task on real evidence (a count, a rate, a comparison, a parsed table) and put the code in the code field. " + approved_tools_prompt() + "TOOL proposes a reusable tool for every resident: put a short lower-case name in target, what it does in proposal, and in code define exactly `def tool(text):` returning a string plus `TESTS = [[input, expected], ...]` with at least two cases, under the same sandbox rules; it is tested in the sandbox and published, and runs in the world only after a human approves it. "
                  if "bounded-workbench" in agent.get("capabilities", []) else
                  "You do not hold the bounded workbench, so ANALYZE is not available to you; earn it by filing three verified findings. ")
               + "Do not claim consciousness. Use MOVE only for an existing room. Move when another declared room better fits the work; otherwise stay. "
@@ -598,11 +601,18 @@ def record_analysis(agent, cycle, code, analysis):
 
 
 def run_analysis(code, data=""):
-    """Run one bounded analysis without allowing task failure to abort the cycle."""
+    """Run one bounded analysis without allowing task failure to abort the cycle.
+    Approved resident tools are defined first, in the same restricted namespace."""
+    prelude_file = ROOT / "state" / "tool-prelude.py"
+    try:
+        prelude_file.parent.mkdir(parents=True, exist_ok=True)
+        prelude_file.write_text(resident_tools.prelude())
+    except Exception:  # noqa: BLE001 - analysis proceeds without tools
+        prelude_file = None
     try:
         completed = subprocess.run(
             [sys.executable, str(ROOT / "scripts/code_sandbox.py"), "--code", code,
-             "--data", str(data or "")[:6000]],
+             "--data", str(data or "")[:6000]] + (["--prelude-file", str(prelude_file)] if prelude_file else []),
             cwd=ROOT, env=child_env(), capture_output=True, text=True, check=False, timeout=10)
     except subprocess.TimeoutExpired:
         return {"status": "timed-out", "output": ""}
@@ -991,6 +1001,17 @@ def apply_construction(world, registry, cycle):
         changes.append({"agent": agent.get("id"), "action": "build", "room": room_id,
                         "connected_to": source["id"]})
     return changes
+
+
+def approved_tools_prompt():
+    try:
+        tools = resident_tools.approved_tools()
+    except Exception:  # noqa: BLE001
+        tools = []
+    if not tools:
+        return ""
+    listed = "; ".join(f"tool_{tool['name']}(text): {tool['description'] or 'no description'}" for tool in tools[:12])
+    return "Approved resident tools you may call inside ANALYZE code: " + listed + ". "
 
 
 def catalog_tool_names():
@@ -1990,6 +2011,14 @@ def main():
             emit_event(world, args.cycle, "analysis-run", agent.get("id", "resident"),
                        "Resident ran a bounded local analysis; output remains local.",
                        status=analysis.get("status", "failed"), output_chars=len(analysis.get("output", "")))
+        elif decision["action"] == "TOOL":
+            proposal = resident_tools.propose_tool(agent.get("id", "resident"), args.cycle, decision.get("target", ""),
+                                                   decision.get("proposal", ""), decision.get("code", ""))
+            agent["last_tool_proposal"] = {"id": proposal["id"], "name": proposal["name"], "status": proposal["status"],
+                                           "reason": proposal.get("reason", "")[:200], "cycle": args.cycle}
+            emit_event(world, args.cycle, "tool-proposed", agent.get("id", "resident"),
+                       f"Resident proposed the tool '{proposal['name']}'; the sandbox gate reported {proposal['status']}.",
+                       tool_proposal=proposal["id"], name=proposal["name"], status=proposal["status"], reason=proposal.get("reason", "")[:160])
         elif decision["action"] == "PROPOSE":
             agent["proposal"] = decision["proposal"] or "No proposal text supplied."
         elif decision["action"] in {"DISCOVER", "BUILD", "TRANSFORM"}:

@@ -383,7 +383,7 @@ class LocalAutonomyTests(unittest.TestCase):
         with_workbench = local_autonomy.decision_schema(["atrium"], {"capabilities": ["bounded-workbench"]})
         self.assertIn("ANALYZE", with_workbench["properties"]["action"]["enum"])
         self.assertIn("self_summary", schema["required"])
-        self.assertEqual(schema["properties"]["code"]["maxLength"], 800)
+        self.assertEqual(schema["properties"]["code"]["maxLength"], 1600)
 
     def test_analyze_requires_workbench_and_data_only_code(self):
         text = "ACTION: ANALYZE\nROOM: atrium\nTARGET: summarize values\nPROPOSAL: NONE\nREQUEST: NONE\nCODE: print(sum(range(3)))\nREASON: test"
@@ -974,6 +974,13 @@ class LocalAutonomyTests(unittest.TestCase):
             self.assertEqual(frontier["open_questions"][0]["status"], "abandoned")
         finally:
             local_autonomy.PURSUIT = original
+
+
+    def test_tool_proposals_are_a_workbench_action(self):
+        self.assertIn("TOOL", local_autonomy.allowed_actions({"capabilities": ["bounded-workbench"]}))
+        self.assertNotIn("TOOL", local_autonomy.allowed_actions({"capabilities": []}))
+        schema = local_autonomy.decision_schema(["atrium"], {"capabilities": ["bounded-workbench"]})
+        self.assertEqual(schema["properties"]["code"]["maxLength"], 1600)
 
 
 if __name__ == "__main__":

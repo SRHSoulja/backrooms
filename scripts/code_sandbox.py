@@ -134,16 +134,22 @@ def sandbox_command(work, script):
     return bwrap_prefix(work) + ["python3", "-I", "/work/task.py"], "bubblewrap-unshare-all", detail
 
 
-def run(code, data=""):
+def run(code, data="", prelude=""):
+    """Run one task; ``prelude`` is approved resident-tool code (validated again here)
+    defined in the same restricted namespace before the task."""
     if not code.strip() or len(code) > MAX_CODE:
         return {"status": "rejected", "reason": "code is empty or exceeds bounded length", "contract": CONTRACT}
     data = str(data or "")[:MAX_DATA]
+    # Approved tools and the task are validated together, so the task may call
+    # the tools and nothing else beyond the allowlist.
+    combined = (prelude.rstrip() + "\n" + code) if prelude else code
     try:
-        tree = ast.parse(code, mode="exec")
+        tree = ast.parse(combined, mode="exec")
         validate_tree(tree)
         compile(tree, "task.py", "exec")
     except (SyntaxError, ValueError) as error:
         return {"status": "rejected", "reason": str(error)[:160], "contract": CONTRACT}
+    code = combined
     with tempfile.TemporaryDirectory(prefix="backrooms-code-") as work:
         script = Path(work) / "task.py"
         # The task runs in a fresh namespace whose builtins are the allowlist, so
@@ -166,5 +172,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--code", required=True)
     parser.add_argument("--data", default="")
+    parser.add_argument("--prelude-file", default="", help="file of approved resident-tool code to define first")
     args = parser.parse_args()
-    print(json.dumps(run(args.code, args.data)))
+    prelude = Path(args.prelude_file).read_text() if args.prelude_file and Path(args.prelude_file).exists() else ""
+    print(json.dumps(run(args.code, args.data, prelude)))

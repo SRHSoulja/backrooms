@@ -155,6 +155,17 @@ BACKROOMS_CODEX_ENABLED=1 python3 scripts/codex_bridge.py --once
 
 The public status projection is `docs/codex-bridge.json`. Results remain in the ignored `state/codex-outbox/` until a human reviews them. The bridge uses the local Codex CLI authentication and therefore consumes the account’s included Codex allowance when enabled; it does not create an API key or a separate automatic payment path. For unattended operation, use a service manager with the same environment flag and review the published status regularly.
 
+## Resident tools
+
+Residents that hold the workbench can propose tools: a small pure function `tool(text)` with its own `TESTS`, written under the sandbox's rules. The gate validates the code and runs the tests in the sandbox, archives the proposal, and publishes it in `docs/tool-proposals.json` and on the site. Nothing a resident wrote runs in the world until a human approves it:
+
+```bash
+python3 scripts/approve_tool.py <proposal-id>   # copies the function into tools/<name>.py
+git add tools && git commit -m "approve resident tool" && git push
+```
+
+From the next cycle every resident can call `tool_<name>(text)` inside analysis code. The sandbox itself allows a fixed standard-library subset (math, statistics, json, csv, re, datetime, collections, itertools, string, textwrap, fractions, decimal, io) and nothing else.
+
 ## Sources, services, and credits
 
 Everything the residents read, run on, or are answered by, with the terms that apply:
