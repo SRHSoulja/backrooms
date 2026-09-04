@@ -343,7 +343,34 @@ function render(t) {
   const rooms = live.rooms.length ? live.rooms : [{name:'unmapped'}]; const layout = roomLayout(rooms), columns = layout.columns, cellW = layout.cellW, cellH = layout.cellH;
   if (screen.height !== layout.canvasHeight) screen.height = layout.canvasHeight;
   block(0, 0, 320, screen.height, '#101820'); block(0, layout.footerY, 320, screen.height - layout.footerY, '#18242b');
-  drawRoomLinks(rooms, layout); live.hitboxes = []; rooms.forEach((room, i) => { const placement = layout.cells[room.id || room.name], x = placement.x, y = placement.y; block(x, y, cellW - 5, cellH - 5, i % 2 ? '#292f42' : '#28383a'); block(x, y, cellW - 5, 3, i % 2 ? '#7773b4' : '#d5b46a'); pen.font = '7px monospace'; pen.fillStyle = i % 2 ? '#a9a5ee' : '#d5b46a'; pen.fillText(roomName(room.name), x + 7, y + 14); live.hitboxes.push({type:'room', x, y, w:cellW - 5, h:cellH - 5, data:room}); const ids = Array.isArray(room.occupants) ? room.occupants : []; ids.forEach((id, occupantIndex) => { const resident = live.residents.find(r => String(r.id || r.name).toLowerCase() === String(id).toLowerCase()); if (resident) { const walk = Math.sin(t / 380 + i + occupantIndex) * Math.min(8, cellW / 8); const ax = x + cellW / 2 - 7 + walk + occupantIndex * 14, ay = y + cellH / 2; agent(ax, ay, i % 2 ? ['#c9c3ff','#8b82d9','#eeeaff'] : ['#f2cc60','#e3a84e','#fff1a8'], Math.floor(t / 250) + i + occupantIndex); live.hitboxes.push({type:'agent', x:ax-3, y:ay-5, w:18, h:22, data:resident}); } }); });
+  drawRoomLinks(rooms, layout); live.hitboxes = [];
+  // Pass 1: every room panel. Pass 2: every occupant, so no panel can paint over a resident.
+  rooms.forEach((room, i) => {
+    const placement = layout.cells[room.id || room.name], x = placement.x, y = placement.y;
+    const withdrawn = room.status === 'retracted' || room.status === 'sealed';
+    block(x, y, cellW - 5, cellH - 5, withdrawn ? '#1d1f27' : (i % 2 ? '#292f42' : '#28383a'));
+    block(x, y, cellW - 5, 3, withdrawn ? '#5a5f6b' : (i % 2 ? '#7773b4' : '#d5b46a'));
+    pen.font = '7px monospace'; pen.fillStyle = withdrawn ? '#8b949e' : (i % 2 ? '#a9a5ee' : '#d5b46a');
+    pen.fillText(roomName(room.name), x + 7, y + 14);
+    if (withdrawn) { for (let k = 8; k < cellW - 5; k += 12) block(x + k, y + 6, 6, cellH - 14, '#262a33'); pen.fillStyle = '#8b949e'; pen.fillText(room.status === 'retracted' ? 'WITHDRAWN' : 'SEALED', x + 7, y + cellH - 12); }
+    live.hitboxes.push({type:'room', x, y, w:cellW - 5, h:cellH - 5, data:room});
+  });
+  rooms.forEach((room, i) => {
+    const placement = layout.cells[room.id || room.name], x = placement.x, y = placement.y;
+    const ids = Array.isArray(room.occupants) ? room.occupants : [];
+    const perRow = Math.max(1, Math.floor((cellW - 20) / 15)), maxRows = 2, capacity = perRow * maxRows;
+    ids.forEach((id, occupantIndex) => {
+      if (occupantIndex >= capacity) return;
+      const resident = live.residents.find(r => String(r.id || r.name).toLowerCase() === String(id).toLowerCase());
+      if (!resident) return;
+      const col = occupantIndex % perRow, row = Math.floor(occupantIndex / perRow);
+      const walk = Math.sin(t / 380 + i + occupantIndex) * 2;
+      const ax = x + 8 + col * 15 + walk, ay = y + 20 + row * 17;
+      agent(ax, ay, i % 2 ? ['#c9c3ff','#8b82d9','#eeeaff'] : ['#f2cc60','#e3a84e','#fff1a8'], Math.floor(t / 250) + i + occupantIndex);
+      live.hitboxes.push({type:'agent', x:ax-3, y:ay-5, w:18, h:22, data:resident});
+    });
+    if (ids.length > capacity) { pen.fillStyle = '#8b949e'; pen.font = '7px monospace'; pen.fillText(`+${ids.length - capacity}`, x + cellW - 24, y + cellH - 12); }
+  });
   const positions = layout.positions;
   // Room links are drawn behind the panels by drawRoomLinks(). External A2A
   // connections are metadata only and must not become canvas corridors.
