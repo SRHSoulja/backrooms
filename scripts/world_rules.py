@@ -220,7 +220,10 @@ def finding_on_topic(finding):
     """A finding is on topic when its claim shares content words with the query
     that produced it. A finding with no recorded topic is not held to this."""
     topic = _stems(str(finding.get("topic", "")))
-    return not topic or bool(topic & _stems(str(finding.get("claim", ""))))
+    if len(topic) < 2:
+        return True  # a one-word topic carries too little signal to judge against
+    words = _stems(str(finding.get("claim", ""))) | _stems(str(finding.get("quote", "")))
+    return bool(topic & words)
 
 
 def finding_followup_question(finding):

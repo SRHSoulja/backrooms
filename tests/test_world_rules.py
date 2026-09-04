@@ -1,6 +1,7 @@
 import unittest
+from pathlib import Path
 
-from scripts.world_rules import (collapse_withdrawn_rooms, retract_unfounded_rooms, day_zero_from_events, apply_retractions, compute_standing, finding_followup_question, room_lifecycle,
+from scripts.world_rules import (finding_on_topic, collapse_withdrawn_rooms, retract_unfounded_rooms, day_zero_from_events, apply_retractions, compute_standing, finding_followup_question, room_lifecycle,
                                  sealed_room_ids, settle_disputes)
 
 
@@ -116,6 +117,16 @@ class WorldRuleTests(unittest.TestCase):
         self.assertEqual(world["withdrawn_rooms"][0]["id"], "dud")
         self.assertEqual(world["withdrawn_rooms"][0]["collapsed_cycle"], 380)
         self.assertEqual(world["withdrawn_rooms"][0]["retraction_reason"], "a founding finding is a dictionary definition")
+
+
+    def test_a_finding_is_on_topic_when_its_claim_shares_words_with_the_query_that_found_it(self):
+        topic = "wall street journal editorial process described human dynamics"
+        self.assertTrue(finding_on_topic({"topic": topic, "claim": "The Wall Street Journal's editorial process separates opinion from news."}))
+        self.assertFalse(finding_on_topic({"topic": topic, "claim": "For Population A quasars, the AlIII 1860 emission line shows no significant shift."}))
+        self.assertTrue(finding_on_topic({"topic": "", "claim": "Anything goes when no topic was recorded."}))
+        self.assertTrue(finding_on_topic({"topic": "a2a protocol", "claim": "Agents exchange tasks through the open A2A standard."}))
+        self.assertTrue(finding_on_topic({"topic": topic, "claim": "Timestamps differ by section.", "quote": "the editorial process at the Wall Street Journal"}))
+        self.assertIn('"off-topic"', Path("scripts/local_autonomy.py").read_text())
 
 
 if __name__ == "__main__":
