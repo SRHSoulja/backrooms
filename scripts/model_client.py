@@ -22,7 +22,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 USAGE = ROOT / "state/provider-usage.json"
 DEFAULT_ENV_FILE = Path.home() / ".config/backrooms/env"
-DEFAULT_ORDER = ("mistral", "gemini", "cerebras", "groq", "openrouter", "custom", "local")
+DEFAULT_ORDER = ("mistral", "mistral-8b", "mistral-small", "gemini", "cerebras", "groq", "openrouter", "custom", "local")
 SECRET_NAME = re.compile(r"(?i)(key|token|secret|password|mnemonic|credential)")
 
 
@@ -58,8 +58,16 @@ def setting(name, default=None):
 
 
 BUILTIN = {
-    "mistral": {"base_url": "https://api.mistral.ai", "key": "MISTRAL_API_KEY", "model": "mistral-small-latest",
-                "rpm": 30, "rpd": None, "tpd": None, "json_schema": True},
+    # Mistral limits are per model, not per account: on the free tier mistral-small
+    # allows 20k tokens a minute while the Ministral models allow 600k+ and many
+    # more requests. The family shares one key but each entry keeps its own
+    # window and cooldown, so a throttled model hands over to the next.
+    "mistral": {"base_url": "https://api.mistral.ai", "key": "MISTRAL_API_KEY", "model": "ministral-14b-2512",
+                "rpm": 28, "rpd": None, "tpd": None, "json_schema": True},
+    "mistral-8b": {"base_url": "https://api.mistral.ai", "key": "MISTRAL_API_KEY", "model": "ministral-8b-2512",
+                   "rpm": 120, "rpd": None, "tpd": None, "json_schema": True},
+    "mistral-small": {"base_url": "https://api.mistral.ai", "key": "MISTRAL_API_KEY", "model": "mistral-small-latest",
+                      "rpm": 10, "rpd": None, "tpd": None, "json_schema": True},
     "gemini": {"base_url": "https://generativelanguage.googleapis.com/v1beta/openai", "key": "GEMINI_API_KEY",
                "model": "gemini-2.5-flash", "rpm": 8, "rpd": 900, "tpd": None, "json_schema": True},
     "cerebras": {"base_url": "https://api.cerebras.ai", "key": "CEREBRAS_API_KEY", "model": "qwen-3-32b",
@@ -97,7 +105,7 @@ def providers(local_base_url=None):
         api_key = setting(spec["key"])
         if not api_key:
             continue
-        prefix = "BACKROOMS_" + name.upper()
+        prefix = "BACKROOMS_" + name.upper().replace("-", "_")
         built.append({"name": name, "base_url": spec["base_url"], "api_key": api_key,
                       "model": setting(prefix + "_MODEL", spec["model"]),
                       "rpm": _int(setting(prefix + "_RPM"), spec["rpm"]), "rpd": _int(setting(prefix + "_RPD"), spec["rpd"]),

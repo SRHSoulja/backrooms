@@ -33,7 +33,7 @@ class ModelClientTests(unittest.TestCase):
         model_client.USAGE = Path(self.temporary.name) / "usage.json"
         self.original_secrets = dict(model_client.SECRETS)
         model_client.SECRETS.clear()
-        model_client.SECRETS.update({"MISTRAL_API_KEY": "test-mistral", "GROQ_API_KEY": "test-groq"})
+        model_client.SECRETS.update({"MISTRAL_API_KEY": "test-mistral", "GROQ_API_KEY": "test-groq", "BACKROOMS_PROVIDER_ORDER": "mistral,groq,local"})
         self.sleeps = []
 
     def tearDown(self):
@@ -54,7 +54,7 @@ class ModelClientTests(unittest.TestCase):
         self.assertEqual(names, ["mistral", "groq", "local"])
         self.assertTrue(model_client.configured_remote())
         mistral = model_client.providers()[0]
-        self.assertEqual((mistral["model"], mistral["api_key"]), ("mistral-small-latest", "test-mistral"))
+        self.assertEqual((mistral["model"], mistral["api_key"]), ("ministral-14b-2512", "test-mistral"))
         self.assertTrue(all("Bearer" not in json.dumps(item) for item in model_client.usage_summary()["providers"]))
 
     def test_router_falls_over_on_rate_limit_and_records_usage(self):
@@ -123,7 +123,7 @@ class ModelClientTests(unittest.TestCase):
 
     def test_single_provider_waits_out_a_brief_cooldown_instead_of_failing(self):
         model_client.SECRETS.clear()
-        model_client.SECRETS.update({"MISTRAL_API_KEY": "test-mistral"})
+        model_client.SECRETS.update({"MISTRAL_API_KEY": "test-mistral", "BACKROOMS_PROVIDER_ORDER": "mistral,local"})
         clock = {"now": 1000.0}
         sleeps = []
 
@@ -154,7 +154,7 @@ class ModelClientTests(unittest.TestCase):
 
     def test_long_cooldown_is_not_waited_out(self):
         model_client.SECRETS.clear()
-        model_client.SECRETS.update({"MISTRAL_API_KEY": "test-mistral"})
+        model_client.SECRETS.update({"MISTRAL_API_KEY": "test-mistral", "BACKROOMS_PROVIDER_ORDER": "mistral,local"})
         sleeps = []
 
         def opener(request, timeout=0):
@@ -169,7 +169,7 @@ class ModelClientTests(unittest.TestCase):
 
     def test_router_learns_per_minute_limits_from_headers_and_paces_to_them(self):
         model_client.SECRETS.clear()
-        model_client.SECRETS.update({"MISTRAL_API_KEY": "test-mistral"})
+        model_client.SECRETS.update({"MISTRAL_API_KEY": "test-mistral", "BACKROOMS_PROVIDER_ORDER": "mistral,local"})
         clock = {"now": 1000.0}
         sleeps = []
 
@@ -194,7 +194,7 @@ class ModelClientTests(unittest.TestCase):
 
     def test_router_waits_for_token_window_when_the_minute_budget_is_spent(self):
         model_client.SECRETS.clear()
-        model_client.SECRETS.update({"MISTRAL_API_KEY": "test-mistral"})
+        model_client.SECRETS.update({"MISTRAL_API_KEY": "test-mistral", "BACKROOMS_PROVIDER_ORDER": "mistral,local"})
         clock = {"now": 1000.0}
         sleeps = []
 
@@ -216,7 +216,7 @@ class ModelClientTests(unittest.TestCase):
 
     def test_remaining_zero_holds_the_provider_for_a_minute(self):
         model_client.SECRETS.clear()
-        model_client.SECRETS.update({"MISTRAL_API_KEY": "test-mistral"})
+        model_client.SECRETS.update({"MISTRAL_API_KEY": "test-mistral", "BACKROOMS_PROVIDER_ORDER": "mistral,local"})
         clock = {"now": 1000.0}
         sleeps = []
 
@@ -230,6 +230,28 @@ class ModelClientTests(unittest.TestCase):
         model_client.complete([{"role": "user", "content": "hi"}], base_url="http://127.0.0.1:9", opener=opener, sleep=sleep, clock=lambda: clock["now"])
         model_client.complete([{"role": "user", "content": "hi"}], base_url="http://127.0.0.1:9", opener=opener, sleep=sleep, clock=lambda: clock["now"])
         self.assertTrue(any(seconds >= 59 for seconds in sleeps), sleeps)
+
+    def test_mistral_family_shares_a_key_and_hands_over_per_model(self):
+        model_client.SECRETS.clear()
+        model_client.SECRETS.update({"MISTRAL_API_KEY": "test-mistral"})
+        names = [p["name"] for p in model_client.providers("http://127.0.0.1:9")]
+        self.assertEqual(names[:3], ["mistral", "mistral-8b", "mistral-small"])
+        self.assertTrue(all(p["api_key"] == "test-mistral" for p in model_client.providers("http://127.0.0.1:9") if p["name"].startswith("mistral")))
+        seen = []
+
+        def opener(request, timeout=0):
+            model = json.loads(request.data)["model"]
+            seen.append(model)
+            if model == "ministral-14b-2512":
+                raise urllib.error.HTTPError(request.full_url, 429, "rate limited", {"Retry-After": "30"}, io.BytesIO(b""))
+            return reply('{"ok": true}')
+
+        content, provider = model_client.complete([{"role": "user", "content": "hi"}], base_url="http://127.0.0.1:9",
+                                                  opener=opener, sleep=self.sleeps.append, clock=lambda: 1000.0)
+        self.assertEqual(provider, "mistral-8b")
+        self.assertEqual(seen, ["ministral-14b-2512", "ministral-8b-2512"])
+        summary = {item["name"]: item for item in model_client.usage_summary("http://127.0.0.1:9")["providers"]}
+        self.assertEqual((summary["mistral"]["errors"], summary["mistral-8b"]["calls"]), (1, 1))
 
     def test_bad_credentials_disable_a_provider_and_all_failures_raise(self):
         def opener(request, timeout=0):
