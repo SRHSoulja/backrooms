@@ -700,7 +700,10 @@ def next_question(base_url):
                 item = json.loads(line)
             except json.JSONDecodeError:
                 continue
-            if item.get("status") not in {"rejected", "retracted"} and item.get("claim"):
+            if item.get("status") not in {"rejected", "retracted"} and item.get("claim") \
+                    and item.get("origin", "council-question") in {"council-question", "verify-claim", "stale-target-reassigned"}:
+                # Only findings made on the council's own line of inquiry leave a
+                # question behind; a resident's side exploration does not steer the council.
                 candidates.append(item)
     if int(cycle) % 2 == 0:
         # The newest finding that is on the topic that produced it leaves a question;

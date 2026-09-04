@@ -266,8 +266,19 @@ def extract_finding(url, agent, cycle, tool, target_claim=None, topic_override=N
         finding_id = "finding-rejected-" + hashlib.sha256(f"{lineage}:{cycle}".encode()).hexdigest()[:20]
     else:
         finding_id = "finding-" + hashlib.sha256(lineage.encode()).hexdigest()[:20]
+    # A finding's topic is the question it serves: the council's topic, the query
+    # that found the page, or the resident's own research question. A URL or a
+    # code: target is never a topic, so every finding can be judged on-topic.
+    query = str(tool.get("query") or "")
+    if re.match(r"(?i)^(?:https?://|code:|source:)", query.strip()) or search_page(query):
+        query = ""
+    exploration = str(agent.get("exploration") or "")
+    if re.match(r"(?i)^(?:https?://|code:|source:)", exploration.strip()):
+        exploration = ""
+    origin = (agent.get("research_assignment") or {}).get("origin") if (agent.get("research_assignment") or {}).get("cycle") == cycle else None
     record = {"id": finding_id, "agent": agent.get("id"), "cycle": cycle,
-              "topic": str(topic_override or tool.get("query") or agent.get("exploration") or "research frontier")[:160],
+              "topic": str(topic_override or query or agent.get("question") or exploration or "research frontier")[:160],
+              "origin": origin or "resident-target",
               "claim": claim, "quote": quote, "url": source[:500], "content_hash": source_hash,
               "confidence": confidence, "quote_score": quote_score, "claim_origin": claim_origin,
               "quote_match": reason, "relates_to": [agent.get("room") or "unassigned"], "status": status,

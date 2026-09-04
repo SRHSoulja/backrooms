@@ -886,5 +886,33 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertIsNone(local_autonomy.target_claim_for(""))
 
 
+    def test_a_finding_topic_is_a_question_never_a_url(self):
+        excerpt = "The Agent2Agent protocol is an open standard that lets agents exchange tasks. It publishes an Agent Card for discovery."
+        tool = {"source": "https://github.com/wsj", "excerpt": excerpt, "source_hash": "hash-1", "query": "https://github.com/wsj"}
+        agent = {"id": "local-001", "room": "atrium", "exploration": "code:github.com/wsj", "question": "How do newsrooms publish open source tools?",
+                 "research_assignment": {"cycle": 5, "origin": "resident-target"}}
+        captured = {}
+
+        class FakeResponse:
+            def __init__(self, payload):
+                self.payload = json.dumps({"choices": [{"message": {"content": json.dumps(payload)}}]}).encode()
+            def read(self):
+                return self.payload
+            def __enter__(self):
+                return self
+            def __exit__(self, *_args):
+                return False
+
+        original = local_autonomy.urllib.request.urlopen
+        local_autonomy.urllib.request.urlopen = lambda *_a, **_k: FakeResponse(
+            {"claim": "The protocol publishes an Agent Card for discovery.", "quote": "It publishes an Agent Card for discovery.", "confidence": 0.8})
+        try:
+            finding = local_autonomy.extract_finding("http://127.0.0.1:1", agent, 5, tool)
+        finally:
+            local_autonomy.urllib.request.urlopen = original
+        self.assertEqual(finding["topic"], "How do newsrooms publish open source tools?")
+        self.assertEqual(finding["origin"], "resident-target")
+
+
 if __name__ == "__main__":
     unittest.main()
