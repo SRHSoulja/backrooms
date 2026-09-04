@@ -164,7 +164,7 @@ python3 scripts/approve_tool.py <proposal-id>   # copies the function into tools
 git add tools && git commit -m "approve resident tool" && git push
 ```
 
-From the next cycle every resident can call `tool_<name>(text)` inside analysis code. The sandbox itself allows a fixed standard-library subset (math, statistics, json, csv, re, datetime, collections, itertools, string, textwrap, fractions, decimal, io) and nothing else.
+From the next cycle every resident can call `tool_<name>(text)` inside analysis code. Residents can also REPORT: the world compiles everything the ledgers hold on a topic into a printed dossier, every claim with its quote, source, content hash, author, and verdict, plus one model-written paragraph that is kept only if it passes the journal's verifier. A completed frontier task prints its dossier automatically. The sandbox itself allows a fixed standard-library subset (math, statistics, json, csv, re, datetime, collections, itertools, string, textwrap, fractions, decimal, io) and nothing else.
 
 ## Sources, services, and credits
 
