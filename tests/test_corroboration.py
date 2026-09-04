@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.corroboration import (append_record, candidate_pairs, claims_overlap, corroboration_index, definition_source,
+from scripts.corroboration import (append_record, candidate_pairs, claims_overlap, corroboration_index, definition_source, domain_of, same_document,
                                    founding_pair_stands, growth_candidates, judge_verdict, judgment_schema, load_records,
                                    make_record, on_topic, pair_id)
 
@@ -133,6 +133,28 @@ class CorroborationTests(unittest.TestCase):
         other = {**base, "id": "f3", "url": "https://c.example/three"}
         pairs = candidate_pairs([first, other, verifier])
         self.assertEqual((pairs[0][0]["id"], pairs[0][1]["id"], pairs[0][3]), ("f1", "f2", 1.5))
+
+
+    def test_mirrors_and_subdomains_are_one_source(self):
+        self.assertEqual(domain_of({"url": "https://ar5iv.labs.arxiv.org/html/2304.05559"}), "arxiv.org")
+        self.assertEqual(domain_of({"url": "https://en.m.wikipedia.org/wiki/Wall"}), "wikipedia.org")
+        self.assertEqual(domain_of({"url": "https://www.bbc.co.uk/news/1"}), "bbc.co.uk")
+        self.assertEqual(domain_of({"url": "https://techcrunch.com/2014/12/03/github-russia/"}), "techcrunch.com")
+        paper = {"id": "a", "status": "accepted", "topic": "hvsr", "url": "https://arxiv.org/abs/2304.05559v1",
+                 "claim": "The AutoHVSR algorithm correctly identified the number of resonances in over 99% of 1109 measurements.",
+                 "quote": "correctly determining the number of HVSR resonances for 1099 of the 1109 HVSR measurements"}
+        mirror = {"id": "b", "status": "accepted", "topic": "hvsr", "url": "https://ar5iv.labs.arxiv.org/html/2304.05559",
+                  "claim": "The AutoHVSR algorithm correctly determined the number of resonances for over 99% of the 1109-member dataset.",
+                  "quote": "correctly determining the number of HVSR resonances for over 99% of the 1109-member dataset"}
+        self.assertTrue(same_document(paper, mirror))
+        self.assertEqual(candidate_pairs([paper, mirror]), [])
+        ok, reason = founding_pair_stands({"id": "p", "finding_ids": ["a", "b"], "shared_claim": paper["claim"]}, paper, mirror)
+        self.assertFalse(ok)
+        other = {"id": "c", "status": "accepted", "topic": "hvsr", "url": "https://journals.example/hvsr-review",
+                 "claim": "A review reports the AutoHVSR algorithm resolved the resonance count in over 99% of 1109 measurements.",
+                 "quote": "resolved the resonance count in over 99% of the 1109 measurements"}
+        self.assertFalse(same_document(paper, other))
+        self.assertEqual(len(candidate_pairs([paper, other])), 1)
 
 
 if __name__ == "__main__":

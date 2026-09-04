@@ -28,8 +28,49 @@ def finding_terms(finding):
     return claim_terms(" ".join((str(finding.get("topic", "")), str(finding.get("claim", "")))))
 
 
+SECOND_LEVEL = {"co.uk", "ac.uk", "org.uk", "gov.uk", "com.au", "net.au", "org.au", "co.jp", "co.nz", "com.br", "co.in", "ac.jp", "edu.au", "gov.au"}
+ARXIV_ID = re.compile(r"(?i)(?:arxiv\.org/(?:abs|pdf|html)/|ar5iv\.(?:labs\.)?arxiv\.org/html/|arxiv:)(\d{4}\.\d{4,5}|[a-z\-]+/\d{7})(?:v\d+)?")
+DOI = re.compile(r"(?i)\b(10\.\d{4,9}/[^\s\"<>]+)")
+
+
 def domain_of(finding):
-    return urllib.parse.urlparse(str(finding.get("url", ""))).netloc.lower()
+    """The registrable domain of a finding's source: mirrors and subdomains of
+    one site are one source (ar5iv.labs.arxiv.org is arxiv.org)."""
+    host = urllib.parse.urlparse(str(finding.get("url", ""))).netloc.lower().split(":")[0]
+    host = re.sub(r"^(?:www|m|en\.m|mobile)\.", "", host)
+    labels = host.split(".")
+    if len(labels) >= 3 and ".".join(labels[-2:]) in SECOND_LEVEL:
+        return ".".join(labels[-3:])
+    if len(labels) >= 2:
+        return ".".join(labels[-2:])
+    return host
+
+
+def document_key(finding):
+    """An identifier for the underlying document when the URL carries one (arXiv id, DOI)."""
+    url = str(finding.get("url", ""))
+    match = ARXIV_ID.search(url)
+    if match:
+        return "arxiv:" + match.group(1).lower()
+    match = DOI.search(url)
+    if match:
+        return "doi:" + match.group(1).lower().rstrip("./")
+    return ""
+
+
+def same_document(first, second):
+    """Two findings are the same source when they name the same document or quote the same passage."""
+    key_a, key_b = document_key(first), document_key(second)
+    if key_a and key_a == key_b:
+        return True
+    if first.get("content_hash") and first.get("content_hash") == second.get("content_hash"):
+        return True
+    quote_a, quote_b = claim_stems(first.get("quote", "")), claim_stems(second.get("quote", ""))
+    if len(quote_a) >= 6 and len(quote_b) >= 6:
+        overlap = len(quote_a & quote_b) / len(quote_a | quote_b)
+        if overlap >= 0.8:
+            return True
+    return False
 
 
 def jaccard(left, right):
@@ -53,7 +94,8 @@ DEFINITION_SOURCE = re.compile(r"(?i)(^|\.)(dictionary|wiktionary|merriam-webste
 
 def definition_source(finding):
     """Dictionaries define words; they do not corroborate facts about the world."""
-    return bool(DEFINITION_SOURCE.search(domain_of(finding) + "."))
+    host = urllib.parse.urlparse(str(finding.get("url", ""))).netloc.lower()
+    return bool(DEFINITION_SOURCE.search(host + "."))
 
 
 def candidate_pairs(findings, judged_ids=(), limit=MAX_JUDGMENTS_PER_CYCLE):
@@ -68,7 +110,7 @@ def candidate_pairs(findings, judged_ids=(), limit=MAX_JUDGMENTS_PER_CYCLE):
     for index, first in enumerate(accepted):
         first_terms = finding_terms(first)
         for second in accepted[index + 1:]:
-            if domain_of(first) == domain_of(second):
+            if domain_of(first) == domain_of(second) or same_document(first, second):
                 continue
             identifier = pair_id(first["id"], second["id"])
             if identifier in judged_ids:
@@ -147,6 +189,8 @@ def founding_pair_stands(record, first, second):
         return False, "a founding finding was rejected or retracted"
     if domain_of(first) == domain_of(second):
         return False, "founding findings share a domain"
+    if same_document(first, second):
+        return False, "founding findings are the same document on two addresses"
     if definition_source(first) or definition_source(second):
         return False, "a founding finding is a dictionary definition"
     if not claims_overlap(first, second):
