@@ -1092,6 +1092,15 @@ def family_of_domain(domain):
 ARXIV_ID = re.compile(r"(?i)\barxiv:?\s*(\d{4}\.\d{4,5}(?:v\d+)?)")
 
 
+def normalize_capabilities(registry):
+    """Capabilities are a set: one grant per name, first-granted order kept."""
+    for agent in registry.get("agents", []):
+        caps = agent.get("capabilities")
+        if isinstance(caps, list):
+            agent["capabilities"] = list(dict.fromkeys(str(item) for item in caps))
+    return registry
+
+
 def route_exploration(target, root=None):
     """Turn a resident's EXPLORE target into (tool, value).
 
@@ -1578,6 +1587,7 @@ def main():
     parser.add_argument("--topic", default="", help="research topic behind a follow-up question (the query that produced the finding)")
     args = parser.parse_args()
     registry = json.loads(REGISTRY.read_text()) if REGISTRY.exists() else {"agents": [], "decisions": []}
+    normalize_capabilities(registry)
     deduplicate(registry)
     for agent in registry.get("agents", []):
         if agent.get("status") == "active-local" and not agent.get("interviewed_at"):

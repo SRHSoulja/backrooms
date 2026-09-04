@@ -851,5 +851,14 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertNotIn("EXPLORE may use a target beginning with code:", Path("scripts/local_autonomy.py").read_text())
 
 
+    def test_capability_lists_are_deduplicated_on_load(self):
+        registry = {"agents": [{"id": "local-001", "capabilities": ["bounded-questioning", "public-source-read", "public-source-read", "public-web-read", "public-source-read"]},
+                               {"id": "local-002", "capabilities": ["public-web-read"]}, {"id": "local-003"}]}
+        local_autonomy.normalize_capabilities(registry)
+        self.assertEqual(registry["agents"][0]["capabilities"], ["bounded-questioning", "public-source-read", "public-web-read"])
+        self.assertEqual(registry["agents"][1]["capabilities"], ["public-web-read"])
+        self.assertNotIn("capabilities", registry["agents"][2])
+
+
 if __name__ == "__main__":
     unittest.main()
