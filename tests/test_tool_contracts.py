@@ -29,6 +29,8 @@ class ToolContractTests(unittest.TestCase):
             def fake_fetch(url, max_bytes=None, user_agent=None):
                 if "duckduckgo" in url:
                     return "<html>anomaly: no parsed results</html>"
+                if "prop=extlinks" in url:
+                    return json.dumps({"query": {"pages": {"1": {"extlinks": []}}}})
                 if "en.wikipedia.org/w/api.php" in url:
                     return json.dumps({"query": {"search": [{"title": "Public dataset"}, {"title": "Unrelated thing"}]}})
                 raise AssertionError("unexpected fetch " + url)
@@ -38,6 +40,34 @@ class ToolContractTests(unittest.TestCase):
             self.assertEqual(result["results"][0]["url"], "https://en.wikipedia.org/wiki/Public_dataset")
             self.assertEqual([item["title"] for item in result["results"]], ["Public dataset"])
             self.assertEqual(result["query"], "public dataset")
+        finally:
+            tool_broker.fetch = original
+
+    def test_public_search_uses_wikipedia_references_as_web_sources_when_the_engine_blocks(self):
+        original = tool_broker.fetch
+        try:
+            def fake_fetch(url, max_bytes=None, user_agent=None):
+                if "duckduckgo" in url:
+                    return "<html>anomaly</html>"
+                if "list=search" in url:
+                    return json.dumps({"query": {"search": [{"title": "Editorial board at The Wall Street Journal"}]}})
+                if "prop=extlinks" in url:
+                    return json.dumps({"query": {"pages": {"1": {"extlinks": [
+                        {"*": "https://www.wsj.com/news/author/editorial-board"},
+                        {"*": "https://web.archive.org/web/2007/http://www.dowjones.com/"},
+                        {"*": "https://www.nytimes.com/2011/07/01/business/media/wsj.html"},
+                        {"*": "https://www.wsj.com/articles/second"},
+                        {"*": "https://www.wsj.com/articles/third"},
+                        {"*": "https://twitter.com/WSJopinion"},
+                        {"*": "https://en.wikipedia.org/wiki/Other"}]}}}})
+                raise AssertionError("unexpected fetch " + url)
+            tool_broker.fetch = fake_fetch
+            result = tool_broker.public_search("wall street journal editorial process measured publication timestamps")
+            self.assertEqual(result["source"], "https://en.wikipedia.org/ (references)")
+            self.assertEqual([item["url"] for item in result["results"]],
+                             ["https://www.wsj.com/news/author/editorial-board",
+                              "https://www.nytimes.com/2011/07/01/business/media/wsj.html",
+                              "https://www.wsj.com/articles/second"])
         finally:
             tool_broker.fetch = original
 

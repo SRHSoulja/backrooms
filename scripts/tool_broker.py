@@ -280,6 +280,48 @@ def github_readme(query):
             "excerpt": prose[:2400], "status": "completed", "contract": TOOL_CONTRACTS["github-readme"]}
 
 
+SKIP_REFERENCE = re.compile(r"(?i)(web\.archive\.org|archive\.today|wikipedia\.org|wikimedia\.org|wikidata\.org|twitter\.com|x\.com|facebook\.com|"
+                            r"instagram\.com|youtube\.com|youtu\.be|linkedin\.com|reddit\.com|tiktok\.com|doi\.org|\.pdf(?:$|\?)|/search(?:/|\?|$)|[?&](?:q|query|search)=|"
+                            r"dictionary|wiktionary|merriam-webster|thefreedictionary)")
+
+
+def wikipedia_references(query, max_results=5):
+    """External references of the Wikipedia articles that best match the query:
+    on-topic pages on other domains, at most two per domain."""
+    words = [word for word in query.split() if len(word) > 3]
+    attempts = [query] + [" ".join(words[:count]) for count in (5, 3) if 0 < count < len(words)]
+    titles = []
+    for attempt in attempts:
+        try:
+            data = json.loads(fetch("https://en.wikipedia.org/w/api.php?" + urllib.parse.urlencode(
+                {"action": "query", "list": "search", "srsearch": attempt, "srlimit": 2, "format": "json", "utf8": 1})))
+        except Exception:
+            continue
+        titles = [str(hit.get("title", "")).strip() for hit in data.get("query", {}).get("search", []) if hit.get("title")]
+        if titles:
+            break
+    results, per_domain = [], {}
+    for title in titles[:2]:
+        try:
+            data = json.loads(fetch("https://en.wikipedia.org/w/api.php?" + urllib.parse.urlencode(
+                {"action": "query", "prop": "extlinks", "titles": title, "ellimit": 80, "elprotocol": "https", "format": "json"})))
+        except Exception:
+            continue
+        for page in data.get("query", {}).get("pages", {}).values():
+            for link in page.get("extlinks", []) or []:
+                url = str(link.get("*", "")).strip()
+                host = urllib.parse.urlparse(url).netloc.lower()
+                if not url.startswith("https://") or not host or SKIP_REFERENCE.search(url) or not public_host(host):
+                    continue
+                if per_domain.get(host, 0) >= 2 or any(item["url"] == url for item in results):
+                    continue
+                per_domain[host] = per_domain.get(host, 0) + 1
+                results.append({"title": f"{title} (reference: {host})"[:160], "url": url[:500]})
+                if len(results) >= max_results:
+                    return results
+    return results
+
+
 def public_search(query):
     query = re.sub(r"\s+", " ", str(query)).strip(" ,.;:!?")
     if not query or len(query) > 160 or BLOCKED.search(query):
@@ -306,9 +348,15 @@ def public_search(query):
         if len(results) >= 5:
             break
     if not results:
-        # The engine throttles repeated requests from one address. Wikipedia's
-        # search API answers the whole query reliably, so a turn still reaches a
-        # relevant page instead of a page about the query's first word.
+        # The engine throttles repeated requests from one address. The references
+        # of the best-matching Wikipedia article are on-topic pages on other
+        # domains, which is what a web turn needs and what no engine can block.
+        provider = "https://en.wikipedia.org/ (references)"
+        results = wikipedia_references(query)
+    if not results:
+        # Failing that, Wikipedia's search API answers the whole query reliably,
+        # so a turn still reaches a relevant page instead of a page about the
+        # query's first word.
         provider = "https://en.wikipedia.org/"
         words = [word for word in query.split() if len(word) > 3]
         attempts = [query] + [" ".join(words[:count]) for count in (5, 3) if 0 < count < len(words)]
@@ -327,9 +375,10 @@ def public_search(query):
                 break
     ignored = {"find", "relevant", "latest", "recent", "data", "public", "access", "use", "the", "for", "with"}
     terms = [term for term in re.findall(r"[a-z0-9]+", query.lower()) if len(term) > 3 and term not in ignored]
-    if terms:
+    if terms and "(references)" not in provider:
         # A result must match enough of the query to count: a page about the
-        # first word alone is not a result for a five-word question.
+        # first word alone is not a result for a five-word question. Reference
+        # results are on topic by construction and keep the article's order.
         needed = 1 if len(terms) < 3 else 2
         stems = {term[:5] for term in terms}
         def hits(item):
