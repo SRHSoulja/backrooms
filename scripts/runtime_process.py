@@ -183,3 +183,18 @@ def rotate_log(path, limit_bytes=20_000_000):
         return True
     except OSError:
         return False
+
+
+def hosted_elsewhere(marker_path, host, takeover=False):
+    """True when the state directory says another host runs the world.
+
+    The running host writes its name to ``state/RUNTIME_HOST`` every cycle;
+    a daemon on a different host refuses to start so two brains never run on
+    one state. ``takeover`` (BACKROOMS_TAKEOVER=1) overrides deliberately."""
+    if takeover:
+        return False
+    try:
+        marker = Path(marker_path).read_text().strip()
+    except OSError:
+        return False
+    return bool(marker) and marker != str(host)

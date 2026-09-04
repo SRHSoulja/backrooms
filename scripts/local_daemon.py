@@ -33,9 +33,9 @@ try:
 except ImportError:
     from capability_policy import public_catalog
 try:
-    from scripts.runtime_process import port_in_use, reap_recorded_model, startup_delay, rotate_log
+    from scripts.runtime_process import port_in_use, reap_recorded_model, startup_delay, rotate_log, hosted_elsewhere
 except ImportError:
-    from runtime_process import port_in_use, reap_recorded_model, startup_delay, rotate_log
+    from runtime_process import port_in_use, reap_recorded_model, startup_delay, rotate_log, hosted_elsewhere
 try:
     from scripts.evidence import classify_finding, is_accepted
     from scripts.corroboration import corroboration_index, load_records
@@ -1006,6 +1006,7 @@ def note_publish(outcome, reason=""):
     try:
         health = json.loads(PUBLIC_HEALTH.read_text()) if PUBLIC_HEALTH.exists() else {}
         health["publication_status"] = dict(PUBLISH_STATUS)
+        health["host"] = RUNTIME_HOST
         atomic_write_json(PUBLIC_HEALTH, health)
     except (OSError, json.JSONDecodeError):
         pass
@@ -1223,6 +1224,7 @@ def publish(result, world, model_health=True):
     atomic_write_json(PUBLIC_VOICES, voices)
     atomic_write_json(PUBLIC_WORLD, public_world)
     atomic_write_json(PUBLIC_AUDIT, safe["continuity_audit"])
+    health["host"] = RUNTIME_HOST
     atomic_write_json(PUBLIC_HEALTH, health)
     sync_code_proposals(registry)
     sync_outside_signals()
@@ -1247,7 +1249,13 @@ parser.add_argument("--interval", type=int, default=900, help="seconds between b
 parser.add_argument("--port", type=int, default=8080)
 parser.add_argument("--publish", action="store_true", help="publish safe local-cycle metrics to GitHub Pages")
 parser.add_argument("--once", action="store_true", help="run exactly one bounded cycle and exit")
+RUNTIME_HOST = os.getenv("BACKROOMS_RUNTIME_HOST", "local")
+HOST_MARKER = ROOT / "state/RUNTIME_HOST"
 args = parser.parse_args()
+if hosted_elsewhere(HOST_MARKER, RUNTIME_HOST, takeover=os.getenv("BACKROOMS_TAKEOVER") == "1"):
+    print(json.dumps({"daemon": "refusing to start", "reason": "state/RUNTIME_HOST names another host; set BACKROOMS_TAKEOVER=1 to take the world over deliberately",
+                      "marker": HOST_MARKER.read_text().strip()[:40], "host": RUNTIME_HOST}), flush=True)
+    sys.exit(3)
 lock_handle = acquire_lock()
 configured_url = os.getenv("BACKROOMS_LLM_BASE_URL", "").rstrip("/")
 base_url = configured_url or f"http://127.0.0.1:{args.port}"
@@ -1362,7 +1370,7 @@ try:
     except (OSError, ValueError):
         _clock = {}
     _delay = startup_delay(_clock.get("completed_at"), args.interval, time.time())
-    if _delay > 0:
+    if _delay > 0 and not args.once:
         print(json.dumps({"daemon": "resuming cadence after restart", "idle_seconds": round(_delay)}), flush=True)
         sleep_between_cycles(_delay)
     while True:
@@ -1370,6 +1378,11 @@ try:
             print(json.dumps({"daemon": "reload requested; exiting after completed cycle"}), flush=True)
             break
         cycle_started = time.monotonic()
+        try:
+            HOST_MARKER.parent.mkdir(parents=True, exist_ok=True)
+            HOST_MARKER.write_text(RUNTIME_HOST + "\n")
+        except OSError:
+            pass
         probe_result = probe_models(base_url)
         if not probe_result.get("ok"):
             if configured_url:

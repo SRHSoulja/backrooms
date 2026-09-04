@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.runtime_process import rotate_log, startup_delay, ReloadWatcher, port_has_listener, port_in_use, process_alive, reap_recorded_model
+from scripts.runtime_process import hosted_elsewhere, rotate_log, startup_delay, ReloadWatcher, port_has_listener, port_in_use, process_alive, reap_recorded_model
 
 
 class ReloadWatcherTests(unittest.TestCase):
@@ -113,6 +113,19 @@ class ProcessOwnershipTests(unittest.TestCase):
         self.assertTrue(rotate_log(log, limit_bytes=50))
         self.assertEqual((root / "daemon.log.1").read_text(), "y" * 100)
         self.assertFalse(rotate_log(root / "missing.log"))
+
+
+    def test_a_host_marker_for_another_host_stops_a_second_brain(self):
+        import tempfile
+        root = Path(tempfile.mkdtemp(prefix="backrooms-host-"))
+        marker = root / "RUNTIME_HOST"
+        self.assertFalse(hosted_elsewhere(marker, "local"))
+        marker.write_text("github-actions\n")
+        self.assertTrue(hosted_elsewhere(marker, "local"))
+        self.assertFalse(hosted_elsewhere(marker, "github-actions"))
+        self.assertFalse(hosted_elsewhere(marker, "local", takeover=True))
+        for name in ("local_daemon.py", "local_supervisor.py"):
+            self.assertIn("hosted_elsewhere(", Path("scripts") .joinpath(name).read_text())
 
 
 if __name__ == "__main__":

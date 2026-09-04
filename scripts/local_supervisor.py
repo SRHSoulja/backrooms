@@ -18,9 +18,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 try:
-    from scripts.runtime_process import ReloadWatcher, reap_recorded_model, stop_process_group, rotate_log
+    from scripts.runtime_process import ReloadWatcher, reap_recorded_model, stop_process_group, rotate_log, hosted_elsewhere
 except ImportError:
-    from runtime_process import ReloadWatcher, reap_recorded_model, stop_process_group, rotate_log
+    from runtime_process import ReloadWatcher, reap_recorded_model, stop_process_group, rotate_log, hosted_elsewhere
 
 ROOT = Path(__file__).resolve().parents[1]
 LOG_PATH = ROOT / "state/daemon.log"
@@ -62,6 +62,10 @@ def main():
     signal.signal(signal.SIGHUP, stop)  # tmux kill-session sends SIGHUP; stop the daemon and model with us
     backoff = 5
     while not stopping:
+        if hosted_elsewhere(ROOT / "state/RUNTIME_HOST", os.getenv("BACKROOMS_RUNTIME_HOST", "local"),
+                            takeover=os.getenv("BACKROOMS_TAKEOVER") == "1"):
+            log("another host runs this world (state/RUNTIME_HOST); not starting the daemon. Set BACKROOMS_TAKEOVER=1 to take over deliberately.")
+            return
         process = run_daemon()
         watcher = ReloadWatcher(source_signature(), RELOAD_DEBOUNCE_SECONDS, RELOAD_GRACE_SECONDS)
         reload_requested = False

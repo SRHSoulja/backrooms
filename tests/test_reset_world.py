@@ -132,6 +132,31 @@ class ResetWorldTests(unittest.TestCase):
         self.assertEqual([room["id"] for room in world["rooms"]], ["atrium", "relay"])
         self.assertEqual(json.loads((state / "local-agents.json").read_text())["agents"], [])
 
+    def test_cloud_reset_clones_resets_and_pushes_the_state_repository(self):
+        commands = []
+        workdir = Path(tempfile.mkdtemp(prefix="backrooms-cloud-"))
+
+        def fake_run(command, **_kwargs):
+            commands.append(command)
+            if command[:3] == ["gh", "repo", "clone"]:
+                # the "clone" materialises a state directory shaped like the real one
+                source = self.make_root() / "state"
+                (workdir / "state").mkdir(parents=True, exist_ok=True)
+                for item in source.iterdir():
+                    target = workdir / "state" / item.name
+                    if item.is_dir():
+                        import shutil
+                        shutil.copytree(item, target, dirs_exist_ok=True)
+                    else:
+                        target.write_bytes(item.read_bytes())
+
+        plan = reset_world.cloud_reset("owner/backrooms-state", dry_run=False, run=fake_run, workdir=workdir)
+        self.assertEqual(plan["repository"], "owner/backrooms-state")
+        self.assertIn("findings.jsonl", plan["archived"])
+        self.assertEqual(commands[0][:4], ["gh", "repo", "clone", "owner/backrooms-state"])
+        self.assertEqual([c[3] for c in commands[1:]], ["add", "-c", "push"])
+        self.assertIn("commit", commands[2])
+
 
 if __name__ == "__main__":
     unittest.main()

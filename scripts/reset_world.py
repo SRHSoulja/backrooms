@@ -11,6 +11,7 @@ to run while the daemon holds its lock. ``--dry-run`` only reports.
 import argparse
 import fcntl
 import json
+import os
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
@@ -121,15 +122,50 @@ def reset_world(root, stamp=None, dry_run=False, keep_research=False):
     return plan
 
 
+DEFAULT_STATE_REPO = "SRHSoulja/backrooms-state"
+
+
+def cloud_reset(repo, dry_run=False, keep_research=False, run=None, workdir=None):
+    """Reset the world where it lives when the runtime is on GitHub Actions:
+    clone the private state repository, reset it there, and push. The next
+    scheduled cycle starts from the fresh state; no machine of ours is involved."""
+    import shutil as _shutil
+    import subprocess
+    import tempfile
+    run = run or (lambda command, **kwargs: subprocess.run(command, check=True, capture_output=True, text=True, **kwargs))
+    workdir = Path(workdir or tempfile.mkdtemp(prefix="backrooms-cloud-reset-"))
+    state = workdir / "state"
+    run(["gh", "repo", "clone", repo, str(state), "--", "--depth", "1"])
+    plan = reset_world(workdir, dry_run=dry_run, keep_research=keep_research)
+    plan["repository"] = repo
+    if dry_run:
+        _shutil.rmtree(workdir, ignore_errors=True)
+        return plan
+    run(["git", "-C", str(state), "add", "-A"])
+    run(["git", "-C", str(state), "-c", "user.name=Backrooms Steward", "-c", "user.email=steward@backrooms.local",
+         "commit", "-m", "world reset: founding rooms, empty roster, ledgers archived"])
+    run(["git", "-C", str(state), "push"])
+    _shutil.rmtree(workdir, ignore_errors=True)
+    return plan
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--yes", action="store_true", help="perform the reset (otherwise only the plan is printed)")
     parser.add_argument("--keep-research", action="store_true",
                         help="keep the findings and corroboration ledgers live so new residents inherit the original research")
+    parser.add_argument("--cloud", action="store_true",
+                        help="reset the private state repository used by the GitHub Actions runtime instead of the local state/")
+    parser.add_argument("--state-repo", default=os.getenv("BACKROOMS_STATE_REPO", DEFAULT_STATE_REPO),
+                        help="private state repository for --cloud (owner/name)")
+    parser.add_argument("--root", default=None, help="repository root whose state/ to reset (default: this checkout)")
     args = parser.parse_args()
-    root = Path(__file__).resolve().parents[1]
-    plan = reset_world(root, dry_run=not args.yes, keep_research=args.keep_research)
+    if args.cloud:
+        plan = cloud_reset(args.state_repo, dry_run=not args.yes, keep_research=args.keep_research)
+    else:
+        root = Path(args.root).resolve() if args.root else Path(__file__).resolve().parents[1]
+        plan = reset_world(root, dry_run=not args.yes, keep_research=args.keep_research)
     print(json.dumps(plan, indent=2))
     if not args.yes:
         print("dry run only; rerun with --yes to reset", flush=True)

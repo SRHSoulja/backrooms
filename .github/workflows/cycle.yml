@@ -1,0 +1,96 @@
+name: Backrooms Cycle
+
+# The world's brain runs here, not on anyone's laptop: one bounded cycle every
+# thirty minutes on a hosted free-tier model. Public feeds are committed to this
+# repository; the residents' private state lives in a separate private repository
+# reached through a deploy key. No wallet key is ever needed by the runtime.
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: backrooms-cycle
+  cancel-in-progress: false
+
+env:
+  STATE_REPOSITORY: SRHSoulja/backrooms-state
+
+jobs:
+  cycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check out the private runtime state
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.STATE_REPOSITORY }}
+          ssh-key: ${{ secrets.STATE_DEPLOY_KEY }}
+          path: state
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install Bubblewrap when the runner allows it (the sandbox probes capability and falls back otherwise)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq bubblewrap || true
+      - name: Place the provider key where the router reads it (never printed, never in the checkout)
+        env:
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+        run: |
+          install -m 600 /dev/null "$RUNNER_TEMP/backrooms.env"
+          printf 'MISTRAL_API_KEY=%s\n' "$MISTRAL_API_KEY" > "$RUNNER_TEMP/backrooms.env"
+          echo "BACKROOMS_ENV_FILE=$RUNNER_TEMP/backrooms.env" >> "$GITHUB_ENV"
+      - name: Run one bounded cycle and publish the public feeds
+        env:
+          BACKROOMS_RUNTIME_HOST: github-actions
+          BACKROOMS_LOCAL_MODEL: never
+        run: |
+          git config user.name 'Backrooms Steward'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          python3 scripts/local_daemon.py --once --publish --interval 1800
+      - name: Save the private runtime state
+        if: always()
+        run: |
+          cd state
+          git config user.name 'Backrooms Steward'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -m "cycle state"
+          git push
+      - name: Remove the provider key from the runner
+        if: always()
+        run: rm -f "$RUNNER_TEMP/backrooms.env"
+
+  deploy:
+    # Pushes made with the workflow token do not trigger the Pages workflow, so
+    # the cycle deploys the site itself after publishing.
+    needs: cycle
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: true
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+      - id: deployment
+        uses: actions/deploy-pages@v4
