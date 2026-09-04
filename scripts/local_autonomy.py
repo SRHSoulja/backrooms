@@ -1703,6 +1703,7 @@ def main():
     # council's topic, the next residents on that topic go looking for a second,
     # independent source for that same claim rather than for the subject at large.
     verification_target = target_claim_for(shared_research)
+    verify_families_used = set()
     if verification_target:
         shared_avoid = set(shared_avoid) | {urllib.parse.urlparse(str(verification_target.get("url", ""))).netloc.lower()}
     regrounded = []
@@ -1733,6 +1734,14 @@ def main():
         turn_family = rotation[(turn_index // 2) % len(rotation)]
         if research_assignment and shared_family:
             turn_family = shared_family
+        if verifying:
+            # Two verifiers of one claim in one cycle take different source
+            # families, and never the family the claim itself came from.
+            target_family = family_of_domain(urllib.parse.urlparse(str(verifying.get("url", ""))).netloc)
+            options = [family for family in rotation if family != target_family and family not in verify_families_used] \
+                or [family for family in rotation if family != target_family] or rotation
+            turn_family = options[0]
+            verify_families_used.add(turn_family)
         agent["last_turn_cycle"] = args.cycle
         decision = None
         post_decision = None
@@ -1953,8 +1962,9 @@ def main():
             # one topic is reached through independent kinds of sources.
             if (tool_name == "public-search" and fetch_budget > 0 and tool.get("status") == "completed"
                     and turn_family in FAMILY_TOOLS):
+                focus = (" :: " + str(verifying.get("claim", ""))[:200]) if verifying else ""
                 summary_run = subprocess.run([sys.executable, str(ROOT / "scripts/tool_broker.py"),
-                    FAMILY_TOOLS[turn_family], query_target], cwd=ROOT, env=child_env(), capture_output=True, text=True, check=False)
+                    FAMILY_TOOLS[turn_family], query_target + focus], cwd=ROOT, env=child_env(), capture_output=True, text=True, check=False)
                 try:
                     summarized = json.loads(summary_run.stdout)
                 except json.JSONDecodeError:
@@ -1985,8 +1995,9 @@ def main():
                 if candidates:
                     fetch_budget -= 1
                     for candidate in candidates:
+                        focus = (" :: " + str(verifying.get("claim", ""))[:200]) if verifying else ""
                         fetched_run = subprocess.run([sys.executable, str(ROOT / "scripts/tool_broker.py"),
-                            "public-text", candidate], cwd=ROOT, env=child_env(), capture_output=True, text=True, check=False)
+                            "public-text", candidate + focus], cwd=ROOT, env=child_env(), capture_output=True, text=True, check=False)
                         try:
                             fetched = json.loads(fetched_run.stdout)
                         except json.JSONDecodeError:

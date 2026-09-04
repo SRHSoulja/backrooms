@@ -95,7 +95,7 @@ def wikipedia(query):
             "contract": TOOL_CONTRACTS["wikipedia-search"]}
 
 
-def wikipedia_summary(query):
+def wikipedia_summary(query, focus=""):
     """Resolve a query to one Wikipedia article and return its plain-text summary as evidence.
 
     The REST summary endpoint yields clean, quotable prose with a canonical
@@ -131,6 +131,18 @@ def wikipedia_summary(query):
     encoded = urllib.parse.quote(title.replace(" ", "_"), safe="")
     summary = json.loads(fetch("https://en.wikipedia.org/api/rest_v1/page/summary/" + encoded))
     extract = re.sub(r"\s+", " ", html.unescape(str(summary.get("extract", "")))).strip()
+    if focus:
+        # A verification turn reads the whole article and quotes the passage
+        # that addresses the claim, not only the lead paragraph.
+        try:
+            full = json.loads(fetch("https://en.wikipedia.org/w/api.php?" + urllib.parse.urlencode(
+                {"action": "query", "prop": "extracts", "explaintext": 1, "titles": title, "format": "json", "utf8": 1}), RESEARCH_MAX_BYTES))
+            body = " ".join(str(page.get("extract", "")) for page in full.get("query", {}).get("pages", {}).values())
+            body = re.sub(r"\s+", " ", html.unescape(body)).strip()
+            if body:
+                extract = focused_passage(body, focus)
+        except Exception:
+            pass
     extract = SENSITIVE_ASSIGNMENT.sub("[withheld]", extract)
     extract = BLOCKED.sub("[withheld]", extract)
     page_url = str(((summary.get("content_urls") or {}).get("desktop") or {}).get("page") or
@@ -140,6 +152,42 @@ def wikipedia_summary(query):
                 "source": "https://en.wikipedia.org/", "contract": TOOL_CONTRACTS["wikipedia-summary"]}
     return {"tool": "wikipedia-summary", "query": query, "title": title, "url": page_url,
             "excerpt": extract[:2400], "status": "completed", "contract": TOOL_CONTRACTS["wikipedia-summary"]}
+
+
+FOCUS_SEPARATOR = " :: "
+
+
+def split_focus(value):
+    """A tool value may carry a focus after ' :: ': the claim a verification
+    turn is looking for. The value before it is the query or URL as before."""
+    text = str(value or "")
+    if FOCUS_SEPARATOR in text:
+        head, focus = text.split(FOCUS_SEPARATOR, 1)
+        return head.strip(), re.sub(r"\s+", " ", focus).strip()[:300]
+    return text.strip(), ""
+
+
+def focused_passage(text, focus, window=1600, lead=600):
+    """The passage of a page that shares the most vocabulary with the focus,
+    followed by the page's opening, so a verification turn quotes the part
+    that addresses the colleague's claim rather than the first paragraph."""
+    text = re.sub(r"\s+", " ", str(text or "")).strip()
+    terms = {term[:6] for term in re.findall(r"[a-z0-9]{4,}", str(focus or "").lower())}
+    if not text or not terms:
+        return text[:window + lead]
+    sentences = re.split(r"(?<=[.!?])\s+", text)
+    best, best_score = 0, -1
+    for index, sentence in enumerate(sentences):
+        chunk = " ".join(sentences[index:index + 3])
+        score = len(terms & {term[:6] for term in re.findall(r"[a-z0-9]{4,}", chunk.lower())})
+        if score > best_score:
+            best, best_score = index, score
+    start = max(0, best - 1)
+    passage = " ".join(sentences[start:start + 5])[:window]
+    opening = text[:lead]
+    if passage and not text.startswith(passage[:80]):
+        return (passage + " ... " + opening).strip()
+    return text[:window + lead]
 
 
 def _query_terms(query):
@@ -433,13 +481,14 @@ def clean_excerpt(text):
     return re.sub(r"\S{61,}", lambda match: " " if CODE_PUNCTUATION.search(match.group(0)) else match.group(0), text)
 
 
-def public_text(url):
+def public_text(url, focus=""):
     raw = SCRIPT_STYLE.sub(" ", fetch(url, RESEARCH_MAX_BYTES))
     text = clean_excerpt(re.sub(r"<[^>]+>", " ", html.unescape(raw)))
     text = re.sub(r"\s+", " ", text).strip()
     text = SENSITIVE_ASSIGNMENT.sub("[withheld]", text)
     text = BLOCKED.sub("[withheld]", text)
-    return {"tool": "public-text", "url": url, "excerpt": text[:2400], "status": "completed",
+    excerpt = focused_passage(text, focus) if focus else text[:2400]
+    return {"tool": "public-text", "url": url, "excerpt": excerpt[:2400], "status": "completed",
             "contract": TOOL_CONTRACTS["public-text"]}
 
 
@@ -462,7 +511,7 @@ def run(tool, value):
         if tool == "wikipedia-search":
             return wikipedia(value)
         if tool == "wikipedia-summary":
-            return wikipedia_summary(value)
+            return wikipedia_summary(*split_focus(value))
         if tool == "arxiv-summary":
             return arxiv_summary(value)
         if tool == "openalex-summary":
@@ -476,7 +525,7 @@ def run(tool, value):
         if tool == "public-csv":
             return public_csv(value)
         if tool == "public-text":
-            return public_text(value)
+            return public_text(*split_focus(value))
         return {"tool": tool, "status": "completed", "characters": len(fetch(value)), "contract": TOOL_CONTRACTS[tool]}
     except Exception as error:
         return {"tool": tool, "status": "rejected", "reason": str(error)[:120], "contract": TOOL_CONTRACTS[tool]}

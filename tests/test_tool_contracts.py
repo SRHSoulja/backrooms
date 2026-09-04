@@ -232,5 +232,18 @@ class ToolContractTests(unittest.TestCase):
         self.assertEqual(run("import os") ["status"], "rejected")
 
 
+    def test_focus_splits_off_and_picks_the_passage_that_addresses_the_claim(self):
+        self.assertEqual(tool_broker.split_focus("roskomnadzor github :: Russia blocked GitHub in 2014"), ("roskomnadzor github", "Russia blocked GitHub in 2014"))
+        self.assertEqual(tool_broker.split_focus("plain query"), ("plain query", ""))
+        filler = " ".join(f"Filler sentence number {n} about broadcasting licences and media rules." for n in range(12))
+        text = ("Roskomnadzor is the Russian federal agency overseeing media. " + filler + " "
+                "In December 2014 the agency blocked access to GitHub after the platform hosted pages the regulator objected to. "
+                "The block was lifted days later. The agency also maintains a registry of banned sites.")
+        passage = tool_broker.focused_passage(text, "Russia's regulator blocked access to GitHub after the platform hosted content")
+        self.assertIn("In December 2014 the agency blocked access to GitHub", passage[:300])
+        self.assertIn(" ... Roskomnadzor is the Russian federal agency", passage)
+        self.assertEqual(tool_broker.focused_passage(text, ""), text)
+
+
 if __name__ == "__main__":
     unittest.main()
