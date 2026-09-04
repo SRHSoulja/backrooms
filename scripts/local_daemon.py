@@ -41,6 +41,7 @@ try:
     from scripts.corroboration import corroboration_index, load_records
     from scripts.codex_reviews import consume_outbox
     from scripts.self_prompt_rules import finding_followup_question, research_themes, theme_questions
+    from scripts.world_rules import day_zero_from_events
     from scripts import model_client
     from scripts import journal as journal_module
 except ImportError:
@@ -48,6 +49,7 @@ except ImportError:
     from corroboration import corroboration_index, load_records
     from codex_reviews import consume_outbox
     from self_prompt_rules import finding_followup_question, research_themes, theme_questions
+    from world_rules import day_zero_from_events
     import model_client
     import journal as journal_module
 
@@ -1225,6 +1227,11 @@ def publish(result, world, model_health=True):
     atomic_write_json(PUBLIC_WORLD, public_world)
     atomic_write_json(PUBLIC_AUDIT, safe["continuity_audit"])
     health["host"] = RUNTIME_HOST
+    try:
+        health["day_zero"] = day_zero_from_events(ARCHIVE.read_text().splitlines() if ARCHIVE.exists() else []) \
+            or day_zero_from_events(world.get("events", []))
+    except OSError:
+        health["day_zero"] = None
     atomic_write_json(PUBLIC_HEALTH, health)
     sync_code_proposals(registry)
     sync_outside_signals()

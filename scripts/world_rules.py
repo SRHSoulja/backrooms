@@ -168,3 +168,20 @@ def finding_followup_question(finding):
         return (f"What do other independent public sources say about {subject}, and does any of them "
                 f"contradict the finding that {claim[:160].rstrip('.')}?")
     return f"What do other independent public sources say about {subject}?"
+
+
+def day_zero_from_events(lines):
+    """The most recent world reset, from archived event lines: {"cycle", "at"} or None.
+
+    Day zero is the point after which every room and resident must be
+    explained by the rules alone; the public page measures the run from it."""
+    import json as _json
+    found = None
+    for line in lines:
+        try:
+            event = _json.loads(line) if isinstance(line, str) else dict(line)
+        except (ValueError, TypeError):
+            continue
+        if event.get("kind") == "world-reset":
+            found = {"cycle": event.get("cycle"), "at": event.get("recorded_at") or event.get("at"), "event": event.get("id")}
+    return found

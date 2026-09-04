@@ -1,6 +1,6 @@
 import unittest
 
-from scripts.world_rules import (apply_retractions, compute_standing, finding_followup_question, room_lifecycle,
+from scripts.world_rules import (day_zero_from_events, apply_retractions, compute_standing, finding_followup_question, room_lifecycle,
                                  sealed_room_ids, settle_disputes)
 
 
@@ -63,6 +63,15 @@ class WorldRuleTests(unittest.TestCase):
         self.assertIn("agent discovery cards", question)
         self.assertIn("contradict the finding that Cards are published at a well-known path", question)
         self.assertEqual(finding_followup_question({}), "")
+
+    def test_day_zero_is_the_latest_world_reset(self):
+        lines = ['{"id": "e1", "kind": "arrival", "cycle": 1}', "not json",
+                 '{"id": "reset-a", "kind": "world-reset", "cycle": 100, "recorded_at": "2026-09-01T00:00:00+00:00"}',
+                 '{"id": "reset-b", "kind": "world-reset", "cycle": 275, "recorded_at": "2026-09-04T03:06:25+00:00"}',
+                 '{"id": "e2", "kind": "tool-used", "cycle": 276}']
+        self.assertEqual(day_zero_from_events(lines), {"cycle": 275, "at": "2026-09-04T03:06:25+00:00", "event": "reset-b"})
+        self.assertIsNone(day_zero_from_events(['{"kind": "arrival"}']))
+        self.assertEqual(day_zero_from_events([{"kind": "world-reset", "cycle": 5, "recorded_at": "t"}])["cycle"], 5)
 
 
 if __name__ == "__main__":
