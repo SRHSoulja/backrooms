@@ -1080,14 +1080,37 @@ def publish_failure(reason, model_health, base_url=None):
                      "" if pushed.returncode == 0 else (pushed.stderr.strip().splitlines() or ["unknown"])[-1][:120])
 
 
+DAY_ZERO = ROOT / "state/day-zero.json"
+
+
+def day_zero_record(world):
+    """Day zero: the latest world reset. Read from state/day-zero.json, which
+    the reset writes; if only the events know it, learn it once and write the
+    file so a trimmed event list can never lose it again."""
+    try:
+        if DAY_ZERO.exists():
+            zero = json.loads(DAY_ZERO.read_text())
+            if zero.get("cycle") is not None:
+                return zero
+    except (OSError, json.JSONDecodeError):
+        pass
+    try:
+        zero = day_zero_from_events(world.get("events", [])) \
+            or day_zero_from_events(ARCHIVE.read_text().splitlines() if ARCHIVE.exists() else [])
+    except OSError:
+        zero = None
+    if zero:
+        try:
+            atomic_write_json(DAY_ZERO, zero)
+        except OSError:
+            pass
+    return zero
+
+
 def day_zero_cycle(world):
     """The cycle of the latest world reset, or None: feeds that accumulate across
     cycles keep nothing from before it, so the site shows only this world."""
-    try:
-        zero = day_zero_from_events(ARCHIVE.read_text().splitlines() if ARCHIVE.exists() else []) \
-            or day_zero_from_events(world.get("events", []))
-    except OSError:
-        zero = None
+    zero = day_zero_record(world)
     try:
         return int(zero["cycle"]) if zero and zero.get("cycle") is not None else None
     except (TypeError, ValueError):
@@ -1264,7 +1287,7 @@ def publish(result, world, model_health=True):
     historical_world = json.loads(PUBLIC_WORLD.read_text()) if PUBLIC_WORLD.exists() else {}
     public_rooms = []
     for room in world.get("rooms", []):
-        room_copy = {key: room.get(key) for key in ("id", "name", "description", "doors", "charter", "status", "founded_by", "founded_cycle", "growth_topic", "retracted_artifacts") if key in room}
+        room_copy = {key: room.get(key) for key in ("id", "name", "description", "doors", "charter", "status", "founded_by", "founded_via", "founded_cycle", "corroboration_id", "growth_topic", "retracted_artifacts", "retracted_cycle", "retraction_reason") if key in room}
         occupants = list(room.get("occupants", []))
         occupants.extend(agent.get("id") for agent in registry.get("agents", [])
                          if agent.get("status") not in {"fired", "retired"} and agent.get("room") == room.get("id"))
@@ -1294,11 +1317,7 @@ def publish(result, world, model_health=True):
     atomic_write_json(PUBLIC_WORLD, public_world)
     atomic_write_json(PUBLIC_AUDIT, safe["continuity_audit"])
     health["host"] = RUNTIME_HOST
-    try:
-        health["day_zero"] = day_zero_from_events(ARCHIVE.read_text().splitlines() if ARCHIVE.exists() else []) \
-            or day_zero_from_events(world.get("events", []))
-    except OSError:
-        health["day_zero"] = None
+    health["day_zero"] = day_zero_record(world)
     atomic_write_json(PUBLIC_HEALTH, health)
     sync_code_proposals(registry)
     sync_outside_signals()

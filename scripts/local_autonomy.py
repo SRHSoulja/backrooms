@@ -23,15 +23,15 @@ try:
 except ImportError:
     from model_client import complete, complete_json, child_env
 try:
-    from scripts.evidence import clamp_confidence, classify_finding, is_accepted
+    from scripts.evidence import clamp_confidence, classify_finding, is_accepted, FUNCTION_WORDS
     from scripts.corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, claims_overlap, corroboration_index,
-                                       growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record)
-    from scripts.world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes)
+                                       growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records)
+    from scripts.world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes, retract_unfounded_rooms)
 except ImportError:
-    from evidence import clamp_confidence, classify_finding, is_accepted
+    from evidence import clamp_confidence, classify_finding, is_accepted, FUNCTION_WORDS
     from corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, claims_overlap, corroboration_index,
-                               growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record)
-    from world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes)
+                               growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records)
+    from world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes, retract_unfounded_rooms)
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "state/local-agents.json"
 ARCHIVE = ROOT / "state/archive/events.jsonl"
@@ -60,7 +60,7 @@ MAX_FETCHES_PER_CYCLE = 4
 # evidence. Re-ground a few such purposes per cycle against the frontier, and
 # rest residents that keep producing nothing so turns go to productive work.
 MAX_REGROUNDS_PER_CYCLE = 2
-QUESTION_STOPWORDS = {"about", "after", "also", "from", "into", "that", "this", "with", "what", "which", "where",
+QUESTION_STOPWORDS = FUNCTION_WORDS | {"about", "after", "also", "from", "into", "that", "this", "with", "what", "which", "where",
                       "when", "does", "did", "have", "their", "there", "these", "those", "than", "between",
                       "should", "could", "would", "current", "public", "evidence", "sources", "source", "independent",
                       "confirm", "challenge", "say",
@@ -1972,7 +1972,28 @@ def main():
     construction = apply_construction(world, registry, args.cycle)
     evidence_growth = evidence_room_growth(world, registry, args.cycle)
     room_changes = room_lifecycle(world, accepted_findings(), args.cycle)
+    # A grown room stands only while its founding pair still meets the current
+    # evidence standard; when a rule tightens, the world withdraws its own rooms.
+    ledger_records = load_records(CORROBORATIONS)
+    retracted_rooms = retract_unfounded_rooms(world, {r.get("id"): r for r in ledger_records},
+                                              {f.get("id"): f for f in all_findings()}, args.cycle, founding_pair_stands)
+    if retracted_rooms:
+        withdrawn = {item["corroboration"] for item in retracted_rooms if item.get("corroboration")}
+        for record in ledger_records:
+            if record.get("id") in withdrawn and record.get("relation") == "supports":
+                record["model_relation"] = record.get("model_relation") or "supports"
+                record["relation"] = "unrelated"
+                record["downgraded_cycle"] = args.cycle
+                record["reason"] = ("withdrawn by rule: " + next(item["reason"] for item in retracted_rooms if item.get("corroboration") == record.get("id")))[:200]
+        rewrite_records(CORROBORATIONS, ledger_records)
+        for item in retracted_rooms:
+            emit_event(world, args.cycle, "room-retracted", "evidence-ledger",
+                       "A room founded on evidence was withdrawn because its founding pair no longer meets the evidence standard.",
+                       room=item["room"], reason=item["reason"], corroboration=item.get("corroboration"))
+            room_changes.append({"room": item["room"], "from": "open", "to": "retracted", "reason": item["reason"]})
     for change in room_changes:
+        if change.get("to") == "retracted":
+            continue  # its own event was emitted with the reason above
         emit_event(world, args.cycle, "room-" + change["to"], "evidence-ledger",
                    f"Room {change['room']} moved from {change['from']} to {change['to']} after {change['idle_cycles']} idle cycles.",
                    **change)

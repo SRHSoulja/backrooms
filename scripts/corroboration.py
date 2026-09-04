@@ -48,6 +48,14 @@ def same_topic(first, second):
     return bool(left) and left == right
 
 
+DEFINITION_SOURCE = re.compile(r"(?i)(^|\.)(dictionary|wiktionary|merriam-webster|thefreedictionary|vocabulary|wordreference|collinsdictionary|thesaurus|dictionary\.cambridge)\.", re.I)
+
+
+def definition_source(finding):
+    """Dictionaries define words; they do not corroborate facts about the world."""
+    return bool(DEFINITION_SOURCE.search(domain_of(finding) + "."))
+
+
 def candidate_pairs(findings, judged_ids=(), limit=MAX_JUDGMENTS_PER_CYCLE):
     """Return [(first, second, pair_id, similarity)] worth one model judgment each.
 
@@ -55,7 +63,7 @@ def candidate_pairs(findings, judged_ids=(), limit=MAX_JUDGMENTS_PER_CYCLE):
     each other (similarity 1.0), whatever their wording; other pairs need
     shared claim vocabulary. Cross-domain is required in both cases.
     """
-    accepted = [item for item in findings if is_accepted(item) and item.get("id") and domain_of(item)]
+    accepted = [item for item in findings if is_accepted(item) and item.get("id") and domain_of(item) and not definition_source(item)]
     scored = []
     for index, first in enumerate(accepted):
         first_terms = finding_terms(first)
@@ -118,6 +126,47 @@ def shared_claim_grounded(shared_claim, first, second):
     return True
 
 
+def on_topic(shared_claim, first, second):
+    """A corroborated fact must be about the subject the residents were sent to
+    research: its content words must overlap the findings' topic. Findings with
+    no topic are not held to this."""
+    topic = claim_stems(str(first.get("topic", ""))) | claim_stems(str(second.get("topic", "")))
+    if not topic:
+        return True
+    return bool(claim_stems(shared_claim) & topic)
+
+
+def founding_pair_stands(record, first, second):
+    """Re-check a room's founding pair against the current deterministic rules.
+    Returns (True, "") or (False, reason). The model's verdict is not re-asked;
+    only the rules around it are."""
+    if not record or not first or not second:
+        return False, "founding pair is missing from the ledger"
+    if not (is_accepted(first) and is_accepted(second)):
+        return False, "a founding finding was rejected or retracted"
+    if domain_of(first) == domain_of(second):
+        return False, "founding findings share a domain"
+    if definition_source(first) or definition_source(second):
+        return False, "a founding finding is a dictionary definition"
+    if not claims_overlap(first, second):
+        return False, "founding claims share no vocabulary"
+    shared = str(record.get("shared_claim") or record.get("topic") or "")
+    if not shared_claim_grounded(shared, first, second):
+        return False, "shared fact not grounded in both claims"
+    if not on_topic(shared, first, second):
+        return False, "shared fact is off the research topic"
+    return True, ""
+
+
+def rewrite_records(path, records):
+    """Replace the ledger with the given records (used only to mark rule-based downgrades in place)."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w") as handle:
+        for record in records:
+            handle.write(json.dumps(record, separators=(",", ":")) + "\n")
+
+
 def judge_verdict(first, second, verdict):
     """Apply the evidence rule to a model verdict: 'supports' stands only when the
     model named a shared fact grounded in both claims; otherwise it is recorded
@@ -130,6 +179,9 @@ def judge_verdict(first, second, verdict):
     if relation == "supports" and not shared_claim_grounded(shared_claim, first, second):
         return {"relation": "unrelated", "model_relation": "supports", "shared_claim": shared_claim,
                 "reason": ("shared fact not grounded in both claims: " + reason)[:200]}
+    if relation == "supports" and not on_topic(shared_claim, first, second):
+        return {"relation": "unrelated", "model_relation": "supports", "shared_claim": shared_claim,
+                "reason": ("shared fact is off the research topic: " + reason)[:200]}
     return {"relation": relation, "model_relation": relation, "shared_claim": shared_claim if relation == "supports" else "",
             "reason": reason}
 

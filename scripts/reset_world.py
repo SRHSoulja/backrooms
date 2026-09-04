@@ -30,7 +30,7 @@ ARCHIVE_ONLY = ("local-agents.json", "findings.jsonl", "corroborations.jsonl", "
 ARCHIVE_DIRS = ("printed", "agent-notes", "interviews")
 # The original research: with --keep-research these stay live (and are also copied to the archive).
 RESEARCH = ("findings.jsonl", "corroborations.jsonl")
-KEEP = ("quarantine-inbox.json", "quarantine-inbox.lock", "codex-inbox", "codex-outbox", "codex-consumed.json",
+KEEP = ("day-zero.json", "quarantine-inbox.json", "quarantine-inbox.lock", "codex-inbox", "codex-outbox", "codex-consumed.json",
         "codex-bridge-log.jsonl", "codex-bridge-status.json", "treasury-intents.json", "daemon.log",
         "llama-server.log", "archive")
 # Never read, moved, or rewritten by a reset: the reset only edits files under ``state/``.
@@ -71,6 +71,7 @@ def founding_world(world, cycle, stamp):
     event = {"id": f"event-reset-{stamp}", "actor": "steward", "kind": "world-reset", "cycle": cycle,
              "text": "The world was reset: ledgers archived, founding rooms restored, roster emptied; history kept in the archive.",
              "confidence": 1.0, "recorded_at": datetime.now(timezone.utc).isoformat()}
+    founding_world.last_event = event
     return {**{key: world.get(key) for key in ("schema", "world", "title", "mood") if key in world},
             "cycle": cycle, "rooms": rooms, "residents": ["echo", "morrow"], "shared_memory": memories,
             "events": [event], "connections": connections, "discoveries": [], "messages": []}
@@ -112,6 +113,7 @@ def reset_world(root, stamp=None, dry_run=False, keep_research=False):
     if runtime.exists():
         shutil.copy2(runtime, archive / "local-runtime.json")
     atomic_write_json(world_path, fresh)
+    atomic_write_json(state / "day-zero.json", {"cycle": cycle, "at": founding_world.last_event["recorded_at"], "event": founding_world.last_event["id"]})
     atomic_write_json(runtime, {**fresh, "events": fresh["events"][-20:]})
     atomic_write_json(state / "local-agents.json", {"privacy": "local registry; no credentials or private memory", "agents": [], "decisions": []})
     (archive / "RESET.md").write_text(

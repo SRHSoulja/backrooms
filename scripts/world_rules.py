@@ -121,7 +121,7 @@ def room_lifecycle(world, findings, cycle):
     changes = []
     for room in rooms:
         room_id = room.get("id")
-        if room_id in FOUNDING_ROOMS or not room.get("founded_cycle"):
+        if room_id in FOUNDING_ROOMS or not room.get("founded_cycle") or room.get("status") == "retracted":
             continue
         activity = room.setdefault("activity", {})
         last = max(int(activity.get("last_cycle") or 0), latest_by_room.get(room_id, 0))
@@ -154,7 +154,30 @@ def room_lifecycle(world, findings, cycle):
 
 
 def sealed_room_ids(world):
-    return {room.get("id") for room in world.get("rooms", []) if room.get("status") == "sealed"}
+    return {room.get("id") for room in world.get("rooms", []) if room.get("status") in ("sealed", "retracted")}
+
+
+def retract_unfounded_rooms(world, records_by_id, findings_by_id, cycle, stands):
+    """Withdraw grown rooms whose founding pair no longer meets the evidence
+    standard. ``stands(record, first, second)`` returns (ok, reason). A
+    retracted room stays in the world with its reason; it is never deleted."""
+    changes = []
+    for room in world.get("rooms", []):
+        if room.get("founded_via") != "evidence-ledger" or room.get("status") == "retracted":
+            continue
+        record = records_by_id.get(room.get("corroboration_id"))
+        ids = list((record or {}).get("finding_ids") or room.get("artifacts") or [])
+        first = findings_by_id.get(ids[0]) if len(ids) > 0 else None
+        second = findings_by_id.get(ids[1]) if len(ids) > 1 else None
+        ok, reason = stands(record, first, second)
+        if ok:
+            continue
+        room["status"] = "retracted"
+        room["status_cycle"] = cycle
+        room["retracted_cycle"] = cycle
+        room["retraction_reason"] = reason
+        changes.append({"room": room.get("id"), "reason": reason, "corroboration": room.get("corroboration_id")})
+    return changes
 
 
 def finding_followup_question(finding):
@@ -163,11 +186,11 @@ def finding_followup_question(finding):
     claim = re.sub(r"\s+", " ", str(finding.get("claim", ""))).strip()
     if not topic and not claim:
         return ""
-    subject = topic or claim[:80]
+    # The question is built from the claim itself, never from a bag of search terms.
     if claim:
-        return (f"What do other independent public sources say about {subject}, and does any of them "
-                f"contradict the finding that {claim[:160].rstrip('.')}?")
-    return f"What do other independent public sources say about {subject}?"
+        return (f"Do other independent public sources support or contradict the finding that "
+                f"{claim[:200].rstrip('.')}? What would settle it?")
+    return ""
 
 
 def day_zero_from_events(lines):

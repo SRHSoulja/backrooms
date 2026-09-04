@@ -150,7 +150,9 @@ function renderThesis() {
     const daysSince = Number.isNaN(zeroAt) ? null : Math.max(0, (Date.now() - zeroAt) / 86400000);
     const cyclesSince = (h.cycle != null && dayZero.cycle != null) ? Math.max(0, h.cycle - dayZero.cycle) : null;
     const rooms = Array.isArray(w.rooms) ? w.rooms : [];
-    const evidenceRooms = rooms.filter(r => r.founded_via === 'evidence-ledger' && (r.founded_cycle == null || dayZero.cycle == null || r.founded_cycle >= dayZero.cycle));
+    const grownRooms = rooms.filter(r => r.founded_via === 'evidence-ledger' && (r.founded_cycle == null || dayZero.cycle == null || r.founded_cycle >= dayZero.cycle));
+    const evidenceRooms = grownRooms.filter(r => r.status !== 'retracted');
+    const retractedRooms = grownRooms.filter(r => r.status === 'retracted');
     const agents = Array.isArray(hire.agents) ? hire.agents : [];
     const count = (list, test) => list.filter(test).length;
     const active = count(agents, a => String(a.status || '').startsWith('active'));
@@ -175,7 +177,7 @@ function renderThesis() {
       <p><strong>What is new.</strong> The growth rule as a running public instance: a room exists only because two findings from different domains were judged to assert the same specific fact, the judge had to name that fact in words drawn from both claims, and the pair, quotes, sources, hashes, and verdict are inspectable on this page. As of the survey dated 2026-09-03 no other running public agent world grows by evidence; the closest relative is a paper without an instance.</p>
       <p><strong>Day zero.</strong> Cycle ${escapeHtml(dayZero.cycle ?? 'unknown')} · ${escapeHtml(dayZero.at || 'unknown')} · ${escapeHtml(fmtDays(daysSince))} ago · runtime host <strong>${escapeHtml(h.host || 'unknown')}</strong>. The world was reset to four founding rooms, two founding voices, and an empty roster, and moved off the operator's machine. Everything below counts only what happened after that point.</p>
       <table class="scoreboard"><thead><tr><th>What would count as proof</th><th>So far</th></tr></thead><tbody>
-      ${row('1 · Rooms founded by corroborated evidence', status(evidenceRooms.length > 0, `${evidenceRooms.length} room${evidenceRooms.length === 1 ? '' : 's'}`) + (evidenceRooms.length ? '<br>' + evidenceRooms.map(r => `${escapeHtml(r.name || r.id)} · cycle ${escapeHtml(r.founded_cycle ?? '?')} · by ${escapeHtml((r.founded_by || []).join(', ') || 'unknown')}`).join('<br>') : `<br><span class="label">${supports} supporting verdict${supports === 1 ? '' : 's'} on the ledger; a room needs one from two domains.</span>`), 'Each must trace to two findings from different domains, judged to assert the same fact, with quotes and hashes in the Evidence tab.')}
+      ${row('1 · Rooms founded by corroborated evidence', status(evidenceRooms.length > 0, `${evidenceRooms.length} standing${retractedRooms.length ? ` · ${retractedRooms.length} withdrawn by rule` : ''}`) + (evidenceRooms.length ? '<br>' + evidenceRooms.map(r => `${escapeHtml(r.name || r.id)} · cycle ${escapeHtml(r.founded_cycle ?? '?')} · by ${escapeHtml((r.founded_by || []).join(', ') || 'unknown')}`).join('<br>') : `<br><span class="label">${supports} supporting verdict${supports === 1 ? '' : 's'} on the ledger; a room needs one from two domains.</span>`), 'Each must trace to two findings from different domains, judged to assert the same fact, with quotes and hashes in the Evidence tab.')}
       ${row('2 · Retractions by a third independent source', status(retractions > 0, `${retractions}`), 'A finding withdrawn because a third source ruled against it, kept in the ledger with its reason.')}
       ${row('3 · A roster that turns over by itself', status(active > 0, `${active} active · ${departed} departed`), 'Hires after interview, departures after dormancy, with no operator action.')}
       ${row('4 · Unattended run', status((cyclesSince ?? 0) > 0, `${cyclesSince ?? '?'} cycles · ${fmtDays(daysSince)}`) + `<br><span class="label">last publication ${escapeHtml(pub.outcome || 'unknown')} · host ${escapeHtml(h.host || 'unknown')}</span>`, 'Consecutive cycles published with no human touching the state; the journal records any exception.')}
@@ -193,6 +195,7 @@ function renderRooms(rooms) {
 }
 function roomOrigin(room) {
   if (!room) return 'unknown';
+  if (room.founded_via === 'evidence-ledger' && room.status === 'retracted') return `founded from evidence at cycle ${escapeHtml(room.founded_cycle ?? '?')}, withdrawn by rule at cycle ${escapeHtml(room.retracted_cycle ?? '?')}: ${escapeHtml(room.retraction_reason || 'founding pair no longer meets the standard')}`;
   if (room.founded_via === 'evidence-ledger') return `grown from corroborated evidence · cycle ${escapeHtml(room.founded_cycle ?? '?')} · founded by ${escapeHtml((room.founded_by || []).join(', ') || 'unknown')}`;
   return 'founding room · declared by the charter, never counted as growth';
 }

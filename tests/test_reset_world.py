@@ -64,6 +64,9 @@ class ResetWorldTests(unittest.TestCase):
         runtime = json.loads((root / "state/local-runtime.json").read_text())
         self.assertEqual(runtime["cycle"], 239)
         self.assertTrue((archive / "RESET.md").read_text().startswith("# World reset test"))
+        day_zero = json.loads((root / "state/day-zero.json").read_text())
+        self.assertEqual((day_zero["cycle"], day_zero["event"]), (239, "event-reset-test"))
+        self.assertTrue(day_zero["at"].startswith("20"))
 
     def test_reset_refuses_while_the_daemon_holds_its_lock(self):
         root = self.make_root()

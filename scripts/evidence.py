@@ -9,6 +9,10 @@ import re
 
 STOPWORDS = {"about", "after", "also", "from", "into", "that", "this", "with", "what", "which",
              "where", "when", "does", "did", "have", "their", "there", "these", "those", "than"}
+# Prepositions, determiners, and auxiliaries name no subject; a corroborated
+# definition of one of them is not evidence about the world.
+FUNCTION_WORDS = {'above', 'across', 'against', 'along', 'although', 'always', 'among', 'another', 'around', 'because', 'been', 'before', 'behind', 'being', 'below', 'beneath', 'between', 'beyond', 'both', 'during', 'each', 'either', 'even', 'ever', 'every', 'hence', 'just', 'less', 'many', 'might', 'more', 'most', 'much', 'must', 'neither', 'never', 'often', 'only', 'onto', 'other', 'others', 'over', 'shall', 'since', 'some', 'still', 'such', 'though', 'through', 'thus', 'toward', 'towards', 'under', 'until', 'upon', 'very', 'were', 'whether', 'while', 'will', 'within', 'without'}
+STOPWORDS |= FUNCTION_WORDS
 IMPERATIVE = re.compile(r"^(?:explore|search|analyze|identify|continue|find|review|investigate|look)\b", re.I)
 QUOTE_SUPPORT_THRESHOLD = 0.85
 MIN_FUZZY_TOKENS = 4

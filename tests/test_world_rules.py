@@ -1,6 +1,6 @@
 import unittest
 
-from scripts.world_rules import (day_zero_from_events, apply_retractions, compute_standing, finding_followup_question, room_lifecycle,
+from scripts.world_rules import (retract_unfounded_rooms, day_zero_from_events, apply_retractions, compute_standing, finding_followup_question, room_lifecycle,
                                  sealed_room_ids, settle_disputes)
 
 
@@ -59,10 +59,11 @@ class WorldRuleTests(unittest.TestCase):
         self.assertEqual(world["rooms"][0].get("status"), None)
 
     def test_followup_question_comes_from_the_finding(self):
-        question = finding_followup_question({"topic": "agent discovery cards", "claim": "Cards are published at a well-known path."})
-        self.assertIn("agent discovery cards", question)
-        self.assertIn("contradict the finding that Cards are published at a well-known path", question)
+        question = finding_followup_question({"topic": "under corroboration journalism scientific", "claim": "Cards are published at a well-known path."})
+        self.assertIn("support or contradict the finding that Cards are published at a well-known path", question)
+        self.assertNotIn("under corroboration journalism", question)  # never a bag of search terms
         self.assertEqual(finding_followup_question({}), "")
+        self.assertEqual(finding_followup_question({"topic": "only a topic"}), "")
 
     def test_day_zero_is_the_latest_world_reset(self):
         lines = ['{"id": "e1", "kind": "arrival", "cycle": 1}', "not json",
@@ -72,6 +73,23 @@ class WorldRuleTests(unittest.TestCase):
         self.assertEqual(day_zero_from_events(lines), {"cycle": 275, "at": "2026-09-04T03:06:25+00:00", "event": "reset-b"})
         self.assertIsNone(day_zero_from_events(['{"kind": "arrival"}']))
         self.assertEqual(day_zero_from_events([{"kind": "world-reset", "cycle": 5, "recorded_at": "t"}])["cycle"], 5)
+
+    def test_rooms_whose_founding_pair_fails_the_current_rules_are_withdrawn(self):
+        world = {"rooms": [{"id": "atrium"},
+                           {"id": "dud", "founded_via": "evidence-ledger", "corroboration_id": "pair-dud", "status": "open"},
+                           {"id": "good", "founded_via": "evidence-ledger", "corroboration_id": "pair-good", "status": "open"},
+                           {"id": "already", "founded_via": "evidence-ledger", "corroboration_id": "pair-dud", "status": "retracted"}]}
+        records = {"pair-dud": {"id": "pair-dud", "finding_ids": ["a", "b"]}, "pair-good": {"id": "pair-good", "finding_ids": ["c", "d"]}}
+        findings = {"a": {"id": "a"}, "b": {"id": "b"}, "c": {"id": "c"}, "d": {"id": "d"}}
+        stands = lambda record, first, second: (record["id"] == "pair-good", "" if record["id"] == "pair-good" else "a founding finding is a dictionary definition")
+        changes = retract_unfounded_rooms(world, records, findings, 281, stands)
+        self.assertEqual(changes, [{"room": "dud", "reason": "a founding finding is a dictionary definition", "corroboration": "pair-dud"}])
+        self.assertEqual(world["rooms"][1]["status"], "retracted")
+        self.assertEqual(world["rooms"][1]["retracted_cycle"], 281)
+        self.assertEqual(world["rooms"][2]["status"], "open")
+        self.assertIn("dud", sealed_room_ids(world))
+        self.assertEqual(retract_unfounded_rooms(world, records, findings, 282, stands), [])
+        self.assertEqual(room_lifecycle(world, [], 500), [])  # a retracted room is never dusted, sealed, or reopened
 
 
 if __name__ == "__main__":

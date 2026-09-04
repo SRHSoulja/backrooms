@@ -2,8 +2,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.corroboration import (append_record, candidate_pairs, claims_overlap, corroboration_index, growth_candidates,
-                                   judge_verdict, judgment_schema, load_records, make_record, pair_id)
+from scripts.corroboration import (append_record, candidate_pairs, claims_overlap, corroboration_index, definition_source,
+                                   founding_pair_stands, growth_candidates, judge_verdict, judgment_schema, load_records,
+                                   make_record, on_topic, pair_id)
 
 
 def finding(identifier, url, claim, topic="agent interoperability standards", status="unreviewed"):
@@ -94,6 +95,35 @@ class CorroborationTests(unittest.TestCase):
         self.assertIn("shared_claim", judgment_schema()["required"])
         contradicts = judge_verdict(launch, founded, {"relation": "contradicts", "shared_claim": "", "reason": "dates differ"})
         self.assertEqual((contradicts["relation"], contradicts["shared_claim"]), ("contradicts", ""))
+
+    def test_dictionary_definitions_never_corroborate_and_off_topic_facts_do_not_grow_rooms(self):
+        cambridge = {"id": "f-cam", "topic": "corroboration journalism scientific", "status": "accepted",
+                     "claim": "The preposition under can indicate a position below or lower than something else.",
+                     "url": "https://dictionary.cambridge.org/dictionary/english/under"}
+        dictionary = {"id": "f-dict", "topic": "corroboration journalism scientific", "status": "accepted",
+                      "claim": "The word under can function as a preposition indicating a position beneath something.",
+                      "url": "https://www.dictionary.com/browse/under"}
+        self.assertTrue(definition_source(cambridge) and definition_source(dictionary))
+        self.assertEqual(candidate_pairs([cambridge, dictionary]), [])
+        shared = "The preposition under indicates a position below something."
+        self.assertFalse(on_topic(shared, cambridge, dictionary))
+        verdict = judge_verdict(cambridge, dictionary, {"relation": "supports", "shared_claim": shared, "reason": "same definition"})
+        self.assertEqual((verdict["relation"], verdict["model_relation"]), ("unrelated", "supports"))
+        record = {"id": "pair-dud", "finding_ids": ["f-cam", "f-dict"], "shared_claim": shared, "relation": "supports"}
+        ok, reason = founding_pair_stands(record, cambridge, dictionary)
+        self.assertFalse(ok)
+        self.assertEqual(reason, "a founding finding is a dictionary definition")
+        journalism = {"id": "f-j", "topic": "corroboration journalism scientific", "status": "accepted",
+                      "claim": "Journalism standards require two independent sources before a claim is published.",
+                      "url": "https://example.org/standards"}
+        science = {"id": "f-s", "topic": "corroboration journalism scientific", "status": "accepted",
+                   "claim": "Scientific review treats a result as corroborated when independent groups reproduce it.",
+                   "url": "https://example.net/review"}
+        fact = "Independent sources are required before a claim counts as corroborated in journalism and science."
+        self.assertTrue(on_topic(fact, journalism, science))
+        ok, reason = founding_pair_stands({"id": "pair-ok", "finding_ids": ["f-j", "f-s"], "shared_claim": fact}, journalism, science)
+        self.assertTrue(ok, reason)
+        self.assertEqual(founding_pair_stands(None, journalism, science)[0], False)
 
 
 if __name__ == "__main__":
