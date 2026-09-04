@@ -851,6 +851,8 @@ class LocalAutonomyTests(unittest.TestCase):
         # a search-results page is not a source: it becomes a search for its own query
         self.assertEqual(route("https://github.com/search?q=org%3Apropublica+wall+street+journal&type=repositories"),
                          ("public-search", "wall street journal"))
+        self.assertEqual(route("https://github.com/search?q=roscomnadzor+OR+takedown+NOT+%22spam%22&type=repositories"),
+                         ("public-search", "roscomnadzor takedown spam"))
         self.assertTrue(local_autonomy.search_page("https://en.wikipedia.org/w/index.php?search=x"))
         self.assertFalse(local_autonomy.search_page("https://en.wikipedia.org/wiki/Search_engine"))
         self.assertIsNone(local_autonomy.TECHNICAL.search("Does the Wall Street Journal editorial process measured by a statistical model differ"))
@@ -890,7 +892,13 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(local_autonomy.target_claim_for("journalism corroboration standards")["id"], "finding-a")
         for n in range(3):
             append_record(local_autonomy.CORROBORATIONS, make_record(first, {**verifier, "id": f"f-{n}", "url": f"https://x{n}.example/"}, f"pair-{n}", "unrelated", "", 7))
-        self.assertEqual(local_autonomy.target_claim_for("journalism corroboration standards")["id"], "finding-v")
+        # judged pairs alone do not exhaust a claim; three verification attempts do
+        self.assertEqual(local_autonomy.target_claim_for("journalism corroboration standards")["id"], "finding-a")
+        tries = [{**verifier, "id": f"finding-t{n}", "url": f"https://t{n}.example/"} for n in range(3)]
+        self._write_findings(first, verifier, *tries)
+        exhausted = local_autonomy.target_claim_for("journalism corroboration standards")
+        self.assertNotEqual(exhausted["id"], "finding-a")
+        self.assertEqual(exhausted["origin"], "verify-claim")
         self.assertIsNone(local_autonomy.target_claim_for("something else"))
         self.assertIsNone(local_autonomy.target_claim_for(""))
 

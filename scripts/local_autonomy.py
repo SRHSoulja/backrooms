@@ -1152,10 +1152,13 @@ def target_claim_for(topic):
         return None
     records = load_records(CORROBORATIONS)
     supported = corroboration_index(records)
-    judged_against = {}
-    for record in records:
-        for identifier in record.get("finding_ids", []):
-            judged_against[identifier] = judged_against.get(identifier, 0) + 1
+    # Only genuine verification attempts count against a claim: findings that
+    # were made while looking for that claim in another source. Pairs the
+    # ledger judged for other reasons do not exhaust it.
+    attempts = {}
+    for item in all_findings():
+        if item.get("verifies"):
+            attempts[item["verifies"]] = attempts.get(item["verifies"], 0) + 1
     wanted = {term[:6] for term in question_terms(topic, limit=12).split()}
     candidates = []
     for item in reversed(accepted_findings()):
@@ -1165,7 +1168,7 @@ def target_claim_for(topic):
             continue
         if definition_source(item) or not finding_on_topic(item):
             continue
-        if judged_against.get(item.get("id"), 0) >= VERIFY_ATTEMPTS:
+        if attempts.get(item.get("id"), 0) >= VERIFY_ATTEMPTS:
             continue  # tried enough independent sources; this claim is a dead end for now
         candidates.append(item)
     # A claim a resident found directly comes before a claim produced while
@@ -1220,7 +1223,8 @@ def route_exploration(target, root=None):
     if re.match(r"https://", value, re.I) and search_page(value):
         params = urllib.parse.parse_qs(urllib.parse.urlparse(value).query)
         query = " ".join(params.get("q") or params.get("query") or params.get("search") or [""])
-        query = re.sub(r"\b(?:org|repo|user|language|type|site):\S*", " ", query)
+        query = re.sub(r"\b(?:org|repo|user|language|type|site|in|is|filename|path):\S*", " ", query)
+        query = re.sub(r"\b(?:OR|AND|NOT)\b|[\"'+()]", " ", query)
         return "public-search", re.sub(r"\s+", " ", query).strip()[:160] or re.sub(r"https?://", "", value)[:160]
     if re.match(r"https://", value, re.I):
         path = value.lower().split("?", 1)[0]
@@ -1998,7 +2002,8 @@ def main():
                 candidates = [item.get("url", "") for item in tool["results"]
                               if re.match(r"https://", str(item.get("url", "")), re.I)
                               and not definition_source({"url": item.get("url", "")})
-                              and not search_page(item.get("url", ""))]
+                              and not search_page(item.get("url", ""))
+                              and urllib.parse.urlparse(str(item.get("url", ""))).path.strip("/")]  # a homepage holds no specific fact
                 if research_assignment and shared_avoid:
                     # A second finding from the same domain cannot corroborate
                     # the first; prefer any other domain when one exists.
