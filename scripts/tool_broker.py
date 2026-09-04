@@ -370,19 +370,94 @@ def wikipedia_references(query, max_results=5):
     return results
 
 
+try:
+    from scripts.model_client import setting as _setting
+except ImportError:
+    try:
+        from model_client import setting as _setting
+    except ImportError:  # the broker still works without the router module
+        _setting = lambda name, default=None: default
+SEARCH_USAGE = Path(__file__).resolve().parents[1] / "state" / "search-usage.json"
+LANGSEARCH_DAILY_CAP = 800
+
+
+def post_json(url, payload, headers, timeout=20):
+    """One bounded JSON POST to a public HTTPS API (used only for search APIs)."""
+    parsed = urllib.parse.urlparse(url)
+    if parsed.scheme != "https" or not parsed.hostname or not public_host(parsed.hostname):
+        raise ValueError("only public HTTPS APIs are allowed")
+    request = urllib.request.Request(url, data=json.dumps(payload).encode(), method="POST",
+                                     headers={"Content-Type": "application/json", "Accept-Encoding": "identity",
+                                              "User-Agent": BROKER_AGENT, **headers})
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        return json.loads(response.read(MAX_BYTES).decode("utf-8", "replace"))
+
+
+def _search_budget_left():
+    """A daily counter so the search API's free tier is never exceeded."""
+    from datetime import datetime, timezone
+    today = datetime.now(timezone.utc).date().isoformat()
+    try:
+        usage = json.loads(SEARCH_USAGE.read_text())
+    except (OSError, ValueError):
+        usage = {}
+    if usage.get("day") != today:
+        usage = {"day": today, "count": 0}
+    if usage.get("count", 0) >= LANGSEARCH_DAILY_CAP:
+        return False
+    usage["count"] = usage.get("count", 0) + 1
+    try:
+        SEARCH_USAGE.parent.mkdir(parents=True, exist_ok=True)
+        SEARCH_USAGE.write_text(json.dumps(usage))
+    except OSError:
+        pass
+    return True
+
+
+def langsearch_search(query, count=8):
+    """A real web index through the LangSearch API when a key is configured;
+    returns [] without a key, over budget, or on any failure."""
+    key = _setting("LANGSEARCH_API_KEY")
+    if not key or not _search_budget_left():
+        return []
+    try:
+        data = post_json("https://api.langsearch.com/v1/web-search",
+                         {"query": query, "freshness": "noLimit", "summary": False, "count": count},
+                         {"Authorization": "Bearer " + str(key)})
+    except Exception:
+        return []
+    pages = ((data.get("data") or {}).get("webPages") or data.get("webPages") or {}).get("value") or []
+    results = []
+    for item in pages:
+        url = str(item.get("url") or "").strip()
+        title = re.sub(r"\s+", " ", str(item.get("name") or item.get("title") or "")).strip()
+        if not url.lower().startswith("https://") or re.search(r"(?:login|log-in|signin|sign-in|authenticate|/auth(?:/|$)|/account(?:/|$))", url, re.I):
+            continue
+        if re.search(r"(?i)(/search(?:/|\?|$)|[?&](?:q|query|search)=)", url):
+            continue
+        results.append({"title": title[:160], "url": url[:500], "snippet": re.sub(r"\s+", " ", str(item.get("snippet") or ""))[:240]})
+        if len(results) >= 5:
+            break
+    return results
+
+
 def public_search(query):
     query = re.sub(r"\s+", " ", str(query)).strip(" ,.;:!?")
     if not query or len(query) > 160 or BLOCKED.search(query):
         raise ValueError("query failed bounded validation")
     params = urllib.parse.urlencode({"q": query, "kl": "us-en"})
-    results = []
-    provider = "https://html.duckduckgo.com/"
-    try:
-        page = fetch("https://html.duckduckgo.com/html/?" + params)
-        pattern = r'class="result__a"[^>]*href="([^"]+)"[^>]*>(.*?)</a>'
-        matches = re.finditer(pattern, page, re.I | re.S)
-    except Exception:
-        matches = []
+    # A keyed web index first (LangSearch, when the operator configured a key),
+    # then the engine, then Wikipedia's references and articles.
+    results = langsearch_search(query)
+    provider = "https://api.langsearch.com/" if results else "https://html.duckduckgo.com/"
+    matches = []
+    if not results:
+        try:
+            page = fetch("https://html.duckduckgo.com/html/?" + params)
+            pattern = r'class="result__a"[^>]*href="([^"]+)"[^>]*>(.*?)</a>'
+            matches = re.finditer(pattern, page, re.I | re.S)
+        except Exception:
+            matches = []
     for match in matches:
         url = html.unescape(match.group(1))
         title = re.sub(r"<[^>]+>", "", html.unescape(match.group(2))).strip()
@@ -436,7 +511,7 @@ def public_search(query):
         needed = 1 if len(terms) < 3 else 2
         stems = {term[:5] for term in terms}
         def hits(item):
-            haystack = (item.get("title", "") + " " + item.get("url", "")).lower()
+            haystack = (item.get("title", "") + " " + item.get("url", "") + " " + str(item.get("snippet") or "")).lower()
             return sum(stem in haystack for stem in stems)
         ranked = sorted(results, key=hits, reverse=True)
         results = [item for item in ranked if hits(item) >= needed][:5]

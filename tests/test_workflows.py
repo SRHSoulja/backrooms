@@ -25,7 +25,7 @@ class CycleWorkflowTests(unittest.TestCase):
 
     def test_provider_key_goes_to_a_temp_file_and_is_removed(self):
         self.assertIn("secrets.MISTRAL_API_KEY", self.text)
-        for name in ("GEMINI_API_KEY", "GROQ_API_KEY", "CEREBRAS_API_KEY", "OPENROUTER_API_KEY"):
+        for name in ("GEMINI_API_KEY", "GROQ_API_KEY", "CEREBRAS_API_KEY", "OPENROUTER_API_KEY", "LANGSEARCH_API_KEY"):
             self.assertIn(f"secrets.{name}", self.text)
         self.assertIn("install -m 600", self.text)
         self.assertIn("BACKROOMS_ENV_FILE=", self.text)

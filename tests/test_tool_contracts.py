@@ -255,5 +255,46 @@ class ToolContractTests(unittest.TestCase):
         self.assertEqual(tool_broker.focused_passage(text, ""), text)
 
 
+    def test_langsearch_is_first_when_a_key_is_set_and_absent_otherwise(self):
+        import tempfile
+        original_post, original_setting, original_usage = tool_broker.post_json, tool_broker._setting, tool_broker.SEARCH_USAGE
+        original_fetch = tool_broker.fetch
+        try:
+            tool_broker.SEARCH_USAGE = Path(tempfile.mkdtemp()) / "search-usage.json"
+            calls = []
+            def fake_post(url, payload, headers, timeout=20):
+                calls.append((url, payload["query"], headers.get("Authorization")))
+                return {"data": {"webPages": {"value": [
+                    {"name": "The Wall Street Journal - Dow Jones", "url": "https://www.dowjones.com/brands/wsj/", "snippet": "publisher of the Journal"},
+                    {"name": "WSJ search", "url": "https://www.wsj.com/search?query=dow", "snippet": ""},
+                    {"name": "Sign in", "url": "https://www.wsj.com/login", "snippet": ""}]}}}
+            tool_broker.post_json = fake_post
+            tool_broker._setting = lambda name, default=None: "test-key" if name == "LANGSEARCH_API_KEY" else default
+            tool_broker.fetch = lambda url, max_bytes=None, user_agent=None: (_ for _ in ()).throw(AssertionError("engine must not be called"))
+            result = tool_broker.public_search("wall street journal dow jones")
+            self.assertEqual(result["source"], "https://api.langsearch.com/")
+            self.assertEqual([item["url"] for item in result["results"]], ["https://www.dowjones.com/brands/wsj/"])
+            self.assertEqual(calls[0][2], "Bearer test-key")
+            self.assertEqual(calls[0][1], "wall street journal dow jones")
+            # without a key the API is never called
+            tool_broker._setting = lambda name, default=None: default
+            tool_broker.fetch = lambda url, max_bytes=None, user_agent=None: '<a class="result__a" href="https://example.org/wsj">The Wall Street Journal - Dow Jones</a>' if "duckduckgo" in url else "{}"
+            result = tool_broker.public_search("wall street journal dow jones")
+            self.assertEqual(result["source"], "https://html.duckduckgo.com/")
+            self.assertEqual(len(calls), 1)
+        finally:
+            tool_broker.post_json, tool_broker._setting, tool_broker.SEARCH_USAGE, tool_broker.fetch = original_post, original_setting, original_usage, original_fetch
+
+    def test_langsearch_daily_cap_stops_calls(self):
+        import tempfile
+        original_usage, original_cap = tool_broker.SEARCH_USAGE, tool_broker.LANGSEARCH_DAILY_CAP
+        try:
+            tool_broker.SEARCH_USAGE = Path(tempfile.mkdtemp()) / "search-usage.json"
+            tool_broker.LANGSEARCH_DAILY_CAP = 2
+            self.assertEqual([tool_broker._search_budget_left() for _ in range(3)], [True, True, False])
+        finally:
+            tool_broker.SEARCH_USAGE, tool_broker.LANGSEARCH_DAILY_CAP = original_usage, original_cap
+
+
 if __name__ == "__main__":
     unittest.main()
