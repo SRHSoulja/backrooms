@@ -1382,6 +1382,7 @@ try:
     if _delay > 0 and not args.once:
         print(json.dumps({"daemon": "resuming cadence after restart", "idle_seconds": round(_delay)}), flush=True)
         sleep_between_cycles(_delay)
+    completed_cycles = 0
     while True:
         if reload_requested:
             print(json.dumps({"daemon": "reload requested; exiting after completed cycle"}), flush=True)
@@ -1438,7 +1439,7 @@ try:
                 stop_local_model(server)
                 server = None
                 raise RuntimeError("local model exited during roundtable")
-        completed_cycles = locals().get("completed_cycles", 0) + 1
+        completed_cycles += 1
         post_cycle = os.getenv("BACKROOMS_POST_CYCLE", "").strip()
         if post_cycle:
             # A hosted run saves its private state after every cycle so a cancelled
