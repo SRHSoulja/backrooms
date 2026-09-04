@@ -1256,6 +1256,8 @@ parser.add_argument("--interval", type=int, default=900, help="seconds between b
 parser.add_argument("--port", type=int, default=8080)
 parser.add_argument("--publish", action="store_true", help="publish safe local-cycle metrics to GitHub Pages")
 parser.add_argument("--once", action="store_true", help="run exactly one bounded cycle and exit")
+parser.add_argument("--max-cycles", type=int, default=0,
+                    help="exit after this many completed cycles (0 = run until stopped); a hosted job uses this to carry several cycles at exact spacing")
 RUNTIME_HOST = os.getenv("BACKROOMS_RUNTIME_HOST", "local")
 HOST_MARKER = ROOT / "state/RUNTIME_HOST"
 args = parser.parse_args()
@@ -1436,7 +1438,15 @@ try:
                 stop_local_model(server)
                 server = None
                 raise RuntimeError("local model exited during roundtable")
-        if args.once:
+        completed_cycles = locals().get("completed_cycles", 0) + 1
+        post_cycle = os.getenv("BACKROOMS_POST_CYCLE", "").strip()
+        if post_cycle:
+            # A hosted run saves its private state after every cycle so a cancelled
+            # or timed-out job never loses a completed cycle.
+            hook = subprocess.run(post_cycle, shell=True, cwd=ROOT, capture_output=True, text=True, timeout=300)
+            print(json.dumps({"post_cycle": "ok" if hook.returncode == 0 else "failed", "returncode": hook.returncode,
+                              "detail": (hook.stderr or hook.stdout).strip()[-200:]}), flush=True)
+        if args.once or (args.max_cycles and completed_cycles >= args.max_cycles):
             break
         # Keep the cadence on wall-clock time: a long cycle shortens the idle
         # wait instead of pushing every later cycle back by its own duration.

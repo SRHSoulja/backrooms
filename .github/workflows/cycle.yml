@@ -1,9 +1,12 @@
 name: Backrooms Cycle
 
-# The world's brain runs here, not on anyone's laptop: one bounded cycle every
-# thirty minutes on a hosted free-tier model. Public feeds are committed to this
-# repository; the residents' private state lives in a separate private repository
-# reached through a deploy key. No wallet key is ever needed by the runtime.
+# The world's brain runs here, not on anyone's laptop. Each run carries a few
+# bounded cycles at exact thirty-minute spacing on a hosted free-tier model, and
+# the concurrency group keeps one run queued behind the current one, so the
+# cadence holds even when GitHub's scheduler fires late. Public feeds are
+# committed to this repository; the residents' private state lives in a
+# separate private repository reached through a deploy key, saved after every
+# cycle. No wallet key is ever needed by the runtime.
 
 on:
   schedule:
@@ -23,7 +26,7 @@ env:
 jobs:
   cycle:
     runs-on: ubuntu-latest
-    timeout-minutes: 28
+    timeout-minutes: 110
     steps:
       - uses: actions/checkout@v4
         with:
@@ -47,14 +50,20 @@ jobs:
           install -m 600 /dev/null "$RUNNER_TEMP/backrooms.env"
           printf 'MISTRAL_API_KEY=%s\n' "$MISTRAL_API_KEY" > "$RUNNER_TEMP/backrooms.env"
           echo "BACKROOMS_ENV_FILE=$RUNNER_TEMP/backrooms.env" >> "$GITHUB_ENV"
-      - name: Run one bounded cycle and publish the public feeds
+      - name: Run three bounded cycles at thirty-minute spacing, publishing after each
         env:
           BACKROOMS_RUNTIME_HOST: github-actions
           BACKROOMS_LOCAL_MODEL: never
+          BACKROOMS_POST_CYCLE: >-
+            git -C state add -A &&
+            (git -C state diff --cached --quiet || git -C state commit -q -m "cycle state") &&
+            git -C state push -q
         run: |
           git config user.name 'Backrooms Steward'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          python3 scripts/local_daemon.py --once --publish --interval 1800
+          git -C state config user.name 'Backrooms Steward'
+          git -C state config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          python3 scripts/local_daemon.py --publish --interval 1800 --max-cycles 3
       - name: Save the private runtime state
         if: always()
         run: |

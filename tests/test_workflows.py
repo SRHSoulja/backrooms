@@ -18,7 +18,8 @@ class CycleWorkflowTests(unittest.TestCase):
     def test_never_starts_a_local_model_and_names_its_host(self):
         self.assertIn("BACKROOMS_LOCAL_MODEL: never", self.text)
         self.assertIn("BACKROOMS_RUNTIME_HOST: github-actions", self.text)
-        self.assertIn("--once --publish", self.text)
+        self.assertIn("--publish --interval 1800 --max-cycles 3", self.text)
+        self.assertIn("BACKROOMS_POST_CYCLE", self.text)
 
     def test_provider_key_goes_to_a_temp_file_and_is_removed(self):
         self.assertIn("secrets.MISTRAL_API_KEY", self.text)
