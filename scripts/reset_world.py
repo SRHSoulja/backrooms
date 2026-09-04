@@ -114,6 +114,11 @@ def reset_world(root, stamp=None, dry_run=False, keep_research=False):
         shutil.copy2(runtime, archive / "local-runtime.json")
     atomic_write_json(world_path, fresh)
     atomic_write_json(state / "day-zero.json", {"cycle": cycle, "at": founding_world.last_event["recorded_at"], "event": founding_world.last_event["id"]})
+    # The reset event joins the permanent archive so day zero is recoverable from the record itself.
+    archive_log = state / "archive" / "events.jsonl"
+    archive_log.parent.mkdir(parents=True, exist_ok=True)
+    with archive_log.open("a") as handle:
+        handle.write(json.dumps(founding_world.last_event, separators=(",", ":")) + "\n")
     atomic_write_json(runtime, {**fresh, "events": fresh["events"][-20:]})
     atomic_write_json(state / "local-agents.json", {"privacy": "local registry; no credentials or private memory", "agents": [], "decisions": []})
     (archive / "RESET.md").write_text(

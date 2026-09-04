@@ -67,6 +67,8 @@ class ResetWorldTests(unittest.TestCase):
         day_zero = json.loads((root / "state/day-zero.json").read_text())
         self.assertEqual((day_zero["cycle"], day_zero["event"]), (239, "event-reset-test"))
         self.assertTrue(day_zero["at"].startswith("20"))
+        archived = [json.loads(line) for line in (root / "state/archive/events.jsonl").read_text().splitlines()]
+        self.assertEqual([e["kind"] for e in archived if e.get("kind") == "world-reset"], ["world-reset"])
 
     def test_reset_refuses_while_the_daemon_holds_its_lock(self):
         root = self.make_root()
@@ -104,7 +106,13 @@ class ResetWorldTests(unittest.TestCase):
         digest = lambda name: hashlib.sha256((root / name).read_bytes()).hexdigest()
         before = {name: digest(name) for name in precious}
         plan = reset_world.reset_world(root, stamp="keep")
-        self.assertEqual({name: digest(name) for name in precious}, before)
+        after = {name: digest(name) for name in precious}
+        # The permanent archive is the one exception: it grows by exactly the reset event and loses nothing.
+        archive_text = (root / "state/archive/events.jsonl").read_text()
+        self.assertTrue(archive_text.startswith(precious["state/archive/events.jsonl"]))
+        self.assertIn('"kind":"world-reset"', archive_text.splitlines()[-1])
+        del before["state/archive/events.jsonl"], after["state/archive/events.jsonl"]
+        self.assertEqual(after, before)
         self.assertTrue(any("wallet" in item for item in plan["untouched"]))
         self.assertTrue(any(".config/backrooms" in item for item in plan["untouched"]))
         self.assertIn("Never touched", (state / "archive/reset-keep/RESET.md").read_text())

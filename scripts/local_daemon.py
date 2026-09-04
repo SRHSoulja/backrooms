@@ -1094,11 +1094,16 @@ def day_zero_record(world):
                 return zero
     except (OSError, json.JSONDecodeError):
         pass
-    try:
-        zero = day_zero_from_events(world.get("events", [])) \
-            or day_zero_from_events(ARCHIVE.read_text().splitlines() if ARCHIVE.exists() else [])
-    except OSError:
-        zero = None
+    zero = None
+    for source in (lambda: world.get("events", []),
+                   lambda: json.loads(STATE.read_text()).get("events", []) if STATE.exists() else [],
+                   lambda: ARCHIVE.read_text().splitlines() if ARCHIVE.exists() else []):
+        try:
+            zero = day_zero_from_events(source())
+        except (OSError, json.JSONDecodeError, AttributeError):
+            zero = None
+        if zero:
+            break
     if zero:
         try:
             atomic_write_json(DAY_ZERO, zero)
