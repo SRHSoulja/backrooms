@@ -62,12 +62,15 @@ BUILTIN = {
     # allows 20k tokens a minute while the Ministral models allow 600k+ and many
     # more requests. The family shares one key but each entry keeps its own
     # window and cooldown, so a throttled model hands over to the next.
+    # Daily token budgets keep a month of cycles inside the free tier's monthly
+    # credit (about ten dollars): 900k + 400k + 100k tokens a day is roughly
+    # five dollars a month at these models' list prices.
     "mistral": {"base_url": "https://api.mistral.ai", "key": "MISTRAL_API_KEY", "model": "ministral-14b-2512",
-                "rpm": 20, "rpd": None, "tpd": None, "json_schema": True},
+                "rpm": 20, "rpd": None, "tpd": 900_000, "json_schema": True},
     "mistral-8b": {"base_url": "https://api.mistral.ai", "key": "MISTRAL_API_KEY", "model": "ministral-8b-2512",
-                   "rpm": 120, "rpd": None, "tpd": None, "json_schema": True},
+                   "rpm": 120, "rpd": None, "tpd": 400_000, "json_schema": True},
     "mistral-small": {"base_url": "https://api.mistral.ai", "key": "MISTRAL_API_KEY", "model": "mistral-small-latest",
-                      "rpm": 10, "rpd": None, "tpd": None, "json_schema": True},
+                      "rpm": 10, "rpd": None, "tpd": 100_000, "json_schema": True},
     "gemini": {"base_url": "https://generativelanguage.googleapis.com/v1beta/openai", "key": "GEMINI_API_KEY",
                "model": "gemini-2.5-flash", "rpm": 8, "rpd": 900, "tpd": None, "json_schema": True},
     "cerebras": {"base_url": "https://api.cerebras.ai", "key": "CEREBRAS_API_KEY", "model": "qwen-3-32b",
