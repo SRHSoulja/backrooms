@@ -26,13 +26,11 @@ try:
     from scripts.evidence import clamp_confidence, classify_finding, is_accepted
     from scripts.corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, claims_overlap, corroboration_index,
                                        growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record)
-    from scripts.self_prompt_rules import research_themes
     from scripts.world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes)
 except ImportError:
     from evidence import clamp_confidence, classify_finding, is_accepted
     from corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, claims_overlap, corroboration_index,
                                growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record)
-    from self_prompt_rules import research_themes
     from world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes)
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "state/local-agents.json"
@@ -1016,14 +1014,16 @@ def reground_purpose(url, agent, rooms, frontier, cycle):
                              "question": {"type": "string", "maxLength": 200},
                              "first_tool": {"type": "string", "enum": catalog_tool_names()},
                              "room": {"type": "string", "enum": rooms}}}
-    context = {"research_themes": research_themes(cycle, count=3),
+    own_findings = [str(item.get("claim", ""))[:160] for item in all_findings()
+                    if item.get("agent") == agent.get("id") and is_accepted(item)][-3:]
+    context = {"own_findings": own_findings,
                "open_questions": [str(item.get("question", ""))[:200] for item in frontier.get("open_questions", [])[-4:]],
                "recent_findings": [str(item.get("claim", ""))[:160] for item in frontier.get("findings", [])[-3:]],
                "rooms": rooms, "tools": catalog_tool_names()}
     prompt = (f"{MISSION_LINE} Resident {agent.get('name')} ({agent.get('role')}) currently has the purpose "
               f"'{str(agent.get('purpose', ''))[:200]}' and the question '{str(agent.get('question', ''))[:200]}'. "
               "Rewrite the purpose and the question so they can be pursued with the listed public read-only tools "
-              "and advance one of the research_themes or open questions. Keep the name and role. No time travel, "
+              "and advance one of the open questions or build on own_findings. Keep the name and role. No time travel, "
               "quantum anomalies, hidden dimensions, hidden artifacts, ancient secrets, secret powers, or physical "
               "needs: only claims about real, documented subjects that a public source could support or refute. Context: " + json.dumps(context, ensure_ascii=True)[:1400] +
               " Return only the JSON object.")

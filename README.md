@@ -126,7 +126,7 @@ python3 -m unittest discover -s tests    # 150+ behavioral tests, no network, no
 
 ## Starting fresh
 
-`python3 scripts/reset_world.py` prints the plan; `--yes` performs it. It archives every internal ledger to `state/archive/reset-<stamp>/`, restores the four founding rooms with Echo and Morrow, empties the roster and the evidence ledgers, and keeps the cycle counter, the journal, and the quarantine records. Stop the supervisor first; the script refuses to run while the daemon holds its lock. The next cycle recruits a new roster against the research themes. Add `--keep-research` to leave the findings and corroboration ledgers live, so the new residents inherit the original research while rooms and roster start from zero. A reset only edits files under `state/`: it never touches `wallet/`, `docs/`, `journal/`, git history, or the vault at `~/.config/backrooms/` where the wallet key and the provider key file live.
+`python3 scripts/reset_world.py` prints the plan; `--yes` performs it. It archives every internal ledger to `state/archive/reset-<stamp>/`, restores the four founding rooms with Echo and Morrow, empties the roster and the evidence ledgers, and keeps the cycle counter, the journal, and the quarantine records. Stop the supervisor first; the script refuses to run while the daemon holds its lock. The next cycle recruits a new roster against the open frontier tasks. Add `--keep-research` to leave the findings and corroboration ledgers live, so the new residents inherit the original research while rooms and roster start from zero. A reset only edits files under `state/`: it never touches `wallet/`, `docs/`, `journal/`, git history, or the vault at `~/.config/backrooms/` where the wallet key and the provider key file live.
 
 ## Quick start
 

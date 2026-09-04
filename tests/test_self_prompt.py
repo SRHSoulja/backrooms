@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 
-from scripts.self_prompt_rules import valid
+from scripts.self_prompt_rules import carry_forward, rejection_reason, valid
 
 
 class SelfPromptTests(unittest.TestCase):
@@ -34,23 +34,6 @@ class SelfPromptTests(unittest.TestCase):
         self.assertEqual([item["question"] for item in context["frontier_questions"]], ["open one"])
         self.assertEqual(context["open_contradictions"][0]["reason"], "r")
         self.assertEqual(context["untrusted_outside_leads"][0]["text"], "outside review text")
-
-    def test_research_themes_rotate_by_cycle_and_survive_a_missing_file(self):
-        from scripts.self_prompt_rules import research_themes
-        first = research_themes(0, count=2)
-        second = research_themes(1, count=2)
-        self.assertEqual(len(first), 2)
-        self.assertEqual(first[1], second[0])
-        self.assertTrue(all(isinstance(item, str) and item for item in first))
-        self.assertEqual(research_themes(3, path="/nonexistent/themes.json"), [])
-
-    def test_theme_questions_are_concrete_and_rotate(self):
-        from scripts.self_prompt_rules import theme_questions, valid
-        first = theme_questions(0, count=2)
-        self.assertEqual(len(first), 2)
-        self.assertEqual(theme_questions(1, count=1)[0], first[1])
-        for question in theme_questions(0, count=8):
-            self.assertTrue(valid(f"QUESTION: {question}\nWHY: theme.\nTEST: compare two public sources."), question)
 
     def test_rejects_self_referential_marker_loop(self):
         proposal = ("QUESTION: Why did Echo's evidence markers decrease after the hypothesis weakened?\n"

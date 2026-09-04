@@ -40,7 +40,7 @@ try:
     from scripts.evidence import classify_finding, is_accepted
     from scripts.corroboration import corroboration_index, load_records
     from scripts.codex_reviews import consume_outbox
-    from scripts.self_prompt_rules import finding_followup_question, research_themes, theme_questions
+    from scripts.self_prompt_rules import carry_forward, finding_followup_question
     from scripts.world_rules import day_zero_from_events
     from scripts import model_client
     from scripts import journal as journal_module
@@ -48,7 +48,7 @@ except ImportError:
     from evidence import classify_finding, is_accepted
     from corroboration import corroboration_index, load_records
     from codex_reviews import consume_outbox
-    from self_prompt_rules import finding_followup_question, research_themes, theme_questions
+    from self_prompt_rules import carry_forward, finding_followup_question
     from world_rules import day_zero_from_events
     import model_client
     import journal as journal_module
@@ -706,14 +706,23 @@ def next_question(base_url):
         followup = finding_followup_question(latest)
         if followup:
             return followup[:300], "finding-followup", accepted
-    questions = theme_questions(cycle, count=1)
-    if questions:
-        return questions[0][:300], "theme-fallback", accepted
-    themes = research_themes(cycle, count=1)
-    if themes:
-        return (f"What does current public evidence say about {themes[0]}, and which two independent sources "
-                "could confirm or challenge it?", "theme-fallback", accepted)
-    return ("Which public finding should the Backrooms verify next, and what result would change our view?",
+    # No list a human wrote: when the residents produce nothing valid and no
+    # finding is there to follow, the council carries its own newest open
+    # question forward; failing even that, it repeats the last cycle's question.
+    try:
+        frontier_items = json.loads(LOCAL_FRONTIER.read_text()).get("open_questions", []) if LOCAL_FRONTIER.exists() else []
+    except (OSError, json.JSONDecodeError):
+        frontier_items = []
+    carried = carry_forward(frontier_items)
+    if carried:
+        return str(carried.get("question", ""))[:300], "carried:" + str(carried.get("id", "frontier")), accepted
+    try:
+        previous = str(json.loads(PUBLIC_CYCLE.read_text()).get("question", "")).strip() if PUBLIC_CYCLE.exists() else ""
+    except (OSError, json.JSONDecodeError):
+        previous = ""
+    if previous:
+        return previous[:300], "carried:previous-cycle", accepted
+    return ("Which claim in the open record is least supported by an independent public source, and which source could settle it?",
             "fixed-fallback", accepted)
 
 
@@ -779,7 +788,8 @@ def sync_frontier(result, world, registry):
     question = str(result.get("question", "")).strip()[:300]
     if question and not any(item.get("id") == f"frontier-question-{cycle}" for item in frontier["open_questions"]):
         frontier["open_questions"].append({"id": f"frontier-question-{cycle}", "cycle": cycle,
-                                           "source": "council", "question": question, "status": "open"})
+                                           "source": "council", "question_source": str(result.get("question_source") or ""),
+                                           "question": question, "status": "open"})
     known = {item.get("id") for item in frontier["findings"]}
     for discovery in world.get("discoveries", [])[-20:]:
         if discovery.get("id") in known:
@@ -876,7 +886,7 @@ def sync_frontier(result, world, registry):
     atomic_write_json(LOCAL_FRONTIER, frontier)
     public = {"schema_version": 1, "updated_at": frontier["updated_at"],
               "privacy": "Sanitized frontier questions, finding metadata, and open task summaries only.",
-              "open_questions": [{key: item.get(key) for key in ("id", "cycle", "source", "question", "status")}
+              "open_questions": [{key: item.get(key) for key in ("id", "cycle", "source", "question_source", "question", "status")}
                                  for item in frontier["open_questions"][-50:]],
               "findings": [{key: item.get(key) for key in ("id", "cycle", "source", "room", "claim", "status", "source_url", "source_hash")}
                            for item in frontier["findings"][-50:]],

@@ -583,7 +583,7 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertTrue(local_autonomy.needs_regrounding(agent))
         self.assertEqual(len(agent["purpose_history"]), 1)
         prompt = captured["body"]["messages"][-1]["content"]
-        self.assertIn("research_themes", prompt)
+        self.assertIn("own_findings", prompt)
         self.assertIn("Are the Atrium and Relay connected?", prompt)
         self.assertIn("No time travel", prompt)
         self.assertIn("wikipedia-summary", captured["body"]["response_format"]["json_schema"]["schema"]["properties"]["first_tool"]["enum"])
