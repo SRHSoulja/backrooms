@@ -14,22 +14,75 @@ MAX_DATA = 6000
 CONTRACT = {"capability": "local-code-execution", "access": "restricted-python",
             "network": "none by language policy", "side_effects": "temporary workspace only",
             "max_code": MAX_CODE, "max_data": MAX_DATA, "timeout_seconds": 5, "max_output": MAX_OUTPUT}
-SAFE_CALLS = {"print", "len", "sum", "min", "max", "sorted", "range", "enumerate", "abs", "round"}
-SAFE_NODES = (ast.Module, ast.Expr, ast.Assign, ast.Name, ast.Constant, ast.List, ast.Tuple, ast.Dict,
-              ast.BinOp, ast.UnaryOp, ast.BoolOp, ast.Compare, ast.If, ast.IfExp, ast.For, ast.Load,
-              ast.Store, ast.Add, ast.Sub, ast.Mult, ast.Div, ast.FloorDiv, ast.Mod, ast.Pow, ast.USub,
-              ast.UAdd, ast.And, ast.Or, ast.Eq, ast.NotEq, ast.Lt, ast.LtE, ast.Gt, ast.GtE,
-              ast.Subscript, ast.Slice, ast.ListComp, ast.comprehension, ast.Call)
+SAFE_CALLS = {"print", "len", "sum", "min", "max", "sorted", "range", "enumerate", "abs", "round",
+              "str", "int", "float", "bool", "list", "dict", "set", "tuple", "zip", "map", "filter", "any", "all",
+              "reversed", "isinstance", "repr", "divmod", "chr", "ord", "format"}
+# The standard-library subset an analysis turn may use: pure data work, no
+# files, processes, network, or introspection. Modules are preloaded by the
+# preamble and handed out through a restricted __import__.
+SAFE_MODULES = ("math", "statistics", "json", "csv", "re", "datetime", "collections", "itertools",
+                "string", "textwrap", "fractions", "decimal", "io")
+SAFE_NODES = (ast.Module, ast.Expr, ast.Assign, ast.AugAssign, ast.Name, ast.Constant, ast.List, ast.Tuple, ast.Dict,
+              ast.Set, ast.BinOp, ast.UnaryOp, ast.BoolOp, ast.Compare, ast.If, ast.IfExp, ast.For, ast.While,
+              ast.Break, ast.Continue, ast.Pass, ast.Load, ast.Store, ast.Del,
+              ast.Add, ast.Sub, ast.Mult, ast.Div, ast.FloorDiv, ast.Mod, ast.Pow, ast.USub, ast.UAdd, ast.Not,
+              ast.And, ast.Or, ast.Eq, ast.NotEq, ast.Lt, ast.LtE, ast.Gt, ast.GtE, ast.In, ast.NotIn, ast.Is, ast.IsNot,
+              ast.Subscript, ast.Slice, ast.ListComp, ast.DictComp, ast.SetComp, ast.GeneratorExp, ast.comprehension,
+              ast.Call, ast.keyword, ast.Attribute, ast.Import, ast.ImportFrom, ast.alias, ast.FunctionDef, ast.arguments,
+              ast.arg, ast.Return, ast.Lambda, ast.JoinedStr, ast.FormattedValue, ast.Try, ast.ExceptHandler, ast.Raise,
+              ast.Starred, ast.Tuple)
+
+
+DENIED_NAMES = {"open", "eval", "exec", "compile", "getattr", "setattr", "delattr", "globals", "locals", "vars",
+                "input", "breakpoint", "exit", "quit", "help", "dir", "type", "object", "memoryview", "super",
+                "classmethod", "staticmethod", "property", "id", "hash", "iter", "next", "callable", "bytes", "bytearray"}
 
 
 def validate_tree(tree):
+    defined = {node.name for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)}
+    defined |= {target.id for node in ast.walk(tree) if isinstance(node, ast.Assign) and isinstance(node.value, ast.Lambda)
+                for target in node.targets if isinstance(target, ast.Name)}
     for node in ast.walk(tree):
         if not isinstance(node, SAFE_NODES):
             raise ValueError(f"unsupported code construct: {type(node).__name__}")
-        if isinstance(node, ast.Call) and (not isinstance(node.func, ast.Name) or node.func.id not in SAFE_CALLS):
-            raise ValueError("only allowlisted data functions may be called")
+        if isinstance(node, ast.Name) and node.id in DENIED_NAMES:
+            raise ValueError(f"'{node.id}' is not available in the sandbox")
+        if isinstance(node, ast.Call):
+            target = node.func
+            if isinstance(target, ast.Name):
+                if target.id not in SAFE_CALLS and target.id not in defined:
+                    raise ValueError("only allowlisted builtins, allowlisted modules, and functions defined in the code may be called")
+            elif not isinstance(target, ast.Attribute):
+                raise ValueError("only named functions and methods may be called")
+        if isinstance(node, ast.Attribute) and (node.attr.startswith("_") or node.attr in {"system", "popen", "spawn", "fork"}):
+            raise ValueError("private and process attributes are not allowed")
         if isinstance(node, ast.Name) and node.id.startswith("__"):
             raise ValueError("dunder names are not allowed")
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            modules = [alias.name for alias in node.names] if isinstance(node, ast.Import) else [node.module or ""]
+            for module in modules:
+                if module.split(".")[0] not in SAFE_MODULES:
+                    raise ValueError(f"module not in the sandbox allowlist: {module}")
+            if isinstance(node, ast.ImportFrom) and any(alias.name == "*" for alias in node.names):
+                raise ValueError("star imports are not allowed")
+        if isinstance(node, ast.FunctionDef) and node.name.startswith("_"):
+            raise ValueError("private function names are not allowed")
+
+
+PREAMBLE = (
+    "import builtins as _b\n"
+    "import " + ", ".join(SAFE_MODULES) + "\n"
+    "_modules = {name: globals()[name] for name in " + repr(list(SAFE_MODULES)) + "}\n"
+    "def _safe_import(name, *args, **kwargs):\n"
+    "    root = name.split('.')[0]\n"
+    "    if root not in _modules:\n"
+    "        raise ImportError('module not in the sandbox allowlist: ' + name)\n"
+    "    return _modules[root]\n"
+    "_allowed = {name: getattr(_b, name) for name in " + repr(sorted(SAFE_CALLS)) + "}\n"
+    "_allowed['__import__'] = _safe_import\n"
+    "for _name in ('ValueError', 'TypeError', 'KeyError', 'IndexError', 'ZeroDivisionError', 'Exception', 'StopIteration', 'True', 'False', 'None'):\n"
+    "    _allowed[_name] = getattr(_b, _name)\n"
+    "del _b\n")
 
 
 _BWRAP_PROBE = None
@@ -93,7 +146,9 @@ def run(code, data=""):
         return {"status": "rejected", "reason": str(error)[:160], "contract": CONTRACT}
     with tempfile.TemporaryDirectory(prefix="backrooms-code-") as work:
         script = Path(work) / "task.py"
-        script.write_text("import builtins\n__builtins__ = {name: getattr(builtins, name) for name in " + repr(sorted(SAFE_CALLS)) + "}\ndata = " + repr(data) + "\n" + code)
+        # The task runs in a fresh namespace whose builtins are the allowlist, so
+        # the restriction binds the code itself, not only the preamble.
+        script.write_text(PREAMBLE + "exec(compile(" + repr(code) + ", 'task.py', 'exec'), {'__builtins__': _allowed, 'data': " + repr(data) + "})\n")
         command, isolation, isolation_detail = sandbox_command(work, str(script))
         try:
             completed = subprocess.run(command, capture_output=True, text=True, timeout=5,
