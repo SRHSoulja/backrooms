@@ -105,7 +105,7 @@ def daily_digest(date, findings, corroborations, world, registry, tasks, retract
     rooms_built = [room for room in world.get("rooms", []) if str(room.get("founded_at", "")).startswith(day)]
     completed = [task for task in tasks if str(task.get("completed_at", "")).startswith(day)]
     retired = [agent for agent in registry.get("agents", []) if agent.get("status") in {"retired", "fired"}
-               and str(agent.get("interviewed_at", "")).startswith(day)]
+               and str(agent.get("retired_at") or agent.get("interviewed_at", "")).startswith(day)]
     names = {agent.get("id"): agent.get("name") for agent in registry.get("agents", [])}
     contributors = sorted({item.get("agent") for item in accepted if item.get("agent")})
     digest = {

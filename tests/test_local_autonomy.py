@@ -935,5 +935,23 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(finding["origin"], "resident-target")
 
 
+    def test_expired_claims_return_to_the_pool_and_dormant_residents_depart(self):
+        frontier = {"tasks": [{"id": "task-1", "status": "claimed", "claimed_by": "local-001", "claimed_cycle": 280},
+                              {"id": "task-2", "status": "claimed", "claimed_by": "local-002", "claimed_cycle": 300},
+                              {"id": "task-3", "status": "open"}]}
+        released = local_autonomy.release_expired_claims(frontier, 305)
+        self.assertEqual([item["task"] for item in released], ["task-1"])
+        self.assertEqual(frontier["tasks"][0], {"id": "task-1", "status": "open"})
+        self.assertEqual(frontier["tasks"][1]["status"], "claimed")
+        agent = {"id": "local-009", "status": "dormant", "dormant_since_cycle": 270, "turns_without_evidence": 14}
+        self.assertEqual(local_autonomy.update_evidence_activity(agent, None, 300), "retired")
+        self.assertEqual(agent["status"], "retired")
+        self.assertIn("departed after dormancy", agent["retired_reason"])
+        fresh = {"id": "local-010", "status": "dormant", "dormant_since_cycle": 290, "turns_without_evidence": 13}
+        self.assertIsNone(local_autonomy.update_evidence_activity(fresh, None, 300))
+        self.assertEqual(fresh["status"], "dormant")
+        self.assertIn("deterministic = bool(research_assignment) and not social_state\n", Path("scripts/local_autonomy.py").read_text())
+
+
 if __name__ == "__main__":
     unittest.main()

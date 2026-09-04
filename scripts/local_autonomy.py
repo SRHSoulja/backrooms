@@ -1086,13 +1086,36 @@ def reground_purpose(url, agent, rooms, frontier, cycle):
     return {"agent": agent.get("id"), "purpose": purpose, "question": question, "room": str(grounded.get("room", ""))[:60]}
 
 
+CLAIM_MAX_CYCLES = 12
+DEPART_AFTER_DORMANT_CYCLES = 24
+
+
+def release_expired_claims(frontier, cycle, max_age=CLAIM_MAX_CYCLES):
+    """A claimed task that has not been completed in max_age cycles returns to
+    the open pool so the roster can turn over and the task can find another taker."""
+    released = []
+    for task in (frontier or {}).get("tasks", []):
+        if task.get("status") == "claimed" and int(cycle) - int(task.get("claimed_cycle") or cycle) >= max_age:
+            released.append({"task": task.get("id"), "from": task.get("claimed_by"), "claimed_cycle": task.get("claimed_cycle")})
+            task["status"] = "open"
+            task.pop("claimed_by", None)
+            task.pop("claimed_cycle", None)
+    return released
+
+
 def update_evidence_activity(agent, filed, cycle):
-    """Track turns without evidence; rest a resident that keeps producing none."""
+    """Track turns without evidence; rest a resident that keeps producing none,
+    and let one that has rested a long time leave the roster."""
     if filed:
         agent["turns_without_evidence"] = 0
         if agent.get("status") == "dormant":
             agent["status"] = "active-local"
         return None
+    if agent.get("status") == "dormant" and int(cycle) - int(agent.get("dormant_since_cycle") or cycle) >= DEPART_AFTER_DORMANT_CYCLES:
+        agent["status"] = "retired"
+        agent["retired_at"] = datetime.now(timezone.utc).isoformat()
+        agent["retired_reason"] = "departed after dormancy: no evidence in %d turns" % int(agent.get("turns_without_evidence", 0))
+        return "retired"
     agent["turns_without_evidence"] = agent.get("turns_without_evidence", 0) + 1
     if (agent["turns_without_evidence"] >= DORMANT_AFTER_TURNS_WITHOUT_EVIDENCE and not agent.get("claimed_task")
             and agent.get("request_status") != "open" and agent.get("status") == "active-local"):
@@ -1724,6 +1747,16 @@ def main():
             frontier_snapshot = json.loads(FRONTIER.read_text())
         except json.JSONDecodeError:
             frontier_snapshot = {}
+    released_claims = release_expired_claims(frontier_snapshot, args.cycle)
+    if released_claims:
+        atomic_write_json(FRONTIER, frontier_snapshot)
+        still_claimed = {task.get("id") for task in frontier_snapshot.get("tasks", []) if task.get("status") == "claimed"}
+        for agent in registry.get("agents", []):
+            if agent.get("claimed_task") and agent.get("claimed_task") not in still_claimed:
+                agent.pop("claimed_task", None)
+        for item in released_claims:
+            emit_event(world, args.cycle, "task-claim-expired", "frontier",
+                       "A claimed frontier task went uncompleted for too long and returned to the open pool.", **item)
     shared_research, shared_family, shared_avoid = shared_research_target(args.question, frontier_snapshot, topic_hint=args.topic)
     # The cooperation that matters: once one resident has filed a claim on the
     # council's topic, the next residents on that topic go looking for a second,
@@ -1781,7 +1814,10 @@ def main():
         # the model is consulted only when the resident has something to decide
         # (a message, a trade offer, an open request) or a workbench to use.
         social_state = bool(inbox) or bool(pending_trades) or agent.get("request_status") == "open"
-        deterministic = bool(research_assignment) and not social_state and "bounded-workbench" not in agent.get("capabilities", [])
+        # An assigned research turn is deterministic for everyone; holding the
+        # workbench changes what a resident may do on its own turns, not whether
+        # it takes its share of the council's work.
+        deterministic = bool(research_assignment) and not social_state
         decision_source = "scheduler" if deterministic else "model"
         if deterministic:
             decision = {"action": "EXPLORE", "room": agent.get("room", rooms[0]), "target": research_assignment[:100],
