@@ -7,6 +7,7 @@ touches the network or a model.
 """
 
 import re
+from datetime import datetime, timezone
 
 try:
     from scripts.evidence import claim_terms, is_accepted
@@ -167,8 +168,9 @@ def collapse_withdrawn_rooms(world, cycle):
     for room in world.get("rooms", []):
         if room.get("status") == "retracted" and int(cycle) - int(room.get("retracted_cycle") or cycle) >= COLLAPSE_AFTER_CYCLES:
             record = {key: room.get(key) for key in ("id", "name", "charter", "founded_by", "founded_via", "founded_cycle",
-                                                     "corroboration_id", "growth_topic", "artifacts", "retracted_cycle", "retraction_reason")}
+                                                     "corroboration_id", "growth_topic", "artifacts", "retracted_cycle", "retracted_at", "retraction_reason")}
             record["collapsed_cycle"] = cycle
+            record["collapsed_at"] = datetime.now(timezone.utc).isoformat()
             world.setdefault("withdrawn_rooms", []).append(record)
             collapsed.append(room)
         else:
@@ -204,6 +206,7 @@ def retract_unfounded_rooms(world, records_by_id, findings_by_id, cycle, stands)
         room["status"] = "retracted"
         room["status_cycle"] = cycle
         room["retracted_cycle"] = cycle
+        room["retracted_at"] = datetime.now(timezone.utc).isoformat()
         room["retraction_reason"] = reason
         changes.append({"room": room.get("id"), "reason": reason, "corroboration": room.get("corroboration_id")})
     return changes

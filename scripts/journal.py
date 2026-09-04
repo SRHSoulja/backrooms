@@ -72,12 +72,31 @@ def backfill_timestamps(rows, times, cycle_key="cycle", stamp_key="recorded_at")
     return changed
 
 
-def daily_digest(date, findings, corroborations, world, registry, tasks, retractions=(), room_changes=()):
+def daily_digest(date, findings, corroborations, world, registry, tasks, retractions=(), room_changes=(), day_zero=None, events=()):
     """Facts for one UTC day, keyed so the verifier can check a written entry against them."""
     day = str(date)
     def on_day(item):
         stamp = str(item.get("recorded_at") or item.get("completed_at") or "")
         return stamp.startswith(day)
+    day_events = []
+    for item in events or ():
+        try:
+            event = json.loads(item) if isinstance(item, str) else dict(item)
+        except (ValueError, TypeError):
+            continue
+        if str(event.get("recorded_at", "")).startswith(day):
+            day_events.append(event)
+    reset = day_zero if day_zero and str(day_zero.get("at", "")).startswith(day) else None
+    hired = [agent for agent in registry.get("agents", []) if agent.get("status") not in {"retired", "fired"}
+             and str(agent.get("interviewed_at", "")).startswith(day)]
+    withdrawn = [room for room in world.get("rooms", []) if str(room.get("retracted_at", "")).startswith(day)]
+    withdrawn += [room for room in world.get("withdrawn_rooms", []) if str(room.get("retracted_at", "")).startswith(day)
+                  and room.get("id") not in {item.get("id") for item in withdrawn}]
+    collapsed = [room for room in world.get("withdrawn_rooms", []) if str(room.get("collapsed_at", "")).startswith(day)]
+    lifecycle = [dict(change) for change in list(room_changes)]
+    lifecycle += [{"room": event.get("room"), "from": event.get("from"), "to": event.get("kind", "").replace("room-", "")}
+                  for event in day_events if event.get("kind") in {"room-dust", "room-sealed", "room-open"}]
+    room_changes = lifecycle
     accepted = [item for item in findings if on_day(item) and item.get("status") not in {"rejected", "retracted"}]
     rejected = [item for item in findings if on_day(item) and item.get("status") == "rejected"]
     judged = [item for item in corroborations if on_day(item)]
@@ -94,13 +113,18 @@ def daily_digest(date, findings, corroborations, world, registry, tasks, retract
         "counts": {"accepted_findings": len(accepted), "rejected_findings": len(rejected), "judged_pairs": len(judged),
                    "supports": len(supports), "contradicts": len(contradicts), "rooms_built": len(rooms_built),
                    "tasks_completed": len(completed), "retractions": len(list(retractions)), "retired": len(retired),
-                   "room_changes": len(list(room_changes))},
+                   "room_changes": len(list(room_changes)), "hired": len(hired), "rooms_withdrawn": len(withdrawn),
+                   "rooms_collapsed": len(collapsed), "day_zero_cycle": (reset or {}).get("cycle")},
+        "day_zero": ({"cycle": reset.get("cycle"), "at": reset.get("at")} if reset else None),
+        "hired": [{"id": agent.get("id"), "name": agent.get("name"), "role": str(agent.get("role", ""))[:60]} for agent in hired],
+        "rooms_withdrawn": [{"id": room.get("id"), "name": room.get("name"), "reason": str(room.get("retraction_reason", ""))[:120]} for room in withdrawn],
+        "rooms_collapsed": [{"id": room.get("id"), "name": room.get("name")} for room in collapsed],
         "contributors": [{"id": identifier, "name": names.get(identifier, identifier)} for identifier in contributors],
         "findings": [{"id": item.get("id"), "agent": item.get("agent"), "claim": str(item.get("claim", ""))[:200],
                       "domain": re.sub(r"^https?://([^/]+).*$", r"\1", str(item.get("url", "")))} for item in accepted[-8:]],
         "supports": [{"id": item.get("id"), "topic": str(item.get("topic", ""))[:120], "domains": item.get("domains", [])} for item in supports[-4:]],
         "contradicts": [{"id": item.get("id"), "topic": str(item.get("topic", ""))[:120], "reason": str(item.get("reason", ""))[:160]} for item in contradicts[-4:]],
-        "rooms_built": [{"id": room.get("id"), "name": room.get("name"), "topic": str(room.get("growth_topic", ""))[:120]} for room in rooms_built],
+        "rooms_built": [{"id": room.get("id"), "name": room.get("name"), "topic": str(room.get("growth_topic", ""))[:120], "status": room.get("status", "open")} for room in rooms_built],
         "room_changes": [dict(change) for change in list(room_changes)[-6:]],
         "retractions": [dict(item) for item in list(retractions)[-4:]],
         "tasks_completed": [{"id": task.get("id"), "by": task.get("claimed_by"), "request": str(task.get("request", ""))[:120]} for task in completed[-6:]],
@@ -113,6 +137,11 @@ def digest_text(digest):
     """The plain, verifiable entry used when the model's draft fails verification."""
     counts = digest["counts"]
     lines = [f"Cycle log for {digest['date']}."]
+    if digest.get("day_zero"):
+        lines.append(f"Day zero: at cycle {digest['day_zero']['cycle']} the world was reset to its founding rooms with an empty roster; "
+                     "everything after this is this world's own.")
+    if digest.get("hired"):
+        lines.append("New residents: " + ", ".join(f"{agent['name'] or agent['id']} ({agent['role']})" if agent.get("role") else (agent["name"] or agent["id"]) for agent in digest["hired"]) + ".")
     lines.append(f"{counts['accepted_findings']} findings were accepted and {counts['rejected_findings']} rejected. "
                  f"{counts['judged_pairs']} cross-source pairs were judged: {counts['supports']} supporting, {counts['contradicts']} contradicting.")
     if digest["findings"]:
@@ -120,6 +149,10 @@ def digest_text(digest):
         lines.append(f"Latest accepted finding, by {sample['agent']} from {sample['domain']}: {sample['claim']}")
     if counts["rooms_built"]:
         lines.append("Rooms opened: " + ", ".join(room["name"] or room["id"] for room in digest["rooms_built"]) + ".")
+    if digest.get("rooms_withdrawn"):
+        lines.append("Rooms withdrawn by rule: " + "; ".join(f"{room['name'] or room['id']} ({room['reason']})" for room in digest["rooms_withdrawn"]) + ".")
+    if digest.get("rooms_collapsed"):
+        lines.append("Rooms collapsed into the archive: " + ", ".join(room["name"] or room["id"] for room in digest["rooms_collapsed"]) + ".")
     if digest["room_changes"]:
         lines.append("Room changes: " + "; ".join(f"{change.get('room')} {change.get('from')} to {change.get('to')}" for change in digest["room_changes"]) + ".")
     if counts["retractions"]:
@@ -140,7 +173,7 @@ def verify_entry(entry, digest):
         return False, "empty-or-too-long"
     allowed_ids = set()
     allowed_names = set()
-    for key in ("findings", "supports", "contradicts", "rooms_built", "tasks_completed", "retired", "contributors"):
+    for key in ("findings", "supports", "contradicts", "rooms_built", "tasks_completed", "retired", "contributors", "hired", "rooms_withdrawn", "rooms_collapsed"):
         for item in digest.get(key, []):
             for field in ("id", "agent", "by", "name"):
                 value = item.get(field)
@@ -148,16 +181,24 @@ def verify_entry(entry, digest):
                     (allowed_ids if str(value).startswith(("finding-", "pair-", "task-", "question-task-", "local-")) else allowed_names).add(str(value))
     for change in digest.get("room_changes", []):
         allowed_ids.add(str(change.get("room")))
-    for room in digest.get("rooms_built", []):
-        allowed_ids.add(str(room.get("id")))
+    for key in ("rooms_built", "rooms_withdrawn", "rooms_collapsed"):
+        for room in digest.get(key, []):
+            allowed_ids.add(str(room.get("id")))
+            if room.get("name"):
+                allowed_names.add(str(room.get("name")))
     mentioned_ids = set(re.findall(r"\b(?:finding|pair|task|question-task|local)-[A-Za-z0-9-]+", text))
     unknown = [identifier for identifier in mentioned_ids if identifier not in allowed_ids]
     if unknown:
         return False, "unknown-ids:" + ",".join(unknown)[:120]
-    allowed_numbers = {str(value) for value in digest.get("counts", {}).values()}
+    allowed_numbers = {str(value) for value in digest.get("counts", {}).values() if value is not None}
+    if digest.get("day_zero"):
+        allowed_numbers.add(str(digest["day_zero"].get("cycle")))
     allowed_numbers |= {"1", "2", "3", "one", "two", "three"}
-    # Identifiers such as local-004 or finding-3f2a carry digits that are not claims about counts.
+    # Identifiers such as local-004 or finding-3f2a, and names such as Lumen-7,
+    # carry digits that are not claims about counts.
     stripped = re.sub(r"\b(?:finding|pair|task|question-task|local)-[A-Za-z0-9-]+", " ", text)
+    for name in sorted(allowed_names, key=len, reverse=True):
+        stripped = stripped.replace(name, " ")
     for number in re.findall(r"\b\d+\b", stripped):
         if number not in allowed_numbers and number != digest.get("date", "")[:4] and number not in digest.get("date", ""):
             return False, "unknown-number:" + number

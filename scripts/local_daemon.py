@@ -962,9 +962,15 @@ def sync_journal(world, registry, result):
         journal_module.backfill_timestamps(findings, times)
         journal_module.backfill_timestamps(corroborations, times)
         journal_module.backfill_timestamps(tasks, times, cycle_key="completed_cycle", stamp_key="completed_at")
-        digest = journal_module.daily_digest(day, findings, corroborations, world, registry, tasks,
+        try:
+            full_world = json.loads(STATE.read_text()) if STATE.exists() else world
+        except (OSError, json.JSONDecodeError):
+            full_world = world
+        digest = journal_module.daily_digest(day, findings, corroborations, full_world, registry, tasks,
                                              retractions=result.get("autonomy", {}).get("retractions", []),
-                                             room_changes=result.get("autonomy", {}).get("room_changes", []))
+                                             room_changes=result.get("autonomy", {}).get("room_changes", []),
+                                             day_zero=day_zero_record(world),
+                                             events=ARCHIVE.read_text().splitlines() if ARCHIVE.exists() else [])
         if any(digest["counts"].values()):
             text, author = journal_module.compose_entry(digest, base_url)
             JOURNAL_DIR.mkdir(parents=True, exist_ok=True)
