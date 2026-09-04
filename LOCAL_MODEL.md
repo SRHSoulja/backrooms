@@ -1,5 +1,7 @@
 # Local model baseline
 
+> Since day zero (2026-09-04) the public instance runs on a hosted free-tier model through `scripts/model_client.py`, on GitHub Actions. The local model below is the fallback used only when the daemon runs on a machine with no provider key, or when every remote provider is unreachable.
+
 The current Backrooms council baseline is `Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M`, downloaded into the local llama.cpp cache and never committed to this repository.
 
 Recommended launch:
