@@ -63,7 +63,7 @@ BUILTIN = {
     # more requests. The family shares one key but each entry keeps its own
     # window and cooldown, so a throttled model hands over to the next.
     "mistral": {"base_url": "https://api.mistral.ai", "key": "MISTRAL_API_KEY", "model": "ministral-14b-2512",
-                "rpm": 28, "rpd": None, "tpd": None, "json_schema": True},
+                "rpm": 20, "rpd": None, "tpd": None, "json_schema": True},
     "mistral-8b": {"base_url": "https://api.mistral.ai", "key": "MISTRAL_API_KEY", "model": "ministral-8b-2512",
                    "rpm": 120, "rpd": None, "tpd": None, "json_schema": True},
     "mistral-small": {"base_url": "https://api.mistral.ai", "key": "MISTRAL_API_KEY", "model": "mistral-small-latest",

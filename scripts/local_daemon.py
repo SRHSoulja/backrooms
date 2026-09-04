@@ -1295,6 +1295,8 @@ if hosted_elsewhere(HOST_MARKER, RUNTIME_HOST, takeover=os.getenv("BACKROOMS_TAK
                       "marker": HOST_MARKER.read_text().strip()[:40], "host": RUNTIME_HOST}), flush=True)
     sys.exit(3)
 lock_handle = acquire_lock()
+print(json.dumps({"providers": [{"name": item["name"], "model": item["model"], "rpm": item["rpm"]} for item in model_client.providers()],
+                  "env_file": bool(model_client.SECRETS), "host": RUNTIME_HOST}), flush=True)
 configured_url = os.getenv("BACKROOMS_LLM_BASE_URL", "").rstrip("/")
 base_url = configured_url or f"http://127.0.0.1:{args.port}"
 server = None
