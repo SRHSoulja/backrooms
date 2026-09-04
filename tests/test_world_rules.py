@@ -1,6 +1,6 @@
 import unittest
 
-from scripts.world_rules import (retract_unfounded_rooms, day_zero_from_events, apply_retractions, compute_standing, finding_followup_question, room_lifecycle,
+from scripts.world_rules import (collapse_withdrawn_rooms, retract_unfounded_rooms, day_zero_from_events, apply_retractions, compute_standing, finding_followup_question, room_lifecycle,
                                  sealed_room_ids, settle_disputes)
 
 
@@ -90,6 +90,23 @@ class WorldRuleTests(unittest.TestCase):
         self.assertIn("dud", sealed_room_ids(world))
         self.assertEqual(retract_unfounded_rooms(world, records, findings, 282, stands), [])
         self.assertEqual(room_lifecycle(world, [], 500), [])  # a retracted room is never dusted, sealed, or reopened
+
+    def test_withdrawn_rooms_collapse_into_the_ledger_after_two_days(self):
+        world = {"rooms": [{"id": "atrium", "doors": ["dud-gate", "relay-gate"]},
+                           {"id": "dud", "name": "Dud", "founded_via": "evidence-ledger", "founded_cycle": 280, "founded_by": ["local-001"],
+                            "status": "retracted", "retracted_cycle": 284, "retraction_reason": "a founding finding is a dictionary definition", "doors": ["dud-gate"]}],
+                 "connections": [{"id": "room-link-growth-dud", "kind": "room-link", "from": "atrium", "to": "dud"},
+                                 {"id": "room-link-001", "kind": "room-link", "from": "atrium", "to": "relay"},
+                                 {"id": "a2a-1", "kind": "a2a", "name": "outside"}]}
+        self.assertEqual(collapse_withdrawn_rooms(world, 300), [])
+        changes = collapse_withdrawn_rooms(world, 380)
+        self.assertEqual(changes, [{"room": "dud", "reason": "a founding finding is a dictionary definition", "withdrawn_for": 96}])
+        self.assertEqual([room["id"] for room in world["rooms"]], ["atrium"])
+        self.assertEqual(world["rooms"][0]["doors"], ["relay-gate"])
+        self.assertEqual([link["id"] for link in world["connections"]], ["room-link-001", "a2a-1"])
+        self.assertEqual(world["withdrawn_rooms"][0]["id"], "dud")
+        self.assertEqual(world["withdrawn_rooms"][0]["collapsed_cycle"], 380)
+        self.assertEqual(world["withdrawn_rooms"][0]["retraction_reason"], "a founding finding is a dictionary definition")
 
 
 if __name__ == "__main__":

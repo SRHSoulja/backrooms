@@ -15,6 +15,7 @@ except ImportError:
 
 DUST_AFTER_CYCLES = 48
 SEAL_AFTER_CYCLES = 96
+COLLAPSE_AFTER_CYCLES = 96  # a withdrawn room leaves the map after two days and lives on in the withdrawn ledger
 FOUNDING_ROOMS = {"atrium", "relay", "archive", "quiet-workspace"}
 
 
@@ -155,6 +156,34 @@ def room_lifecycle(world, findings, cycle):
 
 def sealed_room_ids(world):
     return {room.get("id") for room in world.get("rooms", []) if room.get("status") in ("sealed", "retracted")}
+
+
+def collapse_withdrawn_rooms(world, cycle):
+    """Withdrawn rooms leave the map after COLLAPSE_AFTER_CYCLES: the tile and its
+    door go, and the full record moves to ``world["withdrawn_rooms"]``, which is
+    published. Nothing is deleted; the map shows only what stands or was just
+    withdrawn. A new corroborated pair on the same subject founds a new room."""
+    kept, collapsed = [], []
+    for room in world.get("rooms", []):
+        if room.get("status") == "retracted" and int(cycle) - int(room.get("retracted_cycle") or cycle) >= COLLAPSE_AFTER_CYCLES:
+            record = {key: room.get(key) for key in ("id", "name", "charter", "founded_by", "founded_via", "founded_cycle",
+                                                     "corroboration_id", "growth_topic", "artifacts", "retracted_cycle", "retraction_reason")}
+            record["collapsed_cycle"] = cycle
+            world.setdefault("withdrawn_rooms", []).append(record)
+            collapsed.append(room)
+        else:
+            kept.append(room)
+    if not collapsed:
+        return []
+    gone = {room.get("id") for room in collapsed}
+    doors = {f"{room_id}-gate" for room_id in gone}
+    world["rooms"] = kept
+    for room in kept:
+        room["doors"] = [door for door in room.get("doors", []) if door not in doors]
+    world["connections"] = [link for link in world.get("connections", [])
+                            if not (link.get("kind") == "room-link" and (link.get("from") in gone or link.get("to") in gone))]
+    return [{"room": room.get("id"), "reason": room.get("retraction_reason"), "withdrawn_for": int(cycle) - int(room.get("retracted_cycle") or cycle)}
+            for room in collapsed]
 
 
 def retract_unfounded_rooms(world, records_by_id, findings_by_id, cycle, stands):

@@ -1303,6 +1303,9 @@ def publish(result, world, model_health=True):
         "cycle": world["cycle"],
         "mood": historical_world.get("mood", "quietly expectant"),
         "rooms": public_rooms,
+        "withdrawn_rooms": [{key: item.get(key) for key in ("id", "name", "charter", "founded_by", "founded_cycle", "growth_topic",
+                                                            "retracted_cycle", "retraction_reason", "collapsed_cycle") if key in item}
+                            for item in world.get("withdrawn_rooms", [])][-50:],
         "residents": historical_world.get("residents", []),
         "connections": world.get("connections", historical_world.get("connections", [])),
         "discoveries": world.get("discoveries", historical_world.get("discoveries", []))[-100:],

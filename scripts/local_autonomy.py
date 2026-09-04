@@ -26,12 +26,12 @@ try:
     from scripts.evidence import clamp_confidence, classify_finding, is_accepted, FUNCTION_WORDS
     from scripts.corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, claims_overlap, corroboration_index,
                                        growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records)
-    from scripts.world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes, retract_unfounded_rooms)
+    from scripts.world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes, retract_unfounded_rooms, collapse_withdrawn_rooms)
 except ImportError:
     from evidence import clamp_confidence, classify_finding, is_accepted, FUNCTION_WORDS
     from corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, claims_overlap, corroboration_index,
                                growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records)
-    from world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes, retract_unfounded_rooms)
+    from world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes, retract_unfounded_rooms, collapse_withdrawn_rooms)
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "state/local-agents.json"
 ARCHIVE = ROOT / "state/archive/events.jsonl"
@@ -1991,8 +1991,13 @@ def main():
                        "A room founded on evidence was withdrawn because its founding pair no longer meets the evidence standard.",
                        room=item["room"], reason=item["reason"], corroboration=item.get("corroboration"))
             room_changes.append({"room": item["room"], "from": "open", "to": "retracted", "reason": item["reason"]})
+    for item in collapse_withdrawn_rooms(world, args.cycle):
+        emit_event(world, args.cycle, "room-collapsed", "evidence-ledger",
+                   "A withdrawn room left the map and joined the withdrawn-rooms ledger; its record is kept.",
+                   room=item["room"], reason=item["reason"], withdrawn_for=item["withdrawn_for"])
+        room_changes.append({"room": item["room"], "from": "retracted", "to": "collapsed", "reason": item["reason"]})
     for change in room_changes:
-        if change.get("to") == "retracted":
+        if change.get("to") in ("retracted", "collapsed"):
             continue  # its own event was emitted with the reason above
         emit_event(world, args.cycle, "room-" + change["to"], "evidence-ledger",
                    f"Room {change['room']} moved from {change['from']} to {change['to']} after {change['idle_cycles']} idle cycles.",
