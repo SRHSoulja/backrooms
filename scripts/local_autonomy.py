@@ -1155,10 +1155,14 @@ def target_claim_for(topic):
     # Only genuine verification attempts count against a claim: findings that
     # were made while looking for that claim in another source. Pairs the
     # ledger judged for other reasons do not exhaust it.
-    attempts = {}
+    # An attempt counts when a verification finding was actually accepted and
+    # judged: three accepted findings from three distinct domains that failed to
+    # support a claim exhaust it. Rejected fetches and duplicates do not.
+    attempted_domains = {}
     for item in all_findings():
-        if item.get("verifies"):
-            attempts[item["verifies"]] = attempts.get(item["verifies"], 0) + 1
+        if item.get("verifies") and is_accepted(item):
+            attempted_domains.setdefault(item["verifies"], set()).add(urllib.parse.urlparse(str(item.get("url", ""))).netloc.lower())
+    attempts = {identifier: len(domains) for identifier, domains in attempted_domains.items()}
     wanted = {term[:6] for term in question_terms(topic, limit=12).split()}
     candidates = []
     for item in reversed(accepted_findings()):

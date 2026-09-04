@@ -895,6 +895,10 @@ class LocalAutonomyTests(unittest.TestCase):
         # judged pairs alone do not exhaust a claim; three verification attempts do
         self.assertEqual(local_autonomy.target_claim_for("journalism corroboration standards")["id"], "finding-a")
         tries = [{**verifier, "id": f"finding-t{n}", "url": f"https://t{n}.example/"} for n in range(3)]
+        rejected_try = {**verifier, "id": "finding-rej", "url": "https://rejected.example/", "status": "rejected", "rejection_reason": "off-topic"}
+        self._write_findings(first, verifier, rejected_try, tries[0], {**tries[1], "url": "https://t0.example/again"})
+        # two accepted domains (b.example, t0.example) plus a rejected one: not exhausted
+        self.assertEqual(local_autonomy.target_claim_for("journalism corroboration standards")["id"], "finding-a")
         self._write_findings(first, verifier, *tries)
         exhausted = local_autonomy.target_claim_for("journalism corroboration standards")
         self.assertNotEqual(exhausted["id"], "finding-a")
