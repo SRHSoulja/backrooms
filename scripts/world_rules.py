@@ -220,6 +220,9 @@ def finding_on_topic(finding):
     """A finding is on topic when its claim shares content words with the query
     that produced it. A finding with no recorded topic is not held to this."""
     topic = _stems(str(finding.get("topic", "")))
+    # A verification finding serves the claim it was sent to verify, so that
+    # claim's words count as its topic too.
+    topic |= _stems(str(finding.get("verifies_claim", "")))
     if len(topic) < 2:
         return True  # a one-word topic carries too little signal to judge against
     words = _stems(str(finding.get("claim", ""))) | _stems(str(finding.get("quote", "")))

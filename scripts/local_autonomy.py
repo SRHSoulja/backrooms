@@ -285,6 +285,7 @@ def extract_finding(url, agent, cycle, tool, target_claim=None, topic_override=N
               "recorded_at": datetime.now(timezone.utc).isoformat()}
     if target_claim and target_claim.get("id"):
         record["verifies"] = target_claim.get("id")
+        record["verifies_claim"] = str(target_claim.get("claim", ""))[:300]
     if status == "rejected":
         record["rejection_reason"] = reason
     elif search_page(record.get("url")):
@@ -2053,8 +2054,13 @@ def main():
                     agent["post_tool_decision"] = {"cycle": args.cycle, "action": decision["action"],
                                                     "reason": decision.get("reason", "")[:220]}
                 if source and excerpt:
+                    # Only a turn that actually took the verification assignment files a
+                    # verification finding; a workbench holder that chose its own target did not.
+                    took_verify = ((agent.get("research_assignment") or {}).get("cycle") == args.cycle
+                                   and (agent.get("research_assignment") or {}).get("origin") == "verify-claim")
                     finding = extract_finding(args.base_url, agent, args.cycle, agent["last_tool"],
-                                              target_claim=verifying, topic_override=shared_research if verifying else None)
+                                              target_claim=verifying if took_verify else None,
+                                              topic_override=shared_research if took_verify else None)
                     if record_finding(finding) and is_accepted(finding):
                         agent["last_finding_id"] = finding["id"]
                         agent["last_finding_cycle"] = args.cycle

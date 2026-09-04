@@ -125,6 +125,10 @@ class WorldRuleTests(unittest.TestCase):
         self.assertFalse(finding_on_topic({"topic": topic, "claim": "For Population A quasars, the AlIII 1860 emission line shows no significant shift."}))
         self.assertTrue(finding_on_topic({"topic": "", "claim": "Anything goes when no topic was recorded."}))
         self.assertTrue(finding_on_topic({"topic": "a2a protocol", "claim": "Agents exchange tasks through the open A2A standard."}))
+        # a verification finding is on topic when it addresses the claim it verifies
+        self.assertTrue(finding_on_topic({"topic": "wall street journal github organization repositories",
+                                          "verifies_claim": "Russia's regulator RosComNadzor blocked access to GitHub after the platform hosted suicide instructions.",
+                                          "claim": "Roskomnadzor, Russia's Federal Supervision Agency, blocked GitHub in December 2014 over suicide-related pages."}))
         self.assertTrue(finding_on_topic({"topic": topic, "claim": "Timestamps differ by section.", "quote": "the editorial process at the Wall Street Journal"}))
         self.assertIn('"off-topic"', Path("scripts/local_autonomy.py").read_text())
 
