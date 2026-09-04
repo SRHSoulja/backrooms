@@ -953,5 +953,28 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertIn("deterministic = bool(research_assignment) and not social_state\n", Path("scripts/local_autonomy.py").read_text())
 
 
+    def test_a_research_line_that_yields_nothing_for_four_cycles_is_abandoned(self):
+        import tempfile
+        original = local_autonomy.PURSUIT
+        local_autonomy.PURSUIT = Path(tempfile.mkdtemp()) / "pursuit.json"
+        try:
+            for cycle in range(300, 304):
+                local_autonomy.note_pursuit("autohvsr hvsr algorithm", cycle, found=False)
+            self.assertTrue(local_autonomy.pursuit_exhausted("autohvsr hvsr algorithm"))
+            local_autonomy.note_pursuit("wall street journal editorial process", 303, found=True)
+            self.assertFalse(local_autonomy.pursuit_exhausted("wall street journal editorial process"))
+            local_autonomy.note_pursuit("autohvsr hvsr algorithm", 304, found=True)
+            self.assertFalse(local_autonomy.pursuit_exhausted("autohvsr hvsr algorithm"))
+            frontier = {"open_questions": [{"id": "q1", "cycle": 305, "status": "open", "question_source": "finding-followup",
+                                            "research_topic": "dead line here", "question": "Does the dead line hold?"}]}
+            for cycle in range(1, 5):
+                local_autonomy.note_pursuit("dead line here", cycle, found=False)
+            query, family, avoid = local_autonomy.shared_research_target("Does the dead line hold?", frontier, topic_hint="dead line here")
+            self.assertEqual((query, family), ("", None))
+            self.assertEqual(frontier["open_questions"][0]["status"], "abandoned")
+        finally:
+            local_autonomy.PURSUIT = original
+
+
 if __name__ == "__main__":
     unittest.main()

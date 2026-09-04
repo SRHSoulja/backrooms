@@ -1268,6 +1268,40 @@ def route_exploration(target, root=None):
     return "public-search", re.sub(r"[#*]+", " ", value).strip().rstrip(" /.,;")[:160]
 
 
+PURSUIT = ROOT / "state/research-pursuit.json"
+PURSUIT_MAX_EMPTY_CYCLES = 4
+
+
+def load_pursuit():
+    try:
+        return json.loads(PURSUIT.read_text())
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def note_pursuit(query, cycle, found):
+    """Remember how many cycles a research query has been pursued without a new
+    accepted finding; a line that yields nothing for a while is abandoned."""
+    if not query:
+        return
+    pursuit = load_pursuit()
+    entry = pursuit.setdefault(str(query).lower(), {"empty_cycles": 0, "last_cycle": None})
+    if entry.get("last_cycle") != cycle:
+        entry["empty_cycles"] = 0 if found else int(entry.get("empty_cycles", 0)) + 1
+        entry["last_cycle"] = cycle
+    elif found:
+        entry["empty_cycles"] = 0
+    try:
+        atomic_write_json(PURSUIT, pursuit)
+    except OSError:
+        pass
+
+
+def pursuit_exhausted(query):
+    entry = load_pursuit().get(str(query or "").lower(), {})
+    return int(entry.get("empty_cycles", 0)) >= PURSUIT_MAX_EMPTY_CYCLES
+
+
 def shared_research_target(current_question, frontier, topic_hint=""):
     """Pick the research topic residents should converge on this cycle.
 
@@ -1285,10 +1319,18 @@ def shared_research_target(current_question, frontier, topic_hint=""):
         topic = str(item.get("topic", "")).strip().lower()
         if topic:
             by_topic.setdefault(topic, []).append(item)
+    abandoned = False
     for question in reversed(list((frontier or {}).get("open_questions", []))[-6:]):
         if question.get("status") != "open":
             continue
         query = str(question.get("research_topic") or "").strip() or question_terms(question.get("question", ""))
+        if pursuit_exhausted(query):
+            # Pursued for several cycles without a new accepted finding: this
+            # line is abandoned on the record and never carried forward again.
+            question["status"] = "abandoned"
+            question["abandoned_reason"] = f"no new accepted finding in {PURSUIT_MAX_EMPTY_CYCLES} cycles of pursuit"
+            abandoned = True
+            continue
         items = by_topic.get(query.lower(), [])
         if not items or any(item.get("id") in supported for item in items):
             continue
@@ -1297,9 +1339,17 @@ def shared_research_target(current_question, frontier, topic_hint=""):
         unused = [family for family in families_for_topic(query) if family not in used]
         if unused:
             return query, unused[0], domains
+    if abandoned:
+        try:
+            atomic_write_json(FRONTIER, frontier)
+        except OSError:
+            pass
     # A follow-up question carries the topic that produced the finding it follows,
     # so the search stays on that subject instead of on the question's own words.
-    return (str(topic_hint or "").strip() or question_terms(current_question)), None, set()
+    query = (str(topic_hint or "").strip() or question_terms(current_question))
+    if pursuit_exhausted(query):
+        return "", None, set()  # nothing left to pursue this cycle; residents work their own questions
+    return query, None, set()
 
 
 def all_findings():
@@ -2198,6 +2248,10 @@ def main():
     retractions = settle_ledger_disputes(world, args.cycle)
     construction = apply_construction(world, registry, args.cycle)
     evidence_growth = evidence_room_growth(world, registry, args.cycle)
+    if shared_research:
+        gained = any(int(item.get("cycle") or 0) == args.cycle and str(item.get("topic", "")).strip().lower() == shared_research.strip().lower()
+                     for item in accepted_findings())
+        note_pursuit(shared_research, args.cycle, gained)
     room_changes = room_lifecycle(world, accepted_findings(), args.cycle)
     # A grown room stands only while its founding pair still meets the current
     # evidence standard; when a rule tightens, the world withdraws its own rooms.

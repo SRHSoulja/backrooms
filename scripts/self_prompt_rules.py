@@ -26,7 +26,8 @@ def carry_forward(open_questions):
         source = str(item.get("question_source") or "")
         return any(source.startswith(prefix) for prefix in RESIDENT_SOURCES)
     ordered = sorted(items, key=lambda item: int(item.get("cycle") or 0), reverse=True)
-    for pool in (lambda item: own(item) and item.get("status", "open") == "open", lambda item: item.get("status", "open") == "open", own):
+    for pool in (lambda item: own(item) and item.get("status", "open") == "open", lambda item: item.get("status", "open") == "open",
+                 lambda item: own(item) and item.get("status") != "abandoned"):
         for item in ordered:
             if pool(item):
                 return item
