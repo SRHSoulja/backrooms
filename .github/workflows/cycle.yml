@@ -15,6 +15,7 @@ on:
 
 permissions:
   contents: write
+  actions: write   # to dispatch the Pages deploy after every cycle
 
 concurrency:
   group: backrooms-cycle
@@ -54,10 +55,15 @@ jobs:
         env:
           BACKROOMS_RUNTIME_HOST: github-actions
           BACKROOMS_LOCAL_MODEL: never
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # After every cycle: save the private state, then redeploy the site so
+          # the page never lags the feeds (a token push does not trigger the
+          # Pages workflow, but a workflow_dispatch from the token does).
           BACKROOMS_POST_CYCLE: >-
             git -C state add -A &&
             (git -C state diff --cached --quiet || git -C state commit -q -m "cycle state") &&
-            git -C state push -q
+            git -C state push -q &&
+            (gh workflow run pages.yml --ref main || true)
         run: |
           git config user.name 'Backrooms Steward'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
@@ -79,8 +85,8 @@ jobs:
         run: rm -f "$RUNNER_TEMP/backrooms.env"
 
   deploy:
-    # Pushes made with the workflow token do not trigger the Pages workflow, so
-    # the cycle deploys the site itself after publishing.
+    # Backstop: the site is also dispatched after every cycle above; this final
+    # deploy covers a run whose dispatch failed.
     needs: cycle
     permissions:
       contents: read
