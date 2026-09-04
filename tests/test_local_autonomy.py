@@ -836,5 +836,20 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertNotIn("contradict", query.split())
 
 
+    def test_code_prefixed_targets_route_to_public_tools_unless_they_name_a_repository_file(self):
+        route = local_autonomy.route_exploration
+        self.assertEqual(route("code:scripts/evidence.py"), ("local-code-read", "scripts/evidence.py"))
+        self.assertEqual(route("code:scripts/evidence.py#claim_terms"), ("local-code-read", "scripts/evidence.py"))
+        self.assertEqual(route("code:arXiv:1109.6211v1#section-4.3"), ("arxiv-summary", "1109.6211v1"))
+        self.assertEqual(route("code:https://en.wikipedia.org/wiki/Corroboration"), ("public-text", "https://en.wikipedia.org/wiki/Corroboration"))
+        self.assertEqual(route("code:github.com/wsj/*"), ("public-search", "github.com/wsj"))
+        self.assertEqual(route("source: github.com/acme/cards"), ("github-readme", "acme/cards"))
+        self.assertEqual(route("code:wsj_editorial_tools"), ("public-search", "wsj_editorial_tools"))
+        self.assertEqual(route("code:../secrets.env"), ("public-search", "../secrets.env"))
+        self.assertEqual(route("wall street journal editorial process"), ("public-search", "wall street journal editorial process"))
+        self.assertEqual(route("https://example.org/data.json"), ("public-json", "https://example.org/data.json"))
+        self.assertNotIn("EXPLORE may use a target beginning with code:", Path("scripts/local_autonomy.py").read_text())
+
+
 if __name__ == "__main__":
     unittest.main()
