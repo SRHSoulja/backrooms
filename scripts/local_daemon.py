@@ -1080,9 +1080,36 @@ def publish_failure(reason, model_health, base_url=None):
                      "" if pushed.returncode == 0 else (pushed.stderr.strip().splitlines() or ["unknown"])[-1][:120])
 
 
+def day_zero_cycle(world):
+    """The cycle of the latest world reset, or None: feeds that accumulate across
+    cycles keep nothing from before it, so the site shows only this world."""
+    try:
+        zero = day_zero_from_events(ARCHIVE.read_text().splitlines() if ARCHIVE.exists() else []) \
+            or day_zero_from_events(world.get("events", []))
+    except OSError:
+        zero = None
+    try:
+        return int(zero["cycle"]) if zero and zero.get("cycle") is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
+def since_day_zero(items, zero, key="cycle"):
+    if zero is None:
+        return list(items)
+    kept = []
+    for item in items:
+        try:
+            kept.append(item) if int(item.get(key) or 0) >= zero else None
+        except (TypeError, ValueError):
+            kept.append(item)
+    return kept
+
+
 def publish(result, world, model_health=True):
     """Publish only safe metadata, and only when this checkout is clean."""
     model_ok = bool(model_health.get("ok")) if isinstance(model_health, dict) else bool(model_health)
+    zero_cycle = day_zero_cycle(world)
     synced, reason = synchronize_with_origin()
     if not synced:
         note_publish("skipped", reason)
@@ -1139,7 +1166,7 @@ def publish(result, world, model_health=True):
         "privacy": "Only aggregate metrics and the bounded council question are public; raw outputs remain local."
     }
     history = json.loads(PUBLIC_HISTORY.read_text()) if PUBLIC_HISTORY.exists() else {"privacy": "Aggregate action metadata only; raw local outputs are excluded.", "cycles": []}
-    history["cycles"] = (history.get("cycles", []) + [safe])[-24:]
+    history["cycles"] = since_day_zero(history.get("cycles", []) + [safe], zero_cycle, key="runtime_cycle")[-24:]
     public_hirelings = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "privacy": "Sanitized local identity metadata only; purposes, questions, raw outputs, and private registry stay local.",
@@ -1175,6 +1202,7 @@ def publish(result, world, model_health=True):
         "privacy": "Sanitized non-sensitive requests only; raw interviews and private context stay local.",
         "requests": []
     }
+    requests["requests"] = since_day_zero(requests.get("requests", []), zero_cycle)
     registry_by_id = {agent.get("id"): agent for agent in registry.get("agents", [])}
     for old in requests.get("requests", []):
         current = registry_by_id.get(old.get("agent_id"))
