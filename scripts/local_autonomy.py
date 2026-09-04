@@ -1172,9 +1172,12 @@ def target_claim_for(topic):
             continue  # tried enough independent sources; this claim is a dead end for now
         candidates.append(item)
     # A claim a resident found directly comes before a claim produced while
-    # verifying another, so the chain does not drift into verifying verifiers.
+    # verifying another, so the chain does not drift into verifying verifiers;
+    # and the oldest unverified claim goes first, so each gets its attempts in
+    # turn and a newer trivial claim never starves an older substantive one.
     primary = [item for item in candidates if item.get("origin") != "verify-claim"]
-    return (primary or candidates or [None])[0]
+    ordered = primary or candidates
+    return ordered[-1] if ordered else None
 FAMILY_TOOLS = {"encyclopedia": "wikipedia-summary", "papers": "openalex-summary", "code": "github-readme"}
 PAPER_DOMAINS = ("arxiv.org", "doi.org", "openalex.org", "nature.com", "sciencedirect.com", "springer.com", "wiley.com",
                  "ieee.org", "acm.org", "jstor.org", "sagepub.com", "tandfonline.com", "oup.com", "academic.oup.com",
