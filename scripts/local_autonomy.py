@@ -1718,7 +1718,8 @@ def main():
         verifying = verification_target if (research_assignment and verification_target) else None
         if verifying:
             research_assignment = verification_query(verifying.get("claim", ""), shared_research) or research_assignment
-        turn_family = SOURCE_FAMILIES[(turn_index // 2) % len(SOURCE_FAMILIES)]
+        rotation = families_for_topic(shared_research) if shared_research else list(SOURCE_FAMILIES)
+        turn_family = rotation[(turn_index // 2) % len(rotation)]
         if research_assignment and shared_family:
             turn_family = shared_family
         agent["last_turn_cycle"] = args.cycle

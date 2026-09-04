@@ -310,15 +310,21 @@ def public_search(query):
         # search API answers the whole query reliably, so a turn still reaches a
         # relevant page instead of a page about the query's first word.
         provider = "https://en.wikipedia.org/"
-        try:
-            data = json.loads(fetch("https://en.wikipedia.org/w/api.php?" + urllib.parse.urlencode(
-                {"action": "query", "list": "search", "srsearch": query, "srlimit": 5, "format": "json", "utf8": 1})))
+        words = [word for word in query.split() if len(word) > 3]
+        attempts = [query] + [" ".join(words[:count]) for count in (5, 3) if 0 < count < len(words)]
+        for attempt in attempts:
+            try:
+                data = json.loads(fetch("https://en.wikipedia.org/w/api.php?" + urllib.parse.urlencode(
+                    {"action": "query", "list": "search", "srsearch": attempt, "srlimit": 5, "format": "json", "utf8": 1})))
+            except Exception:
+                continue
             for hit in data.get("query", {}).get("search", []):
                 title = str(hit.get("title", "")).strip()
-                if title:
-                    results.append({"title": title[:160], "url": "https://en.wikipedia.org/wiki/" + urllib.parse.quote(title.replace(" ", "_"))})
-        except Exception:
-            results = []
+                url = "https://en.wikipedia.org/wiki/" + urllib.parse.quote(title.replace(" ", "_"))
+                if title and url not in {item["url"] for item in results}:
+                    results.append({"title": title[:160], "url": url})
+            if results:
+                break
     ignored = {"find", "relevant", "latest", "recent", "data", "public", "access", "use", "the", "for", "with"}
     terms = [term for term in re.findall(r"[a-z0-9]+", query.lower()) if len(term) > 3 and term not in ignored]
     if terms:
