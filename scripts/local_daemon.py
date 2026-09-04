@@ -1041,6 +1041,35 @@ def synchronize_with_origin():
     return False, "checkout diverged from origin/main and rebase failed: " + detail
 
 
+def publish_failure(reason, model_health, base_url=None):
+    """A cycle that produced nothing still publishes an honest health record:
+    the site must say 'the model refused every call' rather than go quiet."""
+    try:
+        health = json.loads(PUBLIC_HEALTH.read_text()) if PUBLIC_HEALTH.exists() else {}
+    except (OSError, json.JSONDecodeError):
+        health = {}
+    now = datetime.now(timezone.utc).isoformat()
+    health.update({"generated_at": now, "autonomy": "failed", "failure_reason": reason[:300], "failed_at": now,
+                   "host": RUNTIME_HOST, "model_probe_ok": bool((model_health or {}).get("ok")) if isinstance(model_health, dict) else bool(model_health)})
+    try:
+        health["model_usage"] = model_client.usage_summary(base_url)
+        health["model_provider"] = (model_health or {}).get("provider") if isinstance(model_health, dict) else health.get("model_provider")
+    except Exception:  # noqa: BLE001 - the failure record must never itself fail
+        pass
+    health["publication_status"] = PUBLISH_STATUS.get("last") or health.get("publication_status")
+    atomic_write_json(PUBLIC_HEALTH, health)
+    synced, why = synchronize_with_origin()
+    if not synced:
+        note_publish("skipped", "failure record not published: " + why)
+        return
+    subprocess.run(["git", "add", "docs/health.json"], cwd=ROOT, check=False)
+    commit = subprocess.run(["git", "commit", "-m", "chore: publish runtime failure record"], cwd=ROOT, capture_output=True)
+    if commit.returncode == 0:
+        pushed = subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=ROOT, capture_output=True, text=True)
+        note_publish("pushed" if pushed.returncode == 0 else "push-failed",
+                     "" if pushed.returncode == 0 else (pushed.stderr.strip().splitlines() or ["unknown"])[-1][:120])
+
+
 def publish(result, world, model_health=True):
     """Publish only safe metadata, and only when this checkout is clean."""
     model_ok = bool(model_health.get("ok")) if isinstance(model_health, dict) else bool(model_health)
@@ -1434,7 +1463,10 @@ try:
                               "codex": codex_task,
                               "autonomy": result["autonomy"], "recruitment": result["recruitment"]}), flush=True)
         else:
-            print(json.dumps({"error": "roundtable failed", "returncode": completed.returncode}), flush=True)
+            detail = re.sub(r"[A-Za-z0-9_\-]{28,}", "[redacted]", (completed.stderr or "").strip().splitlines()[-1] if (completed.stderr or "").strip() else "")[:200]
+            print(json.dumps({"error": "roundtable failed", "returncode": completed.returncode, "detail": detail}), flush=True)
+            if args.publish:
+                publish_failure("roundtable failed: " + (detail or "no detail"), probe_result, base_url)
             if server is not None and server.poll() is not None:
                 stop_local_model(server)
                 server = None

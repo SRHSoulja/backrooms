@@ -44,12 +44,22 @@ jobs:
           python-version: '3.x'
       - name: Install Bubblewrap when the runner allows it (the sandbox probes capability and falls back otherwise)
         run: sudo apt-get update -qq && sudo apt-get install -y -qq bubblewrap || true
-      - name: Place the provider key where the router reads it (never printed, never in the checkout)
+      - name: Place the provider keys where the router reads them (never printed, never in the checkout)
+        # Any provider the router knows can be added as a repository secret of the
+        # same name; unset secrets are skipped. The router uses whichever exist,
+        # in BACKROOMS_PROVIDER_ORDER, so a second free provider is a fallback.
         env:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           install -m 600 /dev/null "$RUNNER_TEMP/backrooms.env"
-          printf 'MISTRAL_API_KEY=%s\n' "$MISTRAL_API_KEY" > "$RUNNER_TEMP/backrooms.env"
+          for name in MISTRAL_API_KEY GEMINI_API_KEY GROQ_API_KEY CEREBRAS_API_KEY OPENROUTER_API_KEY; do
+            value="${!name}"
+            if [ -n "$value" ]; then printf '%s=%s\n' "$name" "$value" >> "$RUNNER_TEMP/backrooms.env"; fi
+          done
           echo "BACKROOMS_ENV_FILE=$RUNNER_TEMP/backrooms.env" >> "$GITHUB_ENV"
       - name: Run three bounded cycles at thirty-minute spacing, publishing after each
         env:
