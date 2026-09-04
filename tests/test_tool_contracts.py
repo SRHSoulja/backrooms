@@ -71,6 +71,16 @@ class ToolContractTests(unittest.TestCase):
         finally:
             tool_broker.fetch = original
 
+    def test_public_search_unwraps_the_engines_redirect_links(self):
+        original = tool_broker.fetch
+        try:
+            tool_broker.fetch = lambda url, max_bytes=None, user_agent=None: (
+                '<a class="result__a" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fgithub.com%2Fgithub%2Froskomnadzor%2F&amp;rut=abc">github/roskomnadzor takedown notices</a>')
+            result = tool_broker.public_search("roskomnadzor takedown notices github")
+            self.assertEqual(result["results"][0]["url"], "https://github.com/github/roskomnadzor/")
+        finally:
+            tool_broker.fetch = original
+
     def test_public_search_drops_results_that_match_only_the_first_word(self):
         original = tool_broker.fetch
         try:

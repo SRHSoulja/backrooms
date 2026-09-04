@@ -388,6 +388,12 @@ def public_search(query):
         title = re.sub(r"<[^>]+>", "", html.unescape(match.group(2))).strip()
         if url.startswith("//"):
             url = "https:" + url
+        # The engine wraps results in a redirect; the real page is in uddg=.
+        wrapped = re.match(r"https?://(?:html\.)?duckduckgo\.com/l/\?(.*)$", url, re.I)
+        if wrapped:
+            target = urllib.parse.parse_qs(wrapped.group(1)).get("uddg", [""])[0]
+            if target:
+                url = urllib.parse.unquote(target)
         if not url.lower().startswith("https://") or re.search(r"(?:login|log-in|signin|sign-in|authenticate|/auth(?:/|$)|/account(?:/|$))", url, re.I):
             continue
         if re.search(r"(?i)(/search(?:/|\?|$)|[?&](?:q|query|search)=)", url):

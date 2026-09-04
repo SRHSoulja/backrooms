@@ -882,6 +882,15 @@ class LocalAutonomyTests(unittest.TestCase):
         target = local_autonomy.target_claim_for("journalism corroboration standards")
         self.assertEqual(target["id"], "finding-a")
         self.assertEqual(local_autonomy.target_claim_for("corroboration standards in journalism today")["id"], "finding-a")
+        # a claim produced while verifying another never outranks a claim found directly,
+        # and a claim already judged against three sources is left alone
+        from scripts.corroboration import append_record, make_record
+        verifier = {**first, "id": "finding-v", "cycle": 6, "url": "https://b.example/two", "origin": "verify-claim", "verifies": "finding-a"}
+        self._write_findings(first, verifier)
+        self.assertEqual(local_autonomy.target_claim_for("journalism corroboration standards")["id"], "finding-a")
+        for n in range(3):
+            append_record(local_autonomy.CORROBORATIONS, make_record(first, {**verifier, "id": f"f-{n}", "url": f"https://x{n}.example/"}, f"pair-{n}", "unrelated", "", 7))
+        self.assertEqual(local_autonomy.target_claim_for("journalism corroboration standards")["id"], "finding-v")
         self.assertIsNone(local_autonomy.target_claim_for("something else"))
         self.assertIsNone(local_autonomy.target_claim_for(""))
 

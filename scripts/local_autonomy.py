@@ -1141,13 +1141,22 @@ def verification_query(claim, topic, limit=8):
     return " ".join(picked[:limit]).strip()[:160]
 
 
+VERIFY_ATTEMPTS = 3
+
+
 def target_claim_for(topic):
     """The newest accepted, on-topic finding on this topic that no other domain
     has yet been judged to support: the claim a colleague should try to verify."""
     if not topic:
         return None
-    supported = corroboration_index(load_records(CORROBORATIONS))
+    records = load_records(CORROBORATIONS)
+    supported = corroboration_index(records)
+    judged_against = {}
+    for record in records:
+        for identifier in record.get("finding_ids", []):
+            judged_against[identifier] = judged_against.get(identifier, 0) + 1
     wanted = {term[:6] for term in question_terms(topic, limit=12).split()}
+    candidates = []
     for item in reversed(accepted_findings()):
         have = {term[:6] for term in question_terms(str(item.get("topic", "")), limit=12).split()}
         overlap = len(wanted & have) / len(wanted | have) if (wanted | have) else 0.0
@@ -1155,8 +1164,13 @@ def target_claim_for(topic):
             continue
         if definition_source(item) or not finding_on_topic(item):
             continue
-        return item
-    return None
+        if judged_against.get(item.get("id"), 0) >= VERIFY_ATTEMPTS:
+            continue  # tried enough independent sources; this claim is a dead end for now
+        candidates.append(item)
+    # A claim a resident found directly comes before a claim produced while
+    # verifying another, so the chain does not drift into verifying verifiers.
+    primary = [item for item in candidates if item.get("origin") != "verify-claim"]
+    return (primary or candidates or [None])[0]
 FAMILY_TOOLS = {"encyclopedia": "wikipedia-summary", "papers": "openalex-summary", "code": "github-readme"}
 PAPER_DOMAINS = ("arxiv.org", "doi.org", "openalex.org", "nature.com", "sciencedirect.com", "springer.com", "wiley.com",
                  "ieee.org", "acm.org", "jstor.org", "sagepub.com", "tandfonline.com", "oup.com", "academic.oup.com",
