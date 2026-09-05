@@ -32,7 +32,7 @@ class ResidentToolTests(unittest.TestCase):
         again = resident_tools.propose_tool("local-004", 311, "word count", "counts words", GOOD, path=self.ledger)
         self.assertEqual(again["id"], record["id"])  # same code and name: same record
         ledger = json.loads(self.ledger.read_text())
-        self.assertEqual([item["status"] for item in ledger["proposals"]], ["ready-for-review", "rejected"])
+        self.assertEqual([item["status"] for item in ledger["proposals"]], ["trial", "rejected"])
 
     def test_a_passing_tool_is_on_trial_at_once_and_another_residents_use_adopts_it(self):
         adopted_dir = self.tools / "adopted"
