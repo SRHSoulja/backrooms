@@ -505,18 +505,44 @@ def sync_findings(registry, cycle):
     public_records = []
     for item in rows[-100:]:
         record = {key: item.get(key) for key in ("id", "agent", "cycle", "topic", "claim", "quote", "url", "content_hash",
-                                                  "confidence", "quote_score", "quote_match", "relates_to", "status")}
+                                                  "confidence", "quote_score", "quote_match", "relates_to", "status", "line_id",
+                                                  "origin", "retracted_cycle", "retraction_reason")}
         own_domain = urllib.parse.urlparse(str(item.get("url", ""))).netloc.lower()
         partners = support_index.get(item.get("id"), set()) - {own_domain}
         record["independent_sources"] = (1 + len(partners)) if is_accepted(item) else 0
+        if item.get("status") == "rejected":
+            record["lifecycle_stage"] = "rejected"
+        elif item.get("status") == "retracted":
+            record["lifecycle_stage"] = "retracted"
+        elif item.get("status") == "duplicate":
+            record["lifecycle_stage"] = "duplicate"
+        elif partners:
+            record["lifecycle_stage"] = "corroborated"
+        else:
+            record["lifecycle_stage"] = "candidate"
         if not is_accepted(item):
             record["rejection_reason"] = item.get("rejection_reason", "rejected")
         public_records.append(record)
+    corroborated = sum(item["independent_sources"] >= 2 for item in public_records)
+    counts = {"total": len(rows), "published_records": len(public_records), "candidates": len(accepted),
+              "corroborated": corroborated,
+              "rejected": sum(item.get("status") == "rejected" for item in rows),
+              "retracted": sum(item.get("status") == "retracted" for item in rows),
+              "duplicates": sum(item.get("status") == "duplicate" for item in rows)}
     atomic_write_json(PUBLIC_FINDINGS, {"schema_version": 2, "generated_at": datetime.now(timezone.utc).isoformat(),
         "privacy": "Sanitized claims, short quotes, URLs, hashes, and review metadata only; raw pages remain external and local context remains private.",
+        "status_definitions": {
+            "candidate": "Passed quote, grounding, topic, and provenance gates; not yet independently corroborated.",
+            "corroborated": "A separately sourced finding was judged to support the same specific claim.",
+            "rejected": "Failed an evidence gate and is retained for audit; it cannot found a room.",
+            "retracted": "Previously usable evidence was withdrawn after contrary evidence or a stricter standing check.",
+            "duplicate": "A copy or mirror of existing evidence; retained but never counted as an independent source."},
+        "counts": counts,
         "records": public_records})
-    return {"findings": len(accepted), "findings_rejected": len(rows) - len(accepted), "findings_total": len(rows),
-            "corroborated_findings": sum(item["independent_sources"] >= 2 for item in public_records),
+    return {"findings": len(accepted), "finding_candidates": len(accepted),
+            "findings_rejected": counts["rejected"], "findings_retracted": counts["retracted"],
+            "findings_duplicates": counts["duplicates"], "findings_excluded": len(rows) - len(accepted),
+            "findings_total": len(rows), "corroborated_findings": corroborated,
             "findings_feed": "docs/findings.json"}
 
 

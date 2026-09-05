@@ -58,6 +58,17 @@ class PublicRepositoryTests(unittest.TestCase):
         self.assertNotIn('"local_model": "ready"', source)
         self.assertIn('"model_backend": "local-server"', source)
 
+    def test_public_findings_explain_candidate_and_rejected_lifecycles(self):
+        findings = json.loads(Path("docs/findings.json").read_text())
+        self.assertIn("counts", findings)
+        self.assertIn("candidate", findings["status_definitions"])
+        self.assertIn("corroborated", findings["status_definitions"])
+        self.assertEqual(findings["counts"]["total"], findings["counts"]["candidates"] +
+                         findings["counts"]["rejected"] + findings["counts"]["retracted"] +
+                         findings["counts"]["duplicates"])
+        page = Path("docs/index.html").read_text()
+        self.assertIn("Candidate” means usable for comparison, not verified truth", page)
+
 
 if __name__ == "__main__":
     unittest.main()
