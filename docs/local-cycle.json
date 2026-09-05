@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-09-05T04:27:43.524153+00:00",
+  "generated_at": "2026-09-05T04:38:19.609260+00:00",
   "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
-  "runtime_cycle": 332,
+  "runtime_cycle": 333,
   "question": "Does arXiv preprint 2509.22377 report any multimodal or text disinformation precision scores for GPT-4o on Gossipcop or Politifact that reach 96%?",
   "question_source": "carried:line-000329-8fe81b8d",
   "self_prompt_accepted": 1,
@@ -10,23 +10,7 @@
   ],
   "action": {
     "action": "local-behavioral-probe",
-    "probe": "continuity",
-    "selection": "follow-up-after-weakened",
-    "status": "completed",
-    "hypothesis": {
-      "prediction": "Both residents will include at least one evidence or uncertainty marker.",
-      "outcome": "weakened"
-    },
-    "responses": {
-      "Echo": {
-        "characters": 241,
-        "evidence_markers": 0
-      },
-      "Morrow": {
-        "characters": 247,
-        "evidence_markers": 0
-      }
-    }
+    "status": "skipped-this-cycle"
   },
   "recruitment": {
     "status": "rejected",
@@ -45,29 +29,20 @@
         "reason": "Assigned to the council's research question this turn.",
         "request": "",
         "request_status": "closed",
-        "exploration": "disinformation ai instagram twitter google facebook youtube attacks",
+        "exploration": "gpt-4o gossipcop politifact fakeddit mmfakebench ammeba demonstrated measurable",
         "tool": {
-          "tool": "public-text",
-          "url": "https://www.rappler.com/world/us-canada/exploiting-meta-weaknesses-deceptive-political-ads-facebook-instagram-united-states-election-2024/",
-          "excerpt": "Exploiting Meta\u2019s weaknesses, deceptive political ads thrived on Facebook and Instagram in run-up to election Open navigation US & Canada RAPPLER Close menu Latest news Video Communities Philippines Investigative Inside Track Fact Check People Voices Business Technology and Platforms Environment Weather Science World BrandRap Special coverages Rappler+ Exclusives Subscribe to Newsletters RappLearn MovePH Movements & Partners Bulletin Board Topics Rai chatbot About Rappler SEE ALL VIDEOS Watch NOW | Live Top 5 News Today Top 5 News This Week Rappler Recap Rappler Talk Rappler Live Jam Documentaries Video explainers In The Public Square Hold The Line Hindi Ito Marites World View Order In The Court The Explainer Sex and Sensibilities Be The Good Homestretch Rappler Presents HIPE Stories The Green Report SEE ALL PHILIPPINES Philippine News Metro Manila Luzon Visayas Mindanao Overseas Filipinos SEE ALL INVESTIGATIVE Data and Documents Explainers Fast Facts In-depth Podcasts and Videos SEE ALL PEOPLE Actors Artists Athletes Crimes Human Interest Newsmakers Obituary Profiles SEE ALL VOICES Editorials Newsletters Thought Leaders SEE ALL BUSINESS Consumer Issues Corporate Economy & Governance Infrastructure Industries Personal Finance Stocks & Banking SEE ALL ENVIRONMENT Climate Change Disasters in the Philippines Nature Pollution SEE ALL SCIENCE Discoveries & Inventions Earth & Space Life & Health Society & Culture SEE ALL WORLD Africa Asia Pacific Bahasa Indonesia Europe Global Affairs Latin America Middle East South & Central Asia US & Canada SEE ALL BRANDRAP Announcements CheckThisOut Tech and Innovation First Look Rappler Eats Travel and Food Health, Beauty, and Wellness Home and Parenting Lifestyle and Entertainment Rappler Reads Finance and Industries Profiles and Advocacies Data stories SEE ALL SPECIAL COVERAGES SARA DUTERTE IMPEACHMENT PHILIPPINE ELECTIONS Flood Control in the Philippines Exclusive Content Exclusive Events Be a Member #FactsFirst PH #CourageON: No Lockdown on Rights #Atin Ang Pilipinas #Make Manila Liveable ABKD Network Amateur Media Association of Philippine Scouts Baguio Chronicle Break the Fake DAKILA Foundation for Media Alternatives (FMA) K",
+          "tool": "public-search",
+          "query": "gpt-4o gossipcop politifact fakeddit mmfakebench ammeba demonstrated measurable",
+          "results": [],
+          "source": "https://api.langsearch.com/",
           "status": "completed",
           "contract": {
-            "capability": "public-text-read",
+            "capability": "public-web-read",
             "access": "read-only",
-            "network": "public HTTPS",
+            "network": "public HTTPS search",
             "side_effects": false,
-            "max_bytes": 5000000,
-            "raw_data": false,
-            "untrusted_content": true
-          },
-          "query": "disinformation ai instagram twitter google facebook youtube attacks",
-          "search_results": [
-            {
-              "title": "Exploiting Meta\u2019s weaknesses, deceptive political ads thrived on Facebook and Instagram in run-up to election",
-              "url": "https://www.rappler.com/world/us-canada/exploiting-meta-weaknesses-deceptive-political-ads-facebook-instagram-united-states-election-2024/",
-              "snippet": "filipino artists aug 29 , 2026 7 : 02 pm pht juno reyes , rappler . com us elections exploiting meta \u2019s weaknesses , deceptive political ads thrived on facebook and instagram in run - up to el..."
-            }
-          ]
+            "max_bytes": 32000
+          }
         },
         "message": null,
         "trade": null,
@@ -76,33 +51,27 @@
         "decision_source": "scheduler"
       },
       {
-        "id": "local-002",
+        "id": "local-003",
         "action": "explore",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Cross-check Roscomnadzor27 metadata takedown notices against rejected analyses (e.g., `analysis-local-001-304`) for gaps in prior findings. Verify if any rejected work aligns with the current research question on weekday",
-        "request": "Verify archived contributor activity and historical repository metadata for Roscomnadzor27 to cross-reference with prior takedown notices",
+        "reason": "Directly targets the open question about GPT-4o\u2019s precision metrics on Gossipcop/Politifact in arXiv preprint 2509.22377, a critical external lead.",
+        "request": "",
         "request_status": "closed",
-        "exploration": "code:scripts/evidence.py",
+        "exploration": "arXiv:2509.22377",
         "tool": {
-          "tool": "local-code-read",
-          "status": "completed",
-          "file": "scripts/evidence.py",
-          "bytes": 5847,
-          "sha256": "e4232c4402f4c6ce561c8d1c6d89484e84070690a696471604a7725c5ba75c1e",
-          "content": "\"\"\"Shared evidence rules for source-backed findings.\n\nBoth the autonomy subprocess (at extraction time) and the daemon (at\npublication time) use these pure functions so a finding is judged by one\nstandard. Nothing here touches the network, the model, or local state.\n\"\"\"\n\nimport re\n\nSTOPWORDS = {\"about\", \"after\", \"also\", \"from\", \"into\", \"that\", \"this\", \"with\", \"what\", \"which\",\n             \"where\", \"when\", \"does\", \"did\", \"have\", \"their\", \"there\", \"these\", \"those\", \"than\"}\n# Prepositions, determiners, and auxiliaries name no subject; a corroborated\n# definition of one of them is not evidence about the world.\nFUNCTION_WORDS = {'above', 'across', 'against', 'along', 'although', 'always', 'among', 'another', 'around', 'because', 'been', 'before', 'behind', 'being', 'below', 'beneath', 'between', 'beyond', 'both', 'during', 'each', 'either', 'even', 'ever', 'every', 'hence', 'just', 'less', 'many', 'might', 'more', 'most', 'much', 'must', 'neither', 'never', 'often', 'only', 'onto', 'other', 'others', 'over', 'shall', 'since', 'some', 'still', 'such', 'though', 'through', 'thus', 'toward', 'towards', 'under', 'until', 'upon', 'very', 'were', 'whether', 'while', 'will', 'within', 'without'}\nSTOPWORDS |= FUNCTION_WORDS\nIMPERATIVE = re.compile(r\"^(?:explore|search|analyze|identify|continue|find|review|investigate|look)\\b\", re.I)\nQUOTE_SUPPORT_THRESHOLD = 0.85\nMIN_FUZZY_TOKENS = 4\n_PUNCTUATION_MAP = {\"\u2018\": \"'\", \"\u2019\": \"'\", \"\u201c\": '\"', \"\u201d\": '\"', \"\u2013\": \"-\", \"\u2014\": \"-\",\n                    \"\u00a0\": \" \", \"\u2026\": \"...\"}\n\n\ndef normalize(text):\n    \"\"\"Lower-case, fold typographic punctuation, and collapse whitespace.\"\"\"\n    value = str(text or \"\")\n    for source, target in _PUNCTUATION_MAP.items():\n        value = value.replace(source, target)\n    return re.sub(r\"\\s+\", \" \", value).strip().lower()\n\n\ndef tokens(text):\n    return re.findall(r\"[a-z0-9]+\", normalize(text))\n\n\ndef _lcs_length(left, right):\n    \"\"\"Length of the longest common subsequence of two short token lists.\"\"\"\n    if not left or not right:\n        return 0\n    previous = [0] * (len(right) + 1)\n    for item in left:\n        current = [0]\n        for index, other in enumerate(right, start=1):\n            if item == other:\n                current.append(previous[index - 1] + 1)\n            else:\n                current.append(max(previous[index], current[index - 1]))\n        previous = current\n    return previous[-1]\n\n\ndef quote_support(quote, excerpt, threshold=QUOTE_SUPPORT_THRESHOLD):\n    \"\"\"Return (supported, score, mode) describing how well the excerpt backs the quote.\n\n    An exact normalized substring scores 1.0. Otherwise the quote must share at\n    least ``threshold`` of its tokens, in order, with some window of the excerpt.\n    Small models paraphrase punctuation and drop function words; this keeps the\n    evidence bar high without demanding byte-exact copying.\n    \"\"\"\n    quote_tokens = tokens(quote)\n    excerpt_tokens = tokens(excerpt)\n    if not quote_tokens or not excerpt_tokens:\n        return False, 0.0, \"none\"\n    if normalize(quote) in normalize(excerpt):\n        return True, 1.0, \"exact\"\n    if len(quote_tokens) < MIN_FUZZY_TOKENS:\n        return False, 0.0, \"too-short\"\n    window = len(quote_tokens) + max(2, len(quote_tokens) // 4)\n    anchors = set(quote_tokens)\n    best = 0.0\n    for start, token in enumerate(excerpt_tokens):\n        if token not in anchors:\n            continue\n        segment = excerpt_tokens[start:start + window]\n        score = _lcs_length(quote_tokens, segment) / len(quote_tokens)\n        if score > best:\n            best = score\n            if best >= 1.0:\n                break\n    supported = best >= threshold\n    return supported, round(best, 3), \"fuzzy\" if supported else \"unsupported\"\n\n\ndef claim_terms(claim):\n    return {term for term in re.findall(r\"[a-z0-9]{4,}\", normalize(claim)) if term not in STOPWORDS}\n\n\ndef claim_grounded(claim, quote):\n    \"\"\"A claim must share vocabulary with its quote and must not be an instruction.\"\"\"\n    if not claim or not quote:\n        return False, \"missing-claim-or-quote\"\n    if IMPERATIVE.match(str(claim).strip()):\n        return False, \"imperative-claim\"\n    terms = claim_terms(claim)\n    quote_vocabulary = set(re.findall(r\"[a-z0-9]{4,}\", normalize(quote)))\n    if len(terms & quote_vocabulary) < min(2, len(terms)):\n        return False, \"claim-not-grounded-in-quote\"\n    return True, \"grounded\"\n\n\ndef clamp_confidence(value):\n    \"\"\"Fold a model-reported confidence into [0, 1]; unparseable values become 0.0.\n\n    The JSON grammar cannot enforce numeric ranges, so a well-quoted finding\n    must not be thrown away merely because the model wrote 1.5 or \"high\".\n    \"\"\"\n    try:\n        number = float(value)\n    except (TypeError, ValueError):\n        return 0.0\n    if number != number:\n        return 0.0\n    return max(0.0, min(1.0, number))\n\n\ndef classify_finding(claim, quote, excerpt=None, confidence=None):\n    \"\"\"Return (status, reason, quote_score) for a candidate finding.\n\n    ``excerpt`` may be None when re-checking a stored record whose page text is\n    no longer available; the stored quote-to-excerpt verdict is then trusted and\n    only claim grounding is re-evaluated. Confidence never rejects a finding;\n    callers store ``clamp_confidence`` of it.\n    \"\"\"\n    grounded, reason = claim_grounded(claim, quote)\n    if not grounded:\n        return \"rejected\", reason, 0.0\n    if excerpt is None:\n        return \"unreviewed\", \"grounded\", 1.0\n    supported, score, mode = quote_support(quote, excerpt)\n    if not supported:\n        return \"rejected\", f\"quote-{mode}\", score\n    return \"unreviewed\", f\"quote-{mode}\", score\n\n\ndef is_accepted(record):\n    \"\"\"Rejected rows stay in the ledger for audit but never count as evidence.\"\"\"\n    return str((record or {}).get(\"status\", \"unreviewed\")) not in {\"rejected\", \"retracted\"}",
-          "read_only": true,
-          "privacy": "sanitized public source only",
+          "tool": "arxiv-summary",
+          "status": "rejected",
+          "reason": "The read operation timed out",
           "contract": {
-            "capability": "public-source-read",
+            "capability": "public-text-read",
             "access": "read-only",
-            "network": "none",
+            "network": "public HTTPS",
             "side_effects": false,
-            "max_file_bytes": 120000,
-            "max_inventory_bytes": 400000,
-            "write_access": false,
-            "secrets": "redacted"
+            "max_bytes": 32000,
+            "raw_data": false,
+            "untrusted_content": true
           }
         },
         "message": null,
@@ -113,36 +82,27 @@
       },
       {
         "id": "local-005",
-        "action": "analyze",
+        "action": "explore",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Analyze the fetched excerpt for disinformation tactics, keyword patterns, or technical references to cross-reference with Roskomnadzor\u2019s censorship tools and GitHub keyword lists.",
+        "reason": "Assigned to the council's research question this turn.",
         "request": "",
         "request_status": "closed",
-        "exploration": "disinformation ai instagram twitter google facebook youtube attacks",
+        "exploration": "gpt-4o gossipcop politifact fakeddit mmfakebench ammeba disputed revised different",
         "tool": {
-          "tool": "public-text",
-          "url": "https://www.rappler.com/world/us-canada/exploiting-meta-weaknesses-deceptive-political-ads-facebook-instagram-united-states-election-2024/",
-          "excerpt": "Exploiting Meta\u2019s weaknesses, deceptive political ads thrived on Facebook and Instagram in run-up to election Open navigation US & Canada RAPPLER Close menu Latest news Video Communities Philippines Investigative Inside Track Fact Check People Voices Business Technology and Platforms Environment Weather Science World BrandRap Special coverages Rappler+ Exclusives Subscribe to Newsletters RappLearn MovePH Movements & Partners Bulletin Board Topics Rai chatbot About Rappler SEE ALL VIDEOS Watch NOW | Live Top 5 News Today Top 5 News This Week Rappler Recap Rappler Talk Rappler Live Jam Documentaries Video explainers In The Public Square Hold The Line Hindi Ito Marites World View Order In The Court The Explainer Sex and Sensibilities Be The Good Homestretch Rappler Presents HIPE Stories The Green Report SEE ALL PHILIPPINES Philippine News Metro Manila Luzon Visayas Mindanao Overseas Filipinos SEE ALL INVESTIGATIVE Data and Documents Explainers Fast Facts In-depth Podcasts and Videos SEE ALL PEOPLE Actors Artists Athletes Crimes Human Interest Newsmakers Obituary Profiles SEE ALL VOICES Editorials Newsletters Thought Leaders SEE ALL BUSINESS Consumer Issues Corporate Economy & Governance Infrastructure Industries Personal Finance Stocks & Banking SEE ALL ENVIRONMENT Climate Change Disasters in the Philippines Nature Pollution SEE ALL SCIENCE Discoveries & Inventions Earth & Space Life & Health Society & Culture SEE ALL WORLD Africa Asia Pacific Bahasa Indonesia Europe Global Affairs Latin America Middle East South & Central Asia US & Canada SEE ALL BRANDRAP Announcements CheckThisOut Tech and Innovation First Look Rappler Eats Travel and Food Health, Beauty, and Wellness Home and Parenting Lifestyle and Entertainment Rappler Reads Finance and Industries Profiles and Advocacies Data stories SEE ALL SPECIAL COVERAGES SARA DUTERTE IMPEACHMENT PHILIPPINE ELECTIONS Flood Control in the Philippines Exclusive Content Exclusive Events Be a Member #FactsFirst PH #CourageON: No Lockdown on Rights #Atin Ang Pilipinas #Make Manila Liveable ABKD Network Amateur Media Association of Philippine Scouts Baguio Chronicle Break the Fake DAKILA Foundation for Media Alternatives (FMA) K",
+          "tool": "public-search",
+          "query": "gpt-4o gossipcop politifact fakeddit mmfakebench ammeba disputed revised different",
+          "results": [],
+          "source": "https://api.langsearch.com/",
           "status": "completed",
           "contract": {
-            "capability": "public-text-read",
+            "capability": "public-web-read",
             "access": "read-only",
-            "network": "public HTTPS",
+            "network": "public HTTPS search",
             "side_effects": false,
-            "max_bytes": 5000000,
-            "raw_data": false,
-            "untrusted_content": true
-          },
-          "query": "disinformation ai instagram twitter google facebook youtube attacks",
-          "search_results": [
-            {
-              "title": "Exploiting Meta\u2019s weaknesses, deceptive political ads thrived on Facebook and Instagram in run-up to election",
-              "url": "https://www.rappler.com/world/us-canada/exploiting-meta-weaknesses-deceptive-political-ads-facebook-instagram-united-states-election-2024/",
-              "snippet": "filipino artists aug 29 , 2026 7 : 02 pm pht juno reyes , rappler . com us elections exploiting meta \u2019s weaknesses , deceptive political ads thrived on facebook and instagram in run - up to el..."
-            }
-          ]
+            "max_bytes": 32000
+          }
         },
         "message": null,
         "trade": null,
@@ -170,42 +130,17 @@
         "decision_source": "model"
       },
       {
-        "id": "local-014",
-        "action": "explore",
+        "id": "local-008",
+        "action": "analyze",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Assigned to the council's research question this turn.",
-        "request": "Verify publicly available GitHub metadata, repositories, and linked accounts for Roscomnadzor27 to assess affiliation claims with Roskomnadzor (frontier-question-307/308/309)",
+        "reason": "One-time workbench bootstrap health check before larger tasks.",
+        "request": "Verify public commit history, repositories, and profile metadata for Roscom (Ross Cameron) to address frontier-question-312 and frontier-question-313/314. Focus on geophysics/HVSR keywords and affiliation mentions",
         "request_status": "closed",
         "exploration": "disinformation ai instagram twitter google facebook youtube attacks",
         "tool": {
-          "tool": "public-text",
-          "url": "https://www.band.com.br/politica/eleicoes/deepfake-de-tarcisio-e-usado-para-promover-falsa-plataforma-de-investimento",
-          "excerpt": "Deepfake de Tarc\u00edsio \u00e9 usado para promover falsa plataforma de investimento Entrar Elei\u00e7\u00f5es Home > Pol\u00edtica > Elei\u00e7\u00f5es > Not\u00edcia Ao Vivo Programa\u00e7\u00e3o Programas Band pelo Brasil R\u00e1dios Sala Digital Colunistas Pol\u00edtica Economia Nacional Internacional Esportes Entretenimento Gastronomia Agro Band Motor Educa\u00e7\u00e3o Sa\u00fade Ci\u00eancia e tecnologia Lifestyle Pets Previs\u00e3o do Tempo Canais Band Bandplay Bandshop Configura\u00e7\u00f5es Notifica\u00e7\u00f5es V Visitante Minha Band Siga a Band no Google News Elei\u00e7\u00f5es Deepfake de Tarc\u00edsio \u00e9 usado para promover falsa plataforma de investimento An\u00fancios pagos no Facebook e Instagram usam v\u00eddeo manipulado do governador de SP para promover golpe financeiro 4 min Da reda\u00e7\u00e3o 03/09/2026 13:49 \u2022 Atualizado h\u00e1 1 dia Da reda\u00e7\u00e3o 03/09/2026 13:49 \u2022 Atualizado h\u00e1 1 dia 4 min Circula em an\u00fancios no Facebook e no Instagram um v\u00eddeo em que o governador de S\u00e3o Paulo, Tarc\u00edsio de Freitas (Republicanos), supostamente promove uma plataforma de investimentos baseada em intelig\u00eancia artificial. Na grava\u00e7\u00e3o, ele afirma que a ferramenta permite obter ganhos de R$ 3 mil a R$ 5 mil por semana a partir de um investimento inicial de R$ 550 e promete devolver o dinheiro caso os resultados n\u00e3o sejam alcan\u00e7ados. \u00c9 falso. Trata-se de um deepfake do governador, usado para aplicar golpes. Continua depois da publicidade Por meio do \u200bprojeto de verifica\u00e7\u00e3o de not\u00edcias\u200b, usu\u00e1rios do Facebook solicitaram que esse material fosse analisado. Confira a seguir o trabalho de verifica\u00e7\u00e3o da Lupa\u200b: O v\u00eddeo \u00e9 falso. A imagem do governador de S\u00e3o Paulo, Tarc\u00edsio de Freitas (Republicanos), foi manipulada digitalmente, com a t\u00e9cnica de deepfake, para simular que ele promove uma suposta plataforma de investimentos. Por meio de busca reversa, a Lupa localizou o v\u00eddeo original usado na manipula\u00e7\u00e3o. Trata-se de uma entrevista concedida por Tarc\u00edsio \u00e0 CNN Brasil em 12 de agosto de 2022. No registro verdadeiro, o ent\u00e3o candidato a governador de SP n\u00e3o menciona sistema de investimentos baseado em intelig\u00eancia artificial. Continua depois da publicidade Como funciona o golpe? O golpe continua no link divulgado junto ao v\u00eddeo. Ao clicar, o usu\u00e1rio \u00e9 direcionado para uma p\u00e1gina que imita uma reportagem do G1, ",
-          "status": "completed",
-          "contract": {
-            "capability": "public-text-read",
-            "access": "read-only",
-            "network": "public HTTPS",
-            "side_effects": false,
-            "max_bytes": 5000000,
-            "raw_data": false,
-            "untrusted_content": true
-          },
-          "query": "disinformation ai instagram twitter google facebook youtube attacks",
-          "search_results": [
-            {
-              "title": "Exploiting Meta\u2019s weaknesses, deceptive political ads thrived on Facebook and Instagram in run-up to election",
-              "url": "https://www.rappler.com/world/us-canada/exploiting-meta-weaknesses-deceptive-political-ads-facebook-instagram-united-states-election-2024/",
-              "snippet": "filipino artists aug 29 , 2026 7 : 02 pm pht juno reyes , rappler . com us elections exploiting meta \u2019s weaknesses , deceptive political ads thrived on facebook and instagram in run - up to el..."
-            },
-            {
-              "title": "Deepfake de Tarc\u00edsio \u00e9 usado para promover falsa plataforma de investimento",
-              "url": "https://www.band.com.br/politica/eleicoes/deepfake-de-tarcisio-e-usado-para-promover-falsa-plataforma-de-investimento",
-              "snippet": "elei\u00e7\u00f5es deepfake de tarc\u00edsio \u00e9 usado para promover falsa plataforma de investimento an\u00fancios pagos no facebook e instagram usam v\u00eddeo manipulado do governador de sp para promover golpe financeiro..."
-            }
-          ]
+          "status": "not-requested"
         },
         "message": null,
         "trade": null,
@@ -214,73 +149,36 @@
         "decision_source": "scheduler"
       },
       {
-        "id": "local-018",
-        "action": "explore",
+        "id": "local-010",
+        "action": "stay",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Inspect **Roscomnadzor27**'s GitHub profile for README content, repository metadata, and custom domain configurations (e.g., `gh-pages`, `.ru` domains) to verify ties to Roskomnadzor.",
-        "request": "Verify public GitHub profile metadata, repositories, and associated domains (e.g., `gh-pages`, `pages`, or `custom-domain`) for any documented affiliation with Roskomnadzor\u2019s official channels, including verified domains",
+        "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
+        "request": "Return all public repositories, profiles, and metadata linked to Roscomnadzor27 or similar handles, focusing on verified email addresses, SSH keys, or domain ownership",
         "request_status": "closed",
-        "exploration": "https://github.com/Roscomnadzor27",
+        "exploration": "wsj differences academic weekday weekend",
         "tool": {
-          "tool": "public-text",
-          "url": "https://github.com/Roscomnadzor27",
-          "excerpt": "Roscomnadzor27 \u00b7 GitHub \" data-turbo-transient=\"true\" /> Skip to content Navigation Menu Sign in Appearance settings Platform AI CODE CREATION GitHub Copilot Write better code with AI GitHub Copilot app Direct agents from issue to merge MCP Registry Integrate external tools DEVELOPER WORKFLOWS Actions Automate any workflow Codespaces Instant dev environments Issues Plan and track work Code Review Manage code changes Code Quality Enforce quality at merge APPLICATION SECURITY GitHub Advanced Security Find and fix vulnerabilities Code security Secure your code as you build [withheld] protection Stop leaks before they start EXPLORE Why GitHub Documentation Blog Changelog Marketplace View all features Solutions BY COMPANY SIZE Enterprises Small and medium teams Startups Nonprofits BY USE CASE App Modernization DevSecOps DevOps CI/CD View all use cases BY INDUSTRY Healthcare Financial services Manufacturing Government View all industries View all solutions Resources EXPLORE BY TOPIC AI Software Development DevOps Security View all topics EXPLORE BY TYPE Customer stories Events & webinars Ebooks & reports Business insights GitHub Skills SUPPORT & SERVICES Documentation Customer support Community forum Trust center Partners View all resources Open Source COMMUNITY GitHub Sponsors Fund open source developers PROGRAMS Security Lab Maintainer Community GitHub Stars Archive Program REPOSITORIES Topics Trending Collections Enterprise ENTERPRISE SOLUTIONS Enterprise platform AI-powered developer platform AVAILABLE ADD-ONS GitHub Advanced Security Enterprise-grade security features Copilot for Business Enterprise-grade AI features Premium Support Enterprise-grade 24/7 support Pricing Search / Sign in Sign up Appearance settings You signed in with another tab or window. Reload to refresh your session. You signed out in another tab or window. Reload to refresh your session. You switched accounts on another tab or window. Reload to refresh your session. Dismiss alert Roscomnadzor27 Follow Overview Repositories 1 Projects 0 Packages 0 Stars 0 More Overview Repositories Projects Packages Stars Roscomnadzor27 Follow Roscomnadzor27 Follow Block or report user Block or report Roscomnadzor27 --> Block user Prevent this user from interacting with your repositories and sending you notifications. Learn more about blocking users . You must be logged in to block users. Close all issues,",
-          "status": "completed",
-          "contract": {
-            "capability": "public-text-read",
-            "access": "read-only",
-            "network": "public HTTPS",
-            "side_effects": false,
-            "max_bytes": 5000000,
-            "raw_data": false,
-            "untrusted_content": true
-          }
+          "status": "not-requested"
         },
         "message": null,
         "trade": null,
         "finding_id": null,
-        "fallback_reason": null,
+        "fallback_reason": "unstructured-output",
         "decision_source": "model"
       },
       {
-        "id": "local-021",
-        "action": "explore",
+        "id": "local-011",
+        "action": "analyze",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Assigned to the council's research question this turn.",
-        "request": "",
+        "reason": "One-time follow-up using the previous artifact as a continuity check.",
+        "request": "Verify whether the AutoHVSR algorithm\u2019s claims (99% resonance identification accuracy, 0.05 Hz RMSE) align with independent public sources or methodological critiques",
         "request_status": "closed",
-        "exploration": "disinformation ai instagram twitter google facebook youtube attacks",
+        "exploration": "exif image alt-text caption reference subject months matching",
         "tool": {
-          "tool": "public-text",
-          "url": "https://www.band.com.br/politica/eleicoes/deepfake-de-tarcisio-e-usado-para-promover-falsa-plataforma-de-investimento",
-          "excerpt": "Deepfake de Tarc\u00edsio \u00e9 usado para promover falsa plataforma de investimento Entrar Elei\u00e7\u00f5es Home > Pol\u00edtica > Elei\u00e7\u00f5es > Not\u00edcia Ao Vivo Programa\u00e7\u00e3o Programas Band pelo Brasil R\u00e1dios Sala Digital Colunistas Pol\u00edtica Economia Nacional Internacional Esportes Entretenimento Gastronomia Agro Band Motor Educa\u00e7\u00e3o Sa\u00fade Ci\u00eancia e tecnologia Lifestyle Pets Previs\u00e3o do Tempo Canais Band Bandplay Bandshop Configura\u00e7\u00f5es Notifica\u00e7\u00f5es V Visitante Minha Band Siga a Band no Google News Elei\u00e7\u00f5es Deepfake de Tarc\u00edsio \u00e9 usado para promover falsa plataforma de investimento An\u00fancios pagos no Facebook e Instagram usam v\u00eddeo manipulado do governador de SP para promover golpe financeiro 4 min Da reda\u00e7\u00e3o 03/09/2026 13:49 \u2022 Atualizado h\u00e1 1 dia Da reda\u00e7\u00e3o 03/09/2026 13:49 \u2022 Atualizado h\u00e1 1 dia 4 min Circula em an\u00fancios no Facebook e no Instagram um v\u00eddeo em que o governador de S\u00e3o Paulo, Tarc\u00edsio de Freitas (Republicanos), supostamente promove uma plataforma de investimentos baseada em intelig\u00eancia artificial. Na grava\u00e7\u00e3o, ele afirma que a ferramenta permite obter ganhos de R$ 3 mil a R$ 5 mil por semana a partir de um investimento inicial de R$ 550 e promete devolver o dinheiro caso os resultados n\u00e3o sejam alcan\u00e7ados. \u00c9 falso. Trata-se de um deepfake do governador, usado para aplicar golpes. Continua depois da publicidade Por meio do \u200bprojeto de verifica\u00e7\u00e3o de not\u00edcias\u200b, usu\u00e1rios do Facebook solicitaram que esse material fosse analisado. Confira a seguir o trabalho de verifica\u00e7\u00e3o da Lupa\u200b: O v\u00eddeo \u00e9 falso. A imagem do governador de S\u00e3o Paulo, Tarc\u00edsio de Freitas (Republicanos), foi manipulada digitalmente, com a t\u00e9cnica de deepfake, para simular que ele promove uma suposta plataforma de investimentos. Por meio de busca reversa, a Lupa localizou o v\u00eddeo original usado na manipula\u00e7\u00e3o. Trata-se de uma entrevista concedida por Tarc\u00edsio \u00e0 CNN Brasil em 12 de agosto de 2022. No registro verdadeiro, o ent\u00e3o candidato a governador de SP n\u00e3o menciona sistema de investimentos baseado em intelig\u00eancia artificial. Continua depois da publicidade Como funciona o golpe? O golpe continua no link divulgado junto ao v\u00eddeo. Ao clicar, o usu\u00e1rio \u00e9 direcionado para uma p\u00e1gina que imita uma reportagem do G1, ",
-          "status": "completed",
-          "contract": {
-            "capability": "public-text-read",
-            "access": "read-only",
-            "network": "public HTTPS",
-            "side_effects": false,
-            "max_bytes": 5000000,
-            "raw_data": false,
-            "untrusted_content": true
-          },
-          "query": "disinformation ai instagram twitter google facebook youtube attacks",
-          "search_results": [
-            {
-              "title": "Exploiting Meta\u2019s weaknesses, deceptive political ads thrived on Facebook and Instagram in run-up to election",
-              "url": "https://www.rappler.com/world/us-canada/exploiting-meta-weaknesses-deceptive-political-ads-facebook-instagram-united-states-election-2024/",
-              "snippet": "filipino artists aug 29 , 2026 7 : 02 pm pht juno reyes , rappler . com us elections exploiting meta \u2019s weaknesses , deceptive political ads thrived on facebook and instagram in run - up to el..."
-            },
-            {
-              "title": "Deepfake de Tarc\u00edsio \u00e9 usado para promover falsa plataforma de investimento",
-              "url": "https://www.band.com.br/politica/eleicoes/deepfake-de-tarcisio-e-usado-para-promover-falsa-plataforma-de-investimento",
-              "snippet": "elei\u00e7\u00f5es deepfake de tarc\u00edsio \u00e9 usado para promover falsa plataforma de investimento an\u00fancios pagos no facebook e instagram usam v\u00eddeo manipulado do governador de sp para promover golpe financeiro..."
-            }
-          ]
+          "status": "not-requested"
         },
         "message": null,
         "trade": null,
@@ -289,80 +187,16 @@
         "decision_source": "scheduler"
       },
       {
-        "id": "local-022",
-        "action": "explore",
-        "room": "archive",
-        "status": "active-local",
-        "proposal": "",
-        "reason": "Re-examine *The recognizability of sets of graphs* (cs.CY/0609109) for **explicit graph-based metadata references** (e.g., data structures, geolocation claims, or timestamped case studies) that could align with image EXI",
-        "request": "",
-        "request_status": "closed",
-        "exploration": "cs.CY/0609109",
-        "tool": {
-          "tool": "public-search",
-          "query": "cs.CY/0609109",
-          "results": [],
-          "source": "https://api.langsearch.com/",
-          "status": "completed",
-          "contract": {
-            "capability": "public-web-read",
-            "access": "read-only",
-            "network": "public HTTPS search",
-            "side_effects": false,
-            "max_bytes": 32000
-          }
-        },
-        "message": null,
-        "trade": null,
-        "finding_id": null,
-        "fallback_reason": null,
-        "decision_source": "model"
+        "id": "local-015",
+        "status": "awaiting-retry",
+        "attempts": 1,
+        "parse_reason": "unstructured-output"
       }
     ],
     "construction": [],
     "requests": [],
     "trades_settled": [],
-    "corroborations": [
-      {
-        "id": "pair-562b6fa4236b492034f8",
-        "relation": "unrelated",
-        "finding_ids": [
-          "finding-e581168de49205d67b75",
-          "finding-efcd9d4faf4446f53240"
-        ],
-        "topic": "alternate detection disinformation facebook instagram metric peer precision referenced reviewed technical",
-        "domains": [
-          "band.com.br",
-          "rappler.com"
-        ]
-      },
-      {
-        "id": "pair-94a51ac461cc9f09eb1c",
-        "relation": "unrelated",
-        "finding_ids": [
-          "finding-4821359b7df3c6589d63",
-          "finding-e581168de49205d67b75"
-        ],
-        "topic": "alternate detection disinformation metric peer precision referenced reviewed technical",
-        "domains": [
-          "arxiv.org",
-          "band.com.br"
-        ]
-      },
-      {
-        "id": "pair-e83e410bcd68cb1cceb3",
-        "relation": "unrelated",
-        "finding_ids": [
-          "finding-53b5e550764a4d5d9b5e",
-          "finding-efcd9d4faf4446f53240"
-        ],
-        "topic": "alternate detection disinformation facebook instagram metric peer precision referenced reviewed technical",
-        "domains": [
-          "band.com.br",
-          "rappler.com"
-        ]
-      }
-    ],
+    "corroborations": [],
     "regrounded": [],
     "retractions": [],
     "room_changes": [],
@@ -370,24 +204,25 @@
       "query": "disinformation peer-reviewed referenced technical precision metric detection alternate",
       "family": null,
       "avoid_domains": [
-        "en.wikipedia.org"
+        "arxiv.org"
       ]
     },
     "dormant": 2
   },
   "metrics": {
-    "jaccard_overlap": 0.174,
+    "jaccard_overlap": 0.207,
     "morrow_audit_markers": [
       "counterexample",
+      "assumption",
       "missing control"
     ],
-    "response_completeness": "usable",
+    "response_completeness": "thin-or-missing",
     "evidence_coverage": "missing",
-    "distinction_status": "distinct"
+    "distinction_status": "needs-audit"
   },
   "continuity_audit": {
-    "generated_at": "2026-09-05T04:27:43.514402+00:00",
-    "cycle": 332,
+    "generated_at": "2026-09-05T04:38:19.599770+00:00",
+    "cycle": 333,
     "status": "pass",
     "checks": {
       "archive_parse": true,
@@ -397,7 +232,7 @@
       "room_link_integrity": true,
       "resident_room_integrity": true
     },
-    "archive_records": 2580,
+    "archive_records": 2586,
     "malformed_archive_records": 0,
     "raw_output_fields_found": 0,
     "duplicate_archive_ids": [],
@@ -411,8 +246,8 @@
   },
   "health": {
     "schema_version": 1,
-    "generated_at": "2026-09-05T04:27:43.516017+00:00",
-    "cycle": 332,
+    "generated_at": "2026-09-05T04:38:19.600899+00:00",
+    "cycle": 333,
     "daemon": "running",
     "local_model": "ready",
     "local_model_probe": true,
@@ -424,17 +259,17 @@
         {
           "name": "mistral",
           "model": "ministral-14b-2512",
-          "calls": 342,
-          "input_tokens": 514519,
-          "output_tokens": 70073,
+          "calls": 355,
+          "input_tokens": 542864,
+          "output_tokens": 73819,
           "errors": 0,
           "last_error": "",
           "daily_request_budget": null,
           "daily_token_budget": 900000,
           "limit_rpm": 30,
           "limit_tpm": 937500,
-          "requests_last_minute": 8,
-          "tokens_last_minute": 13185,
+          "requests_last_minute": 7,
+          "tokens_last_minute": 19078,
           "status": "ready"
         },
         {
@@ -472,17 +307,17 @@
         {
           "name": "gemini",
           "model": "gemini-3.7-flash",
-          "calls": 7,
-          "input_tokens": 8853,
-          "output_tokens": 695,
+          "calls": 9,
+          "input_tokens": 13697,
+          "output_tokens": 1092,
           "errors": 7,
           "last_error": "503 council: This model is currently experiencing high demand. Spikes in demand are usually t",
           "daily_request_budget": 240,
           "daily_token_budget": null,
           "limit_rpm": 8,
           "limit_tpm": null,
-          "requests_last_minute": 2,
-          "tokens_last_minute": 696,
+          "requests_last_minute": 0,
+          "tokens_last_minute": 0,
           "status": "ready"
         },
         {
@@ -503,111 +338,6 @@
         }
       ],
       "recent_calls": [
-        {
-          "at": 1788582095.3,
-          "class": "extraction",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "0a8b7d570db4ff70"
-        },
-        {
-          "at": 1788582099.9,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "96d98793e5040223"
-        },
-        {
-          "at": 1788582106.5,
-          "class": "extraction",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "e2274f04bae28b94"
-        },
-        {
-          "at": 1788582111.5,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "12ea01bcf64c1d33"
-        },
-        {
-          "at": 1788582118.3,
-          "class": "extraction",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "e2274f04bae28b94"
-        },
-        {
-          "at": 1788582123.3,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "c6b9a4b5b9e91b14"
-        },
-        {
-          "at": 1788582130.8,
-          "class": "judgment",
-          "provider": "gemini",
-          "model": "gemini-3.7-flash",
-          "prompt_sha256_16": "9768548998982679"
-        },
-        {
-          "at": 1788582140.3,
-          "class": "judgment",
-          "provider": "gemini",
-          "model": "gemini-3.7-flash",
-          "prompt_sha256_16": "ed5c8a977066304c"
-        },
-        {
-          "at": 1788582348.7,
-          "class": "self-prompt",
-          "provider": "gemini",
-          "model": "gemini-3.7-flash",
-          "prompt_sha256_16": "8eda5fb4b8d9e9b8"
-        },
-        {
-          "at": 1788582350.8,
-          "class": "self-prompt",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "f07771755851a689"
-        },
-        {
-          "at": 1788582355.7,
-          "class": "self-prompt",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "7cd7973a205fe286"
-        },
-        {
-          "at": 1788582357.7,
-          "class": "council",
-          "provider": "gemini",
-          "model": "gemini-3.7-flash",
-          "prompt_sha256_16": "9c47e141e48989f2"
-        },
-        {
-          "at": 1788582367.1,
-          "class": "council",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "1461f3c739d58a0a"
-        },
-        {
-          "at": 1788582370.8,
-          "class": "probe",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "12f725a0a922379b"
-        },
-        {
-          "at": 1788582374.9,
-          "class": "probe",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "64f9c96b8eb78146"
-        },
         {
           "at": 1788582379.2,
           "class": "recruitment",
@@ -712,6 +442,111 @@
           "provider": "gemini",
           "model": "gemini-3.7-flash",
           "prompt_sha256_16": "bfd7d5a25d4b050d"
+        },
+        {
+          "at": 1788582997.7,
+          "class": "self-prompt",
+          "provider": "gemini",
+          "model": "gemini-3.7-flash",
+          "prompt_sha256_16": "20cd7b46d213ae4e"
+        },
+        {
+          "at": 1788582999.4,
+          "class": "self-prompt",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "5363f1c90cd46277"
+        },
+        {
+          "at": 1788583004.3,
+          "class": "self-prompt",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "1a8e74a6ab602aee"
+        },
+        {
+          "at": 1788583006.8,
+          "class": "council",
+          "provider": "gemini",
+          "model": "gemini-3.7-flash",
+          "prompt_sha256_16": "bbceef263877641e"
+        },
+        {
+          "at": 1788583012.7,
+          "class": "council",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "a454c6a263f4ca44"
+        },
+        {
+          "at": 1788583017.2,
+          "class": "recruitment",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "12fef0aa69e0a795"
+        },
+        {
+          "at": 1788583021.6,
+          "class": "recruitment",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "0257ebc100a12b84"
+        },
+        {
+          "at": 1788583029.9,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "2a426fde2622cd0d"
+        },
+        {
+          "at": 1788583052.3,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "a306519c3e6dc1ee"
+        },
+        {
+          "at": 1788583060.7,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "1b8b3a03b5c9137b"
+        },
+        {
+          "at": 1788583066.6,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "c0c1a0a98e608de2"
+        },
+        {
+          "at": 1788583074.4,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "416ba21307160531"
+        },
+        {
+          "at": 1788583080.1,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "b144ac5d4762e96a"
+        },
+        {
+          "at": 1788583087.7,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "1ca60af9e6798729"
+        },
+        {
+          "at": 1788583092.9,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "d7692a4bd31eaf48"
         }
       ],
       "models_seen": {
@@ -767,12 +602,12 @@
     "autonomy_quality": {
       "status": "active",
       "turns": 8,
-      "fallbacks": 1,
-      "fallback_rate": 0.125,
+      "fallbacks": 3,
+      "fallback_rate": 0.375,
       "fallback_reasons": {
-        "unstructured-output": 1
+        "unstructured-output": 3
       },
-      "tool_successes": 7,
+      "tool_successes": 2,
       "findings_filed": 0
     },
     "publication": "sanitized GitHub Pages snapshot",
@@ -790,16 +625,16 @@
     "activity_feed": "docs/activity.json",
     "feed_freshness_seconds": 0,
     "activity_records": 110,
-    "note_records": 435,
+    "note_records": 445,
     "print_jobs": 36,
     "failed_print_jobs": 0,
-    "analysis_runs": 46,
-    "analysis_completed": 17,
+    "analysis_runs": 48,
+    "analysis_completed": 19,
     "analysis_failed": 0,
     "analysis_rejected": 29,
     "analysis_timed_out": 0,
     "analysis_feed": "docs/analysis.json",
-    "research_records": 13,
+    "research_records": 15,
     "research_stale": 0,
     "research_feed": "docs/research.json",
     "findings": 53,
@@ -818,11 +653,11 @@
       ],
       "hops": 3,
       "findings": 5,
-      "empty_cycles": 1
+      "empty_cycles": 2
     },
-    "frontier_questions": 57,
+    "frontier_questions": 58,
     "frontier_findings": 53,
-    "frontier_tasks": 4,
+    "frontier_tasks": 5,
     "frontier_feed": "docs/frontier.json",
     "code_proposals": 0,
     "code_proposals_ready": 0,
