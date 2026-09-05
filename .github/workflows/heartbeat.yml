@@ -33,7 +33,9 @@ jobs:
           queued=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow cycle.yml --status queued --json databaseId --jq 'length')
           pending=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow cycle.yml --status pending --json databaseId --jq 'length')
           age=$(python3 -c "import json,datetime; h=json.load(open('docs/health.json')); at=datetime.datetime.fromisoformat(h['generated_at'].replace('Z','+00:00')); print(int((datetime.datetime.now(datetime.timezone.utc)-at).total_seconds()//60))" 2>/dev/null || echo 999)
-          echo "cycle runs active=$active queued=$queued pending=$pending; last publish ${age} min ago"
+          paused=$(python3 -c "import json,datetime; h=json.load(open('docs/health.json')); until=h.get('paused_until'); print('yes' if h.get('autonomy')=='paused' and until and datetime.datetime.fromisoformat(until.replace('Z','+00:00'))>datetime.datetime.now(datetime.timezone.utc) else 'no')" 2>/dev/null || echo no)
+          echo "cycle runs active=$active queued=$queued pending=$pending; last publish ${age} min ago; paused=$paused"
+          if [ "$paused" = "yes" ]; then echo "the world is paused until the free allowances reset; not dispatching"; exit 0; fi
           if [ "${active:-0}" = "0" ] && [ "${queued:-0}" = "0" ] && [ "${pending:-0}" = "0" ] && [ "${age:-999}" -gt 50 ]; then
             gh workflow run cycle.yml --repo "$GITHUB_REPOSITORY" && echo "dispatched a cycle run"
           fi

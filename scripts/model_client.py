@@ -18,7 +18,7 @@ import re
 import time
 import urllib.error
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -101,6 +101,8 @@ def providers(local_base_url=None):
     built = []
     for name in order:
         if name == "local":
+            if setting("BACKROOMS_LOCAL_MODEL") == "never":
+                continue  # a hosted run has no local server to fall back to
             url = local_base_url or setting("BACKROOMS_LOCAL_BASE_URL", "http://127.0.0.1:8080")
             built.append({"name": "local", "base_url": url, "api_key": None, "model": setting("BACKROOMS_LLM_MODEL", "local"),
                           "rpm": None, "rpd": None, "tpd": None, "json_schema": True})
@@ -186,6 +188,23 @@ def _available(provider, usage, now):
     if provider["tpd"] and entry.get("input_tokens", 0) + entry.get("output_tokens", 0) >= provider["tpd"]:
         return False, "daily-token-budget"
     return True, ""
+
+
+def readiness(local_base_url=None, now=None):
+    """Which providers could answer right now, and why the others cannot: the
+    daemon pauses a cycle instead of failing it when nothing is ready."""
+    usage = _load_usage()
+    now = now if now is not None else time.time()
+    report = []
+    for provider in providers(local_base_url):
+        ok, why = _available(provider, usage, now)
+        report.append({"name": provider["name"], "ready": bool(ok), "reason": why})
+    return report
+
+
+def next_utc_midnight(now=None):
+    moment = datetime.fromtimestamp(now if now is not None else time.time(), tz=timezone.utc)
+    return (moment.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)).isoformat()
 
 
 def _note_success(usage, name, prompt_tokens, completion_tokens, limits, now, **fields):
@@ -310,6 +329,12 @@ def resolve_model(provider, usage, opener=None):
         chosen = choose_gemini_model(listed, provider["model"], failed)
     else:
         chosen = choose_preferred_model(listed, provider.get("preferred_models") or (), provider["model"], failed)
+    listed_names = {str(raw or "").split("/")[-1].strip() for raw in listed}
+    if listed_names and chosen not in listed_names and chosen == provider["model"]:
+        # Nothing usable is listed today (every model's quota is spent): the fallback
+        # name would only earn 404s, so the provider rests until tomorrow.
+        _record(usage, provider["name"], last_error="every usable model's daily quota is spent; resting until tomorrow", disabled=True)
+        return provider
     cache[provider["name"]] = chosen
     usage.setdefault("models_last", {})[provider["name"]] = chosen
     # A choice made while a better model was busy lasts only until that model's window ends.

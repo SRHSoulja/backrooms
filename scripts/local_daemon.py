@@ -1380,13 +1380,62 @@ def synchronize_with_origin():
     ancestor = subprocess.run(["git", "merge-base", "--is-ancestor", "origin/main", "HEAD"], cwd=ROOT, capture_output=True)
     if not ancestor.returncode:
         return True, ""  # origin has nothing new; local is simply ahead
-    rebase = subprocess.run(["git", "rebase", "--autostash", "origin/main"], cwd=ROOT, capture_output=True, text=True)
+    # Feeds written this cycle must survive the sync unchanged: an autostash
+    # would merge them with origin's copy and can leave conflict markers in a
+    # published file. Set them aside, rebase, put them back exactly.
+    status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
+    changed = [line[3:] for line in status.stdout.splitlines() if len(line) >= 4 and line[:2].strip() in ("M", "MM", "AM", "A")]
+    kept = {}
+    for path in changed:
+        try:
+            kept[path] = (ROOT / path).read_bytes()
+        except OSError:
+            continue
+    if kept:
+        subprocess.run(["git", "checkout", "--"] + list(kept), cwd=ROOT, capture_output=True)
+    rebase = subprocess.run(["git", "rebase", "origin/main"], cwd=ROOT, capture_output=True, text=True)
+    if rebase.returncode:
+        subprocess.run(["git", "rebase", "--abort"], cwd=ROOT, capture_output=True)
+    for path, content in kept.items():
+        try:
+            (ROOT / path).write_bytes(content)
+        except OSError:
+            continue
     if not rebase.returncode:
         print(json.dumps({"publish": "rebased local commits onto origin/main"}), flush=True)
         return True, ""
-    subprocess.run(["git", "rebase", "--abort"], cwd=ROOT, capture_output=True)
     detail = (rebase.stderr.strip().splitlines() or ["unknown"])[-1][:120]
     return False, "checkout diverged from origin/main and rebase failed: " + detail
+
+
+def publish_pause(readiness, base_url=None):
+    """No provider can answer, every free allowance for the day is spent: the
+    world pauses until midnight UTC and says so, instead of failing cycle after cycle."""
+    try:
+        health = json.loads(PUBLIC_HEALTH.read_text()) if PUBLIC_HEALTH.exists() else {}
+    except (OSError, json.JSONDecodeError):
+        health = {}
+    now = datetime.now(timezone.utc).isoformat()
+    reasons = ", ".join(f"{item['name']}:{item['reason']}" for item in readiness if not item.get("ready"))
+    health.update({"generated_at": now, "autonomy": "paused", "paused_at": now, "paused_until": model_client.next_utc_midnight(),
+                   "pause_reason": ("every model provider's free allowance for the day is spent (" + reasons + "); cycles resume after midnight UTC")[:300],
+                   "host": RUNTIME_HOST, "model_status": "unavailable", "model_probe_ok": False, "model_backend": "hosted-api"})
+    health.pop("failure_reason", None)
+    try:
+        health["model_usage"] = model_client.usage_summary(base_url)
+    except Exception:  # noqa: BLE001
+        pass
+    atomic_write_json(PUBLIC_HEALTH, health)
+    synced, why = synchronize_with_origin()
+    if not synced:
+        note_publish("skipped", "pause record not published: " + why)
+        return
+    subprocess.run(["git", "add", "docs/health.json"], cwd=ROOT, check=False)
+    commit = subprocess.run(["git", "commit", "-m", "chore: pause until the free allowances reset"], cwd=ROOT, capture_output=True)
+    if commit.returncode == 0:
+        pushed = subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=ROOT, capture_output=True, text=True)
+        note_publish("pushed" if pushed.returncode == 0 else "push-failed",
+                     "" if pushed.returncode == 0 else (pushed.stderr.strip().splitlines() or ["unknown"])[-1][:120])
 
 
 def publish_failure(reason, model_health, base_url=None):
@@ -1868,6 +1917,13 @@ try:
         sync_frontier({}, runtime_world(), registry)
         frontier = json.loads(LOCAL_FRONTIER.read_text()) if LOCAL_FRONTIER.exists() else {}
         codex_task = queue_codex_frontier_review(frontier)
+        readiness = model_client.readiness(base_url)
+        if readiness and not any(item.get("ready") for item in readiness):
+            print(json.dumps({"paused": "no model provider can answer; every free allowance for the day is spent",
+                              "providers": readiness}), flush=True)
+            if args.publish:
+                publish_pause(readiness, base_url)
+            break
         decision = next_question(base_url)
         question, question_source = decision["question"], decision["source"]
         self_prompt_accepted, research_topic = decision.get("accepted", 0), decision.get("research_topic", "")
