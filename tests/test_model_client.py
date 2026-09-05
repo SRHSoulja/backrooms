@@ -19,6 +19,8 @@ class GeminiModelChoiceTests(unittest.TestCase):
         self.assertEqual(choose_gemini_model([ids[2], ids[5], ids[1]], "gemini-2.5-flash"), "gemini-3.8-flash-preview-08-2026")
         self.assertEqual(choose_gemini_model(["models/gemini-2.5-flash-lite"], "gemini-2.5-flash"), "gemini-2.5-flash")
         self.assertEqual(choose_gemini_model([], "fallback"), "fallback")
+        self.assertEqual(choose_gemini_model(["models/gemini-flash-latest", "models/gemini-pro-latest"], "x"), "gemini-flash-latest")
+        self.assertEqual(choose_gemini_model(["models/gemini-3.8-flash-001", "models/gemini-3.8-flash-preview"], "x"), "gemini-3.8-flash-001")
 
 
 class ProviderOrderTests(unittest.TestCase):

@@ -212,20 +212,21 @@ UNWANTED_MODEL = re.compile(r"lite|image|tts|live|audio|embed|8b|thinking|native
 
 
 def choose_gemini_model(model_ids, fallback):
-    """The newest general Flash model the account can see; a dated or preview name
-    only when no plain one exists. Never a lite, image, audio, or live variant."""
+    """The newest general Flash model the account can see: a released name over a
+    preview or dated one, the newest version among those, a 'latest' alias when
+    nothing is versioned. Never a lite, image, audio, live, or experimental variant."""
     best = None
     for raw in model_ids or []:
-        name = str(raw or "").split("/")[-1]
-        match = GEMINI_FLASH.match(name)
-        if not match or UNWANTED_MODEL.search(name.replace("gemini-", "", 1)):
+        name = str(raw or "").split("/")[-1].strip()
+        if "flash" not in name or not name.startswith("gemini") or UNWANTED_MODEL.search(name.replace("gemini-", "", 1)):
             continue
+        match = re.search(r"gemini-(\d+(?:\.\d+)?)-flash", name)
         try:
-            version = float(match.group(1))
+            version = float(match.group(1)) if match else 0.0
         except ValueError:
-            continue
-        plain = 0 if ("preview" in name or re.search(r"-\d{2}-\d{4}$", name)) else 1
-        key = (plain, version, name)  # a released model over a preview; among those, the newest
+            version = 0.0
+        plain = 0 if re.search(r"preview|-\d{2}-\d{4}$", name) else 1
+        key = (plain, version, 1 if "latest" in name else 0, -len(name), name)
         if best is None or key > best[0]:
             best = (key, name)
     return best[1] if best else fallback
@@ -251,9 +252,12 @@ def resolve_model(provider, usage, opener=None):
     if cache.get(provider["name"]):
         return {**provider, "model": cache[provider["name"]]}
     try:
-        chosen = choose_gemini_model(_list_models(provider, opener), provider["model"])
-    except Exception:  # noqa: BLE001 - the configured name is used and the listing retried next day
+        listed = _list_models(provider, opener)
+    except Exception as error:  # noqa: BLE001 - the configured name is used and the listing retried on the next call
+        usage.setdefault("models_seen", {})[provider["name"]] = ["listing failed: " + type(error).__name__]
         return provider
+    usage.setdefault("models_seen", {})[provider["name"]] = [str(item).split("/")[-1][:48] for item in listed[:40]]
+    chosen = choose_gemini_model(listed, provider["model"])
     cache[provider["name"]] = chosen
     return {**provider, "model": chosen}
 
@@ -451,7 +455,11 @@ def complete(messages, *, temperature=0.3, max_tokens=400, schema=None, schema_n
                     except Exception as retry_error:  # noqa: BLE001 - recorded and passed to the next provider
                         _record(usage, provider["name"], errors=1, last_error=f"400 {str(retry_error)[:80]}", cooldown_until=clock() + 30)
                 else:
-                    _record(usage, provider["name"], errors=1, last_error=f"{status} {call_class}", cooldown_until=clock() + 30)
+                    detail = _error_detail(error)
+                    _record(usage, provider["name"], errors=1, last_error=(f"{status} {call_class}" + (f": {detail}" if detail else ""))[:160],
+                            cooldown_until=clock() + 30)
+                    if status == 404 and provider.get("resolve_model"):
+                        usage.get("models", {}).pop(provider["name"], None)  # a stale model name: list again on the next call
                 failures.append(f"{provider['name']}:{status}")
                 continue
             except Exception as error:  # noqa: BLE001 - any transport failure moves to the next provider
@@ -507,7 +515,8 @@ def probe(local_base_url=None, opener=None, timeout=8):
 def usage_summary(local_base_url=None):
     """Counts only; never keys or endpoints beyond the provider's name."""
     usage = _load_usage()
-    summary = {"day": usage.get("day"), "providers": [], "recent_calls": list(usage.get("calls", []))[-30:]}
+    summary = {"day": usage.get("day"), "providers": [], "recent_calls": list(usage.get("calls", []))[-30:],
+               "models_seen": usage.get("models_seen", {})}
     for provider in providers(local_base_url):
         entry = usage["providers"].get(provider["name"], {})
         summary["providers"].append({
