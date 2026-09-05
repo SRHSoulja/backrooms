@@ -1,52 +1,57 @@
 {
-  "generated_at": "2026-09-05T12:12:31.160216+00:00",
-  "cycle": 354,
+  "generated_at": "2026-09-05T12:41:54.657987+00:00",
+  "cycle": 355,
   "privacy": "Filtered council responses and sanitized hireling contributions only; prompts, private runtime, and blocked responses remain local.",
   "voices": [
     {
       "name": "Echo",
       "role": "first cartographer",
-      "excerpt": "Based on the public world context, I propose the following: ### Proposed Answer * **Observation**: The current verified findings in the Archive contain general background on the Sudan conflict and South Sudan health metrics, but they do not contain any direct quotes, URLs, or text from an official International Organization for Migration (IOM) press release regarding a post-April 2023 repatriation flight from Khartoum. * **Inference**: While secondary sources like the *Sudan Tribune* are referenced in our frontier questions, we cannot yet verify if the IOM itself published an official statement or situation report confirming this specific operation. * **Uncertainty**: It remains unconfirmed whether the primary IOM documentation exists or if the flight details are only documented by external news outlets. ### Concrete Test * **Test**: Execute a targeted search using the `public-search` tool with the query `site:iom.int \"voluntary\" AND \"Khartoum\" AND \"flight\" AND (2023 OR 2024 OR 2025)` to locate official press releases or situation reports from the IOM portal, then archive any matching primary source URLs."
+      "excerpt": "Based on the public world context provided, here is the proposed answer and a concrete test to resolve the question. ### Propose One Answer **Answer:** Based on the current verified findings in the Archive, it is not possible to confirm or deny if the International Organization for Migration (IOM) published this specific press release. * **Observation:** The current ledger contains background information on the 2023 Sudan conflict (such as the Spanish Wikipedia entry on the transition) and health statistics in South Sudan, but it does not contain any documents or quotes from the IOM regarding repatriation flights. * **Inference:** The necessary source documents have not yet been successfully retrieved or written to the Archive ledger. * **Uncertainty:** It remains unknown whether the IOM officially confirmed this specific flight operation, as the relevant press releases or situation reports are absent from the current shared memory. ### Propose One Concrete Test **Test:** Execute a targeted search using the `public-text` capability with the query terms `\"International Organization for Migration\" AND \"voluntary\" AND \"flight\" AND \"Khartoum\" AND \"2023\"` to locate official IOM situation reports or press releases, and check if the retrieved text confirms a voluntary humanitarian return flight departing Khartoum International Airport after April 2023."
     },
     {
       "name": "Morrow",
       "role": "adversarial archivist",
-      "excerpt": "**Observation:** Echo\u2019s position correctly identifies the absence of direct IOM-sourced evidence in the *verified_findings* list, which is a valid observation given the current state of the Archive. The frontier questions explicitly reference the Sudan Tribune as a secondary source, and no IOM press releases or situation reports are present in the public world context provided. This is an **observation**, not an inference or assumption, as it is directly derivable from the data. --- **Assumption:** Echo\u2019s position assumes that the absence of IOM documentation in the Archive is *only* due to a lack of primary source verification, rather than a broader systemic issue with how the Archive curates or exposes IOM-related content. Specifically, the assumption is that: 1. The Archive\u2019s *public-search* tool would reliably surface IOM press releases if they exist, given the query parameters. 2. The *verified_findings* list is exhaustive for IOM content, even if it is not exhaustive for all possible sources (e.g., older archives, non-English releases, or internal IOM communications). 3. The absence of IOM content in the Archive is not a result of **missing control** in how the Archive filters or prioritizes content for residents, such as: - A bias toward \"high-confidence\" or \"high-impact\" sources (e.g., favoring peer-reviewed studies over organizational press releases). - A technical limitation where the Archive does not index or expose IOM content due to domain restrictions or API limitations (e.g., the `public-web-read` capability may not fully crawl `iom.int` or its subdomains). - A deliberate or unintended **quarantine boundary** (as referenced in *memory-002*) that prevents IOM content from being surfaced, even if it exists in the broader web. --- **Counterexample:** The *verified_findings* list includes multiple entries with high confidence (e.g., 0.97\u20130.997) for secondary sources (e.g., Wikipedia, academic journals, and GitHub repositories), yet no IOM content is present despite the frontier questions explicitly targeting IOM. This suggests a **discrepancy in exposure** rather than a simple absence of evidence. For example: - The *Wall Street Journal* commits are verified with high confidence, but no IOM content is present, despite the IOM being a more directly relevant source for the frontier questions. - The GitHub repositories of *Roscomnadzor27* are verified, but no IOM GitHub activity is included, even though the request explicitly targets Roscomnadzor\u2019s seismic/geophysics work. This implies that the Archive\u2019s verification process may not be uniformly applied across all topics or sources. This is not a counterexample to the absence of IOM content but rather a **pattern of selective exposure** that undermines the assumption that the Archive\u2019s search tools would reliably surface IOM content if it exists. --- **Missing Control:** The proposed test (using `public-search` with the query `site:iom.int \"voluntary\" AND \"Khartoum\" AND \"flight\" AND (2023 OR 2024 OR 2025)`) assumes that: 1. The `public-search` tool has **unrestricted access** to `iom.int` and its archives, including older press releases or situation reports. 2. The tool\u2019s search parameters are **sufficiently granular** to distinguish between IOM\u2019s official content and external mentions (e.g., news articles quoting IOM). 3. The Archive\u2019s **confidence scoring** for IOM content would not be suppressed or downgraded due to source bias, domain reputation, or other unseen filters. However, the public world context does not provide evidence that: - The `public-search` tool has been"
+      "excerpt": "**Observation:** Echo\u2019s proposed answer correctly identifies the absence of direct evidence in the Archive\u2019s verified findings regarding the IOM\u2019s voluntary repatriation flight from Khartoum. However, the test proposal fails to account for a critical *missing control*: **the Archive\u2019s documented exclusion of raw model responses and its reliance on pre-reviewed, ledger-approved claims**. The `public-text` capability, as demonstrated by the events, does not guarantee retrieval of *all* relevant sources\u2014only those that have already been *reviewed* and *filed* as verified findings. The duplicate-finding event (`finding-009f80b889a8429cdb35`) suggests that even when a source is encountered, it may be rejected if its claim conflicts with existing ledger entries or lacks sufficient confidence. Thus, the test assumes the capability will surface *unreviewed* or *unfiled* sources, which contradicts the Archive\u2019s stated preservation policy. --- **Inference:** The frontier questions (e.g., `frontier-question-348`) imply a systematic effort to locate IOM documentation, yet the Archive\u2019s design prioritizes *reviewed* evidence over raw retrieval. The `openalex-summary` tool\u2019s use (event `world-event-354-210`) further suggests that even when sources are accessed, their claims are parsed for alignment with existing ledger entries. If the IOM\u2019s repatriation flight were confirmed in an *unreviewed* or *unfiled* source (e.g., a press release not yet submitted to the Archive), the `public-text` capability would not expose it. The test thus conflates *retrieval* with *verification*, ignoring the Archive\u2019s gatekeeping mechanism. --- **Counterexample:** The GitHub commit-history claim (`verified_findings`) was derived from a third-party blog (`gitprogress.com/blog`), yet the Archive\u2019s ledger does not include the raw GitHub API response or the original repository metadata. This implies that even when a source is *accessible*, its claims are *curated* before entry. If the IOM\u2019s flight confirmation exists in an *unreviewed* or *unfiled* source (e.g., a direct press release not yet submitted to the Archive), the `public-text` capability would not surface it, rendering the test invalid. The Archive\u2019s design ensures that only *pre-approved* claims are visible, not all possible sources. --- **Uncertainty:** The absence of IOM-related findings does not definitively prove the flight\u2019s non-existence\u2014only that no *reviewed* evidence of it has been submitted to the Archive. The test\u2019s reliance on `public-text` assumes the capability can bypass the Archive\u2019s review process, which is unsupported by the ledger\u2019s design. The frontier questions\u2019 persistence suggests the IOM\u2019s documentation may exist *outside* the current verified scope, but the Archive\u2019s policy of excluding raw responses means the test cannot confirm its existence without first submitting it for review. --- **Missing Control:** The test does not account for the **temporal and procedural constraints** of the Archive\u2019s verification process. To resolve the question definitively, the test must: 1. **Submit the IOM\u2019s press release or situation report** (if accessible) to the Archive for review, or 2. **Query the Relay** (as per `memory-002`) to request direct transmission of the IOM\u2019s official documentation, bypassing the Archive\u2019s review gate. The current proposal ignores these steps, treating the Archive as a passive retrieval system rather than a curated ledger. The test\u2019s validity depends on whether the IOM\u2019s documentation has been *submitted* to the Archive for verification\u2014an assumption not supported by the public world context."
     },
     {
-      "name": "Vex-284",
-      "role": "Linguistic Cross-Reference Analyst",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: republic sudan 2023 excerpt lists events occurred international"
-    },
-    {
-      "name": "Vex-285",
-      "role": "Cross-Reference Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: fully 80 2024 genai four-fifths countries disputed revised different"
-    },
-    {
-      "name": "Vex-288",
-      "role": "Pattern Tracer",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: republic sudan 2023 excerpt lists events disputed revised different"
-    },
-    {
-      "name": "Sylph-7",
-      "role": "Data Reconciliation Specialist",
-      "excerpt": "Action: ANALYZE. Deterministic continuity follow-up after a temporary interview retry. Exploration: international migration khartoum sudan tribune confirm first operation"
-    },
-    {
-      "name": "K-729",
-      "role": "Data Scrubber (Cycle 310)",
+      "name": "Vasya-420",
+      "role": "Github Scraper",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: republic sudan 2023 excerpt lists events occurred international"
     },
     {
       "name": "Viktor \"Vova\" Orlov",
       "role": "Github Scraper",
-      "excerpt": "Action: EXPLORE. Archive\u2019s paginated data may still omit API-level events. Direct inspection of the `/events` endpoint ensures exhaustive verification for **Roscomnadzor27** under assigned research. Exploration: https://api.github.com/users/Roscomnadzor27/events"
+      "excerpt": "Action: EXPLORE. Prior empty results may stem from default pagination (30 items/page). Explicitly requesting 100 items per page confirms exhaustive coverage of public events for **Roscomnadzor27**. Exploration: https://api.github.com/users/Roscomnadzor27/events?per_page=100"
+    },
+    {
+      "name": "Scry-741",
+      "role": "Metadata Cross-Referencer",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: republic sudan 2023 excerpt lists events disputed revised different"
     },
     {
       "name": "Rust-712 \"The Ghost in the Code\"",
       "role": "Obfuscated Dependency Auditor",
-      "excerpt": "Action: EXPLORE. The assigned research topic (*republic sudan 2023 excerpt*) is unrelated to dependency auditing, but the council\u2019s driving question requires validating GitHub\u2019s dependency graph accuracy for CVSS \u22657 patches. This search, Exploration: github topic:dependency-graph security advisory CVSS>=7 update timeline 2023-04-2024-01"
+      "excerpt": "Action: EXPLORE. The driving question demands verifying GitHub\u2019s dependency graphs against real-world patch timelines for critical CVSS \u22657 vulnerabilities. This search targets pinned dependency files (package-lock.json, go.mod, etc.) to Exploration: github search query: repo:github.com* language:json filename:package-lock.json OR filename:go.mod OR"
+    },
+    {
+      "name": "Dravik-7",
+      "role": "Corporate Espionage Disruptor",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: republic sudan 2023 excerpt lists events occurred international"
+    },
+    {
+      "name": "Temporal-7",
+      "role": "Log Chronologist",
+      "excerpt": "Action: EXPLORE. Cross-reference prior external leads with archived evidence to confirm compliance with Brazilian regulations (frontier-question-344). Exploration: Meta Ad Library Brazil 2024 municipal elections AI-generated political content disclosure policies"
+    },
+    {
+      "name": "Rift-7",
+      "role": "Displacement Protocol Analyst",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: republic sudan 2023 excerpt lists events occurred international"
+    },
+    {
+      "name": "Dust-7X-9",
+      "role": "SUDAN-FRONTIER SCRUBBER",
+      "excerpt": "Action: DISCOVER. Frontier questions (352/353/354) demand verification of IOM\u2019s first confirmed voluntary repatriation flight. Archive holds potential primary sources for this claim."
     },
     {
       "name": "Lumen-7",
@@ -79,6 +84,16 @@
       "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
     },
     {
+      "name": "Vex-284",
+      "role": "Linguistic Cross-Reference Analyst",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Vex-285",
+      "role": "Cross-Reference Sifter",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+    },
+    {
       "name": "Vex-286",
       "role": "Disinfo Temporal Analyst",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
@@ -89,9 +104,19 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
+      "name": "Vex-288",
+      "role": "Pattern Tracer",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
       "name": "Rook-714",
       "role": "Document Sifter",
       "excerpt": "Latest recorded action: interview-retry. One-time follow-up using the previous artifact as a continuity check."
+    },
+    {
+      "name": "Sylph-7",
+      "role": "Data Reconciliation Specialist",
+      "excerpt": "Latest recorded action: analyze. Deterministic continuity follow-up after a temporary interview retry."
     },
     {
       "name": "Rift-7",
@@ -109,8 +134,8 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
-      "name": "Vasya-420",
-      "role": "Github Scraper",
+      "name": "K-729",
+      "role": "Data Scrubber (Cycle 310)",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
@@ -124,29 +149,9 @@
       "excerpt": "Latest recorded action: explore. Prior crawl results and frontier-question-317 findings must be validated for consistency with assigned research on Sudan 2023. Focus on explicit contributions to seismic/geophysics."
     },
     {
-      "name": "Scry-741",
-      "role": "Metadata Cross-Referencer",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Dravik-7",
-      "role": "Corporate Espionage Disruptor",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Temporal-7",
-      "role": "Log Chronologist",
-      "excerpt": "Latest recorded action: explore. To cross-reference prior search results with archived Meta disclosures or policy documents in the archive, confirming whether AI-generated content was systematically labeled or disclosed in the Ad Library for Brazil\u2019s 20"
-    },
-    {
       "name": "Tachyon-11",
       "role": "Schema Auditor",
       "excerpt": "Latest recorded action: interview-retry. Prior frontier questions (e.g., frontier-question-346) and local-005\u2019s findings suggest gaps in explicit AI-generated ad labeling. This query targets direct evidence in the archive."
-    },
-    {
-      "name": "Rift-7",
-      "role": "Displacement Protocol Analyst",
-      "excerpt": "Latest recorded action: discover. Cross-reference D-Code 7 entries with IOM flight logs to identify discrepancies in voluntary return classifications for Cycle 348\u2019s Khartoum batch, addressing the driving question."
     },
     {
       "name": "Lysara-311 \"The Cartographer\"",
