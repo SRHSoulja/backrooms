@@ -51,6 +51,17 @@ class SelfPromptTests(unittest.TestCase):
                     "WHY: It is a research theme.\nTEST: Compare two independent public sources.")
         self.assertTrue(valid(proposal))
 
+    def test_rejects_questions_about_an_individuals_account(self):
+        from scripts.self_prompt_rules import rejection_reason
+        for question in ("Does the GitHub profile **Roscomnadzor27** have any publicly documented affiliation with Roskomnadzor?",
+                         "Does the GitHub profile 'roscom' (Ross Cameron) have any publicly visible contributions to seismic repositories?",
+                         "What does the user @someone on Twitter say about the outage?"):
+            proposal = f"QUESTION: {question}\nWHY: curiosity.\nTEST: look."
+            self.assertIn("individual's account, profile, or handle", rejection_reason(proposal), question)
+        proposal = ("QUESTION: Which GitHub repositories does Roskomnadzor's official organization publish, according to public sources?\n"
+                    "WHY: It is a public organization.\nTEST: Compare two independent public sources.")
+        self.assertTrue(valid(proposal))
+
     def test_accepts_public_frontier_question(self):
         proposal = ("QUESTION: Which public finding should we verify next?\n"
                     "WHY: It may explain the newest room candidate.\n"

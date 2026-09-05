@@ -25,13 +25,13 @@ except ImportError:
 try:
     from scripts.evidence import clamp_confidence, classify_finding, is_accepted, FUNCTION_WORDS
     from scripts.corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, claims_overlap, corroboration_index,
-                                       growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source)
+                                       growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source, profile_subject, profile_url)
     from scripts import reports, resident_tools
     from scripts.world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes, retract_unfounded_rooms, collapse_withdrawn_rooms, finding_on_topic)
 except ImportError:
     from evidence import clamp_confidence, classify_finding, is_accepted, FUNCTION_WORDS
     from corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, claims_overlap, corroboration_index,
-                               growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source)
+                               growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source, profile_subject, profile_url)
     import reports, resident_tools
     from world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes, retract_unfounded_rooms, collapse_withdrawn_rooms, finding_on_topic)
 ROOT = Path(__file__).resolve().parents[1]
@@ -300,6 +300,11 @@ def extract_finding(url, agent, cycle, tool, target_claim=None, topic_override=N
         # Dictionaries define words; a definition is kept for audit but is never evidence.
         record["status"] = "rejected"
         record["rejection_reason"] = "definition-source"
+    elif profile_subject(record):
+        # A person's account or profile page describes a person, not the world;
+        # it is kept for audit but is never evidence, and no room is built on it.
+        record["status"] = "rejected"
+        record["rejection_reason"] = "profile-subject"
     elif not finding_on_topic(record):
         # A page found for one subject that yields a claim about another (a loose
         # search hit) is kept for audit but never counts and never leads anywhere.
@@ -1245,7 +1250,7 @@ def target_claim_for(topic):
         overlap = len(wanted & have) / len(wanted | have) if (wanted | have) else 0.0
         if overlap < 0.5 or item.get("id") in supported:
             continue
-        if definition_source(item) or not finding_on_topic(item):
+        if definition_source(item) or profile_subject(item) or not finding_on_topic(item):
             continue
         if attempts.get(item.get("id"), 0) >= VERIFY_ATTEMPTS:
             continue  # tried enough independent sources; this claim is a dead end for now
@@ -2159,6 +2164,7 @@ def main():
                 candidates = [item.get("url", "") for item in tool["results"]
                               if re.match(r"https://", str(item.get("url", "")), re.I)
                               and not definition_source({"url": item.get("url", "")})
+                              and not profile_url(item.get("url", ""))  # a person's profile is never evidence
                               and not search_page(item.get("url", ""))
                               and urllib.parse.urlparse(str(item.get("url", ""))).path.strip("/")]  # a homepage holds no specific fact
                 if research_assignment and shared_avoid:

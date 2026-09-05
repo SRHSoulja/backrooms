@@ -98,6 +98,47 @@ def definition_source(finding):
     return bool(DEFINITION_SOURCE.search(host + "."))
 
 
+# An individual's account or profile page on a code or social platform. Such a
+# page describes a person, not the world; a mirror of it on a second platform
+# (a site that fills its profile from GitHub login, say) is not an independent
+# source, and the world does not build rooms about people.
+PROFILE_HOSTS = re.compile(r"(?i)^(?:(?:gist\.)?github\.com|gitlab\.com|bitbucket\.org|codeberg\.org|morph\.io|x\.com|twitter\.com|"
+                           r"instagram\.com|facebook\.com|threads\.net|tiktok\.com|youtube\.com|huggingface\.co|kaggle\.com|"
+                           r"keybase\.io|about\.me|gravatar\.com|bsky\.app|mastodon\.social|linktr\.ee|patreon\.com|ko-fi\.com|"
+                           r"buymeacoffee\.com|dev\.to|hashnode\.dev|medium\.com|substack\.com|linkedin\.com|reddit\.com)$")
+PROFILE_PATH = re.compile(r"(?i)^/(?:(?:in|u|user|users|profile|profiles|people|person|member|members|author|authors|orgs|channel)/[^/]+|@[^/]+)$")
+PLATFORM = (r"(?:github|gitlab|bitbucket|codeberg|twitter|x\.com|linkedin|instagram|facebook|reddit|mastodon|tiktok|youtube|"
+            r"telegram|discord|bluesky|bsky|morph\.io|kaggle|hugging\s*face|keybase|medium|substack|patreon)")
+HANDLE = r"(?:['\"\u201c\u2018@]|\*\*|`)[\w.\-]+(?:['\"\u201d\u2019]|\*\*|`)?"
+# A claim or question about one named account: a platform's profile word next
+# to a quoted, bolded, or @-prefixed handle ("the GitHub profile 'roscom'",
+# "'roscom' on GitHub").
+PROFILE_CLAIM = re.compile(r"(?i)" + PLATFORM + r"\s+(?:user\s+)?(?:profiles?|accounts?|handles?|usernames?|pages?|users?)\b[^.;]{0,40}?" + HANDLE
+                           + r"|" + HANDLE + r"\s+(?:\([^)]{0,60}\)\s+)?(?:on|at)\s+" + PLATFORM + r"\b"
+                           + r"|" + PLATFORM + r"\s+(?:user|profile|account|handle)\s+(?:named|called)\s+" + HANDLE)
+
+
+def profile_url(url):
+    """True for an individual's account or profile page (github.com/name, linkedin.com/in/name, medium.com/@name)."""
+    parsed = urllib.parse.urlparse(str(url or ""))
+    host = re.sub(r"^(?:www|m|mobile)\.", "", parsed.netloc.lower().split(":")[0])
+    path = parsed.path.rstrip("/")
+    segments = [segment for segment in path.split("/") if segment]
+    if PROFILE_HOSTS.match(host) and len(segments) == 1:
+        return True
+    return bool(PROFILE_PATH.match(path))
+
+
+def about_profile(text):
+    """True when a claim or question is about one named account or handle."""
+    return bool(PROFILE_CLAIM.search(str(text or "")))
+
+
+def profile_subject(finding):
+    """A person's account is never evidence: the page is a profile, or the claim is about a named handle."""
+    return profile_url(finding.get("url", "")) or about_profile(finding.get("claim", ""))
+
+
 def candidate_pairs(findings, judged_ids=(), limit=MAX_JUDGMENTS_PER_CYCLE):
     """Return [(first, second, pair_id, similarity)] worth one model judgment each.
 
@@ -105,7 +146,8 @@ def candidate_pairs(findings, judged_ids=(), limit=MAX_JUDGMENTS_PER_CYCLE):
     each other (similarity 1.0), whatever their wording; other pairs need
     shared claim vocabulary. Cross-domain is required in both cases.
     """
-    accepted = [item for item in findings if is_accepted(item) and item.get("id") and domain_of(item) and not definition_source(item)]
+    accepted = [item for item in findings if is_accepted(item) and item.get("id") and domain_of(item)
+                and not definition_source(item) and not profile_subject(item)]
     scored = []
     for index, first in enumerate(accepted):
         first_terms = finding_terms(first)
@@ -193,6 +235,8 @@ def founding_pair_stands(record, first, second):
         return False, "founding findings are the same document on two addresses"
     if definition_source(first) or definition_source(second):
         return False, "a founding finding is a dictionary definition"
+    if profile_subject(first) or profile_subject(second):
+        return False, "a founding finding is an individual's account or profile page"
     if not claims_overlap(first, second):
         return False, "founding claims share no vocabulary"
     shared = str(record.get("shared_claim") or record.get("topic") or "")

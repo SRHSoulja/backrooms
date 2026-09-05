@@ -69,6 +69,9 @@ class WorldRuleTests(unittest.TestCase):
         # a dictionary definition or an off-topic finding leaves no question behind
         self.assertEqual(finding_followup_question({"topic": "corroboration journalism", "claim": "The word wall means a vertical structure.",
                                                     "url": "https://dictionary.cambridge.org/dictionary/english/wall"}), "")
+        # a person's profile page leaves no question behind either: the world does not research individuals
+        self.assertEqual(finding_followup_question({"topic": "github profile roscom ross cameron", "url": "https://github.com/roscom",
+                                                    "claim": "The GitHub profile for 'roscom' (Ross Cameron) lists Roscommon Pty Ltd."}), "")
         self.assertEqual(finding_followup_question({"topic": "corroboration journalism scientific", "claim": "BlackRock manages 15 trillion dollars.",
                                                     "url": "https://en.wikipedia.org/wiki/BlackRock"}), "")
         self.assertIn("support or contradict", finding_followup_question({"topic": "corroboration journalism scientific",

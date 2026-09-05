@@ -236,10 +236,10 @@ def finding_followup_question(finding):
     not a dictionary, leaves a question behind; otherwise the council does not
     follow it, and research does not drift by word association."""
     try:
-        from scripts.corroboration import definition_source
+        from scripts.corroboration import definition_source, profile_subject
     except ImportError:
-        from corroboration import definition_source
-    if definition_source(finding) or not finding_on_topic(finding):
+        from corroboration import definition_source, profile_subject
+    if definition_source(finding) or profile_subject(finding) or not finding_on_topic(finding):
         return ""
     topic = re.sub(r"\s+", " ", str(finding.get("topic", ""))).strip()
     claim = re.sub(r"\s+", " ", str(finding.get("claim", ""))).strip()

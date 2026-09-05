@@ -698,6 +698,31 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertTrue(local_autonomy.PHYSICAL_NEEDS.search("I need clean water and shelter"))
         self.assertFalse(local_autonomy.PHYSICAL_NEEDS.search("I need a public dataset and compute"))
 
+    def test_extraction_from_a_persons_profile_is_rejected_as_profile_subject(self):
+        excerpt = "roscom. Ross Cameron. Roscommon Pty Ltd. Sydney, Australia. 12 repositories."
+        tool = {"source": "https://github.com/roscom", "excerpt": excerpt, "source_hash": "hash-p",
+                "query": "github profile roscomnadzor27 similar name handle publicly affiliation"}
+        agent = {"id": "local-test", "room": "archive", "capabilities": []}
+        payload = {"claim": "The GitHub profile for 'roscom' (Ross Cameron) is associated with Roscommon Pty Ltd, based in Sydney.",
+                   "quote": "Ross Cameron. Roscommon Pty Ltd. Sydney, Australia.", "confidence": 0.9}
+
+        class FakeResponse:
+            def read(self):
+                return json.dumps({"choices": [{"message": {"content": json.dumps(payload)}}]}).encode()
+            def __enter__(self):
+                return self
+            def __exit__(self, *_args):
+                return False
+
+        original = local_autonomy.urllib.request.urlopen
+        local_autonomy.urllib.request.urlopen = lambda *_args, **_kwargs: FakeResponse()
+        try:
+            finding = local_autonomy.extract_finding("http://127.0.0.1:1", agent, 5, tool)
+        finally:
+            local_autonomy.urllib.request.urlopen = original
+        self.assertEqual((finding["status"], finding["rejection_reason"]), ("rejected", "profile-subject"))
+        self.assertFalse(local_autonomy.is_accepted(finding))
+
     def test_rejected_extraction_is_kept_with_reason_and_never_counts(self):
         excerpt = ("The Agent2Agent protocol is an open standard that lets agents exchange tasks. "
                    "It publishes an Agent Card for discovery.")

@@ -58,7 +58,17 @@ def rejection_reason(proposal):
         return "missing " + ", ".join(missing) + " line(s); return exactly QUESTION:, WHY:, TEST:"
     if SELF_REFERENTIAL.search(fields.get("QUESTION", "")):
         return "the question is about this world's own rooms, residents, or telemetry; ask about the outside world"
+    if about_profile(fields.get("QUESTION", "")):
+        return "the question is about an individual's account, profile, or handle; ask about the world, not about a person"
     return ""
+
+
+def about_profile(text):
+    try:
+        from scripts.corroboration import about_profile as check
+    except ImportError:
+        from corroboration import about_profile as check
+    return check(text)
 
 
 def valid(proposal):

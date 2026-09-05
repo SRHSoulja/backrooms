@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.corroboration import (append_record, candidate_pairs, claims_overlap, corroboration_index, definition_source, domain_of, same_document,
+from scripts.corroboration import (append_record, candidate_pairs, claims_overlap, corroboration_index, definition_source, profile_subject, profile_url, about_profile, domain_of, same_document,
                                    founding_pair_stands, growth_candidates, judge_verdict, judgment_schema, load_records,
                                    make_record, on_topic, pair_id)
 
@@ -95,6 +95,32 @@ class CorroborationTests(unittest.TestCase):
         self.assertIn("shared_claim", judgment_schema()["required"])
         contradicts = judge_verdict(launch, founded, {"relation": "contradicts", "shared_claim": "", "reason": "dates differ"})
         self.assertEqual((contradicts["relation"], contradicts["shared_claim"]), ("contradicts", ""))
+
+    def test_a_persons_profile_is_never_evidence_and_never_founds_a_room(self):
+        github = {"id": "f-gh", "topic": "github profile roscomnadzor27 similar name handle publicly affiliation", "status": "accepted",
+                  "claim": "The GitHub profile for 'roscom' (Ross Cameron) is associated with Roscommon Pty Ltd, based in Sydney.",
+                  "url": "https://github.com/roscom"}
+        mirror = {**github, "id": "f-morph", "url": "https://morph.io/roscom"}  # fills its profile from GitHub login
+        self.assertTrue(profile_subject(github) and profile_subject(mirror))
+        for url in ("https://www.linkedin.com/in/someone", "https://medium.com/@someone", "https://x.com/someone?lang=en",
+                    "https://github.com/orgs/python", "https://news.example/author/someone/"):
+            self.assertTrue(profile_url(url), url)
+        for url in ("https://github.com/owner/repo", "https://gist.github.com/roscom/abc123", "https://arxiv.org/abs/1109.6211",
+                    "https://docs.github.com/en/account-and-profile", "https://en.wikipedia.org/wiki/Roskomnadzor", "https://example.org/news/github-block"):
+            self.assertFalse(profile_url(url), url)
+        self.assertTrue(about_profile("Does the GitHub profile **Roscomnadzor27** have any publicly documented affiliation?"))
+        self.assertTrue(about_profile("The user 'roscom' on GitHub lists Roscommon Pty Ltd as employer."))
+        for text in ("Users can choose to hide their private contributions on their GitHub profile.",
+                     "Russia's regulator blocked access to GitHub after the platform hosted banned content.",
+                     "Accounts of the battle 'were harrowing' according to the diary.",
+                     "Which open-source projects on GitHub simulate societies of software agents?"):
+            self.assertFalse(about_profile(text), text)
+        self.assertFalse(profile_subject({"claim": "Russia's regulator blocked access to GitHub in 2014.", "url": "https://example.org/news/github-block"}))
+        self.assertEqual(candidate_pairs([github, mirror]), [])
+        record = {"id": "pair-person", "finding_ids": ["f-gh", "f-morph"], "shared_claim": github["claim"], "relation": "supports"}
+        ok, reason = founding_pair_stands(record, github, mirror)
+        self.assertFalse(ok)
+        self.assertEqual(reason, "a founding finding is an individual's account or profile page")
 
     def test_dictionary_definitions_never_corroborate_and_off_topic_facts_do_not_grow_rooms(self):
         cambridge = {"id": "f-cam", "topic": "corroboration journalism scientific", "status": "accepted",
