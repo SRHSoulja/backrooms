@@ -114,7 +114,10 @@ def providers(local_base_url=None):
         built.append({"name": name, "base_url": spec["base_url"], "api_key": api_key,
                       "model": setting(prefix + "_MODEL", spec["model"]),
                       "rpm": _int(setting(prefix + "_RPM"), spec["rpm"]), "rpd": _int(setting(prefix + "_RPD"), spec["rpd"]),
-                      "tpd": _int(setting(prefix + "_TPD"), spec["tpd"]), "json_schema": spec["json_schema"]})
+                      "tpd": _int(setting(prefix + "_TPD"), spec["tpd"]), "json_schema": spec["json_schema"],
+                      # endpoint quirks and live model resolution travel with the provider
+                      **{key: spec[key] for key in ("chat_path", "models_path", "resolve_model") if key in spec},
+                      "model_overridden": bool(setting(prefix + "_MODEL"))})
     return built
 
 
@@ -211,14 +214,16 @@ GEMINI_FLASH = re.compile(r"^gemini-(\d+(?:\.\d+)?)-flash(?:-preview[-\w]*|-\d{2
 UNWANTED_MODEL = re.compile(r"lite|image|tts|live|audio|embed|8b|thinking|native|exp", re.I)
 
 
-def choose_gemini_model(model_ids, fallback):
+def choose_gemini_model(model_ids, fallback, failed=()):
     """The newest general Flash model the account can see: a released name over a
     preview or dated one, the newest version among those, a 'latest' alias when
-    nothing is versioned. Never a lite, image, audio, live, or experimental variant."""
+    nothing is versioned. Never a lite, image, audio, live, or experimental variant,
+    and never a name that already answered 404 today."""
     best = None
+    failed = {str(item) for item in (failed or ())}
     for raw in model_ids or []:
         name = str(raw or "").split("/")[-1].strip()
-        if "flash" not in name or not name.startswith("gemini") or UNWANTED_MODEL.search(name.replace("gemini-", "", 1)):
+        if name in failed or "flash" not in name or not name.startswith("gemini") or UNWANTED_MODEL.search(name.replace("gemini-", "", 1)):
             continue
         match = re.search(r"gemini-(\d+(?:\.\d+)?)-flash", name)
         try:
@@ -243,21 +248,19 @@ def _list_models(provider, opener=None, timeout=20):
 def resolve_model(provider, usage, opener=None):
     """Providers marked ``resolve_model`` pick their model from the live list once
     a day (an override in BACKROOMS_<NAME>_MODEL wins); the choice is recorded."""
-    if not provider.get("resolve_model"):
+    if not provider.get("resolve_model") or provider.get("model_overridden"):
         return provider
-    override = setting("BACKROOMS_" + provider["name"].upper().replace("-", "_") + "_MODEL")
-    if override:
-        return {**provider, "model": override}
     cache = usage.setdefault("models", {})
     if cache.get(provider["name"]):
         return {**provider, "model": cache[provider["name"]]}
+    failed = usage.get("models_failed", {}).get(provider["name"], [])
     try:
         listed = _list_models(provider, opener)
     except Exception as error:  # noqa: BLE001 - the configured name is used and the listing retried on the next call
         usage.setdefault("models_seen", {})[provider["name"]] = ["listing failed: " + type(error).__name__]
         return provider
     usage.setdefault("models_seen", {})[provider["name"]] = [str(item).split("/")[-1][:48] for item in listed[:40]]
-    chosen = choose_gemini_model(listed, provider["model"])
+    chosen = choose_gemini_model(listed, provider["model"], failed)
     cache[provider["name"]] = chosen
     return {**provider, "model": chosen}
 
@@ -461,7 +464,15 @@ def complete(messages, *, temperature=0.3, max_tokens=400, schema=None, schema_n
                     _record(usage, provider["name"], errors=1, last_error=(f"{status} {call_class}" + (f": {detail}" if detail else ""))[:160],
                             cooldown_until=clock() + 30)
                     if status == 404 and provider.get("resolve_model"):
-                        usage.get("models", {}).pop(provider["name"], None)  # a stale model name: list again on the next call
+                        # A stale model name: remember it failed, take the provider's own
+                        # suggestion when the message names one, and otherwise list again.
+                        usage.get("models", {}).pop(provider["name"], None)
+                        failed = usage.setdefault("models_failed", {}).setdefault(provider["name"], [])
+                        if provider["model"] not in failed:
+                            failed.append(provider["model"])
+                        hint = re.search(r"use models/([a-z0-9][a-z0-9.\-]+)", detail or "")
+                        if hint and hint.group(1) not in failed:
+                            usage.setdefault("models", {})[provider["name"]] = hint.group(1)
                 failures.append(f"{provider['name']}:{status}")
                 continue
             except Exception as error:  # noqa: BLE001 - any transport failure moves to the next provider

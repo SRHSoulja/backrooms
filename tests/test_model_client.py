@@ -21,6 +21,27 @@ class GeminiModelChoiceTests(unittest.TestCase):
         self.assertEqual(choose_gemini_model([], "fallback"), "fallback")
         self.assertEqual(choose_gemini_model(["models/gemini-flash-latest", "models/gemini-pro-latest"], "x"), "gemini-flash-latest")
         self.assertEqual(choose_gemini_model(["models/gemini-3.8-flash-001", "models/gemini-3.8-flash-preview"], "x"), "gemini-3.8-flash-001")
+        probe = ["gemini-2.5-flash", "gemini-flash-latest", "gemini-3.5-flash", "gemini-3.6-flash", "gemini-3.7-flash", "gemini-3.8-flash", "gemini-3-flash-preview", "gemini-omni-1.1-flash"]
+        self.assertEqual(choose_gemini_model(probe, "x"), "gemini-3.8-flash")
+        self.assertEqual(choose_gemini_model(probe, "x", failed=["gemini-3.8-flash"]), "gemini-3.7-flash")
+
+    def test_provider_dicts_carry_endpoint_quirks_and_resolution_flags(self):
+        import os
+        from scripts import model_client
+        previous = {key: os.environ.get(key) for key in ("GEMINI_API_KEY", "BACKROOMS_ENV_FILE", "BACKROOMS_PROVIDER_ORDER")}
+        os.environ["GEMINI_API_KEY"] = "test-key-not-real"
+        os.environ["BACKROOMS_ENV_FILE"] = ""
+        os.environ["BACKROOMS_PROVIDER_ORDER"] = "gemini"
+        try:
+            gemini = [item for item in model_client.providers() if item["name"] == "gemini"][0]
+        finally:
+            for key, value in previous.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
+        self.assertEqual((gemini["chat_path"], gemini["models_path"], gemini["resolve_model"], gemini["model_overridden"]),
+                         ("/chat/completions", "/models", "gemini-flash", False))
 
 
 class ProviderOrderTests(unittest.TestCase):
