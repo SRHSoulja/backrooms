@@ -1,4 +1,5 @@
 import json
+import urllib.error
 import unittest
 from pathlib import Path
 
@@ -144,6 +145,24 @@ class ToolContractTests(unittest.TestCase):
             self.assertNotIn("abc", result["excerpt"])
         finally:
             tool_broker.fetch = original
+
+    def test_http_404_is_a_source_failure_not_a_policy_rejection(self):
+        original = tool_broker.fetch
+        try:
+            url = "https://example.org/missing"
+            tool_broker.fetch = lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                urllib.error.HTTPError(url, 404, "Not Found", {}, None))
+            result = tool_broker.run("public-text", url)
+        finally:
+            tool_broker.fetch = original
+        self.assertEqual(result["status"], "failed")
+        self.assertEqual(result["error_kind"], "source-not-found")
+        self.assertEqual(result["http_status"], 404)
+        self.assertFalse(result["retryable"])
+
+    def test_broker_policy_violation_remains_rejected(self):
+        result = tool_broker.run("public-text", "http://127.0.0.1/private")
+        self.assertEqual((result["status"], result["error_kind"]), ("rejected", "policy-rejection"))
 
     def test_research_tools_have_a_larger_input_cap_but_small_public_outputs(self):
         self.assertEqual(TOOL_CONTRACTS["public-text"]["max_bytes"], 5000000)

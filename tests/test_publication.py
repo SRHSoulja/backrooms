@@ -1,6 +1,6 @@
 import unittest
 
-from scripts.publication import public_text
+from scripts.publication import public_text, public_tool_attempt
 
 
 class PublicationSafetyTests(unittest.TestCase):
@@ -18,6 +18,15 @@ class PublicationSafetyTests(unittest.TestCase):
 
     def test_empty_text_is_not_described_as_withheld(self):
         self.assertEqual(public_text(""), "")
+
+    def test_tool_attempt_projection_is_bounded_and_allowlisted(self):
+        attempt = public_tool_attempt({"last_tool_attempt": {
+            "cycle": 331, "tool": "public-text", "requested_target": "https://example.org/missing",
+            "status": "failed", "error_kind": "source-not-found", "http_status": 404,
+            "private_debug": "must not publish"}})
+        self.assertEqual(attempt["error_kind"], "source-not-found")
+        self.assertEqual(attempt["http_status"], 404)
+        self.assertNotIn("private_debug", attempt)
 
 
 if __name__ == "__main__":

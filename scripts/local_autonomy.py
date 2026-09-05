@@ -1103,6 +1103,52 @@ def target_is_stale(agent, target):
     return agent.get("target_repeats", 0) >= 3
 
 
+FAILED_SOURCE_STATES = {"failed", "no-match"}
+
+
+def recovery_search_query(target):
+    """Convert a failed public URL into a short search for a real replacement.
+
+    Models often invent plausible deep paths such as ``docs/schema.md``.  The
+    retry should discover a link rather than guessing another path.
+    """
+    parsed = urllib.parse.urlparse(str(target or ""))
+    pieces = []
+    if parsed.hostname and parsed.hostname.lower() != "github.com":
+        pieces.extend(parsed.hostname.lower().removeprefix("www.").split("."))
+    pieces.extend(urllib.parse.unquote(parsed.path).split("/"))
+    ignored = {"", "www", "com", "org", "net", "html", "htm", "md", "json", "csv", "pdf",
+               "blob", "tree", "main", "master", "docs", "doc", "index", "raw"}
+    words = []
+    for piece in pieces:
+        for word in re.findall(r"[a-z0-9]+", piece.lower()):
+            if word not in ignored and word not in words:
+                words.append(word)
+    return " ".join(words)[:160] or "public source documentation"
+
+
+def target_requires_recovery(agent, target):
+    """True when a direct URL has already failed or is repeating fruitlessly."""
+    if not re.match(r"https://", str(target or ""), re.I):
+        return False
+    attempt = agent.get("last_tool_attempt") or {}
+    if attempt.get("requested_target") == target and attempt.get("status") in FAILED_SOURCE_STATES:
+        return True
+    # Compatibility for registries written before last_tool_attempt existed:
+    # a repeated URL unlike the last successful source has not succeeded.
+    prior_source = str((agent.get("last_tool") or {}).get("source") or "")
+    return agent.get("exploration") == target and int(agent.get("target_repeats", 0) or 0) >= 1 and prior_source != target
+
+
+def note_exploration_target(agent, target):
+    """Persist a target and count repeated attempts independently of past work."""
+    if target and target == agent.get("exploration"):
+        agent["target_repeats"] = int(agent.get("target_repeats", 0) or 0) + 1
+    elif target != agent.get("exploration"):
+        agent["target_repeats"] = 0
+    agent["exploration"] = target or "unassigned public room question"
+
+
 def reground_purpose(url, agent, rooms, frontier, cycle):
     """Rewrite one resident's purpose so it can be pursued with public tools toward an open question.
 
@@ -2130,11 +2176,7 @@ def main():
             agent["record"] = {**(agent.get("standing") or {}), "retired_cycle": args.cycle,
                                "reason": decision.get("reason", "")[:200]}
         elif decision["action"] == "EXPLORE":
-            if decision["target"] and decision["target"] == agent.get("exploration") and not agent.get("last_finding_id"):
-                agent["target_repeats"] = agent.get("target_repeats", 0) + 1
-            elif decision["target"] != agent.get("exploration"):
-                agent["target_repeats"] = 0
-            agent["exploration"] = decision["target"] or "unassigned public room question"
+            note_exploration_target(agent, decision["target"])
             if "public-web-read" not in agent.get("capabilities", []):
                 agent.setdefault("capabilities", []).append("public-web-read")
                 agent["skill_status"] = "earned-after-interview"
@@ -2236,11 +2278,15 @@ def main():
         if decision["action"] == "EXPLORE" and "public-web-read" in agent.get("capabilities", []):
             target = agent.get("exploration", "")
             tool_name, query_target = route_exploration(target)
+            recovery_from = ""
+            if tool_name in {"public-text", "public-json", "public-csv"} and target_requires_recovery(agent, target):
+                recovery_from = target
+                tool_name, query_target = "public-search", recovery_search_query(target)
             if tool_name == "local-code-read" and "public-source-read" not in agent.get("capabilities", []):
                 agent.setdefault("capabilities", []).append("public-source-read")
             if tool_name == "public-search":
-                query_target = target[:160].strip()
-                origin = "resident-target"
+                query_target = query_target[:160].strip() if recovery_from else target[:160].strip()
+                origin = "failed-target-recovery" if recovery_from else "resident-target"
                 if research_assignment:
                     query_target, origin = research_assignment[:160], (("dissent-claim" if dissenting else "verify-claim") if verifying else "council-question")
                 elif shared_research and target_is_stale(agent, target):
@@ -2256,7 +2302,8 @@ def main():
             try:
                 tool = json.loads(completed.stdout)
             except json.JSONDecodeError:
-                tool = {"status": "failed"}
+                tool = {"tool": tool_name, "status": "failed", "error_kind": "invalid-broker-response",
+                        "reason": "invalid-broker-response", "retryable": False}
             # Structured source families (encyclopedia, papers, code) give
             # clean, quotable prose with canonical URLs; the family rotates so
             # one topic is reached through independent kinds of sources.
@@ -2309,6 +2356,17 @@ def main():
                             fetched["search_results"] = tool.get("results", [])[:5]
                             tool = fetched
                             break
+            attempt = {"cycle": args.cycle, "tool": tool.get("tool", tool_name),
+                       "requested_target": str(target)[:500], "resolved_target": str(query_target)[:500],
+                       "status": tool.get("status", "failed"),
+                       "error_kind": tool.get("error_kind", ""),
+                       "reason": str(tool.get("reason", ""))[:120],
+                       "retryable": bool(tool.get("retryable", False))}
+            if isinstance(tool.get("http_status"), int):
+                attempt["http_status"] = tool["http_status"]
+            if recovery_from:
+                attempt["recovery_from"] = str(recovery_from)[:500]
+            agent["last_tool_attempt"] = attempt
             if tool.get("status") == "completed":
                 summary = tool.get("summary", {})
                 excerpt = str(tool.get("excerpt", ""))[:2400]
@@ -2381,6 +2439,8 @@ def main():
                            "Resident tool request was rejected and the related capability was revoked.",
                            tool=tool.get("tool", "unknown"), capability="public-web-read")
             elif tool.get("status") != "not-requested":
+                if tool.get("status") in FAILED_SOURCE_STATES:
+                    agent["target_repeats"] = max(1, int(agent.get("target_repeats", 0) or 0))
                 why = re.sub(r"\s+", " ", str(tool.get("reason") or "")).strip()[:140]
                 emit_event(world, args.cycle, "tool-failed", agent.get("id", "resident"),
                            f"Resident {tool.get('tool', 'tool')} attempt ended with status {tool.get('status', 'unknown')}"

@@ -69,6 +69,11 @@ class PublicRepositoryTests(unittest.TestCase):
         page = Path("docs/index.html").read_text()
         self.assertIn("Candidate” means usable for comparison, not verified truth", page)
 
+    def test_resident_tool_failures_are_visible_separately_from_evidence(self):
+        page = Path("docs/index.html").read_text()
+        self.assertIn("attemptSummary(agent.last_tool_attempt)", page)
+        self.assertIn("Latest attempt:", page)
+
 
 if __name__ == "__main__":
     unittest.main()

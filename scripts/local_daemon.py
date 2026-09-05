@@ -20,9 +20,9 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import re
 try:
-    from scripts.publication import BLOCKED, public_text
+    from scripts.publication import BLOCKED, public_text, public_tool_attempt
 except ImportError:
-    from publication import BLOCKED, public_text
+    from publication import BLOCKED, public_text, public_tool_attempt
 
 try:
     from scripts.storage import atomic_write_json
@@ -1469,6 +1469,7 @@ def publish(result, world, model_health=True):
                 "capabilities": agent.get("capabilities", [])[:8],
                 "skill_progress": skill_progress(agent, registry),
                 "last_tool": agent.get("last_tool", {}),
+                "last_tool_attempt": public_tool_attempt(agent),
                 "room_proposal": agent.get("room_proposal", {}),
                 "research_assignment": {key: str(value)[:160] for key, value in (agent.get("research_assignment") or {}).items()
                                         if key in ("cycle", "query", "origin", "source_preference")},

@@ -322,6 +322,24 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertTrue(local_autonomy.target_is_stale({"target_repeats": 3}, "agent card specification"))
         self.assertFalse(local_autonomy.target_is_stale({"target_repeats": 1}, "agent card specification"))
 
+    def test_failed_direct_url_is_recovered_through_search(self):
+        target = "https://github.com/github/advisory-database/blob/main/docs/schema.md"
+        agent = {"target_repeats": 1, "exploration": target,
+                 "last_tool": {"source": "https://github.com/github/advisory-database"},
+                 "last_tool_attempt": {"requested_target": target, "status": "failed",
+                                       "error_kind": "source-not-found"}}
+        self.assertTrue(local_autonomy.target_requires_recovery(agent, target))
+        self.assertEqual(local_autonomy.recovery_search_query(target), "github advisory database schema")
+        self.assertFalse(local_autonomy.target_requires_recovery(agent, "https://example.org/new-source"))
+
+    def test_repeated_target_counts_even_after_an_older_finding(self):
+        target = "https://example.org/report"
+        agent = {"exploration": target, "target_repeats": 0, "last_finding_id": "older-finding"}
+        local_autonomy.note_exploration_target(agent, target)
+        self.assertEqual(agent["target_repeats"], 1)
+        local_autonomy.note_exploration_target(agent, "https://example.org/replacement")
+        self.assertEqual(agent["target_repeats"], 0)
+
     def test_printer_request_creates_local_digital_job(self):
         registry = {"agents": [{"id": "local-test", "request": "access to a printer",
                                  "request_status": "open"}]}

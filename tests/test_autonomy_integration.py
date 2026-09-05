@@ -69,9 +69,14 @@ elif tool == "github-readme":
                       "excerpt": "acme/cards: discovery cards. It publishes an Agent Card for discovery.",
                       "contract": {"capability": "public-text-read", "untrusted_content": True}}))
 elif tool == "public-text":
-    print(json.dumps({"tool": "public-text", "url": value, "status": "completed",
-                      "excerpt": "The Agent2Agent protocol is an open standard that lets agents exchange tasks. It publishes an Agent Card for discovery.",
-                      "contract": {"capability": "public-text-read", "untrusted_content": True}}))
+    if "missing.example" in value:
+        print(json.dumps({"tool": "public-text", "url": value, "status": "failed", "error_kind": "source-not-found",
+                          "reason": "source-not-found (HTTP 404)", "http_status": 404, "retryable": False,
+                          "contract": {"capability": "public-text-read", "untrusted_content": True}}))
+    else:
+        print(json.dumps({"tool": "public-text", "url": value, "status": "completed",
+                          "excerpt": "The Agent2Agent protocol is an open standard that lets agents exchange tasks. It publishes an Agent Card for discovery.",
+                          "contract": {"capability": "public-text-read", "untrusted_content": True}}))
 else:
     print(json.dumps({"tool": tool, "status": "rejected", "reason": "fake broker supports search and text only", "contract": {}}))
 """
@@ -281,6 +286,33 @@ class AutonomyIntegrationTests(unittest.TestCase):
         ledger = [json.loads(line) for line in (self.root / "state/findings.jsonl").read_text().splitlines()]
         self.assertEqual(ledger[0]["url"], "https://en.wikipedia.org/wiki/Agent_card")
         self.assertEqual(ledger[0]["status"], "unreviewed")
+
+    def test_failed_direct_url_is_recorded_then_recovered_via_search(self):
+        dead = "https://missing.example/docs/schema.md"
+        self.server.decision = {**BASE_DECISION, "action": "EXPLORE", "target": dead, "reason": "inspect schema"}
+        first = self.run_autonomy(cycle=7)
+        self.assertEqual(first.returncode, 0, first.stderr[-1500:])
+        registry = json.loads((self.root / "state/local-agents.json").read_text())
+        agent = registry["agents"][0]
+        self.assertNotIn("last_tool", agent)
+        self.assertEqual((agent["last_tool_attempt"]["status"], agent["last_tool_attempt"]["error_kind"]),
+                         ("failed", "source-not-found"))
+        self.assertEqual(agent["target_repeats"], 1)
+        world = json.loads((self.root / "state/world.json").read_text())
+        failed = next(event for event in world["events"] if event["kind"] == "tool-failed")
+        self.assertIn("status failed: source-not-found (HTTP 404)", failed["text"])
+        self.assertNotIn("public-web-read", agent.get("revoked_capabilities", []))
+
+        second = self.run_autonomy(cycle=8)
+        self.assertEqual(second.returncode, 0, second.stderr[-1500:])
+        calls = [json.loads(line) for line in (self.root / "state/broker-calls.jsonl").read_text().splitlines()]
+        self.assertEqual(sum(call["tool"] == "public-text" and call["value"] == dead for call in calls), 1)
+        self.assertTrue(any(call["tool"] == "public-search" and "missing" in call["value"] and "schema" in call["value"]
+                            for call in calls))
+        registry = json.loads((self.root / "state/local-agents.json").read_text())
+        attempt = registry["agents"][0]["last_tool_attempt"]
+        self.assertEqual(attempt["recovery_from"], dead)
+        self.assertEqual(attempt["status"], "completed")
 
     def test_shared_council_question_yields_a_judged_pair_and_an_evidence_room(self):
         registry = json.loads((self.root / "state/local-agents.json").read_text())

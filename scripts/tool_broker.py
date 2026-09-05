@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Safe, read-only internet broker for local hireling research."""
 
-import argparse, csv, html, ipaddress, io, json, re, socket, urllib.parse, urllib.request
+import argparse, csv, html, ipaddress, io, json, re, socket, urllib.error, urllib.parse, urllib.request
 import xml.etree.ElementTree as ElementTree
 from pathlib import Path
 
@@ -573,6 +573,36 @@ def public_text(url, focus=""):
             "contract": TOOL_CONTRACTS["public-text"]}
 
 
+def failure_result(tool, error):
+    """Return a machine-readable failure without calling network errors policy rejections.
+
+    ``rejected`` is reserved for a request that violates the broker's bounded
+    contract.  A public server returning 404, timing out, or sending malformed
+    data is an unsuccessful fetch, not resident misconduct.
+    """
+    result = {"tool": tool, "status": "failed", "error_kind": "tool-error",
+              "reason": "tool-error", "retryable": False, "contract": TOOL_CONTRACTS[tool]}
+    if isinstance(error, urllib.error.HTTPError):
+        code = int(error.code)
+        kinds = {401: "source-access-denied", 403: "source-access-denied",
+                 404: "source-not-found", 410: "source-gone", 429: "source-rate-limited"}
+        kind = kinds.get(code, "source-upstream-error" if code >= 500 else "source-http-error")
+        result.update(error_kind=kind, reason=f"{kind} (HTTP {code})", http_status=code,
+                      retryable=code == 429 or code >= 500)
+    elif isinstance(error, urllib.error.URLError):
+        result.update(error_kind="source-unreachable", reason="source-unreachable", retryable=True)
+    elif isinstance(error, (TimeoutError, socket.timeout)):
+        result.update(error_kind="source-timeout", reason="source-timeout", retryable=True)
+    elif isinstance(error, (json.JSONDecodeError, ElementTree.ParseError, UnicodeError)):
+        result.update(error_kind="invalid-source-response", reason="invalid-source-response")
+    elif isinstance(error, ValueError):
+        # ValueError is how the broker's URL, size, redirect, compression, and
+        # secret-pattern guards reject requests before content is admitted.
+        result.update(status="rejected", error_kind="policy-rejection",
+                      reason=str(error)[:120], retryable=False)
+    return result
+
+
 def run(tool, value):
     try:
         if tool == "local-code-read":
@@ -609,7 +639,7 @@ def run(tool, value):
             return public_text(*split_focus(value))
         return {"tool": tool, "status": "completed", "characters": len(fetch(value)), "contract": TOOL_CONTRACTS[tool]}
     except Exception as error:
-        return {"tool": tool, "status": "rejected", "reason": str(error)[:120], "contract": TOOL_CONTRACTS[tool]}
+        return failure_result(tool, error)
 
 
 if __name__ == "__main__":

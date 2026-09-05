@@ -6,6 +6,9 @@ BLOCKED = re.compile(
     re.I,
 )
 
+PUBLIC_TOOL_ATTEMPT_FIELDS = {"cycle", "tool", "requested_target", "resolved_target", "status",
+                              "error_kind", "reason", "retryable", "http_status", "recovery_from"}
+
 
 def public_text(value, limit=240):
     compact = re.sub(r"\s+", " ", str(value or "")).strip()
@@ -14,3 +17,10 @@ def public_text(value, limit=240):
     if BLOCKED.search(compact):
         return "[content withheld by publication filter]"
     return compact[:limit]
+
+
+def public_tool_attempt(agent):
+    """Project bounded attempt diagnostics separately from successful evidence."""
+    return {key: (public_text(value) if isinstance(value, str) else value)
+            for key, value in (agent.get("last_tool_attempt") or {}).items()
+            if key in PUBLIC_TOOL_ATTEMPT_FIELDS}
