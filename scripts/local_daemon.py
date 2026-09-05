@@ -1515,6 +1515,7 @@ def publish(result, world, model_health=True):
         health["event_chain"] = {**ledger_chain.head(ARCHIVE), "verified": ok, "problem": problem}
     except OSError:
         health["event_chain"] = {"count": 0, "head": "", "verified": False, "problem": "archive unreadable"}
+    atomic_write_json(PUBLIC_HEALTH, health)  # the feed carries the tool, judge, and chain fields added above
     sync_outside_signals()
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}
