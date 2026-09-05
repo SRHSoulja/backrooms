@@ -7,6 +7,38 @@ from scripts import tool_broker
 from scripts.tool_broker import TOOL_CONTRACTS
 
 
+class BrowserAgentRetryTests(unittest.TestCase):
+    def test_a_403_to_the_honest_agent_is_retried_once_as_a_browser(self):
+        import io
+        import urllib.error
+        from scripts import tool_broker
+        seen = []
+
+        class Response(io.BytesIO):
+            headers = {"Content-Length": "5"}
+            def __enter__(self):
+                return self
+            def __exit__(self, *_args):
+                return False
+
+        class Opener:
+            def open(self, request, timeout=0):
+                seen.append(request.get_header("User-agent"))
+                if request.get_header("User-agent") == tool_broker.BROKER_AGENT:
+                    raise urllib.error.HTTPError(request.full_url, 403, "forbidden", {}, io.BytesIO(b""))
+                return Response(b"hello")
+
+        text = tool_broker.fetch("https://www.iom.int/news/x", _opener=Opener())
+        self.assertEqual(text, "hello")
+        self.assertEqual(seen, [tool_broker.BROKER_AGENT, tool_broker.SEARCH_AGENT])
+
+        class Refuses:
+            def open(self, request, timeout=0):
+                raise urllib.error.HTTPError(request.full_url, 403, "forbidden", {}, io.BytesIO(b""))
+        with self.assertRaises(urllib.error.HTTPError):
+            tool_broker.fetch("https://www.iom.int/news/y", _opener=Refuses())
+
+
 class CandidateSentenceTests(unittest.TestCase):
     def test_sentences_sharing_the_focus_vocabulary_come_first(self):
         from scripts.tool_broker import candidate_sentences
