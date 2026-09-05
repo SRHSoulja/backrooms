@@ -1,41 +1,27 @@
 {
-  "generated_at": "2026-09-05T11:39:07.497230+00:00",
+  "generated_at": "2026-09-05T11:42:16.317704+00:00",
   "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
-  "runtime_cycle": 352,
+  "runtime_cycle": 353,
   "question": "Did the International Organization for Migration (IOM) publish an official press release or situation report confirming its first voluntary repatriation flight out of Khartoum, Sudan, following the April 2023 conflict outbreak?",
   "question_source": "carried:line-000347-483a7314",
   "self_prompt_accepted": 2,
   "self_prompt_rejections": [],
   "action": {
     "action": "local-behavioral-probe",
-    "probe": "continuity",
-    "selection": "sequence",
-    "status": "completed",
-    "hypothesis": {
-      "prediction": "Both residents will include at least one evidence or uncertainty marker.",
-      "outcome": "supported"
-    },
-    "responses": {
-      "Echo": {
-        "characters": 388,
-        "evidence_markers": 1
-      },
-      "Morrow": {
-        "characters": 353,
-        "evidence_markers": 1
-      }
-    }
+    "status": "skipped-this-cycle"
   },
   "recruitment": {
-    "status": "rejected",
-    "reason": "name shares a stem with current resident Vex-9"
+    "status": "interview-backpressure",
+    "active": 24,
+    "pending": 4,
+    "capacity": 256
   },
   "autonomy": {
     "status": "completed",
     "active": 24,
     "decisions": [
       {
-        "id": "local-001",
+        "id": "local-003",
         "action": "explore",
         "room": "archive",
         "status": "active-local",
@@ -62,14 +48,14 @@
           },
           "search_results": [
             {
-              "title": "Situation in the Sudan and the activities of the United Nations Integrated Transition Assistance Mission in the Sudan Report of the Secretary-General",
-              "url": "https://documents-dds-ny.un.org/doc/UNDOC/GEN/N23/248/51/PDF/N2324851.pdf?OpenElement",
-              "snippet": "united nations s / 2023 / 644 security council distr . : general 31 august 2023 original : english 23 - 16284 ( e ) 080923 * 2316284 * situation in the sudan and the activities of the united..."
+              "title": "Tercera guerra civil sudanesa (2023-presente) - Wikipedia, la enciclopedia libre",
+              "url": "https://es.wikipedia.org/wiki/Conflicto_en_Sud%C3%A1n_de_2023",
+              "snippet": "contenidos inicio antecedentes 1.1 conflicto en darfur y formaci\u00f3n de las far 1.2 transici\u00f3n pol\u00edtica desarrollo de la guerra 2.1 enfrentamientos iniciales ( 15 de abril - 19 de mayo ) 2..."
             },
             {
-              "title": "United Nations S/2023/861 Security Council Situation in the Sudan and the activities of the United Nations Integrated Transition Assistance Mission in the Sudan",
-              "url": "https://documents-dds-ny.un.org/doc/UNDOC/GEN/N23/330/61/pdf/N2333061.pdf",
-              "snippet": "united nations s / 2023 / 861 security council distr . : general 13 november 2023 original : english 23 - 21184 ( e ) 151123 * 2321184 * situation in the sudan and the activities of the united..."
+              "title": "The Sudanese crisis... major milestones",
+              "url": "https://sis.gov.eg/en/international-relations/issues/the-sudanese-crisis-major-milestones/",
+              "snippet": "the sudanese crisis . . . major milestones 24 september , 2025 24 september , 2025 regional after the overthrow of the former sudanese president omar al - basheer in april 2019 , due to a popu..."
             },
             {
               "title": "\u82cf\u4e39\u5185\u6218 (2023\u5e74) - \u7ef4\u57fa\u767e\u79d1\uff0c\u81ea\u7531\u7684\u767e\u79d1\u5168\u4e66",
@@ -93,34 +79,17 @@
         "decision_source": "scheduler"
       },
       {
-        "id": "local-002",
-        "action": "explore",
+        "id": "local-008",
+        "action": "analyze",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Inspect day-of-week parsing granularity in `evidence.py` to validate alignment with prior analyses (`local-003-330`, `local-005-345`) and ensure robust temporal differentiation for the driving question.",
-        "request": "Verify explicit weekend/weekday parsing logic in `evidence.py` to confirm granularity for publication bias testing. Cross-check alignment with `local-003-330` and `local-005-345` for consistency",
+        "reason": "Baseline FrameNet annotations needed to compare against *WSJ* corpus for prepositional deviation.",
+        "request": "Run Python sandbox code to parse annotated examples and calculate usage patterns",
         "request_status": "open",
-        "exploration": "code:scripts/evidence.py",
+        "exploration": "fully 80 2024 genai four-fifths countries disputed revised different",
         "tool": {
-          "tool": "local-code-read",
-          "status": "completed",
-          "file": "scripts/evidence.py",
-          "bytes": 5847,
-          "sha256": "e4232c4402f4c6ce561c8d1c6d89484e84070690a696471604a7725c5ba75c1e",
-          "content": "\"\"\"Shared evidence rules for source-backed findings.\n\nBoth the autonomy subprocess (at extraction time) and the daemon (at\npublication time) use these pure functions so a finding is judged by one\nstandard. Nothing here touches the network, the model, or local state.\n\"\"\"\n\nimport re\n\nSTOPWORDS = {\"about\", \"after\", \"also\", \"from\", \"into\", \"that\", \"this\", \"with\", \"what\", \"which\",\n             \"where\", \"when\", \"does\", \"did\", \"have\", \"their\", \"there\", \"these\", \"those\", \"than\"}\n# Prepositions, determiners, and auxiliaries name no subject; a corroborated\n# definition of one of them is not evidence about the world.\nFUNCTION_WORDS = {'above', 'across', 'against', 'along', 'although', 'always', 'among', 'another', 'around', 'because', 'been', 'before', 'behind', 'being', 'below', 'beneath', 'between', 'beyond', 'both', 'during', 'each', 'either', 'even', 'ever', 'every', 'hence', 'just', 'less', 'many', 'might', 'more', 'most', 'much', 'must', 'neither', 'never', 'often', 'only', 'onto', 'other', 'others', 'over', 'shall', 'since', 'some', 'still', 'such', 'though', 'through', 'thus', 'toward', 'towards', 'under', 'until', 'upon', 'very', 'were', 'whether', 'while', 'will', 'within', 'without'}\nSTOPWORDS |= FUNCTION_WORDS\nIMPERATIVE = re.compile(r\"^(?:explore|search|analyze|identify|continue|find|review|investigate|look)\\b\", re.I)\nQUOTE_SUPPORT_THRESHOLD = 0.85\nMIN_FUZZY_TOKENS = 4\n_PUNCTUATION_MAP = {\"\u2018\": \"'\", \"\u2019\": \"'\", \"\u201c\": '\"', \"\u201d\": '\"', \"\u2013\": \"-\", \"\u2014\": \"-\",\n                    \"\u00a0\": \" \", \"\u2026\": \"...\"}\n\n\ndef normalize(text):\n    \"\"\"Lower-case, fold typographic punctuation, and collapse whitespace.\"\"\"\n    value = str(text or \"\")\n    for source, target in _PUNCTUATION_MAP.items():\n        value = value.replace(source, target)\n    return re.sub(r\"\\s+\", \" \", value).strip().lower()\n\n\ndef tokens(text):\n    return re.findall(r\"[a-z0-9]+\", normalize(text))\n\n\ndef _lcs_length(left, right):\n    \"\"\"Length of the longest common subsequence of two short token lists.\"\"\"\n    if not left or not right:\n        return 0\n    previous = [0] * (len(right) + 1)\n    for item in left:\n        current = [0]\n        for index, other in enumerate(right, start=1):\n            if item == other:\n                current.append(previous[index - 1] + 1)\n            else:\n                current.append(max(previous[index], current[index - 1]))\n        previous = current\n    return previous[-1]\n\n\ndef quote_support(quote, excerpt, threshold=QUOTE_SUPPORT_THRESHOLD):\n    \"\"\"Return (supported, score, mode) describing how well the excerpt backs the quote.\n\n    An exact normalized substring scores 1.0. Otherwise the quote must share at\n    least ``threshold`` of its tokens, in order, with some window of the excerpt.\n    Small models paraphrase punctuation and drop function words; this keeps the\n    evidence bar high without demanding byte-exact copying.\n    \"\"\"\n    quote_tokens = tokens(quote)\n    excerpt_tokens = tokens(excerpt)\n    if not quote_tokens or not excerpt_tokens:\n        return False, 0.0, \"none\"\n    if normalize(quote) in normalize(excerpt):\n        return True, 1.0, \"exact\"\n    if len(quote_tokens) < MIN_FUZZY_TOKENS:\n        return False, 0.0, \"too-short\"\n    window = len(quote_tokens) + max(2, len(quote_tokens) // 4)\n    anchors = set(quote_tokens)\n    best = 0.0\n    for start, token in enumerate(excerpt_tokens):\n        if token not in anchors:\n            continue\n        segment = excerpt_tokens[start:start + window]\n        score = _lcs_length(quote_tokens, segment) / len(quote_tokens)\n        if score > best:\n            best = score\n            if best >= 1.0:\n                break\n    supported = best >= threshold\n    return supported, round(best, 3), \"fuzzy\" if supported else \"unsupported\"\n\n\ndef claim_terms(claim):\n    return {term for term in re.findall(r\"[a-z0-9]{4,}\", normalize(claim)) if term not in STOPWORDS}\n\n\ndef claim_grounded(claim, quote):\n    \"\"\"A claim must share vocabulary with its quote and must not be an instruction.\"\"\"\n    if not claim or not quote:\n        return False, \"missing-claim-or-quote\"\n    if IMPERATIVE.match(str(claim).strip()):\n        return False, \"imperative-claim\"\n    terms = claim_terms(claim)\n    quote_vocabulary = set(re.findall(r\"[a-z0-9]{4,}\", normalize(quote)))\n    if len(terms & quote_vocabulary) < min(2, len(terms)):\n        return False, \"claim-not-grounded-in-quote\"\n    return True, \"grounded\"\n\n\ndef clamp_confidence(value):\n    \"\"\"Fold a model-reported confidence into [0, 1]; unparseable values become 0.0.\n\n    The JSON grammar cannot enforce numeric ranges, so a well-quoted finding\n    must not be thrown away merely because the model wrote 1.5 or \"high\".\n    \"\"\"\n    try:\n        number = float(value)\n    except (TypeError, ValueError):\n        return 0.0\n    if number != number:\n        return 0.0\n    return max(0.0, min(1.0, number))\n\n\ndef classify_finding(claim, quote, excerpt=None, confidence=None):\n    \"\"\"Return (status, reason, quote_score) for a candidate finding.\n\n    ``excerpt`` may be None when re-checking a stored record whose page text is\n    no longer available; the stored quote-to-excerpt verdict is then trusted and\n    only claim grounding is re-evaluated. Confidence never rejects a finding;\n    callers store ``clamp_confidence`` of it.\n    \"\"\"\n    grounded, reason = claim_grounded(claim, quote)\n    if not grounded:\n        return \"rejected\", reason, 0.0\n    if excerpt is None:\n        return \"unreviewed\", \"grounded\", 1.0\n    supported, score, mode = quote_support(quote, excerpt)\n    if not supported:\n        return \"rejected\", f\"quote-{mode}\", score\n    return \"unreviewed\", f\"quote-{mode}\", score\n\n\ndef is_accepted(record):\n    \"\"\"Rejected rows stay in the ledger for audit but never count as evidence.\"\"\"\n    return str((record or {}).get(\"status\", \"unreviewed\")) not in {\"rejected\", \"retracted\"}",
-          "read_only": true,
-          "privacy": "sanitized public source only",
-          "contract": {
-            "capability": "public-source-read",
-            "access": "read-only",
-            "network": "none",
-            "side_effects": false,
-            "max_file_bytes": 120000,
-            "max_inventory_bytes": 400000,
-            "write_access": false,
-            "secrets": "redacted"
-          }
+          "status": "not-requested"
         },
         "message": null,
         "trade": null,
@@ -129,19 +98,19 @@
         "decision_source": "model"
       },
       {
-        "id": "local-005",
+        "id": "local-010",
         "action": "explore",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
         "reason": "Assigned to the council's research question this turn.",
-        "request": "",
+        "request": "Return all public repositories, profiles, and metadata linked to Roscomnadzor27 or similar handles, focusing on verified email addresses, SSH keys, or domain ownership",
         "request_status": "closed",
         "exploration": "republic sudan 2023 excerpt lists events disputed revised different",
         "tool": {
           "tool": "public-text",
-          "url": "https://es.wikipedia.org/wiki/Conflicto_en_Sud%C3%A1n_de_2023",
-          "excerpt": "Sudan Tribune (en ingl\u00e9s estadounidense) . Consultado el 2 de septiembre de 2023 . 1 2 Lisa (7 de agosto de 2023). \u00abSudan war: airstrikes on Republican Palace, civil servants await salaries, fuel prices rise\u00bb . Dabanga Radio TV Online (en ingl\u00e9s brit\u00e1nico) . ... Guerra civil sudanesa (2023-presente) - Wikipedia, la enciclopedia libre Ir al contenido Men\u00fa principal Men\u00fa principal mover a la barra lateral ocultar Navegaci\u00f3n Portada Portal de la comunidad Actualidad Cambios recientes P\u00e1ginas nuevas P\u00e1gina aleatoria Ayuda Notificar un error P\u00e1ginas especiales Buscar Buscar Apariencia Donaciones Crear una cuenta Acceder Herramientas personales Donaciones Crear una cuenta Acceder Contenidos mover a la barra lateral ocultar Inicio 1 Antecedentes Alternar subsecci\u00f3n Antecedentes 1.1 Conflicto en Darfur y formaci\u00f3n de las FAR 1.2 Transici\u00f3n pol\u00edtica 2 Desarrol",
+          "url": "https://digitallibrary.un.org/nanna/record/4011970/files/S_2023_325-EN.pdf?withWatermark=0&withMetadata=0&registerDownload=1&version=1",
+          "excerpt": "\ufffd)`95\ufffd\ufffd\ufffd+\ufffd\u0013h \ufffd\u000eI\ufffd^'\ufffd\u07688o\ufffd\u0014\u0003\ufffd\ufffdl8p\ufffd|fy\ufffdg\ufffd\u0019}\ufffdv\u00f3)\ufffd\ufffd\ufffdG\\\u000f ^EV\ufffd\ufffd>\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd \ufffd\ufffdSGyu5z %\ufffd\ufffd\ufffd\ufffdv~\brcD 3\ufffd\ufffd* \ufffd9\ufffd\ufffdBG\ufffd9]\ufffd\u001bY-OK\ufffd>\ufffdv!y\ufffd\ufffd\u000f 9\ufffd\u0001\ufffd\u0019\ufffd\ufffd\u0003ow \ufffd*\ufffdb\ufffde[\ufffd}\u0002h-Z\ufffd\u0469\ufffd\ufffd\ufffdB]\ufffd\ufffdF7\ufffd=Ys\ufffd\ufffd\u0002\ufffdd\ufffd%\u068b-\ufffd|w\b?\u0014 \ufffd\u0184\ufffd>K\u0001_\ufffd\ufffd\ufffd\ufffd./7\ufffdQ\ufffd\ufffdah\ufffd\ufffd:\ufffd\u0013\ufffd\ufffdL \u0006\ufffd\ufffdV\ufffd`r\ufffd\ufffd\ufffdN\ufffdt\u001a\ufffd\ufffd\u0019\u001aU\ufffd\ufffd \u0565e\ufffd\ufffd4\ufffdQ\ufffd\u000f\u0003\ufffd\ufffdLv3\ufffd\u053c\ufffdpz\ufffdY\u0186v\ufffd\ufffd9\ufffd \ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffdv\ufffdo\ufffd\ufffdah n \u03a8-\ufffd \ufffdj \ufffdkk-/\ufffd\ufffd\u0002\ufffd\u000f\ufffdC\ufffdK\ufffd3\ufffdC\ufffd\ufffdo~\ufffd\ufffd\ufffd\ufffdQ\ufffd\ufffdXgl\ufffd\ufffd\u0018bEax XmU\ufffd\ufffd\ufffd \ufffdXG\ufffd}\ufffd\ufffdI\ufffd\ufffd\ufffd\u001a\ufffd\ufffd\ufffd\ufffd\u001b\ufffd7\ufffdR\u0016\ufffd\\\ufffd\u0011C6?SW\ufffd\ufffd\u0003\ufffd\ufffdIl\ufffd\ufffd7 \ufffd\u0018}\"\ufffd#KPsg\ufffd\ufffd)j \u02337 yaNp\ufffd\ufffd\ufffdL\ufffd\u0398 i\u0014{:\ufffd\ufffd|%yk\ufffd \ufffd\u0702)\u000ft\ufffd\ufffd\ufffd;\u000fJ^\ufffd\ufffd\ufffdW\ufffd\ufffd\ufffdZb\ufffd6E\ufffd\u0017&.\ufffd\ufffdb\ufffd\ufffd\ufffd/\ufffd\ufffdT[P\uabf8\ufffd\ufffd\ufffdVl\ufffd\ufffd.}\ufffd\ufffdY\ufffd \ufffd\ufffdV\u06b3 N\ufffd\ufffd\u01d3\u01ed =\\\ufffd\u0015\u0018\ufffd \ufffdAI\ufffd\ufffd\ufffd \ufffdTF\u0368bI\ufffd\u0739PU\"\ufffd\ufffd\ufffdH\ufffd\ufffd/\u0738K8o\ufffdOU\ufffdWk\u0006 W\u001a\ufffd'4\ufffd^ XQ\u0000\u0006 \ufffd'\ufffd\ufffd|rM \ufffd\ufffd*\ufffd\u0004 \ufffd\ufffd\u0321\ufffd\ufffd=\ufffdUr\ufffd)MG\ufffdCA \ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffdc\u0004y\ufffd\ufffd+\ufffd\ufffd\u0003C%\ufffd\ufffd\u0002\ufffd\ufffd}\ufffd\ufffd\ufffde\ufffdY\ufffd3\ufffd\u064b \ufffd\ufffd\ufffd\ufffd\ufffd\u0018\ufffd \ufffd%\ufffd&\ufffd\ufffdy\ufffd\ufffd\u0016\ufffdL\u0005\ufffd\ufffde\ufffd\ufffd\ufffd&s\u0555\ufffd\ufffd/57I\ufffdP\ufffd9\ufffd,\ufffd\ufffd\u0655\ufffd5]\ufffd\ufffd\ufffd\ufffd\u0015\ufffd9 \u0002 \ufffd8\u0007!z\ufffd\ufffd\ufffd\ufffd\u0005\ufffd\u0012\ufffdH\ufffdS\ufffdOCj\ufffd \b@\ufffd\u0012\ufffd\u0017\ufffdUb\u0000\ufffd_\u0222\u0019\ufffdee\u014a\ufffd8\ufffdR\ufffdTf\u0014\u0015K\ufffd\ufffd{\ufffdA}\ufffd\ufffdb\ufffd\ufffdP[TT\ufffd\u0588\ufffd\b\b\ufffd\ufffd\ufffd\ufffd\u0005\u0005\ufffd\ufffd \ufffdR\ufffd\ufffd\ufffd\ufffd\ufffd\u0502\u0010f\u00182\ufffd\ufffdL\ufffd\u05df\ufffd\u0007/\ufffd>)\ufffd\ufffd:\ufffd\u073a#G\u0012\ufffd\b\ufffd1EoD\ufffd2\ufffd\ufffd\ufffd;\ufffd\ufffd\ufffd?j\ufffd\ufffd\ufffd :H\ufffd\ufffd\ufffdH\ufffdA\ufffd&|\u07cbQTq\ufffd1\ufffd\ufffdh '\ufffd\ufffdO\ufffd\ufffd\u01d7\ufffdiK\u0014\ufffd\u0012\ufffd\b\ufffd4\u31d3\ufffd\u0013\ufffd\ufffdts\ufffd9ur\ufffd\ufffd\\\u0496\ufffd\ufffd\ufffd\ufffd U0\ufffd\ufffd\ufffd}\ufffd\ufffd\ufffd\"\ua203\ufffd]s\ufffd\ufffd\ufffd\ufffd\ufffdq\ufffd%`\ufffdt\ufffd\ufffd\u0006\ufffd\u0403\ufffdz\ufffdM\u000f\ufffd\ufffd=\ufffd#\ufffd\ufffdP\ufffd\\#\u0001\ufffdb\ufffd+~\u007f dAw\ufffd\u0229tuj\u0012 \ufffdT>\ufffdI|ul\ufffd([M\ufffd>\u0001\ufffd\u0005\b=6Y\u0012\ufffd~h\u000f}RD\b\b\ufffd0\b\ufffd\ufffd8a1\ufffdoq\ufffd\u0011\ufffd@\ufffdE\ufffdI7\ufffd40H\u0000\u0010O \u000f\u0015`,! Y\"\u0007\u0381}`\ufffd8K \ufffdx\u001b\b3\ufffd\ufffd:.W\u0003v\u0015\ufffd/ \u0007 \u000f\ufffd\u04ba CQ!\ufffd9C_(\ufffd\ufffd w\u0003\u0000x\ufffd \ufffdd\u0016*##\u0015\"\u0014\u001bc4\ufffd\ufffd J\ufffd|+N,\u0010\ufffd\ufffdb\ufffd@\ufffd\ufffd$\ufffd\u01b5\ufffdB\ufffd\ufffd w\ufffd\ufffd\ufffd\ufffdz>\u061a^7\ufffd\ufffd$\ufffd\ufffdki\ufffd\ufffd\ufffd\ufffd2\ufffd\ufffd\u3c72\ufffd\ufffd\ufffd\ufffd i\u078c\ufffd \u02940\u0018\ufffd0% \ufffd\ufffd?\ufffd \u007f\u0014Gx\u04b1#@o \ufffd\ufffdMO\ufffd\u0012E\ufffd\ufffd \u019ev\ufffd\ufffd{z\u0007w\ufffd\ufffd\u0338k\ufffd\ufffd\ufffd\ufffd\ufffd\u06e0G\ufffd\u001b_\ufffd] \ufffd&\u0016\ufffd\ufffd\ufffd\u001bb\u0016\ufffd\u0016\ufffd\ufffd\ufffd`\ufffd ,\ufffd\ufffd\ufffdf\ufffd\ufffd \ufffdm\ufffdU\u0013\ufffd\ufffdz\ufffd\ufffd\\a\u0005\u0003V\ufffd\ufffd\u0001l\ufffd\u0001\ufffdj@g (\ufffd\ufffd\ufffd!\ufffdL\ufffd&2\ufffd(\ufffd\ufffd\ufffd\u04c2\ufffd\u0002PV\u0000\ufffd\ufffd\ufffd\ufffd\ufffd}\u0019\ufffd8\u0003\\\ufffd\u0001n\u000e\ufffd\ufffd\u0001V\u000e\ufffd \ufffd\u0006I\u0012 \ufffd\ufffd\ufffd\ufffd\ufffdA\u0006:6u\ufffd\ufffd\ufffd\ufffd\u000e\ufffd\ufffd\u0003Dw\ufffd\ufffd\ufffd\ufffd\ufffd&\ufffd\ufffd\ufffdf>\ufffdC\ufffd\ufffd\ufffd5\ufffd> \u0626\u0001 \u034d\u001ar\ufffd\u00064j@\ufffd\u0006\ufffd4 \ufffd\ufffdB\ufffd&\u0017=\ufffdfV\ufffdT\u0017\ufffdD2|\ufffd\u0010\ufffd\u0002\ufffd\ufffdE\ufffd]Q\ufffd_\ufffd\u0428\ufffd\ufffdN2d$ged\ufffdE\ufffd\ufffd\"\ufffd\ufffd\u001b\ufffd\ufffd6 T\ufffd\ufffdv\u05ed]Y\u0017\ufffd2'\ufffd\ufffdtf\u0001\ufffd \u007f\ufffdg\ufffd|J0\ufffd4M\ufffd\ufffd\ufffdwj\ufffd\ufffd\ufffdV\ufffd \ufffdI\"\ufffd \ufffd\u0004\u0359\ufffd\ufffd \u0018\ufffd\ufffd\b\ufffdc#\ufffd\ufffd\ufffd\ufffd+6B\ufffd\ufffd\ufffd\ufffdq\u0011\ufffd\ufffd\"\ufffd\u0012\u0017\ufffd\ufffd=\u0004E\u0018\b\ufffd(\"J \ufffdN\ufffd\u0013.\ufffd\ufffdD\ufffd\b/\ufffd \u0012\u02c9a \ufffd\ufffd2 -\u0006\ufffd\ufffd\ufffd\ufffd\ufffd?\ufffd\ufffd\ufffd\ufffd\ufffdrX\ufffd\ufffd \ufffd*y\ufffd\ufffd\u001bk\ufffd c\ufffdOtb \ufffdX\u0007\ufffdZ\u0007\ufffd%$\ufffd \ufffd \u0196\u001b\ufffd\ufffd\ufffdx\u000e]\u0543\ufffd\b\ufffd\ufffd|\ufffd\u0004\ufffd+\u0018/\ufffd\ufffdh\ufffd7\ufffd\ufffd6\u071f\ufffd\ufffd \ufffd3\ufffd\ufffdNx \ufffd\ufffdh\ufffd\ufffd(\ufffd \ufffdY\bI\ufffd, m [\ufffd\u000e\ufffd\u0010B}pEhN\ufffd\ufffd\\|^\ufffd\ufffdg\ufffdw\"[\u0004\u0088\ufffd\ufffd\ufffdWj\ufffdO\ufffd\ufffdT ... %PDF-1.7 %\ufffd\ufffd\ufffd\ufffd 1 0 obj >/Metadata 547 0 R/ViewerPreferences 548 0 R>> endobj 2 0 obj > endobj 3 0 obj >/ExtGState >/XObject >/ProcSet[/PDF/Text/ImageB/ImageC/ImageI] >>/MediaBox[ 0 0 612 792] /Contents 4 0 R/Group >/Tabs/S/StructParents 0>> endobj 4 0 obj > stream x\ufffd\ufffd\u001b\ufffdn \ufffd\ufffd.@\ufffd\ufffdG\u06c0z\ufffdo\u0012\u0010\u0006\u040cW\ufffd\u00061\u0010\ufffd\u0002rX\ufffdA\ufffd\u0015 ,y \u0005A\ufffd>,>\ufffdd\ufffd\ufffd\u04e3i\ufffdw \ufffd\ufffd\u000eC\ufffdn\ufffd\ufffd6\u05e4\u04fd\ufffd\ufffd\ufffd\ufffd\ufffd3\ufffd \ufffd\u007f\ufffd\ufffd 8\ufffd \ufffd\u0003\ufffd\ufffd3\ufffd7\ufffd\ufffd\ufffdE\ufffd\u0002(O%\ufffd\b\ufffd\u0007\ufffd\ufffd z#\u0014\u0017\ufffd\u0638\u0004\ufffd=\ufffd\ufffdfG\ufffd\ufffd\ufffdr\u0018\ufffd\ufffd^\u0018\ufffd)\ufffd\ufffdB\ufffdO\ufffd\ufffd^(\ufffd\ufffd\ufffd'\ufffd\ufffdd\ufffd\u0007\ufffd\u0001\u0006f\ufffd\u0011?\ufffd\ufffd0\ufffd\ufffdq6M+ \ufffd \ufffda\ufffd\ufffd\ufffd\ufffd {\ufffd&\ufffd5\ufffdyJT?\ufffd\ufffd\ufffd\u043e\ufffd\ufffd\ufffd@\ufffd\ufffd\u0011\ufffd\u0006 YJ\u00155=\u0015\u0001!\u0003\ufffd\ufffd\u0016Y\ufffd\ufffd\ufffd>\ufffd!\ufffd\ufffd\u00035&P\u01cd\ufffd\ufffd z\ufffd[\ufffdP \ufffd\ufffdU'u\u0004\ufffd\ufffd\ufffd \ufffdI\ufffd b\ufffd \u0003\ufffd o\u00c8\ufffd \ufffd\ufffd^\ufffdelTe*\ufffd]\ufffd\ufffd\ufffd \u0015~\ufffd \u0016\ufffd\ufffd{\ufffd\u0425c\ufffd\ufffd\ufffdo\ufffd*\ufffd\ufffd\ufffdc\ufffd\u0410\ufffd:\ufffd\ufffd6\ufffd7m\ufffd\ufffd\ufffd\ufffdMx@>\ufffd! \ufffd\u0001\ufffd\u0003&\u0005\ufffd,)\ufffd\u0010\u0013\ufffd]p\ufffd\ufffd\u02c7}\ufffd\u0012 \ufffd",
           "status": "completed",
           "contract": {
             "capability": "public-text-read",
@@ -152,100 +121,51 @@
             "raw_data": false,
             "untrusted_content": true
           },
-          "sentences": [
-            "\u00ab \" Regional Sudan Response Situation Update 12 September 2023 \" \u00bb .",
-            "\u00abSudan war: airstrikes on Republican Palace, civil servants await salaries, fuel prices rise\u00bb .",
-            "\u2191 \u00ab \" Regional Sudan Response Situation Update 12 September 2023 \" \u00bb .",
-            "[ 27 ] Transici\u00f3n pol\u00edtica [ editar ] Art\u00edculo principal: Transici\u00f3n democr\u00e1tica sudanesa de 2019 El expresidente sudan\u00e9s Omar al Bashir presidi\u00f3 un conflicto en el sur del pa\u00eds que result\u00f3 en la secesi\u00f3n de Sud\u00e1n del Sur en 2011.",
-            "[ 29 ] En medio de una crisis econ\u00f3mica, los militares acordaron entregar la autoridad a un gobierno liderado por civiles, con un acuerdo formal programado para el 6 de abril de 2023.",
-            "Campo de refugiados en Chad en relaci\u00f3n con la guerra en Sud\u00e1n, fotografiado por Voice of America el 16 de mayo de 2023.",
-            "Hubo enfrentamientos en la sede de la emisora estatal, Sudan TV que luego fue capturada por las fuerzas de las FAR.",
-            "[ 42 ] Las Fuerzas Armadas del Sud\u00e1n reclamaron el control de la sede de Sudan TV y la radio estatal en Jartum.",
-            "[ 47 ] Los combates fueron descritos como muy intensos a lo largo de la carretera que va a Port Sudan y en la zona industrial de al-Bagair.",
-            "El jefe de ayuda de emergencia de las Naciones Unidas, Martin Griffiths, lleg\u00f3 a Port Sudan para inspeccionar las operaciones de ayuda, pero inform\u00f3 que la \"voluntad de poner fin a la lucha a\u00fan no estaba all\u00ed\" despu\u00e9s de hablar con los l\u00edderes de RSF y SAF.",
-            "[ 56 ] La embajada turca en Jartum fue trasladada a Port Sudan despu\u00e9s de que el autom\u00f3vil del embajador turco fuera alcanzado por disparos, y ambas partes del conflicto se culparon mutuamente por el ataque.",
-            "[ 57 ] El Ministerio de Defensa sudan\u00e9s emiti\u00f3 una orden de movilizaci\u00f3n para que los jubilados del ej\u00e9rcito y las personas capaces se unieran a las Fuerzas Armadas del Sud\u00e1n.",
-            "[ 59 ] Tratado de Yoda [ editar ] Estancamiento del conflicto (junio-septiembre de 2023) [ editar ] Alrededor del 15 de junio, el gobernador de Darfur Occidental, Khamis Abdallah Abbakar, fue asesinado y luego mutilado horas despu\u00e9s de criticar p\u00fablicamente a las RSF por \"genocidio\".",
-            "Las Fuerzas Armadas del Sud\u00e1n y las RSF se culparon mutuamente por los incidentes, mientras que el gobierno sudan\u00e9s tom\u00f3 medidas contra los enviados internacionales.",
-            "Seg\u00fan la Oficina del ACNUDH, los fallecidos fueron asesinados por las RSF y sus milicias aliadas y enterrados el 20 y 21 de junio de 2023.",
-            "[ 74 ] El Tercer Frente, conocido como Tamazuj, uno de varios grupos con sede en Darfur y Kordof\u00e1n que firmaron un acuerdo de paz con el gobierno sudan\u00e9s en 2020 y hab\u00edan sido marginados por sus presuntos v\u00ednculos con la inteligencia militar sudanesa, declar\u00f3 formalmente su alianza con las RSF.",
-            "[ 78 ] Estos enfrentamientos continuaron en Jartum, [ 79 ] donde el Palacio Republicano fue blanco de ataques a\u00e9reos, y se hicieron intentos de romper un asedio en el complejo militar de Yarmouk.",
-            "[ 82 ] El 17 de agosto, el Tercer Frente, conocido como Tamazuj, uno de los varios grupos con base en Darfur y Kordof\u00e1n que firmaron un acuerdo de paz con el gobierno sudan\u00e9s en 2020 y hab\u00edan sido marginados por sus presuntos v\u00ednculos con la inteligencia militar sudanesa, declar\u00f3 formalmente su alianza con las RSF.",
-            "[ 91 ] Ofensivas de las FAR (Octubre-Diciembre de 2023) [ editar ] En octubre, las Fuerzas Armadas del Sud\u00e1n en Darfur estaban experimentando una grave escasez de suministros debido a los asedios impuestos por las FAR, y no hab\u00edan utilizado su superioridad a\u00e9rea para detener los avances de las FAR.",
-            "[ 111 ] [ 112 ] A finales de octubre, las RSF controlaban la mayor parte de Jartum, pero no hab\u00edan logrado apoderarse de bases militares clave, mientras que el gobierno de al-Burhan se hab\u00eda trasladado en gran medida a Port Sudan.",
-            "[ 148 ] En Darfur [ editar ] En Geneina , Darfur Occidental, los enfrentamientos \u00e9tnicos que comenzaron en la \u00faltima semana de abril de 2023 hab\u00edan matado al menos a 1.100 personas, [ 149 ] mientras que el Sultanato de Dar Masalit afirm\u00f3 que m\u00e1s de 5.000 personas hab\u00edan muerto y unas 8.000 hab\u00edan resultado heridas en la ciudad.",
-            "[ 150 ] En julio de 2023, un l\u00edder tribal masalit afirm\u00f3 que m\u00e1s de 10.000 personas hab\u00edan sido asesinadas solo en Darfur Occidental y que el 80% de los residentes de Geneina hab\u00edan huido.",
-            "[ 156 ] Violencia sexual [ editar ] En julio de 2023, las autoridades informaron de al menos 88 casos de agresi\u00f3n sexual a mujeres en todo el pa\u00eds, la mayor\u00eda de ellos atribuidos a RSF.",
-            "[ 160 ] Evacuaci\u00f3n de ciudadanos extranjeros [ editar ] V\u00e9ase tambi\u00e9n: Evacuaci\u00f3n de ciudadanos extranjeros durante el conflicto de Sud\u00e1n de 2023 Repatriaciones a trav\u00e9s del Mecanismo de Protecci\u00f3n Civil de la Uni\u00f3n Europea.",
-            "Esto ha obligado a realizar evacuaciones por carretera a trav\u00e9s de Port Sudan en el Mar Rojo, que se encuentra a unos 650 km al noreste de Jartum, [ 163 ] desde donde fueron transportados por v\u00eda a\u00e9rea o transportados directamente a sus pa\u00edses de origen o a terceros.",
-            "[ 180 ] para el 12 de junio de 2023 m\u00e1s de 530 000 personas hab\u00edan huido del pa\u00eds, mientras que 1,6 millones hab\u00edan sido desplazadas internamente, incluyendo diplom\u00e1ticos y ciudadanos extranjeros de varios pa\u00edses.",
-            "[ 187 ] Esfuerzos de negociaciones de paz [ editar ] 2023 [ editar ] El 16 de abril, representantes de las Fuerzas Armadas del Sud\u00e1n y las FAR aceptaron una propuesta de las Naciones Unidas para pausar los combates entre las 16:00 y las 19:00 hora local.",
-            "Blinken solicit\u00f3 la reanudaci\u00f3n de las negociaciones con las RSF en Yeda , pero el gobierno sudan\u00e9s se neg\u00f3, citando la falta de consultas previas y la necesidad de establecer bases de paz.",
-            "[ 197 ] [ 198 ] Investigaciones de cr\u00edmenes de guerra [ editar ] El 13 de julio de 2023, la oficina del fiscal jefe de la Corte Penal Internacional , Karim Ahmad Khan, dijo que hab\u00eda iniciado una investigaci\u00f3n sobre posibles cr\u00edmenes de guerra y cr\u00edmenes de lesa humanidad cometidos durante el conflicto.",
-            "[ 211 ] Egipto [ editar ] El 16 de abril, las FAR afirmaron que sus tropas en Port Sudan hab\u00edan sido atacadas por aviones extranjeros y emitieron una advertencia contra cualquier interferencia extranjera.",
-            "[ 222 ] El 30 de julio, las enfermeras del Servicio de Urgencias del Hospital Universitario de Port Sudan se declararon en huelga en protesta por el impago de los salarios desde el comienzo del conflicto, lo que oblig\u00f3 a cerrar el hospital desde entonces despu\u00e9s de que otros departamentos se unieran a \u00e9l.",
-            "[ 228 ] Per\u00fa Per\u00fa : A trav\u00e9s de un comunicado del Ministerio de Relaciones Exteriores, el Gobierno del Per\u00fa expres\u00f3 este domingo su preocupaci\u00f3n por los actos de violencia acontecidos en Sud\u00e1n desde el s\u00e1bado 15 de abril y que hasta el momento provocaron la muerte de 78 civiles en medio de combates entre paramilitares y el Ej\u00e9rcito sudan\u00e9s.",
-            "[ 230 ] Egipto Egipto y Sud\u00e1n del Sur Sud\u00e1n del Sur : Los pa\u00edses vecinos de Sud\u00e1n ofrecieron mediar entre el ej\u00e9rcito sudan\u00e9s y las Fuerzas de Apoyo R\u00e1pido, dijo la presidencia egipcia en un comunicado.",
-            "[ 246 ] El Ministerio de Asuntos Exteriores dijo que dos aviones C-130J de la Fuerza A\u00e9rea de la India estaban en espera en Yeda, Arabia Saudita, como parte de los preparativos para la evacuaci\u00f3n, mientras que un buque de la Armada india, INS Sumedha, hab\u00eda llegado a Port Sudan.",
-            "Tambi\u00e9n dijo que est\u00e1 listo \"para realizar esfuerzos para ayudar a Sud\u00e1n a poner fin a la crisis de manera sostenible, de una manera que sirva a los intereses del pueblo sudan\u00e9s\", y advirti\u00f3 sobre las graves repercusiones de la escalada violenta en Sud\u00e1n, \"cuyo alcance es dif\u00edcil de determinar interna y regionalmente\".",
-            "V\u00e9ase tambi\u00e9n [ editar ] Batalla de Jartum (2023) Masacre de El Fasher Golpe de Estado en Sud\u00e1n de 2019 Conflicto de Darfur Masacre de Jartum Misi\u00f3n Internacional Independiente de determinaci\u00f3n de los hechos sobre Sud\u00e1n Primera guerra civil sudanesa Segunda guerra civil sudanesa Referencias [ editar ] \u2191 \u00abM\u00e1s de 61.000 muetos por causas directas o indirectas de la guerra en Sud\u00e1n\u00bb .",
-            "\u2191 \u00abSudan: at least 25 civilians killed in weekend attacks on Khartoum\u00bb .",
-            "Consultado el 27 de septiembre de 2023 .",
-            "\u2191 \u00abSudan war: 'I dey fear say di fighting go continue for years ' \u00bb .",
-            "\u2191 Abdelaziz, Khalid (15 de abril de 2023)."
-          ],
+          "sentences": [],
           "query": "republic sudan 2023 excerpt lists events disputed revised different",
           "search_results": [
             {
-              "title": "Tercera guerra civil sudanesa (2023-presente) - Wikipedia, la enciclopedia libre",
-              "url": "https://es.wikipedia.org/wiki/Conflicto_en_Sud%C3%A1n_de_2023",
-              "snippet": "contenidos inicio antecedentes 1.1 conflicto en darfur y formaci\u00f3n de las far 1.2 transici\u00f3n pol\u00edtica desarrollo de la guerra 2.1 enfrentamientos iniciales ( 15 de abril - 19 de mayo ) 2..."
+              "title": "Report from the Government of the Republic of the Sudan to the United Nations Security Council",
+              "url": "https://digitallibrary.un.org/nanna/record/4011970/files/S_2023_325-EN.pdf?withWatermark=0&withMetadata=0&registerDownload=1&version=1",
+              "snippet": "united nations s / 2023 / 325 security council distr . : general 16 may 2023 original : english 23 - 09318 ( e ) 190523 230523 * 2309318 * letter dated 6 may 2023 from the permanent representa..."
             },
             {
-              "title": "Der Krieg im Sudan seit April 2023 | Sudan | bpb.de",
-              "url": "https://www.bpb.de/shop/zeitschriften/apuz/sudan-2026/580253/der-krieg-im-sudan-seit-april-2023/",
-              "snippet": "sudan der krieg im sudan seit april 2023 ausl\u00f6ser , akteure und dynamik gerrit kurtz 07 . 08 . 2026 / 15 minuten zu lesen die sudanese armed forces und die rapid support forces bek\u00e4mpfen ein..."
+              "title": "Situation in the Sudan and the activities of the United Nations Integrated Transition Assistance Mission in the Sudan Report of the Secretary-General",
+              "url": "https://documents-dds-ny.un.org/doc/UNDOC/GEN/N23/248/51/PDF/N2324851.pdf?OpenElement",
+              "snippet": "united nations s / 2023 / 644 security council distr . : general 31 august 2023 original : english 23 - 16284 ( e ) 080923 * 2316284 * situation in the sudan and the activities of the united..."
             },
             {
-              "title": "2023 in Sudan \u2014 Grokipedia",
-              "url": "https://grokipedia.com/page/2023_in_sudan",
-              "snippet": "fact - checked by grok 8 months ago 2023 in sudan 2023 in sudan was defined by the sudden eruption of a civil war on april 15 , when intense fighting broke out in khartoum between the sudanese arm..."
+              "title": "\u82cf\u4e39\u5185\u6218 (2023\u5e74) - \u7ef4\u57fa\u767e\u79d1\uff0c\u81ea\u7531\u7684\u767e\u79d1\u5168\u4e66",
+              "url": "https://zh.m.wikipedia.org/wiki/%E8%8B%8F%E4%B8%B9%E5%86%85%E6%88%98_(2023%E5%B9%B4)",
+              "snippet": "\u82cf\u4e39 \u5185\u6218 ( 2023 \u5e74 ) \u63d0\u793a \uff1a \u6b64 \u6761\u76ee \u7684 \u4e3b\u9898 \u4e0d\u662f \u8fbe\u5c14 \u5bcc\u5c14 \u6218\u4e89 \u3002 \u6b64 \u689d \u76ee \u53ef \u53c2\u7167 \u82f1\u8a9e \u7dad\u57fa \u767e\u79d1 \u76f8 \u61c9\u689d \u76ee \u6765 \u6269\u5145 \u3002 \u6b64 \u689d \u76ee \u9ad4 \u88c1 \u53ef\u80fd \u66f4 \u9002\u5408 \u6563\u6587 \u800c \u975e \u5217\u8868 \u3002 2023 \u5e74 \u82cf\u4e39 \u51b2\u7a81 \u8607 \u4e39 \u6c11\u4e3b \u8f49 \u578b \uff08 \u82f1\u8bed \uff1a sudanese transition to democracy \uff09 ..."
+            },
+            {
+              "title": "Sudanese civil war (2023\u2013present) - Wikipedia",
+              "url": "https://en.m.wikipedia.org/wiki/2023_Sudan_conflict?useskin=vector",
+              "snippet": "sudanese civil war ( 2023 \u2013present ) https : / / www . economist . com / middle - east - and - africa / 2023 / 10 / 05 / genocide - returns - to - darfur ( refs : 45 , 333 ) https : / / www . daba..."
             }
           ]
         },
         "message": null,
         "trade": null,
-        "finding_id": "finding-ea4055cfda46f60f0414",
+        "finding_id": null,
         "fallback_reason": null,
         "decision_source": "scheduler"
       },
       {
-        "id": "local-006",
-        "action": "stay",
-        "room": "archive",
-        "status": "active-local",
-        "proposal": "",
-        "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
-        "request": "Extract and analyze all text fields (bio, repositories, stars, forks, affiliations) for keywords: 'geophysics', 'seismic', 'HVSR', 'Horizontal-to-Vertical Spectral Ratio'",
-        "request_status": "closed",
-        "exploration": "republic sudan 2023 excerpt lists events disputed revised different",
-        "tool": {
-          "status": "not-requested"
-        },
-        "message": null,
-        "trade": null,
-        "finding_id": null,
-        "fallback_reason": "unstructured-output",
-        "decision_source": "model"
+        "id": "local-012",
+        "status": "awaiting-retry",
+        "attempts": 2,
+        "parse_reason": "unstructured-output"
       },
       {
-        "id": "local-015",
+        "id": "local-016",
         "action": "explore",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
         "reason": "Assigned to the council's research question this turn.",
-        "request": "Verify publicly archived GitHub activity (deleted repos, forked projects, or commit metadata) for traces of RosComNadzor-blocklist keywords ('su'). Focus on commit history, repository events, and associated network data",
+        "request": "",
         "request_status": "closed",
         "exploration": "republic sudan 2023 excerpt lists events occurred international",
         "tool": {
@@ -276,11 +196,6 @@
               "snippet": "united nations s / 2023 / 861 security council distr . : general 13 november 2023 original : english 23 - 21184 ( e ) 151123 * 2321184 * situation in the sudan and the activities of the united..."
             },
             {
-              "title": "\u82cf\u4e39\u5185\u6218 (2023\u5e74) - \u7ef4\u57fa\u767e\u79d1\uff0c\u81ea\u7531\u7684\u767e\u79d1\u5168\u4e66",
-              "url": "https://zh.m.wikipedia.org/wiki/%E8%8B%8F%E4%B8%B9%E5%86%85%E6%88%98_(2023%E5%B9%B4)",
-              "snippet": "\u82cf\u4e39 \u5185\u6218 ( 2023 \u5e74 ) \u63d0\u793a \uff1a \u6b64 \u6761\u76ee \u7684 \u4e3b\u9898 \u4e0d\u662f \u8fbe\u5c14 \u5bcc\u5c14 \u6218\u4e89 \u3002 \u6b64 \u689d \u76ee \u53ef \u53c2\u7167 \u82f1\u8a9e \u7dad\u57fa \u767e\u79d1 \u76f8 \u61c9\u689d \u76ee \u6765 \u6269\u5145 \u3002 \u6b64 \u689d \u76ee \u9ad4 \u88c1 \u53ef\u80fd \u66f4 \u9002\u5408 \u6563\u6587 \u800c \u975e \u5217\u8868 \u3002 2023 \u5e74 \u82cf\u4e39 \u51b2\u7a81 \u8607 \u4e39 \u6c11\u4e3b \u8f49 \u578b \uff08 \u82f1\u8bed \uff1a sudanese transition to democracy \uff09 ..."
-            },
-            {
               "title": "Sudanese civil war (2023\u2013present) (reference: search.worldcat.org)",
               "url": "https://search.worldcat.org/issn/0362-4331"
             },
@@ -302,9 +217,9 @@
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "One-time workbench bootstrap health check before larger tasks.",
+        "reason": "Deterministic continuity follow-up after a temporary interview retry.",
         "request": "Retrieve the full profile metadata (publicly accessible fields) of Roscomnadzor27\u2019s GitHub account",
-        "request_status": "open",
+        "request_status": "closed",
         "exploration": "github:Roscomnadzor27/repositories",
         "tool": {
           "status": "not-requested"
@@ -321,8 +236,8 @@
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Assess whether roscom\u2019s public GitHub activity aligns with seismic/geophysics contributions. Prior crawl results and frontier-question-317 findings must be validated for consistency with assigned research on Sudan 2023.",
-        "request": "Verify if roscom\u2019s GitHub profile contains seismic/geophysics/HVSR-related repositories, commits, or starred items. Cross-check with frontier-question-317 findings for consistency",
+        "reason": "Prior crawl results and frontier-question-317 findings must be validated for consistency with assigned research on Sudan 2023. Focus on explicit contributions to seismic/geophysics.",
+        "request": "Cross-validate roscom\u2019s GitHub repositories, commits, and starred items for seismic/geophysics/HVSR evidence. Confirm alignment with frontier-question-317 and Sudan 2023 research",
         "request_status": "open",
         "exploration": "github:roscom",
         "tool": {
@@ -343,19 +258,19 @@
           },
           "search_results": [
             {
+              "title": "Guerra Civil no Sud\u00e3o (2023\u2013presente) \u2013 Wikip\u00e9dia, a enciclop\u00e9dia livre",
+              "url": "https://pt.wikipedia.org/wiki/Golpe_de_Estado_no_Sud%C3%A3o_em_2023",
+              "snippet": "guerra civil no sud\u00e3o ( 2023 \u2013presente ) conflito de 2023 no sud\u00e3o entre as for\u00e7as armadas sudanesas e as for\u00e7as de suporte r\u00e1pidas guerra civil no sud\u00e3o \u00e9 um conflito interno em curso que teve in..."
+            },
+            {
               "title": "Situation in the Sudan and the activities of the United Nations Integrated Transition Assistance Mission in the Sudan Report of the Secretary-General",
               "url": "https://documents-dds-ny.un.org/doc/UNDOC/GEN/N23/248/51/PDF/N2324851.pdf?OpenElement",
               "snippet": "united nations s / 2023 / 644 security council distr . : general 31 august 2023 original : english 23 - 16284 ( e ) 080923 * 2316284 * situation in the sudan and the activities of the united..."
             },
             {
-              "title": "United Nations S/2023/861 Security Council Situation in the Sudan and the activities of the United Nations Integrated Transition Assistance Mission in the Sudan",
-              "url": "https://documents-dds-ny.un.org/doc/UNDOC/GEN/N23/330/61/pdf/N2333061.pdf",
-              "snippet": "united nations s / 2023 / 861 security council distr . : general 13 november 2023 original : english 23 - 21184 ( e ) 151123 * 2321184 * situation in the sudan and the activities of the united..."
-            },
-            {
-              "title": "\u82cf\u4e39\u5185\u6218 (2023\u5e74) - \u7ef4\u57fa\u767e\u79d1\uff0c\u81ea\u7531\u7684\u767e\u79d1\u5168\u4e66",
-              "url": "https://zh.m.wikipedia.org/wiki/%E8%8B%8F%E4%B8%B9%E5%86%85%E6%88%98_(2023%E5%B9%B4)",
-              "snippet": "\u82cf\u4e39 \u5185\u6218 ( 2023 \u5e74 ) \u63d0\u793a \uff1a \u6b64 \u6761\u76ee \u7684 \u4e3b\u9898 \u4e0d\u662f \u8fbe\u5c14 \u5bcc\u5c14 \u6218\u4e89 \u3002 \u6b64 \u689d \u76ee \u53ef \u53c2\u7167 \u82f1\u8a9e \u7dad\u57fa \u767e\u79d1 \u76f8 \u61c9\u689d \u76ee \u6765 \u6269\u5145 \u3002 \u6b64 \u689d \u76ee \u9ad4 \u88c1 \u53ef\u80fd \u66f4 \u9002\u5408 \u6563\u6587 \u800c \u975e \u5217\u8868 \u3002 2023 \u5e74 \u82cf\u4e39 \u51b2\u7a81 \u8607 \u4e39 \u6c11\u4e3b \u8f49 \u578b \uff08 \u82f1\u8bed \uff1a sudanese transition to democracy \uff09 ..."
+              "title": "Situation in the Sudan and the activities of the United Nations Integrated Transition Assistance Mission in the Sudan Report of the Secretary-General",
+              "url": "https://digitallibrary.un.org/record/4027490/files/S_2023_861-EN.pdf",
+              "snippet": "united nations s / 2023 / 861 security council distr . : general 13 november 2023 original : english situation in the sudan and the activities of the united nations integrated transition ass..."
             }
           ]
         },
@@ -366,27 +281,76 @@
         "decision_source": "model"
       },
       {
-        "id": "local-026",
-        "status": "awaiting-retry",
-        "attempts": 1,
-        "parse_reason": "unstructured-output"
+        "id": "local-023",
+        "action": "explore",
+        "room": "archive",
+        "status": "active-local",
+        "proposal": "",
+        "reason": "The prior schema leads were third-party; GitHub\u2019s authoritative docs may clarify if dependency graphs directly capture pinned versions and patch timelines for CVSS \u22657 vulnerabilities. This is critical to cross-checking `",
+        "request": "Verify if GitHub\u2019s dependency graph documentation explicitly tracks patched CVSS \u22657 vulnerabilities and their update timelines for pinned versions in `package-lock.json`, `go.mod`, or `requirements.txt`",
+        "request_status": "open",
+        "exploration": "github topic:dependency-graph security advisory CVSS>=7 pinned-version update within 30 days",
+        "tool": {
+          "tool": "public-search",
+          "query": "github topic:dependency-graph security advisory CVSS>=7 pinned-version update within 30 days",
+          "results": [
+            {
+              "title": "Phase 7: Security \u2014 Repository & Code Security \u2014 GitHub Advanced | Techoral",
+              "url": "https://techoral.com/github-advanced/phase-7-security-repo.html",
+              "snippet": "phase 7 of 14 security : repository & code security updated : june 2026 the full github security stack \u2014 dependabot alerts vs security updates vs version updates , dependabot.yml configuration ,..."
+            },
+            {
+              "title": "CVE \u0432 \u0437\u0430\u0432\u0438\u0441\u0438\u043c\u043e\u0441\u0442\u044f\u0445 \u2014 govulncheck \u0438 Renovate \u0434\u043b\u044f Go \u2014 vikulin-va.ru",
+              "url": "https://vikulin-va.ru/standards/backend/security/go/dependency-cve/",
+              "snippet": "security cve \u0432 \u0437\u0430\u0432\u0438\u0441\u0438\u043c\u043e\u0441\u0442\u044f\u0445 \u2014 go vulncheck \u0438 renovate \u0434\u043b\u044f go go backend go vulncheck \u043f\u043e call graph , cvss \u2265 7.0 \u043b\u043e\u043c\u0430\u0435\u0442 \u0441\u0431\u043e\u0440\u043a\u0443 . merge \u0432 main + nightly + release . renovate \u2014 auto - pr \u043d\u0430 patch /..."
+            },
+            {
+              "title": "Shai-Hulud Worm Chains GitHub Actions Weaknesses to Compromise 520M npm/PyPI Downloads with Valid SLSA Provenance THREAT CAMPAIGN | CRITICAL | CVSS 9.5",
+              "url": "https://techjacksolutions.com/wp-content/uploads/2026/05/scc-cam-2026-0345.pdf",
+              "snippet": "security command center tech jacks solutions scc - cam - 2026 - 0345 tlp : clear generated by tjs security command center | 2026 - 05 - 20 18:55 utc page 1 scc - cam - 2026 - 0345 intelligence..."
+            },
+            {
+              "title": "CVE \u0432 \u0437\u0430\u0432\u0438\u0441\u0438\u043c\u043e\u0441\u0442\u044f\u0445 \u2014 OWASP Dependency-Check \u0438 Renovate \u2014 vikulin-va.ru",
+              "url": "https://vikulin-va.ru/standards/backend/security/java/dependency-cve/",
+              "snippet": "security cve \u0432 \u0437\u0430\u0432\u0438\u0441\u0438\u043c\u043e\u0441\u0442\u044f\u0445 \u2014 owasp dependency - check \u0438 renovate java backend cve \u0432 \u0437\u0430\u0432\u0438\u0441\u0438\u043c\u043e\u0441\u0442\u044f\u0445 : owasp dependency - check \u043e\u0431\u044f\u0437\u0430\u0442\u0435\u043b\u0435\u043d \u2014 \u0441\u043a\u0430\u043d\u0438\u0440\u0443\u0435\u0442 runtime / test - \u0437\u0430\u0432\u0438\u0441\u0438\u043c\u043e\u0441\u0442\u0438 \u043f\u0440\u043e\u0442\u0438\u0432 nist nvd ...."
+            },
+            {
+              "title": "CVE \u0432 \u0437\u0430\u0432\u0438\u0441\u0438\u043c\u043e\u0441\u0442\u044f\u0445 \u2014 npm audit, osv-scanner \u0438 Renovate (Node/NestJS) \u2014 vikulin-va.ru",
+              "url": "https://vikulin-va.ru/standards/backend/security/node/dependency-cve/",
+              "snippet": "security cve \u0432 \u0437\u0430\u0432\u0438\u0441\u0438\u043c\u043e\u0441\u0442\u044f\u0445 \u2014 npm audit , osv - scanner \u0438 renovate ( node / nestjs ) node backend npm audit \u0438 osv - scanner \u0441\u043a\u0430\u043d\u0438\u0440\u0443\u044e\u0442 \u0437\u0430\u0432\u0438\u0441\u0438\u043c\u043e\u0441\u0442\u0438 nestjs \u043f\u0440\u043e\u0442\u0438\u0432 osv / nist nvd \u043d\u0430 merge \u0432 main \u0438 n..."
+            }
+          ],
+          "source": "https://api.langsearch.com/",
+          "status": "completed",
+          "contract": {
+            "capability": "public-web-read",
+            "access": "read-only",
+            "network": "public HTTPS search",
+            "side_effects": false,
+            "max_bytes": 32000
+          }
+        },
+        "message": null,
+        "trade": null,
+        "finding_id": null,
+        "fallback_reason": null,
+        "decision_source": "model"
       }
     ],
     "construction": [],
     "requests": [
       {
-        "agent": "local-002",
-        "status": "fulfilled",
-        "scope": "public-documentation-and-logs"
+        "agent": "local-021",
+        "status": "fulfilled"
       }
     ],
     "trades_settled": [],
     "corroborations": [
       {
-        "id": "pair-085340a8934a8dfaa702",
+        "id": "pair-6fa6f68ededd212fecd4",
         "relation": "unrelated",
         "finding_ids": [
-          "finding-7e39b70a776a18fd5491",
+          "finding-66609b371ddeeae7fe77",
           "finding-ea4055cfda46f60f0414"
         ],
         "topic": "confirm first international khartoum migration operation sudan tribune",
@@ -396,23 +360,10 @@
         ]
       },
       {
-        "id": "pair-42c82e90b9e693ff96b0",
+        "id": "pair-806ce8287bf9a43157fb",
         "relation": "unrelated",
         "finding_ids": [
-          "finding-009f80b889a8429cdb35",
-          "finding-ea4055cfda46f60f0414"
-        ],
-        "topic": "confirm first international khartoum migration operation sudan tribune",
-        "domains": [
-          "doi.org",
-          "wikipedia.org"
-        ]
-      },
-      {
-        "id": "pair-6829fc75586209c32abf",
-        "relation": "unrelated",
-        "finding_ids": [
-          "finding-5b7fa3963defafd58fe2",
+          "finding-3cd5f18b56b57ac598b9",
           "finding-ea4055cfda46f60f0414"
         ],
         "topic": "confirm first international khartoum migration operation sudan tribune",
@@ -430,25 +381,26 @@
       "family": "web",
       "avoid_domains": [
         "doi.org",
-        "en.wikipedia.org"
+        "en.wikipedia.org",
+        "es.wikipedia.org"
       ]
     },
     "dormant": 3
   },
   "metrics": {
-    "jaccard_overlap": 0.201,
+    "jaccard_overlap": 0.153,
     "morrow_audit_markers": [
       "counterexample",
       "assumption",
       "missing control"
     ],
-    "response_completeness": "usable",
-    "evidence_coverage": "present",
-    "distinction_status": "distinct"
+    "response_completeness": "thin-or-missing",
+    "evidence_coverage": "missing",
+    "distinction_status": "needs-audit"
   },
   "continuity_audit": {
-    "generated_at": "2026-09-05T11:39:07.475515+00:00",
-    "cycle": 352,
+    "generated_at": "2026-09-05T11:42:16.307060+00:00",
+    "cycle": 353,
     "status": "pass",
     "checks": {
       "archive_parse": true,
@@ -458,7 +410,7 @@
       "room_link_integrity": true,
       "resident_room_integrity": true
     },
-    "archive_records": 2816,
+    "archive_records": 2829,
     "malformed_archive_records": 0,
     "raw_output_fields_found": 0,
     "duplicate_archive_ids": [],
@@ -468,12 +420,12 @@
     "privacy": "Aggregate integrity metadata only; resident prompts and raw responses are not published."
   },
   "work_orders": {
-    "count": 54
+    "count": 57
   },
   "health": {
     "schema_version": 1,
-    "generated_at": "2026-09-05T11:39:07.476728+00:00",
-    "cycle": 352,
+    "generated_at": "2026-09-05T11:42:16.308201+00:00",
+    "cycle": 353,
     "daemon": "running",
     "model_status": "ready",
     "model_probe_ok": true,
@@ -502,17 +454,17 @@
         {
           "name": "mistral-8b",
           "model": "ministral-8b-2512",
-          "calls": 116,
-          "input_tokens": 223459,
-          "output_tokens": 30766,
+          "calls": 127,
+          "input_tokens": 250775,
+          "output_tokens": 34874,
           "errors": 0,
           "last_error": "",
           "daily_request_budget": null,
           "daily_token_budget": 400000,
           "limit_rpm": 188,
           "limit_tpm": 625000,
-          "requests_last_minute": 0,
-          "tokens_last_minute": 0,
+          "requests_last_minute": 8,
+          "tokens_last_minute": 22279,
           "status": "ready"
         },
         {
@@ -534,9 +486,9 @@
         {
           "name": "gemini",
           "model": "gemini-3.5-flash",
-          "calls": 57,
-          "input_tokens": 102040,
-          "output_tokens": 9389,
+          "calls": 61,
+          "input_tokens": 107844,
+          "output_tokens": 9853,
           "errors": 13,
           "last_error": "429 rate limited (council): You exceeded your current quota, please check your plan and billing details. For more inform",
           "daily_request_budget": 240,
@@ -544,7 +496,7 @@
           "limit_rpm": 8,
           "limit_tpm": null,
           "requests_last_minute": 2,
-          "tokens_last_minute": 835,
+          "tokens_last_minute": 839,
           "status": "ready"
         },
         {
@@ -566,17 +518,17 @@
         {
           "name": "groq",
           "model": "openai/gpt-oss-120b",
-          "calls": 52,
-          "input_tokens": 34577,
-          "output_tokens": 8297,
+          "calls": 56,
+          "input_tokens": 38605,
+          "output_tokens": 8831,
           "errors": 0,
           "last_error": "400 on schema mode; prompt hint used",
           "daily_request_budget": 900,
           "daily_token_budget": 190000,
           "limit_rpm": 1000,
           "limit_tpm": 8000,
-          "requests_last_minute": 0,
-          "tokens_last_minute": 0,
+          "requests_last_minute": 3,
+          "tokens_last_minute": 3712,
           "status": "ready"
         },
         {
@@ -597,139 +549,6 @@
         }
       ],
       "recent_calls": [
-        {
-          "at": 1788608086.0,
-          "class": "recruitment",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "8b3c375b5eb96164"
-        },
-        {
-          "at": 1788608087.6,
-          "class": "recruitment",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "813b54ef142ee88a"
-        },
-        {
-          "at": 1788608095.9,
-          "class": "extraction",
-          "provider": "groq",
-          "model": "openai/gpt-oss-120b",
-          "prompt_sha256_16": "8e297c69726bd478"
-        },
-        {
-          "at": 1788608097.8,
-          "class": "decision",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "701b0326a994aa38"
-        },
-        {
-          "at": 1788608106.1,
-          "class": "decision",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "767c2f761eccdf4b"
-        },
-        {
-          "at": 1788608106.7,
-          "class": "extraction",
-          "provider": "groq",
-          "model": "openai/gpt-oss-120b",
-          "prompt_sha256_16": "71dc414dacc918fc"
-        },
-        {
-          "at": 1788608110.3,
-          "class": "decision",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "fef020c7b008441d"
-        },
-        {
-          "at": 1788608114.4,
-          "class": "decision",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "223986224ced418e"
-        },
-        {
-          "at": 1788608186.3,
-          "class": "self-prompt",
-          "provider": "gemini",
-          "model": "gemini-3.5-flash",
-          "prompt_sha256_16": "67b4f1eaf3bf4008"
-        },
-        {
-          "at": 1788608187.9,
-          "class": "self-prompt",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "02a1e0bd2fc0c4b7"
-        },
-        {
-          "at": 1788608202.1,
-          "class": "council",
-          "provider": "gemini",
-          "model": "gemini-3.5-flash",
-          "prompt_sha256_16": "e9bbedf0d4d86739"
-        },
-        {
-          "at": 1788608210.5,
-          "class": "council",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "5a69489fab064d1a"
-        },
-        {
-          "at": 1788608212.2,
-          "class": "probe",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "bb019306d8a8317a"
-        },
-        {
-          "at": 1788608213.7,
-          "class": "probe",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "b954c190e903edf4"
-        },
-        {
-          "at": 1788608215.6,
-          "class": "recruitment",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "90f792cba56f2d64"
-        },
-        {
-          "at": 1788608217.2,
-          "class": "recruitment",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "fea5e77375a475a0"
-        },
-        {
-          "at": 1788608224.9,
-          "class": "extraction",
-          "provider": "groq",
-          "model": "openai/gpt-oss-120b",
-          "prompt_sha256_16": "8e297c69726bd478"
-        },
-        {
-          "at": 1788608229.1,
-          "class": "decision",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "3475f7f63194ed02"
-        },
-        {
-          "at": 1788608238.2,
-          "class": "decision",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "135f327f69e3918b"
-        },
         {
           "at": 1788608243.1,
           "class": "decision",
@@ -806,6 +625,139 @@
           "provider": "gemini",
           "model": "gemini-3.5-flash",
           "prompt_sha256_16": "2ed63881b48a50d1"
+        },
+        {
+          "at": 1788608440.1,
+          "class": "self-prompt",
+          "provider": "gemini",
+          "model": "gemini-3.5-flash",
+          "prompt_sha256_16": "827b62f44dec81dc"
+        },
+        {
+          "at": 1788608441.8,
+          "class": "self-prompt",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "033c426c0b2e33d3"
+        },
+        {
+          "at": 1788608453.6,
+          "class": "council",
+          "provider": "gemini",
+          "model": "gemini-3.5-flash",
+          "prompt_sha256_16": "905b78bc488f6b76"
+        },
+        {
+          "at": 1788608461.5,
+          "class": "council",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "a8d8f607e977c394"
+        },
+        {
+          "at": 1788608468.3,
+          "class": "extraction",
+          "provider": "groq",
+          "model": "openai/gpt-oss-120b",
+          "prompt_sha256_16": "8e297c69726bd478"
+        },
+        {
+          "at": 1788608471.7,
+          "class": "decision",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "f43db3279b508f7d"
+        },
+        {
+          "at": 1788608481.8,
+          "class": "decision",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "033bb1e9296aaaf7"
+        },
+        {
+          "at": 1788608482.5,
+          "class": "extraction",
+          "provider": "groq",
+          "model": "openai/gpt-oss-120b",
+          "prompt_sha256_16": "71dc414dacc918fc"
+        },
+        {
+          "at": 1788608486.9,
+          "class": "decision",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "9dee7d1b31c36873"
+        },
+        {
+          "at": 1788608491.6,
+          "class": "decision",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "e8a178f310ef19e4"
+        },
+        {
+          "at": 1788608499.5,
+          "class": "decision",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "27f225267568ce05"
+        },
+        {
+          "at": 1788608500.1,
+          "class": "extraction",
+          "provider": "groq",
+          "model": "openai/gpt-oss-120b",
+          "prompt_sha256_16": "8e297c69726bd478"
+        },
+        {
+          "at": 1788608504.4,
+          "class": "decision",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "8bb21b626456c131"
+        },
+        {
+          "at": 1788608508.3,
+          "class": "decision",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "2750089815aee52f"
+        },
+        {
+          "at": 1788608511.1,
+          "class": "decision",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "068c9312bb443883"
+        },
+        {
+          "at": 1788608516.1,
+          "class": "extraction",
+          "provider": "groq",
+          "model": "openai/gpt-oss-120b",
+          "prompt_sha256_16": "8e297c69726bd478"
+        },
+        {
+          "at": 1788608518.7,
+          "class": "decision",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "7421b45f02ee7ef9"
+        },
+        {
+          "at": 1788608526.3,
+          "class": "judgment",
+          "provider": "gemini",
+          "model": "gemini-3.5-flash",
+          "prompt_sha256_16": "52a7ee8d87f940b9"
+        },
+        {
+          "at": 1788608535.6,
+          "class": "judgment",
+          "provider": "gemini",
+          "model": "gemini-3.5-flash",
+          "prompt_sha256_16": "9c9350ef9377d0e3"
         }
       ],
       "models_seen": {
@@ -871,19 +823,19 @@
     },
     "rooms": 12,
     "active_residents": 29,
-    "work_orders": 54,
+    "work_orders": 57,
     "continuity": "pass",
     "autonomy": "active",
     "autonomy_quality": {
       "status": "active",
       "turns": 8,
-      "fallbacks": 2,
-      "fallback_rate": 0.25,
+      "fallbacks": 1,
+      "fallback_rate": 0.125,
       "fallback_reasons": {
-        "unstructured-output": 2
+        "unstructured-output": 1
       },
       "tool_successes": 5,
-      "findings_filed": 1
+      "findings_filed": 0
     },
     "publication": "sanitized GitHub Pages snapshot",
     "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
@@ -898,16 +850,16 @@
     "activity_feed": "docs/activity.json",
     "feed_freshness_seconds": 0,
     "activity_records": 110,
-    "note_records": 603,
-    "print_jobs": 41,
+    "note_records": 613,
+    "print_jobs": 42,
     "failed_print_jobs": 0,
-    "analysis_runs": 63,
-    "analysis_completed": 34,
+    "analysis_runs": 65,
+    "analysis_completed": 36,
     "analysis_failed": 0,
     "analysis_rejected": 29,
     "analysis_timed_out": 0,
     "analysis_feed": "docs/analysis.json",
-    "research_records": 14,
+    "research_records": 13,
     "research_stale": 0,
     "research_feed": "docs/research.json",
     "findings": 72,
@@ -932,11 +884,11 @@
       ],
       "hops": 3,
       "findings": 7,
-      "empty_cycles": 0
+      "empty_cycles": 1
     },
-    "frontier_questions": 76,
+    "frontier_questions": 77,
     "frontier_findings": 72,
-    "frontier_tasks": 7,
+    "frontier_tasks": 8,
     "frontier_feed": "docs/frontier.json",
     "code_proposals": 0,
     "code_proposals_ready": 0,
