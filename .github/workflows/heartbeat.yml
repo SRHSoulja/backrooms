@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   heartbeat:
@@ -19,6 +20,23 @@ jobs:
       - run: python3 scripts/free_heartbeat.py
       - run: python3 scripts/treasury_check.py
       - run: python3 scripts/market_watch.py
+      - name: Keep the world running when GitHub's cycle schedule stalls
+        # GitHub's cron for the cycle workflow fires every two to four hours in
+        # practice. If no cycle run is active or queued and the last cycle
+        # published more than fifty minutes ago, start one. The provider
+        # budgets in the router, not this step, bound how much the world can do
+        # in a day.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          active=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow cycle.yml --status in_progress --json databaseId --jq 'length')
+          queued=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow cycle.yml --status queued --json databaseId --jq 'length')
+          pending=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow cycle.yml --status pending --json databaseId --jq 'length')
+          age=$(python3 -c "import json,datetime; h=json.load(open('docs/health.json')); at=datetime.datetime.fromisoformat(h['generated_at'].replace('Z','+00:00')); print(int((datetime.datetime.now(datetime.timezone.utc)-at).total_seconds()//60))" 2>/dev/null || echo 999)
+          echo "cycle runs active=$active queued=$queued pending=$pending; last publish ${age} min ago"
+          if [ "${active:-0}" = "0" ] && [ "${queued:-0}" = "0" ] && [ "${pending:-0}" = "0" ] && [ "${age:-999}" -gt 50 ]; then
+            gh workflow run cycle.yml --repo "$GITHUB_REPOSITORY" && echo "dispatched a cycle run"
+          fi
       - name: Publish heartbeat
         run: |
           git config user.name 'Backrooms Heartbeat'

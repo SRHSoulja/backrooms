@@ -2398,6 +2398,7 @@ def main():
                 candidates = candidates[:3]
                 if candidates:
                     fetch_budget -= 1
+                    first_completed = None
                     for candidate in candidates:
                         focus = (" :: " + str(verifying.get("claim", ""))[:200]) if verifying else ""
                         fetched_run = subprocess.run([sys.executable, str(ROOT / "scripts/tool_broker.py"),
@@ -2406,11 +2407,26 @@ def main():
                             fetched = json.loads(fetched_run.stdout)
                         except json.JSONDecodeError:
                             fetched = {"status": "failed"}
-                        if fetched.get("status") == "completed":
-                            fetched["query"] = query_target
-                            fetched["search_results"] = tool.get("results", [])[:5]
-                            tool = fetched
-                            break
+                        if fetched.get("status") != "completed":
+                            continue
+                        fetched["query"] = query_target
+                        fetched["search_results"] = tool.get("results", [])[:5]
+                        if verifying and research_assignment:
+                            # A verification turn keeps looking until a page actually states
+                            # the colleague's fact; the first page that loads is only a fallback.
+                            probe = {"source": candidate, "excerpt": str(fetched.get("excerpt", "")), "query": query_target,
+                                     "source_hash": hashlib.sha256(str(fetched.get("excerpt", "")).encode()).hexdigest(),
+                                     "sentences": fetched.get("sentences") or []}
+                            hit = entailed_finding(agent, args.cycle, probe, verifying, dissent=dissenting, topic_override=shared_research)
+                            if hit and hit.get("status") != "rejected":
+                                tool = fetched
+                                break
+                            first_completed = first_completed or fetched
+                            continue
+                        tool = fetched
+                        break
+                    if verifying and research_assignment and tool.get("tool") == "public-search" and first_completed:
+                        tool = first_completed
             attempt = {"cycle": args.cycle, "tool": tool.get("tool", tool_name),
                        "requested_target": str(target)[:500], "resolved_target": str(query_target)[:500],
                        "status": tool.get("status", "failed"),
