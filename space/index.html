@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Backrooms Replay</title>
+<style>
+  :root { --bg:#0f1117; --panel:#171a23; --ink:#e6e6ea; --dim:#8b949e; --gold:#d5b46a; --violet:#a9a5ee; --red:#e07a7a; --green:#7ac98f; --line:#2a2f3d; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  header { padding:18px 22px 10px; border-bottom:1px solid var(--line); }
+  h1 { margin:0 0 4px; font-size:20px; font-weight:600; letter-spacing:.02em; }
+  h1 span { color:var(--gold); }
+  .sub { color:var(--dim); font-size:13px; }
+  .sub a { color:var(--violet); }
+  .controls { display:flex; flex-wrap:wrap; gap:12px; align-items:center; padding:12px 22px; border-bottom:1px solid var(--line); background:var(--panel); position:sticky; top:0; z-index:2; }
+  .controls input[type=range] { flex:1 1 320px; accent-color:var(--gold); }
+  button { background:#232838; color:var(--ink); border:1px solid var(--line); border-radius:6px; padding:6px 12px; font:inherit; cursor:pointer; }
+  button:hover { border-color:var(--gold); }
+  .cycle { font-size:18px; color:var(--gold); min-width:150px; }
+  main { display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 360px), 1fr)); gap:14px; padding:14px 22px 40px; }
+  section { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; min-width:0; }
+  section h2 { margin:0 0 10px; font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--dim); font-weight:600; }
+  .wide { grid-column:1 / -1; }
+  .counts { display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:8px; }
+  .count { background:#10131b; border:1px solid var(--line); border-radius:8px; padding:8px 10px; }
+  .count b { display:block; font-size:20px; color:var(--ink); }
+  .count span { color:var(--dim); font-size:12px; }
+  .rooms { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px; }
+  .room { border:1px solid var(--line); border-radius:8px; padding:8px; background:#1d2130; min-height:64px; font-size:12px; overflow:hidden; }
+  .room.founding { border-color:#3b4257; }
+  .room.grown { border-color:var(--gold); background:#26311f; }
+  .room.withdrawn { border-color:#5a5f6b; color:var(--dim); background:repeating-linear-gradient(135deg,#1d1f27 0 6px,#262a33 6px 12px); }
+  .room small { display:block; color:var(--dim); margin-top:4px; }
+  .event { padding:4px 0; border-bottom:1px dashed #23283a; font-size:12.5px; }
+  .event .kind { color:var(--violet); }
+  .event.good .kind { color:var(--green); }
+  .event.bad .kind { color:var(--red); }
+  .pair { padding:6px 0; border-bottom:1px dashed #23283a; font-size:12.5px; }
+  .tag { display:inline-block; padding:0 6px; border-radius:4px; background:#232838; color:var(--dim); font-size:11px; margin-right:6px; }
+  .tag.supports { background:#24402c; color:var(--green); }
+  .tag.contradicts { background:#3f2424; color:var(--red); }
+  .muted { color:var(--dim); }
+  .line-root { font-size:13px; }
+  .hop { color:var(--dim); font-size:12px; padding-left:10px; }
+  footer { padding:12px 22px 30px; color:var(--dim); font-size:12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1><span>Backrooms</span> Replay</h1>
+  <div class="sub">An unattended world of AI residents whose map grows only from corroborated public evidence. Read from the dataset
+    <a id="dataset-link" href="#" rel="noopener">__DATASET__</a> · live site <a href="https://srhsoulja.github.io/backrooms/" rel="noopener">srhsoulja.github.io/backrooms</a> · code <a href="https://github.com/SRHSoulja/backrooms" rel="noopener">GitHub</a></div>
+</header>
+<div class="controls">
+  <button id="play">Play</button>
+  <button id="step-back">−1</button>
+  <button id="step">+1</button>
+  <input id="slider" type="range" min="0" max="0" value="0">
+  <div class="cycle" id="cycle-readout">loading…</div>
+  <label class="muted">speed <select id="speed"><option value="900">slow</option><option value="400" selected>normal</option><option value="120">fast</option></select></label>
+</div>
+<main>
+  <section class="wide"><h2>Counters at this cycle</h2><div class="counts" id="counts"></div></section>
+  <section class="wide"><h2>Map</h2><div class="rooms" id="rooms"></div></section>
+  <section><h2>Research line</h2><div id="line"></div></section>
+  <section><h2>Judged pairs this cycle</h2><div id="pairs"></div></section>
+  <section class="wide"><h2>Events this cycle</h2><div id="events"></div></section>
+</main>
+<footer id="status">Loading the ledger…</footer>
+<script>
+const DATASET = "__DATASET__";
+const BASE = `https://huggingface.co/datasets/${DATASET}/resolve/main/`;
+const $ = id => document.getElementById(id);
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+document.getElementById('dataset-link').href = `https://huggingface.co/datasets/${DATASET}`;
+
+async function text(name) { const r = await fetch(BASE + name + '?t=' + Math.floor(Date.now()/60000)); if (!r.ok) throw new Error(name + ' ' + r.status); return r.text(); }
+async function jsonl(name) { return (await text(name)).split('\n').filter(l => l.trim()).map(l => { try { return JSON.parse(l); } catch (e) { return null; } }).filter(Boolean); }
+async function json(name) { return JSON.parse(await text(name)); }
+
+const GOOD = new Set(['finding-filed','findings-corroborated','room-built-from-evidence','line-opened','tool-adopted','capability-earned','frontier-task-completed','report-printed']);
+const BAD = new Set(['finding-rejected','room-retracted','verdict-downgraded','tool-failed','finding-retracted','line-closed','tool-expired']);
+const NOTABLE = new Set(['finding-filed','findings-corroborated','findings-contradict','room-built-from-evidence','room-retracted','verdict-downgraded','line-opened','line-closed','tool-proposed','tool-adopted','tool-expired','finding-retracted','capability-earned','report-printed','resident-dormant','room-requested']);
+
+let state = null, timer = null;
+
+async function load() {
+  const [events, pairs, world, lines, dayZero] = await Promise.all([
+    jsonl('events.jsonl'), jsonl('corroborations.jsonl'), json('world.json'), json('research-lines.json').catch(() => ({lines: []})), json('day-zero.json').catch(() => ({}))
+  ]);
+  const zero = Number(dayZero.cycle || 0);
+  const cycles = new Set();
+  for (const e of events) if (e.cycle != null && Number(e.cycle) >= zero) cycles.add(Number(e.cycle));
+  for (const p of pairs) if (p.cycle != null && Number(p.cycle) >= zero) cycles.add(Number(p.cycle));
+  const ordered = [...cycles].sort((a, b) => a - b);
+  const rooms = (world.rooms || []).concat(world.withdrawn_rooms || []);
+  state = { events, pairs, world, rooms, lines: lines.lines || [], zero, cycles: ordered, dayZeroAt: dayZero.at || '' };
+  $('slider').min = 0; $('slider').max = Math.max(0, ordered.length - 1); $('slider').value = $('slider').max;
+  $('status').textContent = `${events.length} events in the chained archive · ${pairs.length} judged pairs · ${ordered.length} cycles since day zero (cycle ${zero}, ${String(state.dayZeroAt).slice(0,16).replace('T',' ')} UTC).`;
+  render();
+}
+
+function currentCycle() { return state.cycles[Number($('slider').value)] ?? state.zero; }
+
+function counts(c) {
+  const ev = state.events.filter(e => Number(e.cycle) >= state.zero && Number(e.cycle) <= c);
+  const pr = state.pairs.filter(p => Number(p.cycle) >= state.zero && Number(p.cycle) <= c);
+  const n = kind => ev.filter(e => e.kind === kind).length;
+  const rooms = state.rooms.filter(r => r.founded_via === 'evidence-ledger' && Number(r.founded_cycle) <= c);
+  const withdrawn = rooms.filter(r => r.retracted_cycle != null && Number(r.retracted_cycle) <= c);
+  const lines = state.lines.filter(l => Number(l.opened_cycle) <= c);
+  return [
+    ['findings filed', n('finding-filed')], ['findings rejected', n('finding-rejected')],
+    ['pairs judged', pr.length], ['supports', pr.filter(p => p.relation === 'supports').length], ['contradicts', pr.filter(p => p.relation === 'contradicts').length],
+    ['verdicts downgraded', n('verdict-downgraded')], ['rooms founded', rooms.length], ['rooms withdrawn', withdrawn.length],
+    ['lines opened', lines.length], ['lines closed', lines.filter(l => l.closed_cycle != null && Number(l.closed_cycle) <= c).length],
+    ['tools proposed', n('tool-proposed')], ['tools adopted', n('tool-adopted')],
+  ];
+}
+
+function render() {
+  if (!state) return;
+  const c = currentCycle();
+  $('cycle-readout').textContent = `cycle ${c}`;
+  $('counts').innerHTML = counts(c).map(([label, value]) => `<div class="count"><b>${esc(value)}</b><span>${esc(label)}</span></div>`).join('');
+  const rooms = state.rooms.filter(r => r.founded_via !== 'evidence-ledger' || Number(r.founded_cycle) <= c);
+  $('rooms').innerHTML = rooms.map(r => {
+    const grown = r.founded_via === 'evidence-ledger';
+    const withdrawn = grown && r.retracted_cycle != null && Number(r.retracted_cycle) <= c;
+    const cls = withdrawn ? 'withdrawn' : grown ? 'grown' : 'founding';
+    const note = withdrawn ? `withdrawn at ${r.retracted_cycle}: ${r.retraction_reason || ''}` : grown ? `founded at ${r.founded_cycle}` : 'founding room';
+    return `<div class="room ${cls}"><div>${esc(r.name || r.id)}</div><small>${esc(note)}</small></div>`;
+  }).join('') || '<div class="muted">No rooms yet.</div>';
+  const line = state.lines.filter(l => Number(l.opened_cycle) <= c && (l.status === 'open' || l.closed_cycle == null || Number(l.closed_cycle) >= c)).slice(-1)[0];
+  $('line').innerHTML = line ? `<div class="line-root">${esc(line.root)}</div><div class="muted">anchors: ${esc((line.anchors || []).join(', ') || 'none')} · opened ${esc(line.opened_cycle)} · ${esc(line.origin || '')}${line.closed_cycle != null && Number(line.closed_cycle) <= c ? ' · closed ' + esc(line.closed_cycle) + ': ' + esc(line.closed_reason || '') : ''}</div>` +
+    (line.hops || []).filter(h => Number(h.cycle) <= c).slice(1).map(h => `<div class="hop">cycle ${esc(h.cycle)} · ${esc(h.source || '')}: ${esc(h.question)}</div>`).join('') : '<div class="muted">No line open.</div>';
+  const pairs = state.pairs.filter(p => Number(p.cycle) === c);
+  $('pairs').innerHTML = pairs.map(p => {
+    const inf = p.inference ? ` · judge support ${esc(p.inference.support)} contradiction ${esc(p.inference.contradiction)}` : '';
+    return `<div class="pair"><span class="tag ${esc(p.relation)}">${esc(p.relation)}</span><span class="muted">model ${esc(p.model_relation || p.relation)}${inf}</span><br>${esc(p.shared_claim || p.topic || '')}<br><span class="muted">${esc((p.domains || []).join(' + '))}</span></div>`;
+  }).join('') || '<div class="muted">No pair judged this cycle.</div>';
+  const events = state.events.filter(e => Number(e.cycle) === c);
+  const tally = {};
+  for (const e of events) tally[e.kind] = (tally[e.kind] || 0) + 1;
+  const summary = Object.entries(tally).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<span class="tag">${esc(k)} ${v}</span>`).join(' ');
+  const notable = events.filter(e => NOTABLE.has(e.kind));
+  $('events').innerHTML = `<div style="margin-bottom:8px">${summary || '<span class="muted">no events</span>'}</div>` +
+    notable.map(e => `<div class="event ${GOOD.has(e.kind) ? 'good' : BAD.has(e.kind) ? 'bad' : ''}"><span class="kind">${esc(e.kind)}</span> · ${esc(e.actor || '')} · ${esc(e.text || '')}</div>`).join('');
+}
+
+$('slider').addEventListener('input', render);
+$('step').addEventListener('click', () => { $('slider').value = Math.min(Number($('slider').max), Number($('slider').value) + 1); render(); });
+$('step-back').addEventListener('click', () => { $('slider').value = Math.max(0, Number($('slider').value) - 1); render(); });
+$('play').addEventListener('click', () => {
+  if (timer) { clearInterval(timer); timer = null; $('play').textContent = 'Play'; return; }
+  if (Number($('slider').value) >= Number($('slider').max)) $('slider').value = 0;
+  $('play').textContent = 'Pause';
+  timer = setInterval(() => {
+    if (Number($('slider').value) >= Number($('slider').max)) { clearInterval(timer); timer = null; $('play').textContent = 'Play'; return; }
+    $('slider').value = Number($('slider').value) + 1; render();
+  }, Number($('speed').value));
+});
+load().catch(err => { $('status').textContent = 'Could not load the dataset: ' + err.message; });
+</script>
+</body>
+</html>

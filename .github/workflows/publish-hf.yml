@@ -1,0 +1,35 @@
+name: Backrooms Ledger to Hugging Face
+
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  STATE_REPOSITORY: SRHSoulja/backrooms-state
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check out the private runtime state (read only here)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.STATE_REPOSITORY }}
+          ssh-key: ${{ secrets.STATE_DEPLOY_KEY }}
+          path: state
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - run: pip install -q "huggingface_hub>=0.30,<1"
+      - name: Build the dataset and the replay, then upload both
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_HUB_DISABLE_TELEMETRY: "1"
+        run: python3 scripts/publish_hf.py
