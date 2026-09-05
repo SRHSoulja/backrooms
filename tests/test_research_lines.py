@@ -85,6 +85,17 @@ class LineTests(unittest.TestCase):
         won = note_outcome(state, cycle, 1, ["the-autohvsr-room"])
         self.assertEqual((won[0]["reason"], won[0]["rooms"]), ("room founded on the line", ["the-autohvsr-room"]))
 
+    def test_a_line_that_founds_nothing_ages_out(self):
+        from scripts.research_lines import MAX_LINE_CYCLES
+        state = empty_state()
+        decide(state, 100, [("Did Roskomnadzor block GitHub in December 2014?", "resident:echo")], lambda line: "", [], FALLBACK)
+        line = open_line(state)
+        for cycle in range(100, 100 + MAX_LINE_CYCLES - 1):
+            self.assertEqual(note_outcome(state, cycle, 1), [], cycle)  # findings keep arriving, no room
+        closed = note_outcome(state, 100 + MAX_LINE_CYCLES - 1, 1)
+        self.assertEqual(closed[0]["reason"], f"no room after {MAX_LINE_CYCLES} cycles on the line")
+        self.assertEqual(line["status"], "closed")
+
     def test_hiring_questions_and_the_fallback_open_lines_when_nothing_is_queued(self):
         state = empty_state()
         hires = [("local-004", "Does the GitHub profile Roscomnadzor27 show activity?"),  # would be refused by the council rules upstream

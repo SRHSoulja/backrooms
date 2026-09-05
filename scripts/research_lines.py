@@ -20,6 +20,7 @@ except ImportError:
 
 HOP_CAP = 3
 EMPTY_CYCLES_CAP = 4
+MAX_LINE_CYCLES = 12  # a line that has not founded a room in this many cycles gives way to the next subject
 COOLDOWN_CYCLES = 24
 QUEUE_CAP = 10
 MAX_ANCHORS = 6
@@ -295,6 +296,10 @@ def note_outcome(state, cycle, accepted_on_line, room_ids=()):
         line["findings"] = int(line.get("findings", 0)) + int(accepted_on_line or 0)
         close_line(line, cycle, "room founded on the line")
         return [{"id": line["id"], "reason": line["closed_reason"], "rooms": room_ids}]
+    if int(cycle) - int(line.get("opened_cycle") or cycle) + 1 >= MAX_LINE_CYCLES:
+        line["findings"] = int(line.get("findings", 0)) + int(accepted_on_line or 0)
+        close_line(line, cycle, f"no room after {MAX_LINE_CYCLES} cycles on the line")
+        return [{"id": line["id"], "reason": line["closed_reason"]}]
     if accepted_on_line:
         line["findings"] = int(line.get("findings", 0)) + int(accepted_on_line)
         line["empty_cycles"] = 0

@@ -395,7 +395,7 @@ def _soonest_cooldown(ordered, usage, now):
 def _error_detail(error):
     """The provider's own one-line reason for a 429, without anything secret."""
     try:
-        body = error.read().decode("utf-8", "replace")[:400]
+        body = error.read().decode("utf-8", "replace")[:4000]
     except Exception:  # noqa: BLE001
         return ""
     try:
