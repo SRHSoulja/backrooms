@@ -89,7 +89,7 @@ def same_document(first, second):
 
 SUPPORT_MIN = 0.5
 CONTRADICTION_MIN = 0.6
-SUBJECT_TOKEN = re.compile(r"\b(?:[A-Z][A-Za-z0-9\-]{3,}|\d[\d,.]*%?)\b")
+SUBJECT_TOKEN = re.compile(r"\b(?:[A-Z][A-Za-z0-9\-]{3,}|[A-Z][A-Z0-9]{1,}|\d[\d,.]*%?)\b")  # names, acronyms, numbers
 
 
 def subject_tokens(finding):
@@ -426,20 +426,51 @@ def topic_terms(text):
     return claim_terms(text)
 
 
-def growth_candidates(records, findings_by_id, existing_topics):
-    """Supporting pairs whose topic is not already covered by a room's growth topic."""
-    existing = [topic_terms(topic) for topic in existing_topics if topic]
+def growth_candidates(records, findings_by_id, attached=()):
+    """Supporting cross-domain pairs not yet part of any room's facts, oldest first."""
+    attached = {str(item) for item in (attached or ())}
     candidates = []
     for record in records:
-        if record.get("relation") != "supports":
+        if record.get("relation") != "supports" or record.get("id") in attached:
             continue
         pair = [findings_by_id.get(identifier) for identifier in record.get("finding_ids", [])]
         if len(pair) != 2 or any(item is None for item in pair):
             continue
         if len(set(record.get("domains", []))) < 2 or len({domain_of(item) for item in pair}) < 2:
             continue
-        terms = topic_terms(record.get("topic", ""))
-        if not terms or any(jaccard(terms, known) >= TOPIC_DEDUP_SIMILARITY for known in existing):
-            continue
         candidates.append((record, pair))
     return candidates
+
+
+def subject_for_pair(record, first, second, lines_by_id=None):
+    """(title, anchors) of the subject a corroborated pair is about: the research
+    line's anchors when both findings sit on one line, else the names and
+    numbers the two claims share, else the pair's topic words."""
+    lines_by_id = lines_by_id or {}
+    line = lines_by_id.get(first.get("line_id")) if first.get("line_id") and first.get("line_id") == second.get("line_id") else None
+    anchors = [str(item) for item in ((line or {}).get("anchors") or []) if item][:6]
+    if not anchors:
+        anchors = sorted(subject_tokens(first) & subject_tokens(second))[:6]
+    if not anchors:
+        anchors = sorted(topic_terms(record.get("topic", "")))[:4]
+    title = ", ".join(item if re.fullmatch(r"[\d.,%]+", item) else item.replace("-", " ").title() for item in anchors[:4]) or "an unnamed subject"
+    return title, anchors
+
+
+def subject_room_for(rooms, anchors):
+    """The open subject room whose anchors share a stem with these, if any."""
+    wanted = {str(item).lower()[:8] for item in anchors if item}
+    for room in rooms:
+        if room.get("founded_via") != "evidence-ledger" or room.get("status") == "retracted" or not room.get("facts"):
+            continue
+        have = {str(item).lower()[:8] for item in room.get("anchors") or []}
+        if wanted & have:
+            return room
+    return None
+
+
+def make_fact(record, pair, cycle):
+    return {"claim": str(record.get("shared_claim") or record.get("topic") or "")[:240], "corroboration_id": record.get("id"),
+            "finding_ids": [item.get("id") for item in pair], "domains": list(record.get("domains") or []),
+            "cross_world": bool(record.get("cross_world")), "cycle": int(cycle), "status": "established",
+            "established_at": datetime.now(timezone.utc).isoformat()}

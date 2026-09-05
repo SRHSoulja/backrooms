@@ -54,15 +54,27 @@ class CorroborationTests(unittest.TestCase):
         self.assertEqual(index["f1"], {"a.example", "b.example"})
         self.assertEqual(index["f2"], {"a.example", "b.example"})
 
-    def test_growth_candidates_skip_topics_already_covered_by_a_room(self):
+    def test_growth_candidates_are_the_supporting_pairs_not_yet_in_a_room(self):
+        from scripts.corroboration import subject_for_pair, subject_room_for, make_fact
         first = finding("f1", "https://a.example/one", "The A2A protocol publishes an agent card for discovery.")
         second = finding("f2", "https://b.example/two", "Agent cards enable discovery in the A2A protocol.")
         support = make_record(first, second, "pair-1", "supports", "", 5)
         conflict = make_record(first, second, "pair-2", "contradicts", "", 5)
         by_id = {"f1": first, "f2": second}
         self.assertEqual([record["id"] for record, _pair in growth_candidates([support, conflict], by_id, [])], ["pair-1"])
-        self.assertEqual(growth_candidates([support], by_id, [support["topic"]]), [])
+        self.assertEqual(growth_candidates([support], by_id, ["pair-1"]), [])  # already a fact in a room
         self.assertEqual(growth_candidates([support], {"f1": first}, []), [])
+        # the subject of a pair: its line's anchors, else the names the claims share
+        title, anchors = subject_for_pair(support, {**first, "line_id": "l1"}, {**second, "line_id": "l1"}, {"l1": {"anchors": ["a2a", "agent-card"]}})
+        self.assertEqual((title, anchors), ("A2A, Agent Card", ["a2a", "agent-card"]))
+        title2, anchors2 = subject_for_pair(support, first, second)
+        self.assertIn("a2a", anchors2)
+        fact = make_fact(support, [first, second], 5)
+        self.assertEqual((fact["status"], fact["finding_ids"], fact["domains"]), ("established", ["f1", "f2"], ["a.example", "b.example"]))
+        rooms = [{"id": "atrium"}, {"id": "a2a", "founded_via": "evidence-ledger", "anchors": ["a2a"], "facts": [fact]},
+                 {"id": "old", "founded_via": "evidence-ledger", "anchors": ["a2a"], "facts": [fact], "status": "retracted"}]
+        self.assertEqual(subject_room_for(rooms, ["A2A", "cards"])["id"], "a2a")
+        self.assertIsNone(subject_room_for(rooms, ["roskomnadzor"]))
 
     def test_claims_with_no_shared_vocabulary_are_never_sent_to_the_model(self):
         launch = {"id": "f-launch", "claim": "Cite This For Me was launched in October 2010 to help students create citations.",

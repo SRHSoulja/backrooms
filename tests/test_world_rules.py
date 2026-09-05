@@ -59,6 +59,23 @@ class WorldRuleTests(unittest.TestCase):
         self.assertEqual(room_lifecycle(world, [new], 206), [])
         self.assertEqual(world["rooms"][0].get("status"), None)
 
+    def test_a_subject_room_withdraws_facts_one_by_one_and_falls_with_the_last(self):
+        from scripts.world_rules import retract_unfounded_rooms
+        world = {"rooms": [{"id": "houthis", "founded_via": "evidence-ledger", "corroboration_id": "pair-a", "anchors": ["houthis"],
+                            "facts": [{"corroboration_id": "pair-a", "finding_ids": ["f1", "f2"], "status": "established"},
+                                      {"corroboration_id": "pair-b", "finding_ids": ["f3", "f4"], "status": "established"}]}]}
+        records = {"pair-a": {"id": "pair-a"}, "pair-b": {"id": "pair-b"}}
+        findings = {key: {"id": key} for key in ("f1", "f2", "f3", "f4")}
+        stands = lambda record, first, second: (record["id"] != "pair-a", "" if record["id"] != "pair-a" else "founding findings share a domain")
+        changes = retract_unfounded_rooms(world, records, findings, 400, stands)
+        self.assertEqual(changes, [{"room": "houthis", "fact": "pair-a", "reason": "founding findings share a domain", "kind": "fact-withdrawn"}])
+        self.assertEqual([fact["status"] for fact in world["rooms"][0]["facts"]], ["withdrawn", "established"])
+        self.assertIsNone(world["rooms"][0].get("status"))
+        changes = retract_unfounded_rooms(world, records, findings, 401, lambda r, a, b: (False, "inference judge finds no entailment"))
+        self.assertEqual(world["rooms"][0]["status"], "retracted")
+        self.assertIn("every established fact was withdrawn", world["rooms"][0]["retraction_reason"])
+        self.assertEqual(changes[-1]["room"], "houthis")
+
     def test_followup_question_comes_from_the_finding(self):
         question = finding_followup_question({"topic": "agent discovery cards under review", "claim": "Cards are published at a well-known path.",
                                               "url": "https://spec.example/a2a"})

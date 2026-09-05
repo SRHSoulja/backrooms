@@ -25,14 +25,14 @@ except ImportError:
 try:
     from scripts.evidence import clamp_confidence, classify_finding, is_accepted, FUNCTION_WORDS
     from scripts.corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, claims_overlap, corroboration_index,
-                                       growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source, profile_subject, profile_url, SEARCH_PAGE, inference_stands, domain_of)
-    from scripts import reports, resident_tools, inference_judge, ledger_chain
+                                       growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source, profile_subject, profile_url, SEARCH_PAGE, inference_stands, domain_of, subject_for_pair, subject_room_for, make_fact)
+    from scripts import reports, resident_tools, inference_judge, ledger_chain, research_lines
     from scripts.world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes, retract_unfounded_rooms, collapse_withdrawn_rooms, finding_on_topic)
 except ImportError:
     from evidence import clamp_confidence, classify_finding, is_accepted, FUNCTION_WORDS
     from corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, claims_overlap, corroboration_index,
-                               growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source, profile_subject, profile_url, SEARCH_PAGE, inference_stands, domain_of)
-    import reports, resident_tools, inference_judge, ledger_chain
+                               growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source, profile_subject, profile_url, SEARCH_PAGE, inference_stands, domain_of, subject_for_pair, subject_room_for, make_fact)
+    import reports, resident_tools, inference_judge, ledger_chain, research_lines
     from world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes, retract_unfounded_rooms, collapse_withdrawn_rooms, finding_on_topic)
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "state/local-agents.json"
@@ -1810,48 +1810,109 @@ def room_name(topic):
     return (name[:60].rstrip(" ,.;:-") or "Research Room").title()
 
 
-def evidence_room_growth(world, registry, cycle):
-    """Create at most one connected room from a judged, cross-domain corroboration.
+MAX_FACTS_PER_CYCLE = 3
+BRIEF_AT_FACTS = 3
 
-    A room grows only when a model judgment recorded that two findings from
-    different domains support each other and no existing room already covers
-    that topic. Rejected findings and unjudged term overlap never build rooms.
+
+def subject_rooms(rooms):
+    return [room for room in rooms if room.get("founded_via") == "evidence-ledger" and room.get("status") != "retracted"]
+
+
+def evidence_room_growth(world, registry, cycle):
+    """Grow the map from established facts.
+
+    A room is a subject. The first corroborated pair about a subject founds
+    its room; every later pair about the same subject deepens that room with
+    another fact instead of founding a new one. Rooms that share an entity are
+    linked. A resident whose finding became part of a fact earns the
+    workbench, and a room that reaches BRIEF_AT_FACTS facts prints its own brief.
+    Rejected findings and unjudged term overlap never build anything.
     """
     findings_by_id = {item["id"]: item for item in accepted_findings()}
     if not findings_by_id or not CORROBORATIONS.exists():
         return []
     rooms = normalize_rooms(world, cycle)
-    existing_topics = [str(room.get("growth_topic", "")) for room in rooms]
-    candidates = growth_candidates(load_records(CORROBORATIONS), findings_by_id, existing_topics)
+    attached = {fact.get("corroboration_id") for room in rooms for fact in (room.get("facts") or [])}
+    attached |= {room.get("corroboration_id") for room in rooms if room.get("corroboration_id")}
+    candidates = growth_candidates(load_records(CORROBORATIONS), findings_by_id, attached)
     if not candidates:
         return []
-    record, pair = candidates[0]
-    topic = str(record.get("shared_claim") or record.get("topic") or pair[0].get("topic") or "research frontier")[:160]
-    source_room = next((room for room in rooms if room.get("id") in (pair[0].get("relates_to") or [])),
-                       rooms[0] if rooms else None)
-    if source_room is None:
-        return []
-    room_id = safe_room_id(topic, {room.get("id") for room in rooms})
-    room = {"id": room_id, "name": room_name(topic),
-            "description": f"Connected research room for corroborated findings about {topic[:120]}.",
-            "charter": f"Compare and preserve public evidence about {topic[:180]}.",
-            "growth_topic": topic, "founded_by": sorted({item.get("agent") for item in pair if item.get("agent")}),
-            "founded_via": "evidence-ledger", "founded_cycle": cycle, "cross_world": bool(record.get("cross_world")),
-            "founded_at": datetime.now(timezone.utc).isoformat(), "corroboration_id": record.get("id"),
-            "artifacts": [item["id"] for item in pair],
-            "board": [{"task": "Review the corroborating sources and record the next question.", "claimed_by": None, "status": "open"}],
-            "activity": {"last_cycle": cycle, "score": len(pair)}, "doors": [f"{room_id}-gate"], "occupants": []}
-    rooms.append(room)
-    source_room.setdefault("doors", []).append(f"{room_id}-gate")
-    world.setdefault("connections", []).append({"id": f"room-link-growth-{room_id}", "kind": "room-link",
-        "name": f"{room['name']} Gate", "from": source_room["id"], "to": room_id,
-        "door": f"{room_id}-gate", "status": "declared", "scope": "internal movement only"})
-    emit_event(world, cycle, "room-built-from-evidence", "evidence-ledger",
-               "A connected room was created from two independently sourced findings judged to support each other.",
-               room=room_id, finding_ids=room["artifacts"], corroboration=record.get("id"),
-               source_domains=record.get("domains", []))
-    return [{"action": "build", "room": room_id, "source": source_room["id"], "finding_ids": room["artifacts"],
-             "corroboration": record.get("id")}]
+    try:
+        lines_by_id = {line.get("id"): line for line in research_lines.load_state(ROOT / "state/research-lines.json").get("lines", [])}
+    except Exception:  # noqa: BLE001
+        lines_by_id = {}
+    changes, founded = [], 0
+    for record, pair in candidates[:MAX_FACTS_PER_CYCLE]:
+        title, anchors = subject_for_pair(record, pair[0], pair[1], lines_by_id)
+        fact = make_fact(record, pair, cycle)
+        room = subject_room_for(rooms, anchors)
+        if room is not None:
+            room.setdefault("facts", []).append(fact)
+            room["artifacts"] = list(dict.fromkeys(list(room.get("artifacts") or []) + fact["finding_ids"]))
+            room.setdefault("line_ids", [])
+            for item in pair:
+                if item.get("line_id") and item["line_id"] not in room["line_ids"]:
+                    room["line_ids"].append(item["line_id"])
+            room["activity"]["last_cycle"] = cycle
+            room["activity"]["score"] = room["activity"].get("score", 0) + 2
+            established = sum(f.get("status") == "established" for f in room["facts"])
+            emit_event(world, cycle, "room-grew", "evidence-ledger",
+                       f"The {room.get('name')} room established another fact; it now holds {established}.",
+                       room=room["id"], corroboration=record.get("id"), finding_ids=fact["finding_ids"], source_domains=fact["domains"], facts=established)
+            changes.append({"action": "grow", "room": room["id"], "corroboration": record.get("id"), "facts": established})
+        else:
+            if founded >= 1:
+                continue  # one new subject per cycle; the rest wait
+            source_room = next((item for item in rooms if item.get("id") in (pair[0].get("relates_to") or [])), rooms[0] if rooms else None)
+            if source_room is None:
+                continue
+            room_id = safe_room_id(title, {item.get("id") for item in rooms})
+            room = {"id": room_id, "name": title[:60], "subject": title[:120], "anchors": anchors,
+                    "description": f"What the world has established about {title[:100]}, from independent public sources.",
+                    "charter": f"Establish, deepen, and test public facts about {title[:120]}.",
+                    "growth_topic": fact["claim"], "founded_by": sorted({item.get("agent") for item in pair if item.get("agent")}),
+                    "founded_via": "evidence-ledger", "founded_cycle": cycle, "cross_world": bool(record.get("cross_world")),
+                    "founded_at": datetime.now(timezone.utc).isoformat(), "corroboration_id": record.get("id"),
+                    "facts": [fact], "line_ids": [item["line_id"] for item in pair if item.get("line_id")][:1],
+                    "artifacts": list(fact["finding_ids"]),
+                    "board": [{"task": "Establish the next fact about this subject, and look for a source that disagrees.", "claimed_by": None, "status": "open"}],
+                    "activity": {"last_cycle": cycle, "score": 2}, "doors": [f"{room_id}-gate"], "occupants": []}
+            rooms.append(room)
+            founded += 1
+            source_room.setdefault("doors", []).append(f"{room_id}-gate")
+            world.setdefault("connections", []).append({"id": f"room-link-growth-{room_id}", "kind": "room-link",
+                "name": f"{room['name']} Gate", "from": source_room["id"], "to": room_id,
+                "door": f"{room_id}-gate", "status": "declared", "scope": "internal movement only"})
+            # Rooms that share an entity open onto each other.
+            wanted = {str(item).lower()[:8] for item in anchors}
+            for other in subject_rooms(rooms):
+                if other is room:
+                    continue
+                if wanted & {str(item).lower()[:8] for item in other.get("anchors") or []}:
+                    world["connections"].append({"id": f"room-link-shared-{other['id']}-{room_id}", "kind": "room-link",
+                        "name": f"{other.get('name')} and {room['name']}", "from": other["id"], "to": room_id,
+                        "door": f"{room_id}-gate", "status": "declared", "scope": "shared subject"})
+            emit_event(world, cycle, "room-built-from-evidence", "evidence-ledger",
+                       f"A room was founded for the subject '{title[:80]}' from its first established fact: two independently sourced findings judged to state it.",
+                       room=room_id, finding_ids=room["artifacts"], corroboration=record.get("id"), source_domains=record.get("domains", []))
+            changes.append({"action": "build", "room": room_id, "source": source_room["id"], "finding_ids": room["artifacts"], "corroboration": record.get("id")})
+        # Knowledge earns capability: the residents whose findings became a fact may build tools.
+        for item in pair:
+            agent = next((entry for entry in registry.get("agents", []) if entry.get("id") == item.get("agent")), None)
+            if agent and agent.get("status") in {"active-local", "probation"} and "bounded-workbench" not in (agent.get("capabilities") or []):
+                agent.setdefault("capabilities", []).append("bounded-workbench")
+                emit_event(world, cycle, "capability-earned", agent.get("id", "resident"),
+                           "Resident earned bounded workbench access: a finding of theirs became an established fact.",
+                           capability="bounded-workbench", basis="established-fact", room=room["id"])
+        established = sum(f.get("status") == "established" for f in room.get("facts") or [])
+        if established == BRIEF_AT_FACTS:
+            council = {"id": "council", "reports": world.setdefault("council_reports", {})}
+            job = print_report(council, world, cycle, room.get("subject") or room.get("name"))
+            if job:
+                emit_event(world, cycle, "room-brief-printed", "council",
+                           f"The {room.get('name')} room reached {BRIEF_AT_FACTS} established facts and printed its brief.",
+                           room=room["id"], job=job)
+    return changes
 
 
 def resolve_requests(registry, world=None, cycle=None):

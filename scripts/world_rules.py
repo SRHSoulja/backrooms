@@ -196,6 +196,32 @@ def retract_unfounded_rooms(world, records_by_id, findings_by_id, cycle, stands)
     for room in world.get("rooms", []):
         if room.get("founded_via") != "evidence-ledger" or room.get("status") == "retracted":
             continue
+        if room.get("facts"):
+            # A subject room: each established fact is re-checked; the room stands while any fact does.
+            last_reason = ""
+            for fact in room["facts"]:
+                if fact.get("status") != "established":
+                    continue
+                record = records_by_id.get(fact.get("corroboration_id"))
+                ids = list(fact.get("finding_ids") or [])
+                first = findings_by_id.get(ids[0]) if len(ids) > 0 else None
+                second = findings_by_id.get(ids[1]) if len(ids) > 1 else None
+                ok, why = stands(record, first, second)
+                if ok:
+                    continue
+                fact["status"], fact["withdrawn_cycle"], fact["withdrawn_reason"] = "withdrawn", cycle, why
+                last_reason = why
+                changes.append({"room": room.get("id"), "fact": fact.get("corroboration_id"), "reason": why, "kind": "fact-withdrawn"})
+            if any(fact.get("status") == "established" for fact in room["facts"]):
+                continue
+            reason = "every established fact was withdrawn (last: " + (last_reason or "unknown") + ")"
+            room["status"] = "retracted"
+            room["status_cycle"] = cycle
+            room["retracted_cycle"] = cycle
+            room["retracted_at"] = datetime.now(timezone.utc).isoformat()
+            room["retraction_reason"] = reason
+            changes.append({"room": room.get("id"), "reason": reason, "corroboration": room.get("corroboration_id")})
+            continue
         record = records_by_id.get(room.get("corroboration_id"))
         ids = list((record or {}).get("finding_ids") or room.get("artifacts") or [])
         first = findings_by_id.get(ids[0]) if len(ids) > 0 else None

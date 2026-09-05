@@ -81,9 +81,9 @@ class LineTests(unittest.TestCase):
         self.assertTrue(nxt["opened"])
         self.assertEqual(open_line(state)["anchors"][:2], ["rmse", "autohvsr"])
         self.assertEqual(state["queue"], [])
-        # a room founded on the line wins and closes it
-        won = note_outcome(state, cycle, 1, ["the-autohvsr-room"])
-        self.assertEqual((won[0]["reason"], won[0]["rooms"]), ("room founded on the line", ["the-autohvsr-room"]))
+        # a fact established on the line deepens its subject's room and keeps the line open
+        self.assertEqual(note_outcome(state, cycle, 1, ["the-autohvsr-room"]), [])
+        self.assertEqual((open_line(state)["rooms"], open_line(state)["facts"]), (["the-autohvsr-room"], 1))
 
     def test_a_line_that_founds_nothing_ages_out(self):
         from scripts.research_lines import MAX_LINE_CYCLES
@@ -103,16 +103,19 @@ class LineTests(unittest.TestCase):
         first = decide(state, 310, [], lambda line: "", hires, FALLBACK)
         self.assertEqual((first["source"], first["opened"]), ("hire:local-004", True))
         line = open_line(state)
-        self.assertEqual(note_outcome(state, 310, 0, ["room-x"])[0]["reason"], "room founded on the line")
-        second = decide(state, 311, [], lambda line: "", hires, FALLBACK)
-        self.assertEqual(second["source"], "hire:local-006")
-        self.assertEqual(state["used_hire_questions"], ["local-004", "local-006"])
+        self.assertEqual(note_outcome(state, 310, 0, ["room-x"]), [])  # a fact deepens the line's subject; the line goes on
+        self.assertEqual((line["rooms"], line["facts"], line["empty_cycles"]), (["room-x"], 1, 0))
         for cycle in range(311, 311 + EMPTY_CYCLES_CAP):
             note_outcome(state, cycle, 0)
-        third = decide(state, 320, [], lambda line: "", hires, FALLBACK)
+        second = decide(state, 311 + EMPTY_CYCLES_CAP, [], lambda line: "", hires, FALLBACK)
+        self.assertEqual(second["source"], "hire:local-006")
+        self.assertEqual(state["used_hire_questions"], ["local-004", "local-006"])
+        for cycle in range(316, 316 + EMPTY_CYCLES_CAP):
+            note_outcome(state, cycle, 0)
+        third = decide(state, 321, [], lambda line: "", hires, FALLBACK)
         self.assertEqual((third["source"], third["anchors"], third["research_topic"]), ("fixed-fallback", [], ""))
         # the fallback line gives way as soon as a resident brings a subject
-        fourth = decide(state, 321, [("How does OpenAlex count citations for retracted papers?", "resident:echo")], lambda line: "", [], FALLBACK)
+        fourth = decide(state, 322, [("How does OpenAlex count citations for retracted papers?", "resident:echo")], lambda line: "", [], FALLBACK)
         self.assertEqual((fourth["opened"], fourth["closed"][0]["reason"]), (True, "superseded by a resident question"))
         view = public_view(state)
         self.assertEqual(view["open"], open_line(state)["id"])

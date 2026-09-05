@@ -18,8 +18,11 @@ except ImportError:
 def ask(url, resident, context, retry_reason="", line=None):
     role = "find a surprising but testable question" if resident == "Echo" else "find the most important unresolved weakness or confound"
     if line and line.get("root"):
+        known = line.get("known_facts") or []
         steer = (f"The council works one research line at a time. The open line is: '{str(line.get('root', ''))[:240]}' "
                  f"(anchors: {', '.join(line.get('anchors', [])[:6])}; question {line.get('hop', 1)} of {line.get('cap', 3)}). "
+                 + (("The world has already established about this subject: " + " | ".join(str(item)[:160] for item in known[:5]) +
+                     ". Build on those: ask for the next fact that would extend them, or for a source likely to give a different figure. ") if known else ""))
                  "Propose the next step on this line: what would settle its claim, which independent public source could confirm or refute it. "
                  "If the line has used its questions, or you have a better subject, propose a new line about a different, documented subject "
                  "in the outside world; a new subject waits in a queue until the line closes. ")

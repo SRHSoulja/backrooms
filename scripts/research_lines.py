@@ -308,10 +308,13 @@ def note_outcome(state, cycle, accepted_on_line, room_ids=()):
         return []
     room_ids = [room for room in (room_ids or []) if room]
     if room_ids:
+        # A fact established on the line deepens its subject's room; the line goes
+        # on building that room until its questions or its cycles run out.
         line["rooms"] = list(dict.fromkeys(list(line.get("rooms", [])) + room_ids))
+        line["facts"] = int(line.get("facts", 0)) + len(room_ids)
         line["findings"] = int(line.get("findings", 0)) + int(accepted_on_line or 0)
-        close_line(line, cycle, "room founded on the line")
-        return [{"id": line["id"], "reason": line["closed_reason"], "rooms": room_ids}]
+        line["empty_cycles"] = 0
+        return []
     if int(cycle) - int(line.get("opened_cycle") or cycle) + 1 >= MAX_LINE_CYCLES:
         line["findings"] = int(line.get("findings", 0)) + int(accepted_on_line or 0)
         close_line(line, cycle, f"no room after {MAX_LINE_CYCLES} cycles on the line")

@@ -755,6 +755,45 @@ class LocalAutonomyTests(unittest.TestCase):
         finally:
             local_autonomy.inference_judge = original
 
+    def test_facts_on_one_subject_deepen_one_room_and_earn_the_workbench(self):
+        import tempfile
+        from pathlib import Path
+        from scripts.corroboration import make_record
+        originals = (local_autonomy.FINDINGS, local_autonomy.CORROBORATIONS, local_autonomy.ARCHIVE)
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            local_autonomy.FINDINGS, local_autonomy.CORROBORATIONS, local_autonomy.ARCHIVE = base / "f.jsonl", base / "c.jsonl", base / "e.jsonl"
+            rows = [
+                {"id": "f1", "agent": "local-001", "url": "https://apnews.com/a", "claim": "Over 120 people were killed in clashes between the Houthis and the Yemeni Armed Forces.", "quote": "q", "content_hash": "h", "status": "unreviewed", "line_id": "l1", "relates_to": ["relay"]},
+                {"id": "f2", "agent": "local-002", "url": "https://www.france24.com/b", "claim": "Over 120 people were killed in clashes between the Houthis and the Yemeni Armed Forces.", "quote": "q", "content_hash": "h", "status": "unreviewed", "line_id": "l1", "relates_to": ["relay"]},
+                {"id": "f3", "agent": "local-003", "url": "https://www.bbc.com/c", "claim": "The Houthis said 40 of their fighters died in the clashes.", "quote": "q", "content_hash": "h", "status": "unreviewed", "line_id": "l1", "relates_to": ["relay"]},
+                {"id": "f4", "agent": "local-001", "url": "https://www.reuters.com/d", "claim": "The Houthis said 40 of their fighters died in the clashes.", "quote": "q", "content_hash": "h", "status": "unreviewed", "line_id": "l1", "relates_to": ["relay"]},
+            ]
+            local_autonomy.FINDINGS.write_text("\n".join(json.dumps(row) for row in rows) + "\n")
+            pairs = [make_record(rows[0], rows[1], "pair-a", "supports", "same", 350, shared_claim=rows[0]["claim"]),
+                     make_record(rows[2], rows[3], "pair-b", "supports", "same", 351, shared_claim=rows[2]["claim"])]
+            local_autonomy.CORROBORATIONS.write_text("\n".join(json.dumps(pair) for pair in pairs) + "\n")
+            (base / "research-lines.json").write_text(json.dumps({"lines": [{"id": "l1", "anchors": ["houthis", "yemeni"], "status": "open"}]}))
+            original_load = local_autonomy.research_lines.load_state
+            local_autonomy.research_lines.load_state = lambda _path: json.loads((base / "research-lines.json").read_text())
+            world = {"events": [], "rooms": [{"id": "relay", "doors": [], "occupants": []}], "connections": []}
+            registry = {"agents": [{"id": "local-001", "status": "active-local", "capabilities": ["bounded-questioning"]},
+                                   {"id": "local-002", "status": "active-local", "capabilities": ["bounded-questioning", "bounded-workbench"]}]}
+            try:
+                changes = local_autonomy.evidence_room_growth(world, registry, 352)
+            finally:
+                local_autonomy.research_lines.load_state = original_load
+                local_autonomy.FINDINGS, local_autonomy.CORROBORATIONS, local_autonomy.ARCHIVE = originals
+        rooms = [room for room in world["rooms"] if room.get("founded_via") == "evidence-ledger"]
+        self.assertEqual(len(rooms), 1)
+        room = rooms[0]
+        self.assertEqual((room["name"], room["anchors"], len(room["facts"])), ("Houthis, Yemeni", ["houthis", "yemeni"], 2))
+        self.assertEqual([change["action"] for change in changes], ["build", "grow"])
+        self.assertEqual(sorted(room["artifacts"]), ["f1", "f2", "f3", "f4"])
+        self.assertEqual([e["kind"] for e in world["events"] if e["kind"] in ("room-built-from-evidence", "room-grew")], ["room-built-from-evidence", "room-grew"])
+        self.assertIn("bounded-workbench", registry["agents"][0]["capabilities"])  # local-001 earned it from a fact
+        self.assertEqual(registry["agents"][1]["capabilities"].count("bounded-workbench"), 1)
+
     def test_a_public_record_line_starts_by_verifying_its_own_cited_source(self):
         class StubJudge:
             SUPPORT_MIN, CONTRADICTION_MIN, NLI_REPO, NLI_REVISION = 0.5, 0.6, "stub", "rev"

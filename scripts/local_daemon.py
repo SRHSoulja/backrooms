@@ -775,6 +775,23 @@ def action(base_url, cycle):
 REJECTIONS = []  # why the residents' proposals were refused this cycle (reasons only, never the text)
 
 
+def known_facts_for(line, limit=5):
+    """The established facts of the subject room the line is deepening, if one exists."""
+    try:
+        rooms = json.loads(STATE.read_text()).get("rooms", [])
+    except (OSError, json.JSONDecodeError):
+        return []
+    wanted = {str(item).lower()[:8] for item in (line or {}).get("anchors") or []}
+    if not wanted:
+        return []
+    for room in rooms:
+        if room.get("founded_via") != "evidence-ledger" or room.get("status") == "retracted":
+            continue
+        if wanted & {str(item).lower()[:8] for item in room.get("anchors") or []}:
+            return [str(fact.get("claim", ""))[:200] for fact in room.get("facts", []) if fact.get("status") == "established"][-limit:]
+    return []
+
+
 def resident_proposals(base_url, line):
     """Ask Echo and Morrow for a question; returns ([(question, source)], accepted_count)."""
     command = [sys.executable, str(ROOT / "scripts/self_prompt.py"), "--base-url", base_url, "--state", str(RUNTIME_STATE),
@@ -782,7 +799,8 @@ def resident_proposals(base_url, line):
     if line:
         command += ["--line", json.dumps({"root": line.get("root", ""), "anchors": line.get("anchors", []),
                                           "hop": len(line.get("hops", [])), "cap": research_lines.HOP_CAP,
-                                          "questions": [hop.get("question", "") for hop in line.get("hops", [])][-3:]})]
+                                          "questions": [hop.get("question", "") for hop in line.get("hops", [])][-3:],
+                                          "known_facts": known_facts_for(line)})]
     try:
         cached = json.loads(STREAMS.read_text()) if STREAMS.exists() else {}
         today = [item.get("text") for item in (cached.get("items") or [])[:8]]
