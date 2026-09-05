@@ -127,7 +127,7 @@ def upload(dataset_dir, space_dir, dataset, space, token):
     api.upload_folder(folder_path=str(dataset_dir), repo_id=dataset, repo_type="dataset",
                       commit_message=f"ledger snapshot {datetime.now(timezone.utc).isoformat()[:16]}Z")
     api.create_repo(space, repo_type="space", space_sdk="static", exist_ok=True)
-    api.upload_folder(folder_path=str(space_dir), repo_id=space, repo_type="space",
+    api.upload_folder(folder_path=str(space_dir), repo_id=space, repo_type="space", delete_patterns=["*"],
                       commit_message=f"replay {datetime.now(timezone.utc).isoformat()[:16]}Z")
 
 

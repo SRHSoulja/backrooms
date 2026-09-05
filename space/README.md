@@ -6,7 +6,7 @@ colorTo: yellow
 sdk: static
 pinned: false
 license: mit
-short_description: Replay an unattended AI world that grows only from corroborated evidence
+short_description: Replay of an evidence-gated, unattended AI world
 ---
 
 # Backrooms Replay
