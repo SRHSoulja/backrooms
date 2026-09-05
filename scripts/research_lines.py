@@ -43,6 +43,8 @@ GENERIC_SEED = {
     "according", "publish", "publishes", "similar", "handle", "handles", "choose", "hide", "mean", "consistently", "hold",
     "holds", "show", "shows", "list", "lists", "include", "includes", "name", "names", "content", "contents", "activity",
     "history", "timeline", "affiliation", "connection", "channel", "channels", "input", "output", "phrasing", "return",
+    "confirm", "confirms", "confirmed", "reported", "reports", "give", "gives", "figure", "figures", "date", "dates", "account",
+    "accounts", "first", "sources", "source",
 }
 ANCHOR_STOPWORDS = STOPWORDS | FUNCTION_WORDS | GENERIC_SEED
 

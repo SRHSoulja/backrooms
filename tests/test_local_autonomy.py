@@ -755,6 +755,16 @@ class LocalAutonomyTests(unittest.TestCase):
         finally:
             local_autonomy.inference_judge = original
 
+    def test_a_line_from_the_public_record_reads_the_web_and_the_encyclopedia_not_papers(self):
+        original = dict(local_autonomy.CURRENT_LINE)
+        try:
+            local_autonomy.CURRENT_LINE.update({"id": "line-1", "anchors": ["khartoum"], "origin": "stream:wikipedia-current-events/2026-09-03"})
+            self.assertEqual(local_autonomy.families_for_topic("khartoum migration operation"), ["web", "encyclopedia", "web"])
+            local_autonomy.CURRENT_LINE.update({"origin": "resident:echo"})
+            self.assertEqual(local_autonomy.families_for_topic("khartoum migration operation"), ["encyclopedia", "papers", "web"])
+        finally:
+            local_autonomy.CURRENT_LINE.clear(); local_autonomy.CURRENT_LINE.update(original)
+
     def test_dissent_query_hunts_for_a_different_figure(self):
         query = local_autonomy.dissent_query("Roskomnadzor blocked GitHub in December 2014 over pages about suicide.", "roskomnadzor github")
         self.assertTrue(query.startswith("roskomnadzor github december 2014") or "roskomnadzor" in query.split()[:3], query)

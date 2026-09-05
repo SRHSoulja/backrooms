@@ -1304,7 +1304,11 @@ def search_page(url):
 
 def families_for_topic(topic):
     """Which source families can plausibly hold evidence on a topic: the code
-    family (repositories) only when the topic is about software."""
+    family (repositories) only when the topic is about software; for a line
+    rooted in the day's public record, the web (news outlets) and the
+    encyclopedia, never papers."""
+    if str(CURRENT_LINE.get("origin") or "").startswith("stream:"):
+        return ["web", "encyclopedia", "web"]
     if TECHNICAL.search(str(topic or "")):
         return ["encyclopedia", "papers", "code", "web"]
     return ["encyclopedia", "papers", "web"]
@@ -1346,7 +1350,7 @@ def dissent_query(claim, topic, limit=8):
 VERIFY_ATTEMPTS = 3
 # The research line the council is working this cycle; findings made on its
 # behalf carry its id and anchors so they can be held to its subject.
-CURRENT_LINE = {"id": "", "anchors": []}
+CURRENT_LINE = {"id": "", "anchors": [], "origin": ""}
 
 
 def target_claim_for(topic):
@@ -2029,6 +2033,7 @@ def main():
     parser.add_argument("--topic", default="", help="research topic behind a follow-up question (the query that produced the finding)")
     parser.add_argument("--line-id", default="", help="id of the open research line the council question belongs to")
     parser.add_argument("--anchors", default="", help="comma-separated anchor terms of the open research line")
+    parser.add_argument("--line-origin", default="", help="where the line's root came from (resident:..., stream:..., hire:...)")
     args = parser.parse_args()
     registry = json.loads(REGISTRY.read_text()) if REGISTRY.exists() else {"agents": [], "decisions": []}
     normalize_capabilities(registry)
@@ -2064,6 +2069,7 @@ def main():
                        "A claimed frontier task went uncompleted for too long and returned to the open pool.", **item)
     CURRENT_LINE["id"] = str(args.line_id or "")[:60]
     CURRENT_LINE["anchors"] = [term.strip() for term in str(args.anchors or "").split(",") if term.strip()][:8]
+    CURRENT_LINE["origin"] = str(args.line_origin or "")[:80]
     try:
         for record in resident_tools.expire_trials(args.cycle):
             emit_event(world, args.cycle, "tool-expired", "council",

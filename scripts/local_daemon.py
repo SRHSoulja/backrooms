@@ -1085,11 +1085,12 @@ def recruit(base_url, cycle):
         return {"status": "failed", "active": active, "capacity": MAX_LOCAL_HIRELINGS}
 
 
-def govern(base_url, cycle, question="", research_topic="", line_id="", anchors=()):
+def govern(base_url, cycle, question="", research_topic="", line_id="", anchors=(), line_origin=""):
     completed = subprocess.run([sys.executable, str(ROOT / "scripts/local_autonomy.py"),
         "--base-url", base_url, "--cycle", str(cycle), "--question", str(question or "")[:300],
         "--topic", str(research_topic or "")[:160], "--line-id", str(line_id or "")[:60],
-        "--anchors", ",".join(str(term) for term in (anchors or []))[:200]],
+        "--anchors", ",".join(str(term) for term in (anchors or []))[:200],
+        "--line-origin", str(line_origin or "")[:80]],
         cwd=ROOT, capture_output=True, text=True, check=False)
     if completed.returncode != 0:
         LOCAL_AUTONOMY_ERRORS.parent.mkdir(parents=True, exist_ok=True)
@@ -1886,7 +1887,7 @@ try:
                                 else {"action": "local-behavioral-probe", "status": "skipped-this-cycle"})
             result["recruitment"] = recruit(base_url, world["cycle"])
             result["autonomy"] = govern(base_url, world["cycle"], question, research_topic,
-                                        decision.get("line_id", ""), decision.get("anchors", []))
+                                        decision.get("line_id", ""), decision.get("anchors", []), decision.get("source", ""))
             # Autonomy may have constructed or transformed internal rooms.
             # Reload the canonical topology before publishing this cycle.
             world = runtime_world()
