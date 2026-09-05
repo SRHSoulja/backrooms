@@ -278,7 +278,9 @@ def choose_preferred_model(model_ids, preferred, fallback, failed=()):
 
 
 def _list_models(provider, opener=None, timeout=20):
-    headers = {"Authorization": "Bearer " + provider["api_key"]} if provider.get("api_key") else {}
+    headers = {"Accept": "application/json", "User-Agent": ROUTER_AGENT}
+    if provider.get("api_key"):
+        headers["Authorization"] = "Bearer " + provider["api_key"]
     request = urllib.request.Request(provider["base_url"].rstrip("/") + provider.get("models_path", "/v1/models"), headers=headers)
     with (opener or urllib.request.urlopen)(request, timeout=timeout) as response:
         data = json.load(response)
@@ -319,6 +321,10 @@ def resolve_model(provider, usage, opener=None):
     return {**provider, "model": chosen, "reasoning_effort": thinking_setting(chosen, provider.get("reasoning_effort"))}
 
 
+# Providers behind Cloudflare refuse Python's default user agent outright (error 1010).
+ROUTER_AGENT = "backrooms-router/1 (+https://github.com/SRHSoulja/backrooms)"
+
+
 def _request(provider, messages, temperature, max_tokens, schema, schema_name, timeout, opener=None):
     payload = {"model": provider["model"], "messages": messages, "temperature": temperature,
                "max_tokens": max(int(max_tokens), int(provider.get("min_max_tokens") or 0))}
@@ -329,7 +335,7 @@ def _request(provider, messages, temperature, max_tokens, schema, schema_name, t
             payload["response_format"] = {"type": "json_schema", "json_schema": {"name": schema_name, "strict": True, "schema": schema}}
         else:
             payload["messages"] = _schema_hint(messages, schema)
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Accept": "application/json", "User-Agent": ROUTER_AGENT}
     if provider["api_key"]:
         headers["Authorization"] = "Bearer " + provider["api_key"]
     request = urllib.request.Request(provider["base_url"].rstrip("/") + provider.get("chat_path", "/v1/chat/completions"),
