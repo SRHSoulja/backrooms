@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.corroboration import (append_record, candidate_pairs, claims_overlap, corroboration_index, definition_source, profile_subject, profile_url, about_profile, domain_of, same_document,
+from scripts.corroboration import (append_record, candidate_pairs, claims_overlap, corroboration_index, definition_source, profile_subject, profile_url, about_profile, republisher, not_a_document, domain_of, same_document,
                                    founding_pair_stands, growth_candidates, judge_verdict, judgment_schema, load_records,
                                    make_record, on_topic, pair_id)
 
@@ -121,6 +121,27 @@ class CorroborationTests(unittest.TestCase):
         ok, reason = founding_pair_stands(record, github, mirror)
         self.assertFalse(ok)
         self.assertEqual(reason, "a founding finding is an individual's account or profile page")
+
+    def test_copies_homepages_and_search_pages_never_found_a_room(self):
+        origin = {"id": "f-o", "topic": "roskomnadzor github block", "status": "accepted",
+                  "claim": "Roskomnadzor blocked GitHub in December 2014 over content about suicide.",
+                  "url": "https://techcrunch.com/2014/12/03/github-russia/"}
+        for url in ("https://www.wikiwand.com/en/Roskomnadzor", "https://www.semanticscholar.org/paper/abc", "https://pubmed.ncbi.nlm.nih.gov/12345/",
+                    "https://www.prnewswire.com/news-releases/x.html", "https://news.yahoo.com/github-blocked.html", "https://web.archive.org/web/2014/https://techcrunch.com/x"):
+            self.assertTrue(republisher({"url": url}), url)
+        for url in ("https://techcrunch.com/2014/12/03/github-russia/", "https://en.wikipedia.org/wiki/Roskomnadzor", "https://arxiv.org/abs/2304.05559"):
+            self.assertFalse(republisher({"url": url}), url)
+        for url in ("https://wallhaven.cc/", "https://github.com/search?q=roskomnadzor&type=repositories", "https://en.wikipedia.org/w/index.php?search=x"):
+            self.assertTrue(not_a_document({"url": url}), url)
+        self.assertFalse(not_a_document({"url": "https://techcrunch.com/2014/12/03/github-russia/"}))
+        copy = {**origin, "id": "f-c", "url": "https://news.yahoo.com/github-blocked.html"}
+        home = {**origin, "id": "f-h", "url": "https://example.org/"}
+        self.assertEqual(candidate_pairs([origin, copy]), [])
+        self.assertEqual(candidate_pairs([origin, home]), [])
+        record = {"id": "pair-copy", "finding_ids": ["f-o", "f-c"], "shared_claim": origin["claim"], "relation": "supports"}
+        self.assertEqual(founding_pair_stands(record, origin, copy), (False, "a founding finding is a republished copy of another source"))
+        record = {"id": "pair-home", "finding_ids": ["f-o", "f-h"], "shared_claim": origin["claim"], "relation": "supports"}
+        self.assertEqual(founding_pair_stands(record, origin, home), (False, "a founding finding is a homepage or search page"))
 
     def test_dictionary_definitions_never_corroborate_and_off_topic_facts_do_not_grow_rooms(self):
         cambridge = {"id": "f-cam", "topic": "corroboration journalism scientific", "status": "accepted",

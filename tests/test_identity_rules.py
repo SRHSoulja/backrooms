@@ -26,3 +26,20 @@ class IdentityRuleTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RegistryRetentionTests(unittest.TestCase):
+    def test_trimming_the_registry_never_drops_an_active_resident(self):
+        try:
+            from scripts.identity_rules import retain_registry
+        except ImportError:
+            from identity_rules import retain_registry
+        agents = ([{"id": "local-001", "status": "active-local"}] +
+                  [{"id": f"local-{n:03d}", "status": "retired"} for n in range(2, 6)] +
+                  [{"id": "local-006", "status": "probation"}])
+        kept = retain_registry(agents, 3)
+        self.assertEqual([a["id"] for a in kept], ["local-001", "local-005", "local-006"])
+        self.assertEqual(retain_registry(agents, 10), agents)
+        # every record active: nothing is dropped even over the limit
+        active = [{"id": f"local-{n:03d}", "status": "active-local"} for n in range(1, 5)]
+        self.assertEqual(retain_registry(active, 2), active)

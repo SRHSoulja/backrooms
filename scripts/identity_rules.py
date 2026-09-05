@@ -34,3 +34,24 @@ def shares_stem(name, current_names):
         if name_stem(existing) == stem:
             return existing
     return None
+
+
+ACTIVE_STATUSES = {"active-local", "probation"}
+
+
+def retain_registry(agents, limit):
+    """Trim the resident registry to ``limit`` records by dropping the oldest
+    retired or departed records first; an active resident is never dropped,
+    so a long unattended run cannot lose a working resident to bookkeeping."""
+    agents = list(agents or [])
+    overflow = max(0, len(agents) - int(limit))
+    if not overflow:
+        return agents
+    dropped = 0
+    kept = []
+    for agent in agents:
+        if dropped < overflow and agent.get("status") not in ACTIVE_STATUSES:
+            dropped += 1
+            continue
+        kept.append(agent)
+    return kept

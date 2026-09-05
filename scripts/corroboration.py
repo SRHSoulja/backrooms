@@ -139,6 +139,29 @@ def profile_subject(finding):
     return profile_url(finding.get("url", "")) or about_profile(finding.get("claim", ""))
 
 
+# Sites that republish other sources' text: encyclopedia mirrors, paper
+# aggregators and archives, press-release wires, portals that syndicate wire
+# copy, web archives. A copy may be a finding, but it is never independent of
+# its origin, and the origin is rarely known, so it never founds a room.
+REPUBLISHER = re.compile(r"(?i)(^|\.)(wikiwand|wikizero|wiki2|wikimili|alchetron|everybodywiki|dbpedia|wikidata|infogalactic|"
+                         r"semanticscholar|researchgate|academia|scite|europepmc|ncbi\.nlm\.nih|pubmed|core\.ac|paperswithcode|"
+                         r"alphaxiv|arxiv-sanity|scholar\.archive|ouci\.dntb|x-mol|prnewswire|businesswire|globenewswire|prweb|"
+                         r"einpresswire|newswire|yahoo|msn|aol|archive\.org|archive\.ph|archive\.today|webcache\.googleusercontent)\.")
+SEARCH_PAGE = re.compile(r"(?i)(/search(?:/|\?|$)|[?&](?:q|query|search|srsearch)=)")
+
+
+def republisher(finding):
+    """A republished copy is never independent of its origin."""
+    host = urllib.parse.urlparse(str(finding.get("url", ""))).netloc.lower()
+    return bool(REPUBLISHER.search(host + "."))
+
+
+def not_a_document(finding):
+    """A homepage or a search-results page is a list of pointers, not a source."""
+    url = str(finding.get("url", ""))
+    return not urllib.parse.urlparse(url).path.strip("/") or bool(SEARCH_PAGE.search(url))
+
+
 def candidate_pairs(findings, judged_ids=(), limit=MAX_JUDGMENTS_PER_CYCLE):
     """Return [(first, second, pair_id, similarity)] worth one model judgment each.
 
@@ -147,7 +170,8 @@ def candidate_pairs(findings, judged_ids=(), limit=MAX_JUDGMENTS_PER_CYCLE):
     shared claim vocabulary. Cross-domain is required in both cases.
     """
     accepted = [item for item in findings if is_accepted(item) and item.get("id") and domain_of(item)
-                and not definition_source(item) and not profile_subject(item)]
+                and not definition_source(item) and not profile_subject(item)
+                and not republisher(item) and not not_a_document(item)]
     scored = []
     for index, first in enumerate(accepted):
         first_terms = finding_terms(first)
@@ -237,6 +261,10 @@ def founding_pair_stands(record, first, second):
         return False, "a founding finding is a dictionary definition"
     if profile_subject(first) or profile_subject(second):
         return False, "a founding finding is an individual's account or profile page"
+    if republisher(first) or republisher(second):
+        return False, "a founding finding is a republished copy of another source"
+    if not_a_document(first) or not_a_document(second):
+        return False, "a founding finding is a homepage or search page"
     if not claims_overlap(first, second):
         return False, "founding claims share no vocabulary"
     shared = str(record.get("shared_claim") or record.get("topic") or "")

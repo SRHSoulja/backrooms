@@ -25,13 +25,13 @@ except ImportError:
 try:
     from scripts.evidence import clamp_confidence, classify_finding, is_accepted, FUNCTION_WORDS
     from scripts.corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, claims_overlap, corroboration_index,
-                                       growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source, profile_subject, profile_url)
+                                       growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source, profile_subject, profile_url, SEARCH_PAGE)
     from scripts import reports, resident_tools
     from scripts.world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes, retract_unfounded_rooms, collapse_withdrawn_rooms, finding_on_topic)
 except ImportError:
     from evidence import clamp_confidence, classify_finding, is_accepted, FUNCTION_WORDS
     from corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, claims_overlap, corroboration_index,
-                               growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source, profile_subject, profile_url)
+                               growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source, profile_subject, profile_url, SEARCH_PAGE)
     import reports, resident_tools
     from world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes, retract_unfounded_rooms, collapse_withdrawn_rooms, finding_on_topic)
 ROOT = Path(__file__).resolve().parents[1]
@@ -296,6 +296,11 @@ def extract_finding(url, agent, cycle, tool, target_claim=None, topic_override=N
     elif search_page(record.get("url")):
         record["status"] = "rejected"
         record["rejection_reason"] = "search-page"
+    elif not urllib.parse.urlparse(record.get("url", "")).path.strip("/"):
+        # A homepage holds no specific fact; the search filter never offers one,
+        # but a resident may still name one directly.
+        record["status"] = "rejected"
+        record["rejection_reason"] = "homepage"
     elif definition_source(record):
         # Dictionaries define words; a definition is kept for audit but is never evidence.
         record["status"] = "rejected"
@@ -1184,9 +1189,6 @@ def update_evidence_activity(agent, filed, cycle):
 
 SOURCE_FAMILIES = ("encyclopedia", "papers", "code", "web")
 TECHNICAL = re.compile(r"(?i)\b(protocol|software|librar(y|ies)|source code|codebase|api|apis|github|agents?|interoperab\w*|specification|spec|algorithm|open[- ]source|repositor(y|ies)|programming|compiler|sdk)\b")
-SEARCH_PAGE = re.compile(r"(?i)(/search(?:/|\?|$)|[?&](?:q|query|search|srsearch)=)")
-
-
 def search_page(url):
     """A search-results page is a list of pointers, not a source."""
     return bool(SEARCH_PAGE.search(str(url or "")))
