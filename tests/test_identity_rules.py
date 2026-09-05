@@ -43,3 +43,15 @@ class RegistryRetentionTests(unittest.TestCase):
         # every record active: nothing is dropped even over the limit
         active = [{"id": f"local-{n:03d}", "status": "active-local"} for n in range(1, 5)]
         self.assertEqual(retain_registry(active, 2), active)
+
+
+class RecruiterImportTests(unittest.TestCase):
+    def test_every_name_the_recruiter_imports_from_identity_rules_exists(self):
+        import re
+        from scripts import identity_rules
+        source = open("scripts/local_recruiter.py").read()
+        statements = re.findall(r"from (?:scripts\.)?identity_rules import ([^\n]+)", source)
+        self.assertGreaterEqual(len(statements), 2)
+        for names in statements:
+            for name in [part.strip() for part in names.split(",")]:
+                self.assertTrue(hasattr(identity_rules, name), name)

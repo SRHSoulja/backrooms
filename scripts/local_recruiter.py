@@ -6,10 +6,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 try:
-    from scripts.identity_rules import is_reserved_name, shares_stem
+    from scripts.identity_rules import is_reserved_name, shares_stem, retain_registry
     from scripts.model_client import complete
 except ImportError:
-    from identity_rules import is_reserved_, retain_registryname, shares_stem
+    from identity_rules import is_reserved_name, shares_stem, retain_registry
     from model_client import complete
 
 ROOT = Path(__file__).resolve().parents[1]
