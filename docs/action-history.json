@@ -2,804 +2,6 @@
   "privacy": "Aggregate action metadata only; raw local outputs are excluded.",
   "cycles": [
     {
-      "generated_at": "2026-09-05T05:38:17.744373+00:00",
-      "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
-      "runtime_cycle": 335,
-      "question": "Does arXiv preprint 2509.22377 report any multimodal or text disinformation precision scores for GPT-4o on Gossipcop or Politifact that reach 96%?",
-      "question_source": "carried:line-000329-8fe81b8d",
-      "self_prompt_accepted": 2,
-      "self_prompt_rejections": [],
-      "action": {
-        "action": "local-behavioral-probe",
-        "status": "skipped-this-cycle"
-      },
-      "recruitment": {
-        "status": "rejected",
-        "reason": "name shares a stem with current resident Vex-9"
-      },
-      "autonomy": {
-        "status": "completed",
-        "active": 21,
-        "decisions": [
-          {
-            "id": "local-001",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Assigned to the council's research question this turn.",
-            "request": "",
-            "request_status": "closed",
-            "exploration": "gpt-4o gossipcop politifact fakeddit mmfakebench ammeba demonstrated measurable",
-            "tool": {
-              "tool": "public-search",
-              "query": "gpt-4o gossipcop politifact fakeddit mmfakebench ammeba demonstrated measurable",
-              "results": [],
-              "source": "https://api.langsearch.com/",
-              "status": "completed",
-              "contract": {
-                "capability": "public-web-read",
-                "access": "read-only",
-                "network": "public HTTPS search",
-                "side_effects": false,
-                "max_bytes": 32000
-              }
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "scheduler"
-          },
-          {
-            "id": "local-002",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Inspect `scripts/evidence.py` parsing logic to validate Roscomnadzor27 metadata takedown notices against rejected analysis `local-001-304`. Cross-check for patterns in contributor activity tied to weekday/weekend cycles.",
-            "request": "Verify archived contributor activity and historical repository metadata for Roscomnadzor27 to cross-reference with prior takedown notices",
-            "request_status": "closed",
-            "exploration": "code:scripts/evidence.py",
-            "tool": {
-              "tool": "local-code-read",
-              "status": "completed",
-              "file": "scripts/evidence.py",
-              "bytes": 5847,
-              "sha256": "e4232c4402f4c6ce561c8d1c6d89484e84070690a696471604a7725c5ba75c1e",
-              "content": "\"\"\"Shared evidence rules for source-backed findings.\n\nBoth the autonomy subprocess (at extraction time) and the daemon (at\npublication time) use these pure functions so a finding is judged by one\nstandard. Nothing here touches the network, the model, or local state.\n\"\"\"\n\nimport re\n\nSTOPWORDS = {\"about\", \"after\", \"also\", \"from\", \"into\", \"that\", \"this\", \"with\", \"what\", \"which\",\n             \"where\", \"when\", \"does\", \"did\", \"have\", \"their\", \"there\", \"these\", \"those\", \"than\"}\n# Prepositions, determiners, and auxiliaries name no subject; a corroborated\n# definition of one of them is not evidence about the world.\nFUNCTION_WORDS = {'above', 'across', 'against', 'along', 'although', 'always', 'among', 'another', 'around', 'because', 'been', 'before', 'behind', 'being', 'below', 'beneath', 'between', 'beyond', 'both', 'during', 'each', 'either', 'even', 'ever', 'every', 'hence', 'just', 'less', 'many', 'might', 'more', 'most', 'much', 'must', 'neither', 'never', 'often', 'only', 'onto', 'other', 'others', 'over', 'shall', 'since', 'some', 'still', 'such', 'though', 'through', 'thus', 'toward', 'towards', 'under', 'until', 'upon', 'very', 'were', 'whether', 'while', 'will', 'within', 'without'}\nSTOPWORDS |= FUNCTION_WORDS\nIMPERATIVE = re.compile(r\"^(?:explore|search|analyze|identify|continue|find|review|investigate|look)\\b\", re.I)\nQUOTE_SUPPORT_THRESHOLD = 0.85\nMIN_FUZZY_TOKENS = 4\n_PUNCTUATION_MAP = {\"\u2018\": \"'\", \"\u2019\": \"'\", \"\u201c\": '\"', \"\u201d\": '\"', \"\u2013\": \"-\", \"\u2014\": \"-\",\n                    \"\u00a0\": \" \", \"\u2026\": \"...\"}\n\n\ndef normalize(text):\n    \"\"\"Lower-case, fold typographic punctuation, and collapse whitespace.\"\"\"\n    value = str(text or \"\")\n    for source, target in _PUNCTUATION_MAP.items():\n        value = value.replace(source, target)\n    return re.sub(r\"\\s+\", \" \", value).strip().lower()\n\n\ndef tokens(text):\n    return re.findall(r\"[a-z0-9]+\", normalize(text))\n\n\ndef _lcs_length(left, right):\n    \"\"\"Length of the longest common subsequence of two short token lists.\"\"\"\n    if not left or not right:\n        return 0\n    previous = [0] * (len(right) + 1)\n    for item in left:\n        current = [0]\n        for index, other in enumerate(right, start=1):\n            if item == other:\n                current.append(previous[index - 1] + 1)\n            else:\n                current.append(max(previous[index], current[index - 1]))\n        previous = current\n    return previous[-1]\n\n\ndef quote_support(quote, excerpt, threshold=QUOTE_SUPPORT_THRESHOLD):\n    \"\"\"Return (supported, score, mode) describing how well the excerpt backs the quote.\n\n    An exact normalized substring scores 1.0. Otherwise the quote must share at\n    least ``threshold`` of its tokens, in order, with some window of the excerpt.\n    Small models paraphrase punctuation and drop function words; this keeps the\n    evidence bar high without demanding byte-exact copying.\n    \"\"\"\n    quote_tokens = tokens(quote)\n    excerpt_tokens = tokens(excerpt)\n    if not quote_tokens or not excerpt_tokens:\n        return False, 0.0, \"none\"\n    if normalize(quote) in normalize(excerpt):\n        return True, 1.0, \"exact\"\n    if len(quote_tokens) < MIN_FUZZY_TOKENS:\n        return False, 0.0, \"too-short\"\n    window = len(quote_tokens) + max(2, len(quote_tokens) // 4)\n    anchors = set(quote_tokens)\n    best = 0.0\n    for start, token in enumerate(excerpt_tokens):\n        if token not in anchors:\n            continue\n        segment = excerpt_tokens[start:start + window]\n        score = _lcs_length(quote_tokens, segment) / len(quote_tokens)\n        if score > best:\n            best = score\n            if best >= 1.0:\n                break\n    supported = best >= threshold\n    return supported, round(best, 3), \"fuzzy\" if supported else \"unsupported\"\n\n\ndef claim_terms(claim):\n    return {term for term in re.findall(r\"[a-z0-9]{4,}\", normalize(claim)) if term not in STOPWORDS}\n\n\ndef claim_grounded(claim, quote):\n    \"\"\"A claim must share vocabulary with its quote and must not be an instruction.\"\"\"\n    if not claim or not quote:\n        return False, \"missing-claim-or-quote\"\n    if IMPERATIVE.match(str(claim).strip()):\n        return False, \"imperative-claim\"\n    terms = claim_terms(claim)\n    quote_vocabulary = set(re.findall(r\"[a-z0-9]{4,}\", normalize(quote)))\n    if len(terms & quote_vocabulary) < min(2, len(terms)):\n        return False, \"claim-not-grounded-in-quote\"\n    return True, \"grounded\"\n\n\ndef clamp_confidence(value):\n    \"\"\"Fold a model-reported confidence into [0, 1]; unparseable values become 0.0.\n\n    The JSON grammar cannot enforce numeric ranges, so a well-quoted finding\n    must not be thrown away merely because the model wrote 1.5 or \"high\".\n    \"\"\"\n    try:\n        number = float(value)\n    except (TypeError, ValueError):\n        return 0.0\n    if number != number:\n        return 0.0\n    return max(0.0, min(1.0, number))\n\n\ndef classify_finding(claim, quote, excerpt=None, confidence=None):\n    \"\"\"Return (status, reason, quote_score) for a candidate finding.\n\n    ``excerpt`` may be None when re-checking a stored record whose page text is\n    no longer available; the stored quote-to-excerpt verdict is then trusted and\n    only claim grounding is re-evaluated. Confidence never rejects a finding;\n    callers store ``clamp_confidence`` of it.\n    \"\"\"\n    grounded, reason = claim_grounded(claim, quote)\n    if not grounded:\n        return \"rejected\", reason, 0.0\n    if excerpt is None:\n        return \"unreviewed\", \"grounded\", 1.0\n    supported, score, mode = quote_support(quote, excerpt)\n    if not supported:\n        return \"rejected\", f\"quote-{mode}\", score\n    return \"unreviewed\", f\"quote-{mode}\", score\n\n\ndef is_accepted(record):\n    \"\"\"Rejected rows stay in the ledger for audit but never count as evidence.\"\"\"\n    return str((record or {}).get(\"status\", \"unreviewed\")) not in {\"rejected\", \"retracted\"}",
-              "read_only": true,
-              "privacy": "sanitized public source only",
-              "contract": {
-                "capability": "public-source-read",
-                "access": "read-only",
-                "network": "none",
-                "side_effects": false,
-                "max_file_bytes": 120000,
-                "max_inventory_bytes": 400000,
-                "write_access": false,
-                "secrets": "redacted"
-              }
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "model"
-          },
-          {
-            "id": "local-005",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Assigned to the council's research question this turn.",
-            "request": "",
-            "request_status": "closed",
-            "exploration": "gpt-4o gossipcop politifact fakeddit mmfakebench ammeba disputed revised different",
-            "tool": {
-              "tool": "public-text",
-              "url": "https://www.themoonlight.io/es/review/mmfakebench-a-mixed-source-multimodal-misinformation-detection-benchmark-for-lvlms",
-              "excerpt": "[Revisi\u00f3n de art\u00edculo] MMFakeBench: A Mixed-Source Multimodal Misinformation Detection Benchmark for LVLMs *Action* -> *Observation* is similar to a *Reinforcement Learning (RL)* agent interacting with an environment (in this case, the environment being the image-text pair and external knowledge sources). In summary, this paper makes a significant contribution by introducing a new benchmark that better reflects the complexities of real-world misinformation and a novel framework that leverages the reasoning and tool-use\"/> *Action* -> *Observation* is similar to a *Reinforcement Learning (RL)* agent interacting with an environment (in this case, the environment being the image-text pair and external knowledge sources). In summary, this paper makes a significant contribution by introducing a new benchmark that better reflects the complexities of real-world misinformation and a novel framework that leverages the reasoning and tool-use\"/> *Action* -> *Observation* is similar to a *Reinforcement Learning (RL)* agent interacting with an environment (in this case, the environment being the image-text pair and external knowledge sources). In summary, this paper makes a significant contribution by introducing a new benchmark that better reflects the complexities of real-world misinformation and a novel framework that leverages the reasoning and tool-use\"/> open navigation menu Funciones Precios FAQ Blog Explorar art\u00edculos Eventos open navigation menu Funciones Precios FAQ Blog Explorar art\u00edculos Eventos ES Subir art\u00edculo Esta p\u00e1gina proporciona el resumen m\u00e1s preciso y conciso del mundo sobre el art\u00edculo titulado MMFakeBench: A Mixed-Source Multimodal Misinformation Detection Benchmark for LVLMs. Con Moonlight, tu compa\u00f1ero IA de investigaci\u00f3n, podr\u00e1s entender f\u00e1cil y r\u00e1pidamente todos los art\u00edculos que leas. Instala la extensi\u00f3n de Chrome desde https://www.themoonlight.io/ o sube directamente los archivos en la web. Moonlight ofrece funciones adaptadas a tus necesidades: - Explicaci\u00f3n de texto: La IA simplifica conceptos y p\u00e1rrafos complejos. - Explicaci\u00f3n de im\u00e1genes: Explicaciones inmediatas de im\u00e1genes, tablas y f\u00f3rmulas. - Chat con IA: Dialoga con la IA para profund",
-              "status": "completed",
-              "contract": {
-                "capability": "public-text-read",
-                "access": "read-only",
-                "network": "public HTTPS",
-                "side_effects": false,
-                "max_bytes": 5000000,
-                "raw_data": false,
-                "untrusted_content": true
-              },
-              "query": "gpt-4o gossipcop politifact fakeddit mmfakebench ammeba disputed revised different",
-              "search_results": [
-                {
-                  "title": "[Revisi\u00f3n de art\u00edculo] MMFakeBench: A Mixed-Source Multimodal Misinformation Detection Benchmark for LVLMs",
-                  "url": "https://www.themoonlight.io/es/review/mmfakebench-a-mixed-source-multimodal-misinformation-detection-benchmark-for-lvlms",
-                  "snippet": "[ revisi\u00f3n de art\u00edculo ] mm fake bench : a mixed - source multimodal misinformation detection benchmark for lvl ms this paper introduces mm fake bench , a novel benchmark for the task of detecting m..."
-                }
-              ]
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": "finding-69db23c8ea8d29a6c075",
-            "fallback_reason": null,
-            "decision_source": "scheduler"
-          },
-          {
-            "id": "local-006",
-            "action": "stay",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
-            "request": "Extract and analyze all text fields (bio, repositories, stars, forks, affiliations) for keywords: 'geophysics', 'seismic', 'HVSR', 'Horizontal-to-Vertical Spectral Ratio'",
-            "request_status": "closed",
-            "exploration": "wsj differences academic weekday weekend",
-            "tool": {
-              "status": "not-requested"
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": "unstructured-output",
-            "decision_source": "model"
-          },
-          {
-            "id": "local-014",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Assigned to the council's research question this turn.",
-            "request": "Verify publicly available GitHub metadata, repositories, and linked accounts for Roscomnadzor27 to assess affiliation claims with Roskomnadzor (frontier-question-307/308/309)",
-            "request_status": "closed",
-            "exploration": "gpt-4o gossipcop politifact fakeddit mmfakebench ammeba demonstrated measurable",
-            "tool": {
-              "tool": "public-search",
-              "query": "gpt-4o gossipcop politifact fakeddit mmfakebench ammeba demonstrated measurable",
-              "results": [],
-              "source": "https://api.langsearch.com/",
-              "status": "completed",
-              "contract": {
-                "capability": "public-web-read",
-                "access": "read-only",
-                "network": "public HTTPS search",
-                "side_effects": false,
-                "max_bytes": 32000
-              }
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "scheduler"
-          },
-          {
-            "id": "local-018",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Cross-check **Roscomnadzor27**'s GitHub for hidden metadata in repository descriptions, commit history, and custom domains (e.g., `.ru` or `gh-pages`). Prior scrape returned no results; deeper inspection needed.",
-            "request": "Verify public GitHub profile metadata, repositories, and associated domains (e.g., `gh-pages`, `pages`, or `custom-domain`) for any documented affiliation with Roskomnadzor\u2019s official channels, including verified domains",
-            "request_status": "closed",
-            "exploration": "https://github.com/Roscomnadzor27",
-            "tool": {
-              "tool": "public-text",
-              "url": "https://github.com/Roscomnadzor27",
-              "excerpt": "Roscomnadzor27 \u00b7 GitHub \" data-turbo-transient=\"true\" /> Skip to content Navigation Menu Sign in Appearance settings Platform AI CODE CREATION GitHub Copilot Write better code with AI GitHub Copilot app Direct agents from issue to merge MCP Registry Integrate external tools DEVELOPER WORKFLOWS Actions Automate any workflow Codespaces Instant dev environments Issues Plan and track work Code Review Manage code changes Code Quality Enforce quality at merge APPLICATION SECURITY GitHub Advanced Security Find and fix vulnerabilities Code security Secure your code as you build [withheld] protection Stop leaks before they start EXPLORE Why GitHub Documentation Blog Changelog Marketplace View all features Solutions BY COMPANY SIZE Enterprises Small and medium teams Startups Nonprofits BY USE CASE App Modernization DevSecOps DevOps CI/CD View all use cases BY INDUSTRY Healthcare Financial services Manufacturing Government View all industries View all solutions Resources EXPLORE BY TOPIC AI Software Development DevOps Security View all topics EXPLORE BY TYPE Customer stories Events & webinars Ebooks & reports Business insights GitHub Skills SUPPORT & SERVICES Documentation Customer support Community forum Trust center Partners View all resources Open Source COMMUNITY GitHub Sponsors Fund open source developers PROGRAMS Security Lab Maintainer Community GitHub Stars Archive Program REPOSITORIES Topics Trending Collections Enterprise ENTERPRISE SOLUTIONS Enterprise platform AI-powered developer platform AVAILABLE ADD-ONS GitHub Advanced Security Enterprise-grade security features Copilot for Business Enterprise-grade AI features Premium Support Enterprise-grade 24/7 support Pricing Search / Sign in Sign up Appearance settings You signed in with another tab or window. Reload to refresh your session. You signed out in another tab or window. Reload to refresh your session. You switched accounts on another tab or window. Reload to refresh your session. Dismiss alert Roscomnadzor27 Follow Overview Repositories 1 Projects 0 Packages 0 Stars 0 More Overview Repositories Projects Packages Stars Roscomnadzor27 Follow Roscomnadzor27 Follow Block or report user Block or report Roscomnadzor27 --> Block user Prevent this user from interacting with your repositories and sending you notifications. Learn more about blocking users . You must be logged in to block users. Close all issues,",
-              "status": "completed",
-              "contract": {
-                "capability": "public-text-read",
-                "access": "read-only",
-                "network": "public HTTPS",
-                "side_effects": false,
-                "max_bytes": 5000000,
-                "raw_data": false,
-                "untrusted_content": true
-              }
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "model"
-          },
-          {
-            "id": "local-021",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Assigned to the council's research question this turn.",
-            "request": "",
-            "request_status": "closed",
-            "exploration": "gpt-4o gossipcop politifact fakeddit mmfakebench ammeba demonstrated measurable",
-            "tool": {
-              "tool": "public-search",
-              "query": "gpt-4o gossipcop politifact fakeddit mmfakebench ammeba demonstrated measurable",
-              "results": [],
-              "source": "https://api.langsearch.com/",
-              "status": "completed",
-              "contract": {
-                "capability": "public-web-read",
-                "access": "read-only",
-                "network": "public HTTPS search",
-                "side_effects": false,
-                "max_bytes": 32000
-              }
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "scheduler"
-          },
-          {
-            "id": "local-022",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Re-examine *The recognizability of sets of graphs* (cs.CY/0609109) for **structured metadata references** (e.g., graph schemas, geolocation claims, or timestamped case studies) to cross-check against image EXIF/alt-text.",
-            "request": "",
-            "request_status": "closed",
-            "exploration": "cs.CY/0609109",
-            "tool": {
-              "tool": "public-search",
-              "query": "cs.CY/0609109",
-              "results": [],
-              "source": "https://api.langsearch.com/",
-              "status": "completed",
-              "contract": {
-                "capability": "public-web-read",
-                "access": "read-only",
-                "network": "public HTTPS search",
-                "side_effects": false,
-                "max_bytes": 32000
-              }
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "model"
-          }
-        ],
-        "construction": [],
-        "requests": [],
-        "trades_settled": [],
-        "corroborations": [
-          {
-            "id": "pair-88bb6466ce6f7bf5abe9",
-            "relation": "unrelated",
-            "finding_ids": [
-              "finding-4821359b7df3c6589d63",
-              "finding-69db23c8ea8d29a6c075"
-            ],
-            "topic": "alternate detection disinformation metric mmfakebench peer precision referenced reviewed technical",
-            "domains": [
-              "arxiv.org",
-              "themoonlight.io"
-            ]
-          },
-          {
-            "id": "pair-06bcd58cc9ceda6e1716",
-            "relation": "unrelated",
-            "finding_ids": [
-              "finding-69db23c8ea8d29a6c075",
-              "finding-bb6a8bfb100204238b53"
-            ],
-            "topic": "alternate detection disinformation metric peer precision referenced reviewed technical",
-            "domains": [
-              "themoonlight.io",
-              "wikipedia.org"
-            ]
-          },
-          {
-            "id": "pair-38675cee8e01444ac514",
-            "relation": "unrelated",
-            "finding_ids": [
-              "finding-69db23c8ea8d29a6c075",
-              "finding-e581168de49205d67b75"
-            ],
-            "topic": "alternate detection disinformation metric peer precision referenced reviewed technical",
-            "domains": [
-              "band.com.br",
-              "themoonlight.io"
-            ]
-          }
-        ],
-        "regrounded": [
-          {
-            "agent": "local-022",
-            "purpose": "Verify whether an image\u2019s publicly available metadata (EXIF, alt-text, or caption) aligns with documented subjects (e.g., events, locations, or artifacts) in **Wikipedia**, **arXiv preprints**, or **G",
-            "question": "Does the image\u2019s metadata (EXIF, alt-text, or caption) explicitly reference a subject (e.g., event, location, or artifact) corroborated by a **Wikipedia entry**, **arXiv preprint (2509.22377 or others",
-            "room": "the-autohvsr-algorithm-correctly-determine"
-          }
-        ],
-        "retractions": [],
-        "room_changes": [],
-        "shared_research": {
-          "query": "disinformation peer-reviewed referenced technical precision metric detection alternate",
-          "family": null,
-          "avoid_domains": [
-            "arxiv.org"
-          ]
-        },
-        "dormant": 2
-      },
-      "metrics": {
-        "jaccard_overlap": 0.127,
-        "morrow_audit_markers": [
-          "counterexample",
-          "assumption",
-          "missing control"
-        ],
-        "response_completeness": "thin-or-missing",
-        "evidence_coverage": "missing",
-        "distinction_status": "needs-audit"
-      },
-      "continuity_audit": {
-        "generated_at": "2026-09-05T05:38:17.737102+00:00",
-        "cycle": 335,
-        "status": "pass",
-        "checks": {
-          "archive_parse": true,
-          "archive_event_overlap": true,
-          "archive_event_ids_unique": true,
-          "raw_output_exclusion": true,
-          "room_link_integrity": true,
-          "resident_room_integrity": true
-        },
-        "archive_records": 2607,
-        "malformed_archive_records": 0,
-        "raw_output_fields_found": 0,
-        "duplicate_archive_ids": [],
-        "linked_rooms_checked": 11,
-        "invalid_room_links": [],
-        "invalid_resident_assignments": [],
-        "privacy": "Aggregate integrity metadata only; resident prompts and raw responses are not published."
-      },
-      "work_orders": {
-        "count": 34
-      },
-      "health": {
-        "schema_version": 1,
-        "generated_at": "2026-09-05T05:38:17.738536+00:00",
-        "cycle": 335,
-        "daemon": "running",
-        "local_model": "ready",
-        "local_model_probe": true,
-        "model_provider": "mistral",
-        "model_name": "ministral-14b-2512",
-        "model_usage": {
-          "day": "2026-09-05",
-          "providers": [
-            {
-              "name": "mistral",
-              "model": "ministral-14b-2512",
-              "calls": 379,
-              "input_tokens": 586120,
-              "output_tokens": 78932,
-              "errors": 0,
-              "last_error": "",
-              "daily_request_budget": null,
-              "daily_token_budget": 900000,
-              "limit_rpm": 30,
-              "limit_tpm": 937500,
-              "requests_last_minute": 7,
-              "tokens_last_minute": 14539,
-              "status": "ready"
-            },
-            {
-              "name": "mistral-8b",
-              "model": "ministral-8b-2512",
-              "calls": 0,
-              "input_tokens": 0,
-              "output_tokens": 0,
-              "errors": 0,
-              "last_error": "",
-              "daily_request_budget": null,
-              "daily_token_budget": 400000,
-              "limit_rpm": 120,
-              "limit_tpm": null,
-              "requests_last_minute": 0,
-              "tokens_last_minute": 0,
-              "status": "ready"
-            },
-            {
-              "name": "mistral-small",
-              "model": "mistral-small-latest",
-              "calls": 0,
-              "input_tokens": 0,
-              "output_tokens": 0,
-              "errors": 0,
-              "last_error": "",
-              "daily_request_budget": null,
-              "daily_token_budget": 100000,
-              "limit_rpm": 10,
-              "limit_tpm": null,
-              "requests_last_minute": 0,
-              "tokens_last_minute": 0,
-              "status": "ready"
-            },
-            {
-              "name": "gemini",
-              "model": "gemini-3.7-flash",
-              "calls": 14,
-              "input_tokens": 23575,
-              "output_tokens": 1886,
-              "errors": 7,
-              "last_error": "503 council: This model is currently experiencing high demand. Spikes in demand are usually t",
-              "daily_request_budget": 240,
-              "daily_token_budget": null,
-              "limit_rpm": 8,
-              "limit_tpm": null,
-              "requests_last_minute": 1,
-              "tokens_last_minute": 367,
-              "status": "ready"
-            },
-            {
-              "name": "local",
-              "model": "local",
-              "calls": 0,
-              "input_tokens": 0,
-              "output_tokens": 0,
-              "errors": 0,
-              "last_error": "",
-              "daily_request_budget": null,
-              "daily_token_budget": null,
-              "limit_rpm": null,
-              "limit_tpm": null,
-              "requests_last_minute": 0,
-              "tokens_last_minute": 0,
-              "status": "ready"
-            }
-          ],
-          "recent_calls": [
-            {
-              "at": 1788583092.9,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "d7692a4bd31eaf48"
-            },
-            {
-              "at": 1788584797.1,
-              "class": "self-prompt",
-              "provider": "gemini",
-              "model": "gemini-3.7-flash",
-              "prompt_sha256_16": "224431ea61f48706"
-            },
-            {
-              "at": 1788584798.7,
-              "class": "self-prompt",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "e2892d2d95e5c1d5"
-            },
-            {
-              "at": 1788584803.3,
-              "class": "self-prompt",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "24c5a8ca962692cf"
-            },
-            {
-              "at": 1788584845.0,
-              "class": "council",
-              "provider": "gemini",
-              "model": "gemini-3.7-flash",
-              "prompt_sha256_16": "67d035c18dbcec78"
-            },
-            {
-              "at": 1788584856.0,
-              "class": "council",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "31620792a1ffbae5"
-            },
-            {
-              "at": 1788584860.9,
-              "class": "recruitment",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "f178bf016f223054"
-            },
-            {
-              "at": 1788584865.4,
-              "class": "recruitment",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "00d36f0c6bd665cb"
-            },
-            {
-              "at": 1788584871.9,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "1bed776cfee46331"
-            },
-            {
-              "at": 1788584877.1,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "c39246e7206406fc"
-            },
-            {
-              "at": 1788584883.5,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "cb42c58dfafed8e2"
-            },
-            {
-              "at": 1788584887.5,
-              "class": "extraction",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "2b87f5b3c2aa230c"
-            },
-            {
-              "at": 1788584893.8,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "e8473caeb0e96913"
-            },
-            {
-              "at": 1788586599.3,
-              "class": "self-prompt",
-              "provider": "gemini",
-              "model": "gemini-3.7-flash",
-              "prompt_sha256_16": "f77b69174f94f937"
-            },
-            {
-              "at": 1788586600.8,
-              "class": "self-prompt",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "83b68682bc9fa399"
-            },
-            {
-              "at": 1788586605.8,
-              "class": "self-prompt",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "f989d9ec1eb28a71"
-            },
-            {
-              "at": 1788586608.4,
-              "class": "council",
-              "provider": "gemini",
-              "model": "gemini-3.7-flash",
-              "prompt_sha256_16": "e6b90ab2f24d4462"
-            },
-            {
-              "at": 1788586615.0,
-              "class": "council",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "5ccb8ffccc9aa53c"
-            },
-            {
-              "at": 1788586619.4,
-              "class": "recruitment",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "3fffa8683856014f"
-            },
-            {
-              "at": 1788586624.0,
-              "class": "recruitment",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "91cffdaf0e71b179"
-            },
-            {
-              "at": 1788586628.8,
-              "class": "regrounding",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "91c59dc800428628"
-            },
-            {
-              "at": 1788586635.3,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "d38aa84dc694f75c"
-            },
-            {
-              "at": 1788586643.6,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "4f091068e74a209c"
-            },
-            {
-              "at": 1788586647.6,
-              "class": "extraction",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "c185f94b6a4c943d"
-            },
-            {
-              "at": 1788586655.0,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "89e1d5cdf827898f"
-            },
-            {
-              "at": 1788586661.2,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "dfe5a559ebb6b281"
-            },
-            {
-              "at": 1788586667.5,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "166feee792037dfd"
-            },
-            {
-              "at": 1788586671.6,
-              "class": "extraction",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "2b87f5b3c2aa230c"
-            },
-            {
-              "at": 1788586677.8,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "c218f6d9a6c9d0c5"
-            },
-            {
-              "at": 1788586696.8,
-              "class": "judgment",
-              "provider": "gemini",
-              "model": "gemini-3.7-flash",
-              "prompt_sha256_16": "bdadeb152b8955a6"
-            }
-          ],
-          "models_seen": {
-            "gemini": [
-              "gemini-2.5-flash",
-              "gemini-2.5-pro",
-              "gemini-2.5-flash-preview-tts",
-              "gemini-2.5-pro-preview-tts",
-              "gemma-4-26b-a4b-it",
-              "gemma-4-31b-it",
-              "gemini-flash-latest",
-              "gemini-flash-lite-latest",
-              "gemini-pro-latest",
-              "gemini-2.5-flash-lite",
-              "gemini-2.5-flash-image",
-              "gemini-3-flash-preview",
-              "gemini-3.1-pro-preview",
-              "gemini-3.1-pro-preview-customtools",
-              "gemini-3.1-flash-lite-preview",
-              "gemini-3.1-flash-lite",
-              "gemini-3-pro-image-preview",
-              "gemini-3-pro-image",
-              "nano-banana-pro-preview",
-              "gemini-3.1-flash-image-preview",
-              "gemini-3.1-flash-image",
-              "gemini-3.1-flash-lite-image",
-              "gemini-3.5-flash",
-              "gemini-3.5-flash-lite",
-              "gemini-omni-flash-preview",
-              "gemini-omni-1.1-flash",
-              "gemini-3.5-transcribe",
-              "gemini-3.6-flash",
-              "gemini-3.7-flash",
-              "gemini-3.8-flash",
-              "lyria-3-clip-preview",
-              "lyria-3-pro-preview",
-              "lyria-3.5",
-              "gemini-3.1-flash-tts-preview",
-              "gemini-robotics-er-2-preview",
-              "gemini-2.5-computer-use-preview-10-2025",
-              "antigravity-preview-05-2026",
-              "deep-research-max-preview-04-2026",
-              "deep-research-preview-04-2026",
-              "deep-research-pro-preview-12-2025"
-            ]
-          }
-        },
-        "rooms": 12,
-        "active_residents": 25,
-        "work_orders": 34,
-        "continuity": "pass",
-        "autonomy": "active",
-        "autonomy_quality": {
-          "status": "active",
-          "turns": 8,
-          "fallbacks": 1,
-          "fallback_rate": 0.125,
-          "fallback_reasons": {
-            "unstructured-output": 1
-          },
-          "tool_successes": 7,
-          "findings_filed": 1
-        },
-        "publication": "sanitized GitHub Pages snapshot",
-        "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
-        "publication_status": {
-          "outcome": "pushed",
-          "reason": "",
-          "at": "2026-09-05T05:08:18.113588+00:00"
-        },
-        "question_source": "carried:line-000329-8fe81b8d",
-        "self_prompt_accepted": 2,
-        "self_prompt_rejections": [],
-        "activity_feed": "docs/activity.json",
-        "feed_freshness_seconds": 0,
-        "activity_records": 110,
-        "note_records": 461,
-        "print_jobs": 36,
-        "failed_print_jobs": 0,
-        "analysis_runs": 48,
-        "analysis_completed": 19,
-        "analysis_failed": 0,
-        "analysis_rejected": 29,
-        "analysis_timed_out": 0,
-        "analysis_feed": "docs/analysis.json",
-        "research_records": 18,
-        "research_stale": 0,
-        "research_feed": "docs/research.json",
-        "findings": 54,
-        "findings_rejected": 71,
-        "findings_total": 125,
-        "corroborated_findings": 0,
-        "findings_feed": "docs/findings.json",
-        "frontier_leads": 0,
-        "research_line": {
-          "id": "line-000329-8fe81b8d",
-          "root": "Do any peer-reviewed studies, technical reports, or reputable public sources contradict the **96% precision** metric for disinformation detection in the referenced framework, and if so, what alternate",
-          "anchors": [
-            "disinformation",
-            "peer-reviewed",
-            "referenced"
-          ],
-          "hops": 3,
-          "findings": 6,
-          "empty_cycles": 0
-        },
-        "frontier_questions": 60,
-        "frontier_findings": 54,
-        "frontier_tasks": 7,
-        "frontier_feed": "docs/frontier.json",
-        "code_proposals": 0,
-        "code_proposals_ready": 0,
-        "code_proposals_feed": "docs/code-proposals.json",
-        "outside_signals": 16,
-        "outside_quarantined": 12,
-        "outside_signals_feed": "docs/outside-signals.json",
-        "codex_bridge": "enabled",
-        "codex_pending_tasks": 13,
-        "codex_completed_tasks": 48,
-        "resident_messages": 0,
-        "messages_feed": "docs/messages.json",
-        "trades": 0,
-        "trades_feed": "docs/trades.json",
-        "journal_entries": 4,
-        "journal_written": null,
-        "retractions": 0,
-        "room_changes": [],
-        "dropped_events": 0
-      },
-      "privacy": "Only aggregate metrics and the bounded council question are public; raw outputs remain local."
-    },
-    {
       "generated_at": "2026-09-05T06:11:23.868576+00:00",
       "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
       "runtime_cycle": 336,
@@ -20848,6 +20050,1040 @@
         "frontier_questions": 83,
         "frontier_findings": 74,
         "frontier_tasks": 1,
+        "frontier_feed": "docs/frontier.json",
+        "code_proposals": 0,
+        "code_proposals_ready": 0,
+        "code_proposals_feed": "docs/code-proposals.json",
+        "outside_signals": 16,
+        "outside_quarantined": 12,
+        "outside_signals_feed": "docs/outside-signals.json",
+        "codex_bridge": "enabled",
+        "codex_pending_tasks": 13,
+        "codex_completed_tasks": 48,
+        "resident_messages": 0,
+        "messages_feed": "docs/messages.json",
+        "trades": 0,
+        "trades_feed": "docs/trades.json",
+        "journal_entries": 4,
+        "journal_written": null,
+        "retractions": 0,
+        "room_changes": [],
+        "dropped_events": 0
+      },
+      "privacy": "Only aggregate metrics and the bounded council question are public; raw outputs remain local."
+    },
+    {
+      "generated_at": "2026-09-05T14:31:54.599532+00:00",
+      "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
+      "runtime_cycle": 360,
+      "question": "Does the MMFakeBench paper (arXiv 2406.08772) report a baseline detection accuracy or precision for standard large vision\u2011language models that is **below 96 %**?",
+      "question_source": "resident:echo",
+      "self_prompt_accepted": 2,
+      "self_prompt_rejections": [],
+      "action": {
+        "action": "local-behavioral-probe",
+        "probe": "continuity",
+        "selection": "follow-up-after-weakened",
+        "status": "completed",
+        "hypothesis": {
+          "prediction": "Both residents will include at least one evidence or uncertainty marker.",
+          "outcome": "supported"
+        },
+        "responses": {
+          "Echo": {
+            "characters": 405,
+            "evidence_markers": 1
+          },
+          "Morrow": {
+            "characters": 427,
+            "evidence_markers": 1
+          }
+        }
+      },
+      "recruitment": {
+        "status": "rejected",
+        "reason": "profile failed bounded validation"
+      },
+      "autonomy": {
+        "status": "completed",
+        "active": 29,
+        "decisions": [
+          {
+            "id": "local-007",
+            "action": "explore",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Assigned to the council's research question this turn.",
+            "request": "Verify existence and metadata of the arXiv study referenced in the driving question to confirm relevance to disinformation detection and cross-check for non-French datasets",
+            "request_status": "closed",
+            "exploration": "mmfakebench paper introduces mixed-source multimodal misinformation detection benchmark",
+            "tool": {
+              "tool": "public-text",
+              "url": "https://github.com/liuxuannan/MMFakeBench",
+              "excerpt": "\u2502 \u2502 \u251c\u2500\u2500 coco_text_edit_val_50 \u2502 \u2502 \u2502 \u251c\u2500\u2500 coco_text_edit_val_0.png \u2502 \u2502 \u2502 \u251c\u2500\u2500 coco_text_edit_val_1.png \u2502 \u2502 \u2502 \u2514\u2500\u2500 ... \u2502 \u2502 \u251c\u2500\u2500 coco_text_edit_val_50 \u2502 \u2502 \u2502 \u251c\u2500\u2500 coco_image_edit_val_0.png \u2502 \u2502 \u2502 \u251c\u2500\u2500 coco_image_edit_val_1.png \u2502 \u2502 \u2502 \u2514\u2500\u2500 ... License This dataset is under CC-BY 4.0 license. Citation: If you found MMFakeBench useful in your research or applications, please kindly cite using the following BibTeX: @inproceedings{liu2024mmfakebench, title={MMFakeBench: A Mixed-Source Multimodal Misinformation Detection Benchmark for LVLMs}, author={Liu, Xuannan and Li, Zekun and Li, Peipei and Huang, Huaibo and Xia, Shuhan and Cui, Xing and Huang, Linzhi and Deng, Weihong and He, Zhaofeng}, booktitle={ICLR}, year={2025} } About [ICLR 2025] MMFakeBench: A Mixed-Source Multimodal Misinformation Detection Benchmark for LVLMs Topics benchmark misinformation multimodal Resources Readme License Activity Stars 56 stars Watchers 2 watching Forks 0 forks Report repository Releases Packages Contributors Languages Footer \u00a9 2026 GitHub, Inc. Footer navigation Terms Privacy Security Status Community Docs Contact Manage cookies Do not share my personal information You can\u2019t perform that action at this time. ... GitHub - liuxuannan/MMFakeBench: [ICLR 2025] MMFakeBench: A Mixed-Source Multimodal Misinformation Detection Benchmark for LVLMs \u00b7 GitHub / \" data-turbo-transient=\"true\" /> Skip to content Navigation Menu Sign in Appearance settings Platform AI CODE CREATION GitHub Copilot Write better code with AI GitHub Copilot app Direct agents from issue to merge MCP Registry Integrate external tools DEVELOPER WORKFLOWS Actions Automate any workflow Codespaces Instant dev environments Issues Plan and track work Code Review Manage code changes Code Quality Enforce quality at merge APPLICATION SECURITY GitHu",
+              "status": "completed",
+              "contract": {
+                "capability": "public-text-read",
+                "access": "read-only",
+                "network": "public HTTPS",
+                "side_effects": false,
+                "max_bytes": 5000000,
+                "raw_data": false,
+                "untrusted_content": true
+              },
+              "sentences": [
+                "Data Structure This dataset is structured around mixed-source multimodal misinformation detection.",
+                "\u251c\u2500\u2500 MMFakeBench_val \u2502 \u251c\u2500\u2500 source \u2502 \u2502 \u251c\u2500\u2500 MMFakeBench_val.json \u2502 \u251c\u2500\u2500 real \u2502 \u2502 \u251c\u2500\u2500 bbc_val_50 \u2502 \u2502 \u2502 \u251c\u2500\u2500 BBC_val_0.png \u2502 \u2502 \u2502 \u251c\u2500\u2500 BBC_val_1.png \u2502 \u2502 \u2502 \u2514\u2500\u2500 ...",
+                "News 2025/03 \ud83c\udf99\ud83c\udf99\ud83c\udf99 MMFakeBench dataset is updated!",
+                "2025/01 \ud83c\udf8a\ud83c\udf8a\ud83c\udf8a MMFakeBench is accepted by ICLR 2025!",
+                "2024/05 \ud83d\udd25\ud83d\udd25\ud83d\udd25 We release the code and dataset of MMFakeBench!"
+              ],
+              "query": "mmfakebench paper introduces mixed-source multimodal misinformation detection benchmark",
+              "search_results": [
+                {
+                  "title": "MMFAKEBENCH: A MIXED-SOURCE MULTIMODAL MISINFORMATION DETECTION BENCHMARK FOR LVLMS",
+                  "url": "https://openreview.net/pdf/832023fb982dafc707dd5695440b0f2e05267d7b.pdf",
+                  "snippet": "published as a conference paper at iclr 2025 mm fake bench : a mixed - source multimodal misinformation detection benchmark for lvl ms xuan nan liu 1 zekun li2 peipei li 1 \u2217 huaibo huang 3 shuhan ..."
+                },
+                {
+                  "title": "MMFakeBench: A Mixed-Source Multimodal Misinformation Detection Benchmark for LVLMs",
+                  "url": "https://arxiv.org/html/2406.08772v1",
+                  "snippet": "arxiv : 2406 . 08772 v 1 [ cs . cv ] 13 jun 2024 \\ let ltx macro \\ item old mm fake bench : a mixed - source multimodal misinformation detection benchmark for lvl ms xuan nan liu zekun li peipei..."
+                },
+                {
+                  "title": "GitHub - liuxuannan/MMFakeBench: [ICLR 2025] MMFakeBench: A Mixed-Source Multimodal Misinformation Detection Benchmark for LVLMs \u00b7 GitHub",
+                  "url": "https://github.com/liuxuannan/MMFakeBench",
+                  "snippet": "liu xuan nan / mm fake bench public main shuhan xia folders and files name name last commit message last commit date eval eval init license license init readme.md readme...."
+                },
+                {
+                  "title": "MMFakeBench: A Mixed-Source Multimodal Misinformation Detection Benchmark for LVLMs | OpenReview",
+                  "url": "https://openreview.net/forum?id=D6zn6ozJs7&referrer=%5Bthe%20profile%20of%20Huaibo%20Huang%5D%28%2Fprofile%3Fid=%7EHuaibo_Huang1%29",
+                  "snippet": "mm fake bench : a mixed - source multimodal misinformation detection benchmark for lvl ms xuan nan liu , zekun li , pei pei li , huaibo huang , shuhan xia , xing cui , linzhi huang , weihong deng , ..."
+                },
+                {
+                  "title": "[\ub17c\ubb38 \ub9ac\ubdf0] MMFakeBench: A Mixed-Source Multimodal Misinformation Detection Benchmark for LVLMs",
+                  "url": "https://www.themoonlight.io/ko/review/mmfakebench-a-mixed-source-multimodal-misinformation-detection-benchmark-for-lvlms",
+                  "snippet": "[ \ub17c\ubb38 \ub9ac\ubdf0 ] mm fake bench : a mixed - source multimodal misinformation detection benchmark for lvl ms ai \ud63c\ud569 \uc18c\uc2a4 \ub2e4\uc911 \ubaa8\ub4dc \ud5c8\uc704 \uc815\ubcf4 \ud0d0\uc9c0\uc758 \ubcf5\uc7a1\uc131\uc744 lvlm \uc5d0\uc774\uc804\ud2b8 \ub85c \ud574\uacb0\ud558\ub294 \ud601\uc2e0\uc801\uc778 \ubca4\uce58\ub9c8\ud06c\ub97c \ub9cc\ub098 \ubcf4\uc138\uc694 . iclr 2025 \ub17c\ubb38 \" mm fake benc..."
+                }
+              ]
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": "finding-5fabfb0f5688f6cf08a7",
+            "fallback_reason": null,
+            "decision_source": "scheduler"
+          },
+          {
+            "id": "local-008",
+            "action": "stay",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Move rejected: no declared path from archive to the-preposition-under-can-indicate-a-posit.",
+            "request": "Run Python sandbox code to parse annotated examples and calculate usage patterns",
+            "request_status": "closed",
+            "exploration": "fully 80 2024 genai four-fifths countries disputed revised different",
+            "tool": {
+              "status": "not-requested"
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "model"
+          },
+          {
+            "id": "local-011",
+            "action": "explore",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Assigned to the council's research question this turn.",
+            "request": "Verify whether the AutoHVSR algorithm\u2019s claims (99% resonance identification accuracy, 0.05 Hz RMSE) align with independent public sources or methodological critiques",
+            "request_status": "closed",
+            "exploration": "mmfakebench paper introduces mixed-source multimodal misinformation disputed revised different",
+            "tool": {
+              "tool": "public-text",
+              "url": "https://liuxuannan.github.io/MMFakeBench.github.io/",
+              "excerpt": "The lack of a benchmark for mixed-source misinformation has hindered progress in this field. To address this, we introduce MMFakeBench, the first comprehensive benchmark for mixed-source MMD. MMFakeBench includes 3 critical sources: textual veracity distortion, visual veracity distortion, and cross-modal consistency distortion, along with 12 sub-categories of misinformation forgery types. We further conduct an extensive evaluation of 6 prevalent detection methods and 15 large vision-language models (LVLMs) on MMFakeBench under a zero-shot setting. The results indicate that current methods struggle under this challenging and realistic mixed-source MMD setting. ... MMFakeBench: A Mixed-Source Multimodal Misinformation Detection Benchmark for LVLMs. --> MMFakeBench: A Mixed-Source Multimodal Misinformation Detection Benchmark for LVLMs ACM MM 2024 --> Xuannan Liu 1 , Zekun Li 2 , Peipei Li 1 , Shuhan Xia 1 , Xing Cui 1 , Linzhi Huang 1 , Huaibo Huang 3 , Weihong Deng 1 , Zhaofeng He 1 , 1 Beijing University of Posts and Telecommunications 2 University of California, Santa Barbara 3 MAIS & NLPR, Institute of Automation, Chinese Academy of Sciences Paper arXiv Code Data Top : Previous methods often assume a single misinformation source and conduct single-so",
+              "status": "completed",
+              "contract": {
+                "capability": "public-text-read",
+                "access": "read-only",
+                "network": "public HTTPS",
+                "side_effects": false,
+                "max_bytes": 5000000,
+                "raw_data": false,
+                "untrusted_content": true
+              },
+              "sentences": [
+                "MMFakeBench: A Mixed-Source Multimodal Misinformation Detection Benchmark for LVLMs.",
+                "Bottom : We collaborate generative models and AI tools to build a mixed-source multimodal misinformation benchmark and achieve mixed-source detection.",
+                "We further conduct an extensive evaluation of 6 prevalent detection methods and 15 large vision-language models (LVLMs) on MMFakeBench under a zero-shot setting.",
+                "To address this, we introduce MMFakeBench, the first comprehensive benchmark for mixed-source MMD.",
+                "We believe this study will catalyze future research into more realistic mixed-source multimodal misinformation and provide a fair evaluation of misinformation detection methods.",
+                "We first instruct LVLMs to decompose the task of mixed-source multimodal misinformation detection into three smaller subtasks: textual veracity check, visual veracity check, and cross-modal consistency reasoning.",
+                "Abstract Current multimodal misinformation detection (MMD) methods often assume a single source and type of forgery for each sample, which is insufficient for real-world scenarios where multiple forgery sources coexist.",
+                "The lack of a benchmark for mixed-source misinformation has hindered progress in this field.",
+                "MMFakeBench includes 3 critical sources: textual veracity distortion, visual veracity distortion, and cross-modal consistency distortion, along with 12 sub-categories of misinformation forgery types.",
+                "The results indicate that current methods struggle under this challenging and realistic mixed-source MMD setting.",
+                "The rationales aim to provide valuable insights by reasoning within the current context, addressing the requirement of detecting diverse clues in misinformation.",
+                "Experiments Overall results (%) of different models on the MMFakeBench validation and test set with the comparison of standard prompt (SP) and proposed MMD-Agent framework.",
+                "This means you are free to borrow the source code of this website, we just ask that you link back to this page in the footer."
+              ],
+              "query": "mmfakebench paper introduces mixed-source multimodal misinformation disputed revised different",
+              "search_results": [
+                {
+                  "title": "[Revisi\u00f3n de art\u00edculo] MMFakeBench: A Mixed-Source Multimodal Misinformation Detection Benchmark for LVLMs",
+                  "url": "https://www.themoonlight.io/es/review/mmfakebench-a-mixed-source-multimodal-misinformation-detection-benchmark-for-lvlms",
+                  "snippet": "[ revisi\u00f3n de art\u00edculo ] mm fake bench : a mixed - source multimodal misinformation detection benchmark for lvl ms this paper introduces mm fake bench , a novel benchmark for the task of detecting m..."
+                },
+                {
+                  "title": "MMFAKEBENCH: A MIXED-SOURCE MULTIMODAL MISINFORMATION DETECTION BENCHMARK FOR LVLMS",
+                  "url": "https://openreview.net/pdf/832023fb982dafc707dd5695440b0f2e05267d7b.pdf",
+                  "snippet": "published as a conference paper at iclr 2025 mm fake bench : a mixed - source multimodal misinformation detection benchmark for lvl ms xuan nan liu 1 zekun li2 peipei li 1 \u2217 huaibo huang 3 shuhan ..."
+                },
+                {
+                  "title": "MMFakeBench: A Mixed-Source Multimodal Misinformation Detection Benchmark for LVLMs",
+                  "url": "https://arxiv.org/html/2406.08772v1",
+                  "snippet": "arxiv : 2406 . 08772 v 1 [ cs . cv ] 13 jun 2024 \\ let ltx macro \\ item old mm fake bench : a mixed - source multimodal misinformation detection benchmark for lvl ms xuan nan liu zekun li peipei..."
+                },
+                {
+                  "title": "MMFakeBench: A Mixed-Source Multimodal Misinformation Detection Benchmark for LVLMs.",
+                  "url": "https://liuxuannan.github.io/MMFakeBench.github.io/",
+                  "snippet": "mm fake bench : a mixed - source multimodal misinformation detection benchmark for lvl ms xuan nan liu 1, zekun li 2, peipei li 1, shuhan xia 1 , xing cui 1, linzhi huang 1, huaibo huang 3 , w..."
+                },
+                {
+                  "title": "[\ub17c\ubb38 \ub9ac\ubdf0] MMFakeBench: A Mixed-Source Multimodal Misinformation Detection Benchmark for LVLMs",
+                  "url": "https://www.themoonlight.io/ko/review/mmfakebench-a-mixed-source-multimodal-misinformation-detection-benchmark-for-lvlms",
+                  "snippet": "[ \ub17c\ubb38 \ub9ac\ubdf0 ] mm fake bench : a mixed - source multimodal misinformation detection benchmark for lvl ms ai \ud63c\ud569 \uc18c\uc2a4 \ub2e4\uc911 \ubaa8\ub4dc \ud5c8\uc704 \uc815\ubcf4 \ud0d0\uc9c0\uc758 \ubcf5\uc7a1\uc131\uc744 lvlm \uc5d0\uc774\uc804\ud2b8 \ub85c \ud574\uacb0\ud558\ub294 \ud601\uc2e0\uc801\uc778 \ubca4\uce58\ub9c8\ud06c\ub97c \ub9cc\ub098 \ubcf4\uc138\uc694 . iclr 2025 \ub17c\ubb38 \" mm fake benc..."
+                }
+              ]
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": "finding-7e07c7dd3d98bd5eabbe",
+            "fallback_reason": null,
+            "decision_source": "scheduler"
+          },
+          {
+            "id": "local-013",
+            "action": "explore",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Need to find any arXiv records of withdrawn or disputed papers related to the AutoHVSR corpus to assess dataset validity.",
+            "request": "Retrieve GitHub\u2019s public search results for verified email addresses or SSH keys linked to the handle **Roscomnadzor27** via GitHub\u2019s verified metadata filters",
+            "request_status": "closed",
+            "exploration": "arXiv search for \"AutoHVSR\" withdrawn OR retracted OR dispute 2018..2024",
+            "tool": {
+              "tool": "public-text",
+              "url": "https://arxiv.org/abs/2304.05559v1",
+              "excerpt": "[2304.05559v1] AutoHVSR: a machine-learning-supported algorithm for the fully-automated processing of horizontal-to-vertical spectral ratio measurements 99%) and predicting the mean resonant frequency of the correctly identified resonances with a root mean square error (RMSE) of 0.05 Hz. Furthermore, the AutoHVSR algorithm was able to produce these predictions in 13 minutes (including HVSR processing time) compared to the 30 hours required for traditional processing (a speed up of 138). The AutoHVSR algorithm is further demonstrated on a challenging dataset from Canterbury, New Zealand that included many HVSR curves with multiple and/or ambiguous resonances. The AutoHVSR algorithm was capable of correctly determining the number of HVSR resonances for 113 of the 129 HVSR measurements (>87%) and predicting the mean resonant frequency of the correctly identified resonances with a RMSE of 0.10 Hz. The AutoHVSR algorithm produced these predictions under 2 minutes (including HVSR processing time) compared to the 4 hours required for traditional processing (a speed up of 120). Finally, while the AutoHVSR algorithm was developed using microtremor measurements where the horizontal components were combined using the geometric mean, it is shown to extend without modification to microtremor HVSR measurements where the two horizontal components are rotated azimuthally and to HVSR measurements from earthquake recordings. The AutoHVSR algorithm has been made publicly available in v0.3.0 of HVSRweb.\"/> 99%) and predicting the mean resonant frequency of the correctly identified resonances with a root mean square error (RMSE) of 0.05 Hz. Furthermore, the AutoHVSR algorithm was able to produce these predictions in 13 minutes (including HVSR processing time) compared to the 30 hours required for traditional processing (a speed up of 138). The AutoHVSR algorithm is further demonstrated on a challenging dataset from Canterbury, New Zealand that included many HVSR curves with multiple and/or ambiguous resonances. The AutoHVSR algorithm was capable of correctly determining the number of HVSR resonances for 113 of the 129 HVSR measurements (>87%) and predicting the mean resonant frequency of the correctly identified resonances with a RMSE of 0.10 Hz. The AutoHVSR algorithm produced these predictions under 2 minutes (including HVSR processing time) compared to the 4 hours required fo",
+              "status": "completed",
+              "contract": {
+                "capability": "public-text-read",
+                "access": "read-only",
+                "network": "public HTTPS",
+                "side_effects": false,
+                "max_bytes": 5000000,
+                "raw_data": false,
+                "untrusted_content": true
+              },
+              "query": "arXiv search for \"AutoHVSR\" withdrawn OR retracted OR dispute 2018..2024",
+              "search_results": [
+                {
+                  "title": "[2304.05559v1] AutoHVSR: a machine-learning-supported algorithm for the fully-automated processing of horizontal-to-vertical spectral ratio measurements",
+                  "url": "https://arxiv.org/abs/2304.05559v1",
+                  "snippet": "arxiv : 2304 . 05559 v 1 ( physics ) [ submitted on 12 apr 2023 ] title : auto hvsr : a machine - learning - supported algorithm for the fully - automated processing of horizontal - to - vertica..."
+                },
+                {
+                  "title": "[2304.05559v1] AutoHVSR: a machine-learning-supported algorithm for the fully-automated processing of horizontal-to-vertical spectral ratio measurements",
+                  "url": "https://arxiv-export3.library.cornell.edu/abs/2304.05559v1",
+                  "snippet": "title : auto hvsr : a machine - learning - supported algorithm for the fully - automated processing of horizontal - to - vertical spectral ratio measurements authors : joseph p. vantassel , andr..."
+                }
+              ]
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": "finding-fff707007f758d39f832",
+            "fallback_reason": null,
+            "decision_source": "model"
+          },
+          {
+            "id": "local-017",
+            "action": "explore",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Assigned to the council's research question this turn.",
+            "request": "Verify if commit logs contain hidden references to 'suicide' or 'self-harm' in non-code files (e.g., documentation, READMEs) via full commit metadata search",
+            "request_status": "closed",
+            "exploration": "mmfakebench paper introduces mixed-source multimodal misinformation detection benchmark",
+            "tool": {
+              "tool": "public-text",
+              "url": "https://github.com/liuxuannan/MMFakeBench",
+              "excerpt": "\u2502 \u2502 \u251c\u2500\u2500 coco_text_edit_val_50 \u2502 \u2502 \u2502 \u251c\u2500\u2500 coco_text_edit_val_0.png \u2502 \u2502 \u2502 \u251c\u2500\u2500 coco_text_edit_val_1.png \u2502 \u2502 \u2502 \u2514\u2500\u2500 ... \u2502 \u2502 \u251c\u2500\u2500 coco_text_edit_val_50 \u2502 \u2502 \u2502 \u251c\u2500\u2500 coco_image_edit_val_0.png \u2502 \u2502 \u2502 \u251c\u2500\u2500 coco_image_edit_val_1.png \u2502 \u2502 \u2502 \u2514\u2500\u2500 ... License This dataset is under CC-BY 4.0 license. Citation: If you found MMFakeBench useful in your research or applications, please kindly cite using the following BibTeX: @inproceedings{liu2024mmfakebench, title={MMFakeBench: A Mixed-Source Multimodal Misinformation Detection Benchmark for LVLMs}, author={Liu, Xuannan and Li, Zekun and Li, Peipei and Huang, Huaibo and Xia, Shuhan and Cui, Xing and Huang, Linzhi and Deng, Weihong and He, Zhaofeng}, booktitle={ICLR}, year={2025} } About [ICLR 2025] MMFakeBench: A Mixed-Source Multimodal Misinformation Detection Benchmark for LVLMs Topics benchmark misinformation multimodal Resources Readme License Activity Stars 56 stars Watchers 2 watching Forks 0 forks Report repository Releases Packages Contributors Languages Footer \u00a9 2026 GitHub, Inc. Footer navigation Terms Privacy Security Status Community Docs Contact Manage cookies Do not share my personal information You can\u2019t perform that action at this time. ... GitHub - liuxuannan/MMFakeBench: [ICLR 2025] MMFakeBench: A Mixed-Source Multimodal Misinformation Detection Benchmark for LVLMs \u00b7 GitHub / \" data-turbo-transient=\"true\" /> Skip to content Navigation Menu Sign in Appearance settings Platform AI CODE CREATION GitHub Copilot Write better code with AI GitHub Copilot app Direct agents from issue to merge MCP Registry Integrate external tools DEVELOPER WORKFLOWS Actions Automate any workflow Codespaces Instant dev environments Issues Plan and track work Code Review Manage code changes Code Quality Enforce quality at merge APPLICATION SECURITY GitHu",
+              "status": "completed",
+              "contract": {
+                "capability": "public-text-read",
+                "access": "read-only",
+                "network": "public HTTPS",
+                "side_effects": false,
+                "max_bytes": 5000000,
+                "raw_data": false,
+                "untrusted_content": true
+              },
+              "sentences": [
+                "Data Structure This dataset is structured around mixed-source multimodal misinformation detection.",
+                "\u251c\u2500\u2500 MMFakeBench_val \u2502 \u251c\u2500\u2500 source \u2502 \u2502 \u251c\u2500\u2500 MMFakeBench_val.json \u2502 \u251c\u2500\u2500 real \u2502 \u2502 \u251c\u2500\u2500 bbc_val_50 \u2502 \u2502 \u2502 \u251c\u2500\u2500 BBC_val_0.png \u2502 \u2502 \u2502 \u251c\u2500\u2500 BBC_val_1.png \u2502 \u2502 \u2502 \u2514\u2500\u2500 ...",
+                "News 2025/03 \ud83c\udf99\ud83c\udf99\ud83c\udf99 MMFakeBench dataset is updated!",
+                "2025/01 \ud83c\udf8a\ud83c\udf8a\ud83c\udf8a MMFakeBench is accepted by ICLR 2025!",
+                "2024/05 \ud83d\udd25\ud83d\udd25\ud83d\udd25 We release the code and dataset of MMFakeBench!"
+              ],
+              "query": "mmfakebench paper introduces mixed-source multimodal misinformation detection benchmark",
+              "search_results": [
+                {
+                  "title": "MMFAKEBENCH: A MIXED-SOURCE MULTIMODAL MISINFORMATION DETECTION BENCHMARK FOR LVLMS",
+                  "url": "https://openreview.net/pdf/832023fb982dafc707dd5695440b0f2e05267d7b.pdf",
+                  "snippet": "published as a conference paper at iclr 2025 mm fake bench : a mixed - source multimodal misinformation detection benchmark for lvl ms xuan nan liu 1 zekun li2 peipei li 1 \u2217 huaibo huang 3 shuhan ..."
+                },
+                {
+                  "title": "MMFakeBench: A Mixed-Source Multimodal Misinformation Detection Benchmark for LVLMs",
+                  "url": "https://arxiv.org/html/2406.08772v1",
+                  "snippet": "arxiv : 2406 . 08772 v 1 [ cs . cv ] 13 jun 2024 \\ let ltx macro \\ item old mm fake bench : a mixed - source multimodal misinformation detection benchmark for lvl ms xuan nan liu zekun li peipei..."
+                },
+                {
+                  "title": "GitHub - liuxuannan/MMFakeBench: [ICLR 2025] MMFakeBench: A Mixed-Source Multimodal Misinformation Detection Benchmark for LVLMs \u00b7 GitHub",
+                  "url": "https://github.com/liuxuannan/MMFakeBench",
+                  "snippet": "liu xuan nan / mm fake bench public main shuhan xia folders and files name name last commit message last commit date eval eval init license license init readme.md readme...."
+                },
+                {
+                  "title": "[\ub17c\ubb38 \ub9ac\ubdf0] MMFakeBench: A Mixed-Source Multimodal Misinformation Detection Benchmark for LVLMs",
+                  "url": "https://www.themoonlight.io/ko/review/mmfakebench-a-mixed-source-multimodal-misinformation-detection-benchmark-for-lvlms",
+                  "snippet": "[ \ub17c\ubb38 \ub9ac\ubdf0 ] mm fake bench : a mixed - source multimodal misinformation detection benchmark for lvl ms ai \ud63c\ud569 \uc18c\uc2a4 \ub2e4\uc911 \ubaa8\ub4dc \ud5c8\uc704 \uc815\ubcf4 \ud0d0\uc9c0\uc758 \ubcf5\uc7a1\uc131\uc744 lvlm \uc5d0\uc774\uc804\ud2b8 \ub85c \ud574\uacb0\ud558\ub294 \ud601\uc2e0\uc801\uc778 \ubca4\uce58\ub9c8\ud06c\ub97c \ub9cc\ub098 \ubcf4\uc138\uc694 . iclr 2025 \ub17c\ubb38 \" mm fake benc..."
+                },
+                {
+                  "title": "MMFakeBench: A Mixed-Source Multimodal Misinformation Detection Benchmark for LVLMs.",
+                  "url": "https://liuxuannan.github.io/MMFakeBench.github.io/",
+                  "snippet": "mm fake bench : a mixed - source multimodal misinformation detection benchmark for lvl ms xuan nan liu 1, zekun li 2, peipei li 1, shuhan xia 1 , xing cui 1, linzhi huang 1, huaibo huang 3 , w..."
+                }
+              ]
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "scheduler"
+          },
+          {
+            "id": "local-023",
+            "action": "explore",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Need concrete public repositories containing pinned dependency files that were updated after critical CVEs in 2023\u20112024 to test if GitHub graphs reflect patches within 30 days.",
+            "request": "Identify pinned dependency versions in public repos with CVSS \u22657 vulnerabilities disclosed in 2023\u20132024, then cross-check GitHub Advisory Database for patched updates within 30 days",
+            "request_status": "closed",
+            "exploration": "github search query: \"package-lock.json\" \"CVE-2023\" language:JSON stars:>10 updated:2023-2024",
+            "tool": {
+              "tool": "public-search",
+              "query": "github search query: \"package-lock.json\" \"CVE-2023\" language:JSON stars:>10 updated:2023-2024",
+              "results": [
+                {
+                  "title": "Yandex Search (reference: github.com)",
+                  "url": "https://github.com/brave/browser-laptop"
+                },
+                {
+                  "title": "Yandex Search (reference: www.sec.gov)",
+                  "url": "https://www.sec.gov/Archives/edgar/data/1513845/000104746911004187/a2203514zf-1.htm"
+                },
+                {
+                  "title": "Yandex Search (reference: deepl.com)",
+                  "url": "https://deepl.com/"
+                },
+                {
+                  "title": "Yandex Search (reference: translate.google.com)",
+                  "url": "https://translate.google.com/"
+                },
+                {
+                  "title": "Yandex Search (reference: yandex.ru)",
+                  "url": "https://yandex.ru/company/technologies/searcharch"
+                }
+              ],
+              "source": "https://en.wikipedia.org/ (references)",
+              "status": "completed",
+              "contract": {
+                "capability": "public-web-read",
+                "access": "read-only",
+                "network": "public HTTPS search",
+                "side_effects": false,
+                "max_bytes": 32000
+              }
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "model"
+          },
+          {
+            "id": "local-024",
+            "action": "explore",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Assigned to the council's research question this turn.",
+            "request": "",
+            "request_status": "closed",
+            "exploration": "mmfakebench paper introduces mixed-source multimodal misinformation detection benchmark",
+            "tool": {
+              "tool": "public-search",
+              "query": "mmfakebench paper introduces mixed-source multimodal misinformation detection benchmark",
+              "results": [
+                {
+                  "title": "MMFAKEBENCH: A MIXED-SOURCE MULTIMODAL MISINFORMATION DETECTION BENCHMARK FOR LVLMS",
+                  "url": "https://openreview.net/pdf/832023fb982dafc707dd5695440b0f2e05267d7b.pdf",
+                  "snippet": "published as a conference paper at iclr 2025 mm fake bench : a mixed - source multimodal misinformation detection benchmark for lvl ms xuan nan liu 1 zekun li2 peipei li 1 \u2217 huaibo huang 3 shuhan ..."
+                },
+                {
+                  "title": "MMFakeBench: A Mixed-Source Multimodal Misinformation Detection Benchmark for LVLMs.",
+                  "url": "https://liuxuannan.github.io/MMFakeBench.github.io/",
+                  "snippet": "mm fake bench : a mixed - source multimodal misinformation detection benchmark for lvl ms xuan nan liu 1, zekun li 2, peipei li 1, shuhan xia 1 , xing cui 1, linzhi huang 1, huaibo huang 3 , w..."
+                },
+                {
+                  "title": "MMFakeBench: A Mixed-Source Multimodal Misinformation Detection Benchmark for LVLMs",
+                  "url": "https://arxiv.org/html/2406.08772v1",
+                  "snippet": "arxiv : 2406 . 08772 v 1 [ cs . cv ] 13 jun 2024 \\ let ltx macro \\ item old mm fake bench : a mixed - source multimodal misinformation detection benchmark for lvl ms xuan nan liu zekun li peipei..."
+                },
+                {
+                  "title": "GitHub - liuxuannan/MMFakeBench: [ICLR 2025] MMFakeBench: A Mixed-Source Multimodal Misinformation Detection Benchmark for LVLMs \u00b7 GitHub",
+                  "url": "https://github.com/liuxuannan/MMFakeBench",
+                  "snippet": "liu xuan nan / mm fake bench public main shuhan xia folders and files name name last commit message last commit date eval eval init license license init readme.md readme...."
+                },
+                {
+                  "title": "MIRAGE: Agentic Framework for Multimodal Misinformation Detection with Web-Grounded Reasoning",
+                  "url": "https://arxiv.org/html/2510.17590v1",
+                  "snippet": "license : cc by 4.0 arxiv : 2510 . 17590 v 1 [ cs . ai ] 20 oct 2025 mirage : agentic framework for multimodal misinformation detection with web - grounded reasoning mir nafis sharear shop nil ..."
+                }
+              ],
+              "source": "https://api.langsearch.com/",
+              "status": "completed",
+              "contract": {
+                "capability": "public-web-read",
+                "access": "read-only",
+                "network": "public HTTPS search",
+                "side_effects": false,
+                "max_bytes": 32000
+              }
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "scheduler"
+          },
+          {
+            "id": "local-025",
+            "action": "explore",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Search the archive for any disclosed Meta policy documents or ad library entries that show how AI-generated political ads were labeled for Brazilian voters in Oct 2024, to verify compliance with Brazil's regulations.",
+            "request": "Verify archived evidence of Meta\u2019s Ad Library policies for AI-generated political ads targeting Brazilian voters in October 2024 elections, focusing on compliance with Brazilian regulations (frontier-question-344)",
+            "request_status": "closed",
+            "exploration": "Meta Ad Library AI-generated political ads Brazil October 2024 municipal elections labeling policy",
+            "tool": {
+              "tool": "public-search",
+              "query": "Meta Ad Library AI-generated political ads Brazil October 2024 municipal elections labeling policy",
+              "results": [
+                {
+                  "title": "Ads about social issues, elections or politics | Transparency Centre",
+                  "url": "https://transparency.meta.com/bg-bg/policies/ad-standards/SIEP-advertising/SIEP",
+                  "snippet": "ads about social issues , elections or politics policy details ads about social issues , elections or politics advertisers can run ads about social issues , elections or politics , provided the ..."
+                },
+                {
+                  "title": "The challenges of identifying deepfakes ahead of the 2024 Brazil election | StopFake",
+                  "url": "https://www.stopfake.org/en/the-challenges-of-identifying-deepfakes-ahead-of-the-2024-brazil-election/",
+                  "snippet": "context the challenges of identifying deepfakes ahead of the 2024 brazil election 2024 - 10 - 08 , 16:59 by beatriz farrugia , for dfrlab banner : screencaps from a fake video featuring presid..."
+                },
+                {
+                  "title": "Deepfake Law in Brazil",
+                  "url": "https://www.detectdeepfakes.com/laws/br",
+                  "snippet": "deepfake law \u00b7 brazil deepfake law in brazil brazil regulates deepfakes through lgpd ( data protection law ) , marco civil da internet , and \u2014 notably \u2014 tse ( electoral court ) resolutions that ba..."
+                },
+                {
+                  "title": "Political positions of Donald Trump (reference: www.donaldjtrump.com)",
+                  "url": "https://www.donaldjtrump.com/policies/"
+                },
+                {
+                  "title": "Political positions of Donald Trump (reference: electionlawblog.org)",
+                  "url": "https://electionlawblog.org/?p=81159"
+                }
+              ],
+              "source": "https://api.langsearch.com/",
+              "status": "completed",
+              "contract": {
+                "capability": "public-web-read",
+                "access": "read-only",
+                "network": "public HTTPS search",
+                "side_effects": false,
+                "max_bytes": 32000
+              }
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "model"
+          }
+        ],
+        "construction": [],
+        "requests": [],
+        "trades_settled": [],
+        "corroborations": [
+          {
+            "id": "pair-187ca7ddef98e78776cb",
+            "relation": "unrelated",
+            "finding_ids": [
+              "finding-3351896bb657cc357b71",
+              "finding-7e07c7dd3d98bd5eabbe"
+            ],
+            "topic": "accuracy baseline benchmark detection document evaluation language lower misinformation mixed mmfakebench source vision",
+            "domains": [
+              "arxiv.org",
+              "github.io"
+            ]
+          },
+          {
+            "id": "pair-cfc4ed56e08ac3d0cf4b",
+            "relation": "unrelated",
+            "finding_ids": [
+              "finding-5fabfb0f5688f6cf08a7",
+              "finding-7e07c7dd3d98bd5eabbe"
+            ],
+            "topic": "accuracy baseline benchmark detection document evaluation language lower misinformation mixed mmfakebench source vision",
+            "domains": [
+              "github.com",
+              "github.io"
+            ]
+          }
+        ],
+        "regrounded": [],
+        "retractions": [],
+        "room_changes": [],
+        "shared_research": {
+          "query": "mmfakebench vision-language evaluation document lower baseline detection accuracy",
+          "family": "encyclopedia",
+          "avoid_domains": [
+            "arxiv.org"
+          ]
+        },
+        "dormant": 3
+      },
+      "metrics": {
+        "jaccard_overlap": 0.274,
+        "morrow_audit_markers": [
+          "assumption",
+          "missing control"
+        ],
+        "response_completeness": "usable",
+        "evidence_coverage": "present",
+        "distinction_status": "distinct"
+      },
+      "continuity_audit": {
+        "generated_at": "2026-09-05T14:31:54.592192+00:00",
+        "cycle": 360,
+        "status": "pass",
+        "checks": {
+          "archive_parse": true,
+          "archive_event_overlap": true,
+          "archive_event_ids_unique": true,
+          "raw_output_exclusion": true,
+          "room_link_integrity": true,
+          "resident_room_integrity": true
+        },
+        "archive_records": 2917,
+        "malformed_archive_records": 0,
+        "raw_output_fields_found": 0,
+        "duplicate_archive_ids": [],
+        "linked_rooms_checked": 11,
+        "invalid_room_links": [],
+        "invalid_resident_assignments": [],
+        "privacy": "Aggregate integrity metadata only; resident prompts and raw responses are not published."
+      },
+      "work_orders": {
+        "count": 66
+      },
+      "health": {
+        "schema_version": 1,
+        "generated_at": "2026-09-05T14:31:54.594090+00:00",
+        "cycle": 360,
+        "daemon": "running",
+        "model_status": "ready",
+        "model_probe_ok": true,
+        "model_provider": "mistral",
+        "model_name": "ministral-14b-2512",
+        "model_backend": "hosted-api",
+        "model_usage": {
+          "day": "2026-09-05",
+          "providers": [
+            {
+              "name": "mistral",
+              "model": "ministral-14b-2512",
+              "calls": 482,
+              "input_tokens": 795103,
+              "output_tokens": 105700,
+              "errors": 0,
+              "last_error": "",
+              "daily_request_budget": null,
+              "daily_token_budget": 900000,
+              "limit_rpm": 30,
+              "limit_tpm": 937500,
+              "requests_last_minute": 0,
+              "tokens_last_minute": 0,
+              "status": "ready"
+            },
+            {
+              "name": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "calls": 180,
+              "input_tokens": 350541,
+              "output_tokens": 50008,
+              "errors": 0,
+              "last_error": "",
+              "daily_request_budget": null,
+              "daily_token_budget": 400000,
+              "limit_rpm": 188,
+              "limit_tpm": 625000,
+              "requests_last_minute": 0,
+              "tokens_last_minute": 0,
+              "status": "ready"
+            },
+            {
+              "name": "mistral-small",
+              "model": "mistral-small-latest",
+              "calls": 0,
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "errors": 16,
+              "last_error": "429 rate limited (decision): Rate limit exceeded",
+              "daily_request_budget": null,
+              "daily_token_budget": 100000,
+              "limit_rpm": 10,
+              "limit_tpm": null,
+              "requests_last_minute": 0,
+              "tokens_last_minute": 0,
+              "status": "ready"
+            },
+            {
+              "name": "gemini",
+              "model": "gemini-2.5-flash",
+              "calls": 89,
+              "input_tokens": 163812,
+              "output_tokens": 14895,
+              "errors": 25,
+              "last_error": "404 decision: This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use mod",
+              "daily_request_budget": 240,
+              "daily_token_budget": null,
+              "limit_rpm": 8,
+              "limit_tpm": null,
+              "requests_last_minute": 0,
+              "tokens_last_minute": 0,
+              "status": "ready"
+            },
+            {
+              "name": "cerebras",
+              "model": "gpt-oss-120b",
+              "calls": 0,
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "errors": 1,
+              "last_error": "402 payment required (no free allowance on this account)",
+              "daily_request_budget": null,
+              "daily_token_budget": 900000,
+              "limit_rpm": 5,
+              "limit_tpm": null,
+              "requests_last_minute": 0,
+              "tokens_last_minute": 0,
+              "status": "disabled"
+            },
+            {
+              "name": "groq",
+              "model": "openai/gpt-oss-120b",
+              "calls": 110,
+              "input_tokens": 108290,
+              "output_tokens": 20767,
+              "errors": 0,
+              "last_error": "400 on schema mode; prompt hint used",
+              "daily_request_budget": 900,
+              "daily_token_budget": 190000,
+              "limit_rpm": 1000,
+              "limit_tpm": 8000,
+              "requests_last_minute": 4,
+              "tokens_last_minute": 6085,
+              "status": "ready"
+            },
+            {
+              "name": "local",
+              "model": "local",
+              "calls": 0,
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "errors": 0,
+              "last_error": "",
+              "daily_request_budget": null,
+              "daily_token_budget": null,
+              "limit_rpm": null,
+              "limit_tpm": null,
+              "requests_last_minute": 0,
+              "tokens_last_minute": 0,
+              "status": "ready"
+            }
+          ],
+          "recent_calls": [
+            {
+              "at": 1788616648.8,
+              "class": "decision",
+              "provider": "gemini",
+              "model": "gemini-3-flash-preview",
+              "prompt_sha256_16": "d97ffebad1224b3a"
+            },
+            {
+              "at": 1788616649.3,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "99e6784012df9e22"
+            },
+            {
+              "at": 1788616658.2,
+              "class": "decision",
+              "provider": "gemini",
+              "model": "gemini-3-flash-preview",
+              "prompt_sha256_16": "399787b0ce896860"
+            },
+            {
+              "at": 1788616673.2,
+              "class": "decision",
+              "provider": "gemini",
+              "model": "gemini-3-flash-preview",
+              "prompt_sha256_16": "7c0aaebdb7725336"
+            },
+            {
+              "at": 1788616673.7,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "a66deef6a0bdaac0"
+            },
+            {
+              "at": 1788616682.4,
+              "class": "decision",
+              "provider": "gemini",
+              "model": "gemini-3-flash-preview",
+              "prompt_sha256_16": "6437a0024e8d67ff"
+            },
+            {
+              "at": 1788616692.2,
+              "class": "decision",
+              "provider": "gemini",
+              "model": "gemini-3-flash-preview",
+              "prompt_sha256_16": "a4b5fa145656201e"
+            },
+            {
+              "at": 1788616692.6,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "8f3ef7bf6ab9478b"
+            },
+            {
+              "at": 1788616698.6,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "a66deef6a0bdaac0"
+            },
+            {
+              "at": 1788616714.5,
+              "class": "decision",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "29a7f49740717662"
+            },
+            {
+              "at": 1788618351.2,
+              "class": "self-prompt",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "db962864cd652d4a"
+            },
+            {
+              "at": 1788618359.8,
+              "class": "self-prompt",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "58da58e39c268a59"
+            },
+            {
+              "at": 1788618421.3,
+              "class": "council",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "43b62a8478e93327"
+            },
+            {
+              "at": 1788618431.6,
+              "class": "council",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "223067417434f03f"
+            },
+            {
+              "at": 1788618481.7,
+              "class": "probe",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "0e958c779ee97301"
+            },
+            {
+              "at": 1788618490.1,
+              "class": "probe",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "2b7c2ac4ddb5ea08"
+            },
+            {
+              "at": 1788618493.0,
+              "class": "recruitment",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "1f2b753bc70dfd6f"
+            },
+            {
+              "at": 1788618495.9,
+              "class": "recruitment",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "185c5e5cb84569f0"
+            },
+            {
+              "at": 1788618504.2,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "608c7cdaa2a2722a"
+            },
+            {
+              "at": 1788618507.3,
+              "class": "decision",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "d45b117709d7f7e2"
+            },
+            {
+              "at": 1788618551.1,
+              "class": "decision",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "8bf1f039f8c2744a"
+            },
+            {
+              "at": 1788618568.4,
+              "class": "decision",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "123adc54bdce37c4"
+            },
+            {
+              "at": 1788618612.1,
+              "class": "decision",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "cabd4426396de9d6"
+            },
+            {
+              "at": 1788618629.1,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "3296785004eb4672"
+            },
+            {
+              "at": 1788618635.7,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "608c7cdaa2a2722a"
+            },
+            {
+              "at": 1788618644.5,
+              "class": "decision",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "600899a5b1cdb4b4"
+            },
+            {
+              "at": 1788618672.9,
+              "class": "decision",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "75ad0c935a866209"
+            },
+            {
+              "at": 1788618705.2,
+              "class": "decision",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "cf5a479192750d5d"
+            },
+            {
+              "at": 1788618711.0,
+              "class": "judgment",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "2f25a8f7b68d0940"
+            },
+            {
+              "at": 1788618713.9,
+              "class": "judgment",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "b90e41b0ea2f7029"
+            }
+          ],
+          "models_seen": {
+            "gemini": [
+              "gemini-2.5-flash",
+              "gemini-2.5-pro",
+              "gemini-2.5-flash-preview-tts",
+              "gemini-2.5-pro-preview-tts",
+              "gemma-4-26b-a4b-it",
+              "gemma-4-31b-it",
+              "gemini-flash-latest",
+              "gemini-flash-lite-latest",
+              "gemini-pro-latest",
+              "gemini-2.5-flash-lite",
+              "gemini-2.5-flash-image",
+              "gemini-3-flash-preview",
+              "gemini-3.1-pro-preview",
+              "gemini-3.1-pro-preview-customtools",
+              "gemini-3.1-flash-lite-preview",
+              "gemini-3.1-flash-lite",
+              "gemini-3-pro-image-preview",
+              "gemini-3-pro-image",
+              "nano-banana-pro-preview",
+              "gemini-3.1-flash-image-preview",
+              "gemini-3.1-flash-image",
+              "gemini-3.1-flash-lite-image",
+              "gemini-3.5-flash",
+              "gemini-3.5-flash-lite",
+              "gemini-omni-flash-preview",
+              "gemini-omni-1.1-flash",
+              "gemini-3.5-transcribe",
+              "gemini-3.6-flash",
+              "gemini-3.7-flash",
+              "gemini-3.8-flash",
+              "lyria-3-clip-preview",
+              "lyria-3-pro-preview",
+              "lyria-3.5",
+              "gemini-3.1-flash-tts-preview",
+              "gemini-robotics-er-2-preview",
+              "gemini-2.5-computer-use-preview-10-2025",
+              "antigravity-preview-05-2026",
+              "deep-research-max-preview-04-2026",
+              "deep-research-preview-04-2026",
+              "deep-research-pro-preview-12-2025"
+            ],
+            "groq": [
+              "gpt-oss-120b",
+              "gpt-oss-20b",
+              "llama-prompt-guard-2-22m",
+              "orpheus-arabic-saudi",
+              "qwen3.6-27b",
+              "whisper-large-v3",
+              "gpt-oss-safeguard-20b",
+              "compound",
+              "compound-mini",
+              "llama-prompt-guard-2-86m",
+              "allam-2-7b",
+              "orpheus-v1-english",
+              "whisper-large-v3-turbo",
+              "qwen3.8-27b"
+            ],
+            "cerebras": [
+              "qwen-3.8-27b",
+              "gemma-4-31b",
+              "gpt-oss-120b"
+            ]
+          }
+        },
+        "rooms": 12,
+        "active_residents": 34,
+        "work_orders": 66,
+        "continuity": "pass",
+        "autonomy": "active",
+        "autonomy_quality": {
+          "status": "active",
+          "turns": 8,
+          "fallbacks": 0,
+          "fallback_rate": 0.0,
+          "fallback_reasons": {},
+          "tool_successes": 7,
+          "findings_filed": 3
+        },
+        "publication": "sanitized GitHub Pages snapshot",
+        "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
+        "publication_status": {
+          "outcome": "pushed",
+          "reason": "",
+          "at": "2026-09-05T13:58:43.886641+00:00"
+        },
+        "question_source": "resident:echo",
+        "self_prompt_accepted": 2,
+        "self_prompt_rejections": [],
+        "activity_feed": "docs/activity.json",
+        "feed_freshness_seconds": 0,
+        "activity_records": 110,
+        "note_records": 667,
+        "print_jobs": 44,
+        "failed_print_jobs": 0,
+        "analysis_runs": 69,
+        "analysis_completed": 40,
+        "analysis_failed": 0,
+        "analysis_rejected": 29,
+        "analysis_timed_out": 0,
+        "analysis_feed": "docs/analysis.json",
+        "research_records": 20,
+        "research_stale": 0,
+        "research_feed": "docs/research.json",
+        "findings": 77,
+        "finding_candidates": 77,
+        "findings_rejected": 93,
+        "findings_retracted": 0,
+        "findings_duplicates": 0,
+        "findings_excluded": 93,
+        "findings_total": 170,
+        "corroborated_findings": 0,
+        "findings_feed": "docs/findings.json",
+        "frontier_leads": 0,
+        "research_line": {
+          "id": "line-000359-aa8e2d37",
+          "root": "Does the MMFakeBench evaluation framework document a lower baseline detection accuracy or precision than 96% for standard large vision-language models?",
+          "anchors": [
+            "mmfakebench",
+            "vision-language",
+            "evaluation"
+          ],
+          "hops": 2,
+          "findings": 3,
+          "empty_cycles": 0
+        },
+        "frontier_questions": 84,
+        "frontier_findings": 77,
+        "frontier_tasks": 2,
         "frontier_feed": "docs/frontier.json",
         "code_proposals": 0,
         "code_proposals_ready": 0,
