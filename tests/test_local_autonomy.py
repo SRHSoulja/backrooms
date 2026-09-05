@@ -793,6 +793,27 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual([e["kind"] for e in world["events"] if e["kind"] in ("room-built-from-evidence", "room-grew")], ["room-built-from-evidence", "room-grew"])
         self.assertIn("bounded-workbench", registry["agents"][0]["capabilities"])  # local-001 earned it from a fact
         self.assertEqual(registry["agents"][1]["capabilities"].count("bounded-workbench"), 1)
+        # the residents whose findings built the room now live in it
+        self.assertEqual([agent["room"] for agent in registry["agents"]], [room["id"], room["id"]])
+        moves = [e for e in world["events"] if e["kind"] == "resident-moved"]
+        self.assertEqual(len(moves), 2)
+        self.assertIn("established facts", moves[0]["text"])
+        # a room with more facts than hands asks for a hire designed for its subject
+        need = local_autonomy.room_need_context(world, {"agents": [{"id": "local-001", "status": "active-local", "room": room["id"]}]},
+                                                {"open_questions": [{"status": "open", "line_id": "l1", "question": "How many were wounded?"}]})
+        self.assertEqual((need["room"], len(need["established_facts"]), need["open_questions"]), (room["id"], 2, ["How many were wounded?"]))
+        full = {"agents": [{"id": f"local-00{n}", "status": "active-local", "room": room["id"]} for n in range(1, 4)]}
+        self.assertIsNone(local_autonomy.room_demand(world, full))
+        # a resident filing on the line moves into the subject's room
+        original_line = dict(local_autonomy.CURRENT_LINE)
+        try:
+            local_autonomy.CURRENT_LINE.update({"id": "l1", "anchors": ["houthis"]})
+            newcomer = {"id": "local-009", "status": "active-local", "room": "archive"}
+            self.assertTrue(local_autonomy.house_in_subject_room(world, newcomer, 353))
+            self.assertEqual(newcomer["room"], room["id"])
+            self.assertFalse(local_autonomy.house_in_subject_room(world, newcomer, 353))  # already home
+        finally:
+            local_autonomy.CURRENT_LINE.clear(); local_autonomy.CURRENT_LINE.update(original_line)
 
     def test_a_public_record_line_starts_by_verifying_its_own_cited_source(self):
         class StubJudge:

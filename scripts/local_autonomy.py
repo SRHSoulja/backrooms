@@ -1301,14 +1301,24 @@ def reground_purpose(url, agent, rooms, frontier, cycle):
                              "room": {"type": "string", "enum": rooms}}}
     own_findings = [str(item.get("claim", ""))[:160] for item in all_findings()
                     if item.get("agent") == agent.get("id") and is_accepted(item)][-3:]
+    home = None
+    try:
+        world_rooms = json.loads((ROOT / "state/world.json").read_text()).get("rooms", [])
+        home = next((room for room in world_rooms if room.get("id") == agent.get("room") and room.get("facts")), None)
+    except (OSError, json.JSONDecodeError):
+        home = None
     context = {"own_findings": own_findings,
                "open_questions": [str(item.get("question", ""))[:200] for item in frontier.get("open_questions", [])[-4:]],
                "recent_findings": [str(item.get("claim", ""))[:160] for item in frontier.get("findings", [])[-3:]],
+               "home_room": ({"subject": home.get("subject") or home.get("name"),
+                              "established_facts": [str(fact.get("claim", ""))[:160] for fact in home.get("facts") or [] if fact.get("status") == "established"][-4:],
+                              "board": [str(task.get("task", ""))[:160] for task in home.get("board") or [] if task.get("status") == "open"][:3]} if home else None),
                "rooms": rooms, "tools": catalog_tool_names()}
     prompt = (f"{MISSION_LINE} Resident {agent.get('name')} ({agent.get('role')}) currently has the purpose "
               f"'{str(agent.get('purpose', ''))[:200]}' and the question '{str(agent.get('question', ''))[:200]}'. "
               "Rewrite the purpose and the question so they can be pursued with the listed public read-only tools "
-              "and advance one of the open questions or build on own_findings. Keep the name and role. No time travel, "
+              "and advance one of the open questions, build on own_findings, or, when home_room is given, extend the established facts of the "
+              "resident's own room with the next public fact about its subject. Keep the name and role. No time travel, "
               "quantum anomalies, hidden dimensions, hidden artifacts, ancient secrets, secret powers, or physical "
               "needs: only claims about real, documented subjects that a public source could support or refute. Context: " + json.dumps(context, ensure_ascii=True)[:1400] +
               " Return only the JSON object.")
@@ -1818,6 +1828,59 @@ def subject_rooms(rooms):
     return [room for room in rooms if room.get("founded_via") == "evidence-ledger" and room.get("status") != "retracted"]
 
 
+def room_demand(world, registry):
+    """The subject room that most needs hands: open, with established facts, and
+    fewer active occupants than facts plus one. Returns the room or None."""
+    active = {}
+    for agent in registry.get("agents", []):
+        if agent.get("status") in {"active-local", "probation"}:
+            active[agent.get("room")] = active.get(agent.get("room"), 0) + 1
+    best = None
+    for room in subject_rooms(world.get("rooms", [])):
+        facts = sum(fact.get("status") == "established" for fact in room.get("facts") or [])
+        if facts and active.get(room.get("id"), 0) < facts + 1:
+            need = facts + 1 - active.get(room.get("id"), 0)
+            if best is None or (facts, need) > best[0]:
+                best = ((facts, need), room)
+    return best[1] if best else None
+
+
+def room_need_context(world, registry, frontier=None):
+    """What the recruiter is told when a room needs hands: its subject, facts, board, and open questions."""
+    room = room_demand(world, registry)
+    if room is None:
+        return None
+    line_ids = set(room.get("line_ids") or [])
+    questions = [str(item.get("question", ""))[:200] for item in (frontier or {}).get("open_questions", [])
+                 if item.get("status") == "open" and item.get("line_id") in line_ids][-3:]
+    return {"room": room.get("id"), "subject": room.get("subject") or room.get("name"),
+            "established_facts": [str(fact.get("claim", ""))[:160] for fact in room.get("facts") or [] if fact.get("status") == "established"][-4:],
+            "board": [str(task.get("task", ""))[:160] for task in room.get("board") or [] if task.get("status") == "open"][:3],
+            "open_questions": questions}
+
+
+def house_resident(world, agent, room, cycle, why):
+    """Move a resident into a subject room and say why; occupancy is what a room is made of."""
+    if not agent or not room or agent.get("status") not in {"active-local", "probation", "dormant"}:
+        return False
+    if agent.get("room") == room.get("id"):
+        return False
+    previous = agent.get("room")
+    agent["room"] = room["id"]
+    emit_event(world, cycle, "resident-moved", agent.get("id", "resident"),
+               f"Resident moved into the {room.get('name')} room: {why}"[:240], from_room=previous, to_room=room["id"], reason=why[:120])
+    return True
+
+
+def house_in_subject_room(world, agent, cycle):
+    """A resident who files on the council's line works from that subject's room, when one exists."""
+    anchors = CURRENT_LINE.get("anchors") or []
+    if not anchors:
+        return False
+    room = subject_room_for(world.get("rooms", []), anchors)
+    return house_resident(world, agent, room, cycle, "working the line that deepens this subject") if room else False
+
+
 def evidence_room_growth(world, registry, cycle):
     """Grow the map from established facts.
 
@@ -1896,9 +1959,11 @@ def evidence_room_growth(world, registry, cycle):
                        f"A room was founded for the subject '{title[:80]}' from its first established fact: two independently sourced findings judged to state it.",
                        room=room_id, finding_ids=room["artifacts"], corroboration=record.get("id"), source_domains=record.get("domains", []))
             changes.append({"action": "build", "room": room_id, "source": source_room["id"], "finding_ids": room["artifacts"], "corroboration": record.get("id")})
-        # Knowledge earns capability: the residents whose findings became a fact may build tools.
+        # Knowledge earns capability and a place: the residents whose findings became a fact
+        # move into the room they built and may build tools.
         for item in pair:
             agent = next((entry for entry in registry.get("agents", []) if entry.get("id") == item.get("agent")), None)
+            house_resident(world, agent, room, cycle, "a finding of theirs became one of its established facts")
             if agent and agent.get("status") in {"active-local", "probation"} and "bounded-workbench" not in (agent.get("capabilities") or []):
                 agent.setdefault("capabilities", []).append("bounded-workbench")
                 emit_event(world, cycle, "capability-earned", agent.get("id", "resident"),
@@ -2656,6 +2721,8 @@ def main():
                                                   target_claim=verifying if took_verify else None,
                                                   topic_override=shared_research if took_verify else None)
                     if record_finding(finding) and is_accepted(finding):
+                        if finding.get("line_id"):
+                            house_in_subject_room(world, agent, args.cycle)
                         agent["last_finding_id"] = finding["id"]
                         agent["last_finding_cycle"] = args.cycle
                         agent["last_finding_record"] = {key: finding.get(key) for key in ("id", "claim", "quote", "url", "topic", "cycle")}

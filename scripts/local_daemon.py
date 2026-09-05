@@ -1074,7 +1074,15 @@ def recruit(base_url, cycle):
     room_capacity = max(8, len(world.get("rooms", [])) * LOCAL_RESIDENTS_PER_ROOM)
     frontier = json.loads(LOCAL_FRONTIER.read_text()) if LOCAL_FRONTIER.exists() else {}
     open_tasks = [item for item in frontier.get("tasks", []) if item.get("status") == "open"]
-    if not open_tasks:
+    try:
+        from scripts.local_autonomy import room_need_context
+    except ImportError:
+        from local_autonomy import room_need_context
+    try:
+        room_need = room_need_context(world, registry, frontier)
+    except Exception:  # noqa: BLE001
+        room_need = None
+    if not open_tasks and not room_need:
         return {"status": "no-recruitment-demand", "active": active,
                 "rooms": len(world.get("rooms", [])), "capacity": MAX_LOCAL_HIRELINGS}
     if active >= room_capacity:
@@ -1088,19 +1096,22 @@ def recruit(base_url, cycle):
                 "capacity": MAX_LOCAL_HIRELINGS}
     if active >= MAX_LOCAL_HIRELINGS:
         return {"status": "capacity-reached", "active": active, "capacity": MAX_LOCAL_HIRELINGS}
-    context = json.dumps({"open_tasks": open_tasks[:6],
+    context = json.dumps({"room_need": room_need, "open_tasks": open_tasks[:6],
                           "existing_names": [agent.get("name") for agent in registry.get("agents", [])[-40:]],
                           "rooms": [room.get("id") for room in world.get("rooms", [])],
                           "capabilities": [{"name": item.get("name"), "capability": item.get("capability"),
                                             "grant": item.get("grant"), "scope": item.get("scope")}
                                            for item in public_catalog().get("tools", [])]})
     completed = subprocess.run([sys.executable, str(ROOT / "scripts/local_recruiter.py"),
-        "--base-url", base_url, "--cycle", str(cycle), "--context", context], cwd=ROOT,
+        "--base-url", base_url, "--cycle", str(cycle), "--context", context, "--room", str((room_need or {}).get("room") or "archive")], cwd=ROOT,
         capture_output=True, text=True, check=False)
     try:
-        return json.loads(completed.stdout)
+        outcome = json.loads(completed.stdout)
     except json.JSONDecodeError:
         return {"status": "failed", "active": active, "capacity": MAX_LOCAL_HIRELINGS}
+    if room_need:
+        outcome["room_need"] = {"room": room_need.get("room"), "subject": room_need.get("subject")}
+    return outcome
 
 
 def govern(base_url, cycle, question="", research_topic="", line_id="", anchors=(), line_origin="", seed=None):

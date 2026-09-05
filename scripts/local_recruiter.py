@@ -20,7 +20,9 @@ FORBIDDEN = re.compile(r"(api[_ -]?key|password|secret|private memory|credential
 def ask(url, cycle, context):
     prompt = ("Design one local Backrooms hireling for a bounded research role. Return exactly four lines: "
               "NAME:, ROLE:, PURPOSE:, QUESTION:. Use a fictional name, role under 60 characters, purpose and "
-              f"testable question under 240 characters. No credentials, private data, money, external contact, or consciousness claims. Cycle {cycle}. Current gap context: {context[:1400]}")
+              f"testable question under 240 characters. No credentials, private data, money, external contact, or consciousness claims. "
+              "If the context has a room_need, this hireling joins that room: its purpose and question must aim at the next public fact about "
+              f"that room's subject, extending established_facts or answering its board and open_questions. Cycle {cycle}. Current gap context: {context[:1400]}")
     content, _provider = complete([{"role": "system", "content": "You are a bounded local world designer."},
                                    {"role": "user", "content": prompt}], temperature=0.8, max_tokens=120,
                                   call_class="recruitment", base_url=url)
@@ -40,7 +42,7 @@ def parse(text):
     fields["ROLE"] = fields["ROLE"].strip(" ,.;")
     return fields
 
-parser = argparse.ArgumentParser(); parser.add_argument("--base-url", default="http://127.0.0.1:8080"); parser.add_argument("--cycle", type=int, required=True); parser.add_argument("--context", default=""); args = parser.parse_args()
+parser = argparse.ArgumentParser(); parser.add_argument("--base-url", default="http://127.0.0.1:8080"); parser.add_argument("--cycle", type=int, required=True); parser.add_argument("--context", default=""); parser.add_argument("--room", default="archive"); args = parser.parse_args()
 raw = ask(args.base_url, args.cycle, args.context)
 profile = parse(raw)
 if not profile:
@@ -86,7 +88,7 @@ if any((re.sub(r"[^a-z0-9]", "", str(existing.get("name", "")).lower()) == norma
        and existing.get("status") in {"active-local", "probation"} for existing in registry.get("agents", [])):
     print(json.dumps({"status": "rejected", "reason": "duplicate active identity"})); raise SystemExit(0)
 number = len(registry["agents"]) + 1
-agent = {"id": f"local-{number:03d}", "name": profile["NAME"], "role": profile["ROLE"], "purpose": profile["PURPOSE"], "question": profile["QUESTION"], "room": "archive", "status": "probation", "capabilities": ["bounded-questioning"], "recorded_at": datetime.now(timezone.utc).isoformat()}
+agent = {"id": f"local-{number:03d}", "name": profile["NAME"], "role": profile["ROLE"], "purpose": profile["PURPOSE"], "question": profile["QUESTION"], "room": args.room or "archive", "status": "probation", "capabilities": ["bounded-questioning"], "recorded_at": datetime.now(timezone.utc).isoformat()}
 registry["agents"] = retain_registry(registry.get("agents", []) + [agent], REGISTRY_RETENTION)
 REGISTRY.write_text(json.dumps(registry, indent=2) + "\n")
 print(json.dumps({"status": "activated", "agent": {k: agent[k] for k in ("id", "name", "role", "room", "status")}}))
