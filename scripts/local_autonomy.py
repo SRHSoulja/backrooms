@@ -25,13 +25,13 @@ except ImportError:
 try:
     from scripts.evidence import clamp_confidence, classify_finding, is_accepted, FUNCTION_WORDS
     from scripts.corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, claims_overlap, corroboration_index,
-                                       growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source, profile_subject, profile_url, SEARCH_PAGE, inference_stands)
+                                       growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source, profile_subject, profile_url, SEARCH_PAGE, inference_stands, domain_of)
     from scripts import reports, resident_tools, inference_judge, ledger_chain
     from scripts.world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes, retract_unfounded_rooms, collapse_withdrawn_rooms, finding_on_topic)
 except ImportError:
     from evidence import clamp_confidence, classify_finding, is_accepted, FUNCTION_WORDS
     from corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, claims_overlap, corroboration_index,
-                               growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source, profile_subject, profile_url, SEARCH_PAGE, inference_stands)
+                               growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source, profile_subject, profile_url, SEARCH_PAGE, inference_stands, domain_of)
     import reports, resident_tools, inference_judge, ledger_chain
     from world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes, retract_unfounded_rooms, collapse_withdrawn_rooms, finding_on_topic)
 ROOT = Path(__file__).resolve().parents[1]
@@ -323,6 +323,45 @@ def extract_finding(url, agent, cycle, tool, target_claim=None, topic_override=N
         record["status"] = "rejected"
         record["rejection_reason"] = "off-topic"
     return record
+
+
+def fetch_public_text(url, focus="", base_url=None):
+    """The broker's public-text tool as a subprocess; a failed fetch is a dict with a status."""
+    focus_part = (" :: " + str(focus)[:200]) if focus else ""
+    completed = subprocess.run([sys.executable, str(ROOT / "scripts/tool_broker.py"), "public-text", str(url) + focus_part],
+                               cwd=ROOT, env=child_env(), capture_output=True, text=True, check=False)
+    try:
+        return json.loads(completed.stdout)
+    except json.JSONDecodeError:
+        return {"status": "failed", "reason": "invalid-broker-response"}
+
+
+def file_seed_finding(world, cycle, seed, topic="", fetch=fetch_public_text):
+    """A line from the public record starts with the source the record cited:
+    the world re-fetches that page and, if the judge finds a sentence stating
+    the event, files it as the line's first finding, quoted word for word. If
+    no sentence states it, nothing is filed and the line searches as usual."""
+    claim, url = str(seed.get("claim") or "").strip(), str(seed.get("url") or "").strip()
+    if not claim or not url.startswith("https://"):
+        return None
+    fetched = fetch(url, claim)
+    if not isinstance(fetched, dict) or fetched.get("status") != "completed":
+        return None
+    excerpt = str(fetched.get("excerpt", ""))
+    probe = {"source": url, "excerpt": excerpt, "query": topic or claim, "sentences": fetched.get("sentences") or [],
+             "source_hash": hashlib.sha256(excerpt.encode()).hexdigest()}
+    finding = entailed_finding({"id": "council", "room": "relay"}, cycle, probe, {"id": None, "claim": claim}, topic_override=topic or claim)
+    if not finding or finding.get("status") == "rejected":
+        return None
+    finding["origin"] = "seed-source"
+    finding.pop("verifies", None)
+    finding.pop("verifies_claim", None)
+    if not record_finding(finding):
+        return None
+    emit_event(world, cycle, "seed-verified", "council",
+               "The day's record cited a source for this event; the world re-fetched it and the judge quoted the sentence that states the event.",
+               finding_id=finding["id"], domain=domain_of(finding), entailment=finding.get("entailment", {}).get("entailment"))
+    return finding
 
 
 def split_sentences(text):
@@ -1350,7 +1389,7 @@ def dissent_query(claim, topic, limit=8):
 VERIFY_ATTEMPTS = 3
 # The research line the council is working this cycle; findings made on its
 # behalf carry its id and anchors so they can be held to its subject.
-CURRENT_LINE = {"id": "", "anchors": [], "origin": ""}
+CURRENT_LINE = {"id": "", "anchors": [], "origin": "", "seed": None}
 
 
 def target_claim_for(topic):
@@ -2034,6 +2073,8 @@ def main():
     parser.add_argument("--line-id", default="", help="id of the open research line the council question belongs to")
     parser.add_argument("--anchors", default="", help="comma-separated anchor terms of the open research line")
     parser.add_argument("--line-origin", default="", help="where the line's root came from (resident:..., stream:..., hire:...)")
+    parser.add_argument("--seed-claim", default="", help="for a line from the public record: the event claim itself")
+    parser.add_argument("--seed-url", default="", help="for a line from the public record: the outlet page the record cited for it")
     args = parser.parse_args()
     registry = json.loads(REGISTRY.read_text()) if REGISTRY.exists() else {"agents": [], "decisions": []}
     normalize_capabilities(registry)
@@ -2070,6 +2111,7 @@ def main():
     CURRENT_LINE["id"] = str(args.line_id or "")[:60]
     CURRENT_LINE["anchors"] = [term.strip() for term in str(args.anchors or "").split(",") if term.strip()][:8]
     CURRENT_LINE["origin"] = str(args.line_origin or "")[:80]
+    CURRENT_LINE["seed"] = {"claim": str(args.seed_claim or "")[:300], "url": str(args.seed_url or "")[:500]} if args.seed_claim and args.seed_url else None
     try:
         for record in resident_tools.expire_trials(args.cycle):
             emit_event(world, args.cycle, "tool-expired", "council",
@@ -2081,6 +2123,10 @@ def main():
     # The cooperation that matters: once one resident has filed a claim on the
     # council's topic, the next residents on that topic go looking for a second,
     # independent source for that same claim rather than for the subject at large.
+    seed = CURRENT_LINE.get("seed") or {}
+    if seed.get("claim") and CURRENT_LINE.get("id") and not any(item.get("line_id") == CURRENT_LINE.get("id") and item.get("origin") == "seed-source"
+                                                                for item in all_findings()):
+        file_seed_finding(world, args.cycle, seed, topic=shared_research or "")
     verification_target = target_claim_for(shared_research)
     verify_families_used = set()
     if verification_target:

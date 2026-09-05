@@ -208,7 +208,7 @@ def queue_proposal(state, cycle, question, source, anchors):
 def _result(question, source, line, opened=False, closed=()):
     return {"question": str(question or "")[:300], "source": source, "line_id": line.get("id") if line else "",
             "anchors": list(line.get("anchors") or []) if line else [], "research_topic": line_query(line) if line else "",
-            "opened": opened, "closed": list(closed)}
+            "seed": (line.get("seed") or None) if line else None, "opened": opened, "closed": list(closed)}
 
 
 def decide(state, cycle, proposals, followup_for, hire_questions, fallback, generic=(), stream_questions=None):
@@ -285,13 +285,17 @@ def decide(state, cycle, proposals, followup_for, hire_questions, fallback, gene
 
 def _open_from_stream(state, cycle, stream_questions, generic, closed):
     """A sourced current event the residents can confirm from a second outlet, offered in rotation."""
-    for question, source in (stream_questions or []):
+    for entry in (stream_questions or []):
+        question, source = entry[0], entry[1]
+        seed = entry[2] if len(entry) > 2 else None
         anchors = anchor_terms(question, generic)
         if not anchors or in_cooldown(anchors, state, cycle):
             continue
         if any(shares_anchor(question, line.get("anchors", [])) for line in state.get("lines", []) if line.get("status") == "open"):
             continue
         line = new_line(cycle, question, anchors, source)
+        if seed:
+            line["seed"] = dict(seed)
         state["lines"].append(line)
         return _result(question, source, line, opened=True, closed=closed)
     return None

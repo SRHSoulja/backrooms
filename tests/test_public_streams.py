@@ -35,18 +35,25 @@ class PublicStreamTests(unittest.TestCase):
         self.assertEqual(len(first), 2)
         self.assertNotEqual(first[0][0], second[0][0])
         self.assertTrue(first[0][0].startswith("Do independent public sources confirm that "))
-        self.assertIn("first reported by The Times of Israel", first[0][0])
+        self.assertNotIn("Times of Israel", first[0][0])  # the outlet is the seed source, never part of the question
         self.assertEqual(first[0][1], "stream:wikipedia-current-events/2026-09-04")
+        seed = first[0][2]
+        self.assertEqual((seed["url"], seed["outlet"]), ("https://www.timesofisrael.com/x", "The Times of Israel"))
+        self.assertTrue(seed["claim"].startswith("The Israel Defense Forces state"))
+        self.assertEqual(items[1]["citations"][0]["label"], "AFP via France 24")
         self.assertEqual(public_streams.day_page(date(2026, 9, 4)), "Portal:Current_events/2026_September_4")
 
     def test_a_stream_root_opens_a_line_after_the_queue_and_before_hiring_questions(self):
         state = research_lines.empty_state()
-        streams = [("Do independent public sources confirm that Over 120 people were killed in clashes between the Houthis and the Yemeni Armed Forces (first reported by AFP)?",
-                    "stream:wikipedia-current-events/2026-09-04")]
+        streams = [("Do independent public sources confirm that Over 120 people were killed in clashes between the Houthis and the Yemeni Armed Forces?",
+                    "stream:wikipedia-current-events/2026-09-04", {"claim": "Over 120 people were killed in clashes between the Houthis and the Yemeni Armed Forces.",
+                                                                    "url": "https://www.france24.com/en/x", "outlet": "AFP via France 24"})]
         decision = research_lines.decide(state, 340, [], lambda line: "", [("local-001", "Does EXIF metadata reference documented subjects?")], "fallback",
                                          stream_questions=streams)
         self.assertEqual((decision["source"], decision["opened"]), ("stream:wikipedia-current-events/2026-09-04", True))
         self.assertIn("houthis", research_lines.open_line(state)["anchors"])
+        self.assertEqual(decision["seed"]["url"], "https://www.france24.com/en/x")
+        self.assertEqual(research_lines.open_line(state)["seed"]["outlet"], "AFP via France 24")
         research_lines.note_outcome(state, 340, 1)
         again = research_lines.decide(state, 341, [], lambda line: "", [], "fallback", stream_questions=streams)
         self.assertEqual(again["line_id"], decision["line_id"])

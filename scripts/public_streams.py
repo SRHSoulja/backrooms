@@ -33,13 +33,15 @@ def clean_wikitext(line):
     text = re.sub(r"<!--.*?-->", "", line)
     text = re.sub(r"<ref[^>]*>.*?</ref>|<ref[^>]*/>", "", text)
     text = re.sub(r"\{\{[^{}]*\}\}", "", text)
-    sources = [re.sub(r"'{2,}", "", label).strip("() ") for label in re.findall(r"\[https?://\S+\s+([^\]]+)\]", text)]
+    citations = [{"url": url, "label": re.sub(r"'{2,}", "", label).strip("() ")} for url, label in re.findall(r"\[(https?://\S+)\s+([^\]]+)\]", text)]
+    sources = [item["label"] for item in citations]
     text = re.sub(r"\[https?://\S+(?:\s+[^\]]*)?\]", "", text)
     text = re.sub(r"\[\[([^\]|]*)\|([^\]]*)\]\]", r"\2", text)
     text = re.sub(r"\[\[([^\]]*)\]\]", r"\1", text)
     text = re.sub(r"'{2,}", "", text)
     text = text.replace("&nbsp;", " ")
     text = re.sub(r"\s+", " ", text).strip(" .;:")
+    clean_wikitext.last_citations = citations
     return text, [re.sub(r"\s+", " ", item).strip("() ") for item in sources]
 
 
@@ -59,7 +61,8 @@ def items_from_wikitext(wikitext, day=None):
         if key in seen:
             continue
         seen.add(key)
-        out.append({"text": text + ".", "sources": sources[:3], "day": day.isoformat() if day else None})
+        out.append({"text": text + ".", "sources": sources[:3], "citations": list(getattr(clean_wikitext, "last_citations", []))[:3],
+                    "day": day.isoformat() if day else None})
         if len(out) >= MAX_ITEMS:
             break
     return out
@@ -81,11 +84,19 @@ def recent_items(fetch_json, now=None, days=3):
 
 
 def root_question(item):
-    """The council's root for an item: check it, and look for a different figure or date."""
+    """The council's root for an item: check it, and look for a different figure or date.
+    The outlet that first reported it is the line's seed source, not part of the question,
+    so its name never steers the search."""
     text = str(item.get("text", "")).rstrip(".")
-    sources = ", ".join(item.get("sources") or [])
-    tail = f" (first reported by {sources})" if sources else ""
-    return f"Do independent public sources confirm that {text}{tail}, and does any give a different figure, date, or account?"[:300]
+    return f"Do independent public sources confirm that {text}, and does any give a different figure, date, or account?"[:300]
+
+
+def seed_for(item):
+    """The claim and the outlet page the day's record cited for it: the line's first source, to be re-fetched and quoted."""
+    citations = [c for c in (item.get("citations") or []) if str(c.get("url", "")).startswith("https://")]
+    if not citations:
+        return None
+    return {"claim": str(item.get("text", "")).strip()[:300], "url": str(citations[0]["url"])[:500], "outlet": str(citations[0].get("label", ""))[:80]}
 
 
 def stream_questions(items, cycle, limit=8):
@@ -94,7 +105,8 @@ def stream_questions(items, cycle, limit=8):
         return []
     start = int(cycle) % len(items)
     ordered = items[start:] + items[:start]
-    return [(root_question(item), "stream:wikipedia-current-events" + (f"/{item.get('day')}" if item.get("day") else "")) for item in ordered[:limit]]
+    return [(root_question(item), "stream:wikipedia-current-events" + (f"/{item.get('day')}" if item.get("day") else ""), seed_for(item))
+            for item in ordered[:limit]]
 
 
 if __name__ == "__main__":

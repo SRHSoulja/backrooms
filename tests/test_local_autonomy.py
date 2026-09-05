@@ -755,6 +755,45 @@ class LocalAutonomyTests(unittest.TestCase):
         finally:
             local_autonomy.inference_judge = original
 
+    def test_a_public_record_line_starts_by_verifying_its_own_cited_source(self):
+        class StubJudge:
+            SUPPORT_MIN, CONTRADICTION_MIN, NLI_REPO, NLI_REVISION = 0.5, 0.6, "stub", "rev"
+            def available(self):
+                return True
+            def nli(self, premise, hypothesis):
+                if "120 people" in premise and "Houthis" in hypothesis:
+                    return {"entailment": 0.93, "contradiction": 0.01, "neutral": 0.06}
+                return {"entailment": 0.02, "contradiction": 0.01, "neutral": 0.97}
+        original_judge, original_line, original_findings = local_autonomy.inference_judge, dict(local_autonomy.CURRENT_LINE), local_autonomy.FINDINGS
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as directory:
+            local_autonomy.FINDINGS = Path(directory) / "findings.jsonl"
+            local_autonomy.ARCHIVE = Path(directory) / "events.jsonl"
+            local_autonomy.inference_judge = StubJudge()
+            local_autonomy.CURRENT_LINE.update({"id": "line-000347-seed", "anchors": ["houthis", "yemeni"], "origin": "stream:wikipedia-current-events/2026-09-04"})
+            fetches = []
+            def fetch(url, focus=""):
+                fetches.append((url, focus[:30]))
+                return {"status": "completed", "excerpt": "Fighting raged on Thursday. Over 120 people were killed in clashes between the Houthis and the Yemeni Armed Forces, medics said.",
+                        "sentences": ["Fighting raged on Thursday in the north of the country.", "Over 120 people were killed in clashes between the Houthis and the Yemeni Armed Forces, medics said."]}
+            try:
+                world = {"events": []}
+                seed = {"claim": "Over 120 people were killed in clashes between the Houthis and the Yemeni Armed Forces.", "url": "https://www.france24.com/en/x"}
+                filed = local_autonomy.file_seed_finding(world, 347, seed, topic="houthis yemeni clashes", fetch=fetch)
+                self.assertEqual((filed["origin"], filed["agent"], filed["line_id"], filed["status"]), ("seed-source", "council", "line-000347-seed", "unreviewed"))
+                self.assertIn("Over 120 people were killed", filed["quote"])
+                self.assertNotIn("verifies", filed)
+                self.assertEqual(world["events"][-1]["kind"], "seed-verified")
+                self.assertEqual(fetches[0][0], "https://www.france24.com/en/x")
+                self.assertEqual(len(local_autonomy.FINDINGS.read_text().splitlines()), 1)
+                nothing = local_autonomy.file_seed_finding(world, 348, {"claim": "A claim the page never states in any sentence at all.", "url": "https://www.france24.com/en/y"}, fetch=fetch)
+                self.assertIsNone(nothing)
+            finally:
+                local_autonomy.inference_judge = original_judge
+                local_autonomy.CURRENT_LINE.clear(); local_autonomy.CURRENT_LINE.update(original_line)
+                local_autonomy.FINDINGS = original_findings
+
     def test_a_line_from_the_public_record_reads_the_web_and_the_encyclopedia_not_papers(self):
         original = dict(local_autonomy.CURRENT_LINE)
         try:
