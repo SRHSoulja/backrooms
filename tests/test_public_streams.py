@@ -58,21 +58,22 @@ class PublicStreamTests(unittest.TestCase):
         again = research_lines.decide(state, 341, [], lambda line: "", [], "fallback", stream_questions=streams)
         self.assertEqual(again["line_id"], decision["line_id"])
 
-    def test_roots_alternate_between_resident_subjects_and_the_public_record(self):
+    def test_the_public_record_roots_first_and_resident_subjects_follow_when_it_is_spent(self):
         state = research_lines.empty_state()
         streams = [("Do independent public sources confirm that Over 120 people were killed in clashes between the Houthis and the Yemeni Armed Forces?", "stream:wikipedia-current-events/2026-09-04")]
         proposal = [("Did Meta's Ad Library report deceptive political deepfake ads during the 2024 Brazilian elections?", "resident:echo")]
         first = research_lines.decide(state, 1, proposal, lambda line: "", [], "fallback", stream_questions=streams)
-        self.assertEqual(first["source"], "stream:wikipedia-current-events/2026-09-04")  # first: the public record
+        self.assertEqual(first["source"], "stream:wikipedia-current-events/2026-09-04")  # the public record first
         for cycle in range(1, 1 + research_lines.EMPTY_CYCLES_CAP):
             research_lines.note_outcome(state, cycle, 0)
+        # the same event is in cooldown now, so the residents' queued subject takes the next line
         second = research_lines.decide(state, 6, proposal, lambda line: "", [], "fallback", stream_questions=streams)
-        self.assertEqual((second["source"], research_lines.open_line(state)["origin"]), ("resident:echo", "queued:resident:echo"))  # second: a resident's subject
+        self.assertEqual((second["source"], research_lines.open_line(state)["origin"]), ("resident:echo", "queued:resident:echo"))
         for cycle in range(6, 6 + research_lines.EMPTY_CYCLES_CAP):
             research_lines.note_outcome(state, cycle, 0)
         third = research_lines.decide(state, 11, [("Did BlackRock report 15 trillion in assets in 2026?", "resident:morrow")], lambda line: "", [], "fallback",
-                                      stream_questions=[("Do independent public sources confirm that Argentina repatriated a looted Ceruti painting (first reported by AFP)?", "stream:x")])
-        self.assertEqual(third["source"], "stream:x")
+                                      stream_questions=[("Do independent public sources confirm that Argentina repatriated a looted Ceruti painting?", "stream:x")])
+        self.assertEqual(third["source"], "stream:x")  # a fresh event beats a queued subject
 
 
 if __name__ == "__main__":

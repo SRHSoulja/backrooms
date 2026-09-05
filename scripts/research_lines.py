@@ -249,13 +249,12 @@ def decide(state, cycle, proposals, followup_for, hire_questions, fallback, gene
         if candidate and candidate.lower() != last.lower():
             line["cap_reached_cycle"] = line.get("cap_reached_cycle") or cycle
         return _result(last, "carried:" + line["id"], line, closed=closed)
-    # No open line: roots alternate between the residents' queued subjects and
-    # the day's public record, so neither starves the other; then a resident's
-    # own hiring question, then the fixed fallback.
-    if stream_questions and len(state.get("lines", [])) % 2 == 0:
-        opened = _open_from_stream(state, cycle, stream_questions, generic, closed)
-        if opened:
-            return opened
+    # No open line: the day's public record first, because a sourced event is
+    # where independent outlets exist; then the residents' queued subjects,
+    # then a resident's own hiring question, then the fixed fallback.
+    opened = _open_from_stream(state, cycle, stream_questions, generic, closed)
+    if opened:
+        return opened
     queue = state.get("queue", [])
     while queue:
         item = queue.pop(0)
