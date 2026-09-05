@@ -201,6 +201,8 @@ def _answering(provider, usage):
     """A provider that has failed its last several calls today without a single
     success is not one the world can rely on this cycle, whatever its budget says."""
     entry = usage["providers"].get(provider["name"], {})
+    if "consecutive_errors" not in entry and not entry.get("calls") and int(entry.get("errors", 0)) >= CONSECUTIVE_ERRORS_LIMIT:
+        return False  # a record from before this counter existed: errors and never a call today
     return int(entry.get("consecutive_errors", 0)) < CONSECUTIVE_ERRORS_LIMIT
 
 
