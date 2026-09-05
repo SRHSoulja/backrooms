@@ -73,7 +73,8 @@ BUILTIN = {
     "mistral-small": {"base_url": "https://api.mistral.ai", "key": "MISTRAL_API_KEY", "model": "mistral-small-latest",
                       "rpm": 10, "rpd": None, "tpd": 100_000, "json_schema": True},
     "gemini": {"base_url": "https://generativelanguage.googleapis.com/v1beta/openai", "key": "GEMINI_API_KEY",
-               "model": "gemini-2.5-flash", "rpm": 8, "rpd": 900, "tpd": None, "json_schema": True},
+               "model": "gemini-2.5-flash", "rpm": 8, "rpd": 240, "tpd": None, "json_schema": True,
+               "chat_path": "/chat/completions", "models_path": "/models", "resolve_model": "gemini-flash"},
     "cerebras": {"base_url": "https://api.cerebras.ai", "key": "CEREBRAS_API_KEY", "model": "qwen-3-32b",
                  "rpm": 25, "rpd": None, "tpd": 900000, "json_schema": True},
     "groq": {"base_url": "https://api.groq.com/openai", "key": "GROQ_API_KEY", "model": "llama-3.3-70b-versatile",
@@ -206,6 +207,57 @@ def _schema_hint(messages, schema):
     return hinted
 
 
+GEMINI_FLASH = re.compile(r"^gemini-(\d+(?:\.\d+)?)-flash(?:-preview[-\w]*|-\d{2}-\d{4})?$")
+UNWANTED_MODEL = re.compile(r"lite|image|tts|live|audio|embed|8b|thinking|native|exp", re.I)
+
+
+def choose_gemini_model(model_ids, fallback):
+    """The newest general Flash model the account can see; a dated or preview name
+    only when no plain one exists. Never a lite, image, audio, or live variant."""
+    best = None
+    for raw in model_ids or []:
+        name = str(raw or "").split("/")[-1]
+        match = GEMINI_FLASH.match(name)
+        if not match or UNWANTED_MODEL.search(name.replace("gemini-", "", 1)):
+            continue
+        try:
+            version = float(match.group(1))
+        except ValueError:
+            continue
+        plain = 0 if ("preview" in name or re.search(r"-\d{2}-\d{4}$", name)) else 1
+        key = (plain, version, name)  # a released model over a preview; among those, the newest
+        if best is None or key > best[0]:
+            best = (key, name)
+    return best[1] if best else fallback
+
+
+def _list_models(provider, opener=None, timeout=20):
+    headers = {"Authorization": "Bearer " + provider["api_key"]} if provider.get("api_key") else {}
+    request = urllib.request.Request(provider["base_url"].rstrip("/") + provider.get("models_path", "/v1/models"), headers=headers)
+    with (opener or urllib.request.urlopen)(request, timeout=timeout) as response:
+        data = json.load(response)
+    return [item.get("id") for item in (data.get("data") or []) if isinstance(item, dict)]
+
+
+def resolve_model(provider, usage, opener=None):
+    """Providers marked ``resolve_model`` pick their model from the live list once
+    a day (an override in BACKROOMS_<NAME>_MODEL wins); the choice is recorded."""
+    if not provider.get("resolve_model"):
+        return provider
+    override = setting("BACKROOMS_" + provider["name"].upper().replace("-", "_") + "_MODEL")
+    if override:
+        return {**provider, "model": override}
+    cache = usage.setdefault("models", {})
+    if cache.get(provider["name"]):
+        return {**provider, "model": cache[provider["name"]]}
+    try:
+        chosen = choose_gemini_model(_list_models(provider, opener), provider["model"])
+    except Exception:  # noqa: BLE001 - the configured name is used and the listing retried next day
+        return provider
+    cache[provider["name"]] = chosen
+    return {**provider, "model": chosen}
+
+
 def _request(provider, messages, temperature, max_tokens, schema, schema_name, timeout, opener=None):
     payload = {"model": provider["model"], "messages": messages, "temperature": temperature, "max_tokens": max_tokens}
     if schema is not None:
@@ -216,7 +268,7 @@ def _request(provider, messages, temperature, max_tokens, schema, schema_name, t
     headers = {"Content-Type": "application/json"}
     if provider["api_key"]:
         headers["Authorization"] = "Bearer " + provider["api_key"]
-    request = urllib.request.Request(provider["base_url"].rstrip("/") + "/v1/chat/completions",
+    request = urllib.request.Request(provider["base_url"].rstrip("/") + provider.get("chat_path", "/v1/chat/completions"),
                                      data=json.dumps(payload).encode(), headers=headers, method="POST")
     with (opener or urllib.request.urlopen)(request, timeout=timeout) as response:
         data = json.load(response)
@@ -373,6 +425,7 @@ def complete(messages, *, temperature=0.3, max_tokens=400, schema=None, schema_n
             if not ok:
                 failures.append(f"{provider['name']}:{why}")
                 continue
+            provider = resolve_model(provider, usage, opener)
             entry = _record(usage, provider["name"])
             _pace(provider, entry, now, sleep)
             try:
@@ -458,7 +511,7 @@ def usage_summary(local_base_url=None):
     for provider in providers(local_base_url):
         entry = usage["providers"].get(provider["name"], {})
         summary["providers"].append({
-            "name": provider["name"], "model": provider["model"], "calls": entry.get("calls", 0),
+            "name": provider["name"], "model": usage.get("models", {}).get(provider["name"]) or provider["model"], "calls": entry.get("calls", 0),
             "input_tokens": entry.get("input_tokens", 0), "output_tokens": entry.get("output_tokens", 0),
             "errors": entry.get("errors", 0), "last_error": str(entry.get("last_error", ""))[:120],
             "daily_request_budget": provider["rpd"], "daily_token_budget": provider["tpd"],

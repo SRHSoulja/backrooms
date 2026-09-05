@@ -9,6 +9,18 @@ from pathlib import Path
 from scripts import model_client
 
 
+class GeminiModelChoiceTests(unittest.TestCase):
+    def test_newest_plain_flash_model_wins_and_variants_are_skipped(self):
+        from scripts.model_client import choose_gemini_model
+        ids = ["models/gemini-2.5-flash", "models/gemini-2.5-flash-lite", "models/gemini-3-flash-preview-11-2025",
+               "models/gemini-3.5-flash", "models/gemini-3.5-flash-image", "models/gemini-3.8-flash-preview-08-2026",
+               "models/gemini-3.5-pro", "models/gemini-live-2.5-flash", "models/gemini-2.5-flash-tts"]
+        self.assertEqual(choose_gemini_model(ids, "gemini-2.5-flash"), "gemini-3.5-flash")
+        self.assertEqual(choose_gemini_model([ids[2], ids[5], ids[1]], "gemini-2.5-flash"), "gemini-3.8-flash-preview-08-2026")
+        self.assertEqual(choose_gemini_model(["models/gemini-2.5-flash-lite"], "gemini-2.5-flash"), "gemini-2.5-flash")
+        self.assertEqual(choose_gemini_model([], "fallback"), "fallback")
+
+
 class ProviderOrderTests(unittest.TestCase):
     def test_preferred_providers_move_to_the_front_without_dropping_the_rest(self):
         from scripts.model_client import ordered_providers

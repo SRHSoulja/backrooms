@@ -1576,7 +1576,8 @@ def judge_corroborations(url, world, cycle, limit=MAX_JUDGMENTS_PER_CYCLE):
                     {"role": "user", "content": judgment_prompt(first, second)}]
         try:
             verdict, _provider = complete_json(messages, temperature=0.1, max_tokens=160, schema=judgment_schema(),
-                                               schema_name="corroboration", call_class="judgment", base_url=url)
+                                               schema_name="corroboration", call_class="judgment", base_url=url,
+                                               prefer=("gemini", "groq", "cerebras", "openrouter"))
             if not isinstance(verdict, dict):
                 continue
         except (OSError, ValueError, TypeError, KeyError, AttributeError, json.JSONDecodeError):
