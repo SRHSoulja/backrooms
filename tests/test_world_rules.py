@@ -69,6 +69,18 @@ class WorldRuleTests(unittest.TestCase):
         # a dictionary definition or an off-topic finding leaves no question behind
         self.assertEqual(finding_followup_question({"topic": "corroboration journalism", "claim": "The word wall means a vertical structure.",
                                                     "url": "https://dictionary.cambridge.org/dictionary/english/wall"}), "")
+        # on a research line, a direct finding is on topic only when it names an anchor of the root
+        from scripts.world_rules import finding_on_topic
+        anchored = {"topic": "roskomnadzor github repositories", "anchors": ["roskomnadzor"], "url": "https://techcrunch.com/x",
+                    "claim": "Roskomnadzor blocked GitHub in December 2014.", "quote": "Roskomnadzor blocked access"}
+        self.assertTrue(finding_on_topic(anchored))
+        drifted = {**anchored, "claim": "Users can hide private contributions on their GitHub profile.", "quote": "hide private contributions"}
+        self.assertFalse(finding_on_topic(drifted))
+        self.assertEqual(finding_followup_question(drifted), "")
+        # a verification finding may paraphrase the anchor away; it is held to the claim it verifies instead
+        verifying = {**drifted, "verifies_claim": "Roskomnadzor blocked GitHub in December 2014.",
+                     "claim": "Russia's media regulator blocked GitHub over suicide content in 2014.", "quote": "blocked GitHub"}
+        self.assertTrue(finding_on_topic(verifying))
         # a person's profile page leaves no question behind either: the world does not research individuals
         self.assertEqual(finding_followup_question({"topic": "github profile roscom ross cameron", "url": "https://github.com/roscom",
                                                     "claim": "The GitHub profile for 'roscom' (Ross Cameron) lists Roscommon Pty Ltd."}), "")

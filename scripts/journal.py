@@ -93,6 +93,8 @@ def daily_digest(date, findings, corroborations, world, registry, tasks, retract
     withdrawn += [room for room in world.get("withdrawn_rooms", []) if str(room.get("retracted_at", "")).startswith(day)
                   and room.get("id") not in {item.get("id") for item in withdrawn}]
     collapsed = [room for room in world.get("withdrawn_rooms", []) if str(room.get("collapsed_at", "")).startswith(day)]
+    lines_opened = [event for event in day_events if event.get("kind") == "line-opened"]
+    lines_closed = [event for event in day_events if event.get("kind") == "line-closed"]
     lifecycle = [dict(change) for change in list(room_changes)]
     lifecycle += [{"room": event.get("room"), "from": event.get("from"), "to": event.get("kind", "").replace("room-", "")}
                   for event in day_events if event.get("kind") in {"room-dust", "room-sealed", "room-open"}]
@@ -114,11 +116,14 @@ def daily_digest(date, findings, corroborations, world, registry, tasks, retract
                    "supports": len(supports), "contradicts": len(contradicts), "rooms_built": len(rooms_built),
                    "tasks_completed": len(completed), "retractions": len(list(retractions)), "retired": len(retired),
                    "room_changes": len(list(room_changes)), "hired": len(hired), "rooms_withdrawn": len(withdrawn),
-                   "rooms_collapsed": len(collapsed), "day_zero_cycle": (reset or {}).get("cycle")},
+                   "rooms_collapsed": len(collapsed), "lines_opened": len(lines_opened), "lines_closed": len(lines_closed),
+                   "day_zero_cycle": (reset or {}).get("cycle")},
         "day_zero": ({"cycle": reset.get("cycle"), "at": reset.get("at")} if reset else None),
         "hired": [{"id": agent.get("id"), "name": agent.get("name"), "role": str(agent.get("role", ""))[:60]} for agent in hired],
         "rooms_withdrawn": [{"id": room.get("id"), "name": room.get("name"), "reason": str(room.get("retraction_reason", ""))[:120]} for room in withdrawn],
         "rooms_collapsed": [{"id": room.get("id"), "name": room.get("name")} for room in collapsed],
+        "research_lines": {"opened": [{"root": str(event.get("root", ""))[:140], "origin": str(event.get("origin", ""))[:60]} for event in lines_opened[-4:]],
+                           "closed": [{"root": str(event.get("root", ""))[:140], "reason": str(event.get("reason", ""))[:100]} for event in lines_closed[-4:]]},
         "contributors": [{"id": identifier, "name": names.get(identifier, identifier)} for identifier in contributors],
         "findings": [{"id": item.get("id"), "agent": item.get("agent"), "claim": str(item.get("claim", ""))[:200],
                       "domain": re.sub(r"^https?://([^/]+).*$", r"\1", str(item.get("url", "")))} for item in accepted[-8:]],

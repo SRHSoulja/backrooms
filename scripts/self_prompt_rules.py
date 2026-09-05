@@ -56,10 +56,22 @@ def rejection_reason(proposal):
     missing = [name for name in ("QUESTION", "WHY", "TEST") if not fields.get(name)]
     if missing:
         return "missing " + ", ".join(missing) + " line(s); return exactly QUESTION:, WHY:, TEST:"
-    if SELF_REFERENTIAL.search(fields.get("QUESTION", "")):
+    return question_rejection_reason(fields.get("QUESTION", ""))
+
+
+def question_rejection_reason(question):
+    """Why a bare question cannot open or extend a research line, or ""."""
+    text = re.sub(r"\s+", " ", str(question or "")).strip()
+    if len(text) < 12:
+        return "the question is too short to research"
+    if FORBIDDEN.search(text):
+        return "mentions credentials or private memory"
+    if SELF_REFERENTIAL.search(text):
         return "the question is about this world's own rooms, residents, or telemetry; ask about the outside world"
-    if about_profile(fields.get("QUESTION", "")):
+    if about_profile(text):
         return "the question is about an individual's account, profile, or handle; ask about the world, not about a person"
+    if "[input]" in text.lower() or re.search(r"\{[^}]*\}", text):
+        return "the question has a placeholder where its subject should be"
     return ""
 
 

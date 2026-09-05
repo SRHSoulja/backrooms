@@ -62,6 +62,14 @@ class SelfPromptTests(unittest.TestCase):
                     "WHY: It is a public organization.\nTEST: Compare two independent public sources.")
         self.assertTrue(valid(proposal))
 
+    def test_bare_question_rules_cover_hiring_questions_and_queued_subjects(self):
+        from scripts.self_prompt_rules import question_rejection_reason
+        self.assertEqual(question_rejection_reason("Did Roskomnadzor block GitHub in December 2014, and which sources agree?"), "")
+        self.assertIn("placeholder", question_rejection_reason("Does any public source contradict the claim that '[input]'?"))
+        self.assertIn("too short", question_rejection_reason("Why?"))
+        self.assertIn("individual's account", question_rejection_reason("Does the GitHub profile **Roscomnadzor27** show any activity?"))
+        self.assertIn("own rooms", question_rejection_reason("Why did the residents leave the Atrium?"))
+
     def test_accepts_public_frontier_question(self):
         proposal = ("QUESTION: Which public finding should we verify next?\n"
                     "WHY: It may explain the newest room candidate.\n"

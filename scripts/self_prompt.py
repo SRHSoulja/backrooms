@@ -15,12 +15,19 @@ except ImportError:
     from model_client import complete
 
 
-def ask(url, resident, context, retry_reason=""):
+def ask(url, resident, context, retry_reason="", line=None):
     role = "find a surprising but testable question" if resident == "Echo" else "find the most important unresolved weakness or confound"
-    prompt = (f"You are {resident}. From the public context below, {role}. Prefer a question that follows from a "
-              "recent_finding, an open_contradiction, or an open_question (what other independent sources say, what would settle it); "
-              "otherwise ask about a real, documented subject in the outside world that a public source could support or refute. "
-              "Never ask about this world's own rooms, residents, or telemetry. "
+    if line and line.get("root"):
+        steer = (f"The council works one research line at a time. The open line is: '{str(line.get('root', ''))[:240]}' "
+                 f"(anchors: {', '.join(line.get('anchors', [])[:6])}; question {line.get('hop', 1)} of {line.get('cap', 3)}). "
+                 "Propose the next step on this line: what would settle its claim, which independent public source could confirm or refute it. "
+                 "If the line has used its questions, or you have a better subject, propose a new line about a different, documented subject "
+                 "in the outside world; a new subject waits in a queue until the line closes. ")
+    else:
+        steer = ("No research line is open. Propose the root question of a new line: a real, documented subject in the outside world "
+                 "that two independent public sources could confirm or refute; prefer a recent_finding or an open_contradiction. ")
+    prompt = (f"You are {resident}. From the public context below, {role}. " + steer +
+              "Never ask about this world's own rooms, residents, or telemetry, and never about an individual's account or profile. "
               + (f"Your previous proposal was rejected: {retry_reason}. Propose a different question. " if retry_reason else "") +
               "Return exactly three lines: QUESTION:, WHY:, TEST:. "
               "The test must be reversible, non-sensitive, and require no external contact. "
@@ -35,7 +42,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--base-url", default=os.getenv("BACKROOMS_LLM_BASE_URL", "http://127.0.0.1:8080"))
 parser.add_argument("--state", default="state/world.json", help="public JSON state file to inspect")
 parser.add_argument("--actions", default="state/action-log.json", help="local aggregate action history")
+parser.add_argument("--line", default="", help="JSON of the open research line (root, anchors, hop, cap), if any")
 args = parser.parse_args()
+try:
+    research_line = json.loads(args.line) if args.line else None
+except ValueError:
+    research_line = None
 with open(args.state) as state_file:
     world = json.load(state_file)
 actions = {"actions": []}
@@ -70,7 +82,7 @@ except (OSError, ValueError):
     open_questions = []
 # No standing list of topics: the residents see only the world's own record
 # (charter, memory, findings, contradictions, their earlier questions).
-context = json.dumps({"recent_findings": recent_findings[-5:], "open_contradictions": open_contradictions,
+context = json.dumps({"research_line": research_line, "recent_findings": recent_findings[-5:], "open_contradictions": open_contradictions,
                       "open_questions": open_questions,
                       "shared_memory": world.get("shared_memory", []),
                       "rooms": [{"id": room.get("id"), "description": room.get("description", "")}
@@ -80,12 +92,12 @@ context = json.dumps({"recent_findings": recent_findings[-5:], "open_contradicti
                       "recent_aggregate_actions": actions.get("actions", [])[-2:]})
 proposals = []
 for resident in ("Echo", "Morrow"):
-    proposal = ask(args.base_url, resident, context)
+    proposal = ask(args.base_url, resident, context, line=research_line)
     reason = rejection_reason(proposal)
     attempts = 1
     if reason:
         # Tell the resident why and let it try once more, instead of reaching for a list.
-        proposal = ask(args.base_url, resident, context, retry_reason=reason)
+        proposal = ask(args.base_url, resident, context, retry_reason=reason, line=research_line)
         reason = rejection_reason(proposal)
         attempts = 2
     proposals.append({"resident": resident, "accepted": not reason, "proposal": proposal, "attempts": attempts,

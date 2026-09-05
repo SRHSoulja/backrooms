@@ -219,6 +219,16 @@ def _stems(text):
 def finding_on_topic(finding):
     """A finding is on topic when its claim shares content words with the query
     that produced it. A finding with no recorded topic is not held to this."""
+    anchors = list(finding.get("anchors") or [])
+    if anchors and not finding.get("verifies_claim"):
+        # A finding made on a research line must be about that line's subject:
+        # it names an anchor (a rare term of the root question) in its claim or
+        # quote. Sharing a generic word like "github" is not being on topic.
+        try:
+            from scripts.research_lines import shares_anchor
+        except ImportError:
+            from research_lines import shares_anchor
+        return shares_anchor(" ".join((str(finding.get("claim", "")), str(finding.get("quote", "")))), anchors)
     topic = _stems(str(finding.get("topic", "")))
     # A verification finding serves the claim it was sent to verify, so that
     # claim's words count as its topic too.

@@ -40,16 +40,18 @@ try:
     from scripts.evidence import classify_finding, is_accepted
     from scripts.corroboration import corroboration_index, load_records
     from scripts.codex_reviews import consume_outbox
-    from scripts.self_prompt_rules import carry_forward, finding_followup_question
+    from scripts.self_prompt_rules import carry_forward, finding_followup_question, question_rejection_reason
     from scripts.world_rules import day_zero_from_events
+    from scripts import research_lines
     from scripts import model_client
     from scripts import journal as journal_module
 except ImportError:
     from evidence import classify_finding, is_accepted
     from corroboration import corroboration_index, load_records
     from codex_reviews import consume_outbox
-    from self_prompt_rules import carry_forward, finding_followup_question
+    from self_prompt_rules import carry_forward, finding_followup_question, question_rejection_reason
     from world_rules import day_zero_from_events
+    import research_lines
     import model_client
     import journal as journal_module
 
@@ -94,6 +96,8 @@ LOCAL_TRADES = ROOT / "state/trades.json"
 PUBLIC_TRADES = ROOT / "docs/trades.json"
 LOCAL_FINDINGS = ROOT / "state/findings.jsonl"
 LOCAL_CORROBORATIONS = ROOT / "state/corroborations.jsonl"
+LINES = ROOT / "state/research-lines.json"
+FIXED_FALLBACK = "Which claim in the open record is least supported by an independent public source, and which source could settle it?"
 FINDINGS_RETENTION = 400
 PUBLIC_FINDINGS = ROOT / "docs/findings.json"
 LOCAL_AUTONOMY_ERRORS = ROOT / "state/autonomy-errors.log"
@@ -687,74 +691,159 @@ def action(base_url, cycle):
         return {"action": "local-behavioral-probe", "status": "invalid-result"}
 
 
-def next_question(base_url):
-    """Ask residents for a bounded question; fall back to a public research theme if both are rejected.
-
-    Returns (question, source, accepted_count) so the feed can show how often
-    the council's own proposals pass validation.
-    """
-    completed = subprocess.run([sys.executable, str(ROOT / "scripts/self_prompt.py"),
-        "--base-url", base_url, "--state", str(RUNTIME_STATE),
-        "--actions", str(ROOT / "state/action-log.json")], cwd=ROOT,
-        capture_output=True, text=True, check=False)
-    accepted = 0
-    if completed.returncode == 0:
-        try:
-            proposals = json.loads(completed.stdout).get("proposals", [])
-            accepted = sum(bool(proposal.get("accepted")) for proposal in proposals)
-            for resident in ("Echo", "Morrow"):
-                for proposal in proposals:
-                    if proposal.get("resident") == resident and proposal.get("accepted"):
-                        for line in proposal.get("proposal", "").splitlines():
-                            if line.upper().startswith("QUESTION:"):
-                                question = line.split(":", 1)[1].strip()
-                                if question:
-                                    return question[:300], f"resident:{resident.lower()}", accepted, ""
-        except (json.JSONDecodeError, TypeError):
-            pass
+def resident_proposals(base_url, line):
+    """Ask Echo and Morrow for a question; returns ([(question, source)], accepted_count)."""
+    command = [sys.executable, str(ROOT / "scripts/self_prompt.py"), "--base-url", base_url, "--state", str(RUNTIME_STATE),
+               "--actions", str(ROOT / "state/action-log.json")]
+    if line:
+        command += ["--line", json.dumps({"root": line.get("root", ""), "anchors": line.get("anchors", []),
+                                          "hop": len(line.get("hops", [])), "cap": research_lines.HOP_CAP})]
+    completed = subprocess.run(command, cwd=ROOT, capture_output=True, text=True, check=False)
+    accepted, proposals = 0, []
+    if completed.returncode != 0:
+        return proposals, accepted
     try:
-        cycle = json.loads(RUNTIME_STATE.read_text()).get("cycle", 0)
-    except (OSError, json.JSONDecodeError, TypeError):
-        cycle = 0
-    # A finding leaves a question behind; the world's own record comes before the theme list.
-    candidates = []
-    if LOCAL_FINDINGS.exists():
-        for line in LOCAL_FINDINGS.read_text().splitlines()[-40:]:
-            try:
-                item = json.loads(line)
-            except json.JSONDecodeError:
+        items = json.loads(completed.stdout).get("proposals", [])
+    except (json.JSONDecodeError, TypeError, AttributeError):
+        return proposals, accepted
+    for resident in ("Echo", "Morrow"):
+        for proposal in items:
+            if proposal.get("resident") != resident or not proposal.get("accepted"):
                 continue
-            if item.get("status") not in {"rejected", "retracted"} and item.get("claim") \
-                    and item.get("origin") in {"council-question", "stale-target-reassigned"}:
-                # Only findings made on the council's own line of inquiry leave a
-                # question behind; a resident's side exploration does not steer the council.
-                candidates.append(item)
-    if int(cycle) % 2 == 0:
-        # The newest finding that is on the topic that produced it leaves a question;
-        # off-topic and dictionary findings leave none, so research cannot drift by word association.
-        for item in reversed(candidates):
-            followup = finding_followup_question(item)
-            if followup:
-                return followup[:300], "finding-followup", accepted, str(item.get("topic") or "")[:160]
-    # No list a human wrote: when the residents produce nothing valid and no
-    # finding is there to follow, the council carries its own newest open
-    # question forward; failing even that, it repeats the last cycle's question.
+            accepted += 1
+            for text in str(proposal.get("proposal", "")).splitlines():
+                if text.upper().startswith("QUESTION:"):
+                    question = text.split(":", 1)[1].strip()
+                    if question:
+                        proposals.append((question[:300], f"resident:{resident.lower()}"))
+                    break
+    return proposals, accepted
+
+
+def ledger_rows(limit=None):
+    rows = []
+    if not LOCAL_FINDINGS.exists():
+        return rows
+    lines = LOCAL_FINDINGS.read_text().splitlines()
+    for raw in (lines[-limit:] if limit else lines):
+        try:
+            rows.append(json.loads(raw))
+        except json.JSONDecodeError:
+            continue
+    return rows
+
+
+def line_followup(line):
+    """The question the line's own newest accepted finding leaves behind, or ""."""
+    for item in reversed(ledger_rows(limit=80)):
+        if item.get("line_id") != line.get("id") or item.get("status") in {"rejected", "retracted", "duplicate"} or not item.get("claim"):
+            continue
+        followup = finding_followup_question(item)
+        if followup:
+            return followup[:300]
+    return ""
+
+
+def hire_questions():
+    """Active residents' own hiring questions that pass the council's rules; the world's fallback subjects."""
     try:
-        frontier_items = json.loads(LOCAL_FRONTIER.read_text()).get("open_questions", []) if LOCAL_FRONTIER.exists() else []
+        registry = json.loads(LOCAL_REGISTRY.read_text()) if LOCAL_REGISTRY.exists() else {"agents": []}
     except (OSError, json.JSONDecodeError):
-        frontier_items = []
-    carried = carry_forward(frontier_items)
-    if carried:
-        return (str(carried.get("question", ""))[:300], "carried:" + str(carried.get("id", "frontier")), accepted,
-                str(carried.get("research_topic") or "")[:160])
+        registry = {"agents": []}
+    items = []
+    for agent in registry.get("agents", []):
+        if agent.get("status") not in {"active-local", "probation"}:
+            continue
+        question = re.sub(r"\s+", " ", str(agent.get("question") or "")).strip()
+        if question and not question_rejection_reason(question):
+            items.append((agent.get("id"), question[:300]))
+    return items
+
+
+def next_question(base_url):
+    """The council's question for this cycle, chosen on its research line.
+
+    Residents propose; a proposal that shares an anchor with the open line is
+    its next step, any other waits in the queue for a new line. With no step,
+    the line's newest finding leaves a follow-up; with none, the line's last
+    question is carried. When no line is open, the oldest queued subject opens
+    one, then a resident's own hiring question, then the fixed fallback.
+    Returns the decision dict (question, source, accepted, research_topic,
+    line_id, anchors, opened, closed).
+    """
+    state = research_lines.load_state(LINES)
+    line = research_lines.open_line(state)
+    proposals, accepted = resident_proposals(base_url, line)
     try:
-        previous = str(json.loads(PUBLIC_CYCLE.read_text()).get("question", "")).strip() if PUBLIC_CYCLE.exists() else ""
+        cycle = int(json.loads(RUNTIME_STATE.read_text()).get("cycle", 0)) + 1  # the cycle about to be recorded
+    except (OSError, json.JSONDecodeError, TypeError, ValueError):
+        cycle = 1
+    generic = research_lines.generic_terms([row.get("claim", "") for row in ledger_rows()
+                                            if row.get("status") not in {"rejected", "retracted", "duplicate"}])
+    decision = research_lines.decide(state, cycle, proposals, line_followup, hire_questions(), FIXED_FALLBACK, generic=generic)
+    decision["accepted"] = accepted
+    research_lines.save_state(LINES, state)
+    return decision
+
+
+def settle_line(cycle, world):
+    """After the cycle's research: count accepted findings on the open line and any room founded on it."""
+    state = research_lines.load_state(LINES)
+    line = research_lines.open_line(state)
+    if not line:
+        return []
+    accepted, line_findings = 0, set()
+    for item in ledger_rows(limit=400):
+        if item.get("line_id") != line.get("id") or item.get("status") in {"rejected", "retracted", "duplicate"}:
+            continue
+        line_findings.add(item.get("id"))
+        if int(item.get("cycle") or 0) == int(cycle):
+            accepted += 1
+    founding = {}
+    for record in load_records(LOCAL_CORROBORATIONS):
+        founding[record.get("id")] = set(record.get("finding_ids") or [])
+    rooms = [room.get("id") for room in world.get("rooms", [])
+             if room.get("founded_via") == "evidence-ledger" and int(room.get("founded_cycle") or 0) == int(cycle)
+             and founding.get(room.get("corroboration_id"), set()) & line_findings]
+    closures = research_lines.note_outcome(state, cycle, accepted, rooms)
+    research_lines.save_state(LINES, state)
+    return closures
+
+
+def note_line_events(cycle, world, decision, closures):
+    """Record line openings and closings as world events so the feed and the journal show them."""
+    events = []
+    state = research_lines.load_state(LINES)
+    if decision.get("opened"):
+        line = next((item for item in state.get("lines", []) if item.get("id") == decision.get("line_id")), {})
+        events.append({"id": f"event-line-open-{int(cycle):06d}", "actor": "council", "kind": "line-opened",
+                       "purpose": "research line", "root": str(line.get("root", ""))[:300], "origin": str(line.get("origin", ""))[:80],
+                       "anchors": line.get("anchors", []), "line": line.get("id"),
+                       "text": ("The council opened a research line: " + str(line.get("root", ""))[:160] + " (" + str(line.get("origin", "")) + ").")[:300]})
+    for closure in list(decision.get("closed") or []) + list(closures or []):
+        line = next((item for item in state.get("lines", []) if item.get("id") == closure.get("id")), {})
+        events.append({"id": f"event-line-close-{int(cycle):06d}-{closure.get('id', '')[-8:]}", "actor": "council", "kind": "line-closed",
+                       "purpose": "research line", "root": str(line.get("root", ""))[:300], "reason": str(closure.get("reason", ""))[:120],
+                       "line": line.get("id"), "rooms": list(closure.get("rooms") or []),
+                       "text": ("A research line closed: " + str(closure.get("reason", "")) + ". Root: " + str(line.get("root", ""))[:140])[:300]})
+    if not events:
+        return world
+    stamp = datetime.now(timezone.utc).isoformat()
+    ARCHIVE.parent.mkdir(parents=True, exist_ok=True)
+    with ARCHIVE.open("a") as archive:
+        for event in events:
+            event.update({"confidence": 1.0, "cycle": int(cycle), "recorded_at": stamp})
+            world.setdefault("events", []).append(event)
+            archive.write(json.dumps(event, separators=(",", ":")) + "\n")
+    world["events"] = world["events"][-20:]
+    atomic_write_json(RUNTIME_STATE, world)
+    try:
+        canonical = json.loads(STATE.read_text())
+        canonical["events"] = (canonical.get("events", []) + events)[-200:]
+        atomic_write_json(STATE, canonical)
     except (OSError, json.JSONDecodeError):
-        previous = ""
-    if previous:
-        return previous[:300], "carried:previous-cycle", accepted, ""
-    return ("Which claim in the open record is least supported by an independent public source, and which source could settle it?",
-            "fixed-fallback", accepted, "")
+        pass
+    return world
 
 
 def recruit(base_url, cycle):
@@ -793,10 +882,11 @@ def recruit(base_url, cycle):
         return {"status": "failed", "active": active, "capacity": MAX_LOCAL_HIRELINGS}
 
 
-def govern(base_url, cycle, question="", research_topic=""):
+def govern(base_url, cycle, question="", research_topic="", line_id="", anchors=()):
     completed = subprocess.run([sys.executable, str(ROOT / "scripts/local_autonomy.py"),
         "--base-url", base_url, "--cycle", str(cycle), "--question", str(question or "")[:300],
-        "--topic", str(research_topic or "")[:160]],
+        "--topic", str(research_topic or "")[:160], "--line-id", str(line_id or "")[:60],
+        "--anchors", ",".join(str(term) for term in (anchors or []))[:200]],
         cwd=ROOT, capture_output=True, text=True, check=False)
     if completed.returncode != 0:
         LOCAL_AUTONOMY_ERRORS.parent.mkdir(parents=True, exist_ok=True)
@@ -822,6 +912,7 @@ def sync_frontier(result, world, registry):
         frontier["open_questions"].append({"id": f"frontier-question-{cycle}", "cycle": cycle,
                                            "source": "council", "question_source": str(result.get("question_source") or ""),
                                            "research_topic": str(result.get("research_topic") or "")[:160],
+                                           "line_id": str(result.get("line_id") or "")[:60],
                                            "question": question, "status": "open"})
     known = {item.get("id") for item in frontier["findings"]}
     for discovery in world.get("discoveries", [])[-20:]:
@@ -927,9 +1018,14 @@ def sync_frontier(result, world, registry):
               "corroborations": frontier.get("corroborations", [])[-50:],
               "leads": [{key: item.get(key) for key in ("id", "source", "question_id", "text", "status", "cycle")}
                         for item in frontier.get("leads", [])[-30:]],
-              "tasks": frontier["tasks"][-50:], "activity": frontier["activity"][-50:]}
+              "tasks": frontier["tasks"][-50:], "activity": frontier["activity"][-50:],
+              "research_lines": research_lines.public_view(research_lines.load_state(LINES))}
     atomic_write_json(PUBLIC_FRONTIER, public)
+    open_line = research_lines.open_line(research_lines.load_state(LINES)) or {}
     return {"frontier_leads": len(frontier.get("leads", [])),
+            "research_line": ({"id": open_line.get("id"), "root": str(open_line.get("root", ""))[:200], "anchors": open_line.get("anchors", []),
+                               "hops": len(open_line.get("hops", [])), "findings": open_line.get("findings", 0),
+                               "empty_cycles": open_line.get("empty_cycles", 0)} if open_line else None),
             "frontier_questions": len(frontier["open_questions"]),
             "frontier_findings": len(frontier["findings"]), "frontier_tasks": len(frontier["tasks"]),
             "frontier_feed": "docs/frontier.json"}
@@ -1548,7 +1644,9 @@ try:
         sync_frontier({}, runtime_world(), registry)
         frontier = json.loads(LOCAL_FRONTIER.read_text()) if LOCAL_FRONTIER.exists() else {}
         codex_task = queue_codex_frontier_review(frontier)
-        question, question_source, self_prompt_accepted, research_topic = next_question(base_url)
+        decision = next_question(base_url)
+        question, question_source = decision["question"], decision["source"]
+        self_prompt_accepted, research_topic = decision.get("accepted", 0), decision.get("research_topic", "")
         completed = subprocess.run([sys.executable, str(ROOT / "scripts/roundtable.py"),
             "--base-url", base_url, "--question", question], cwd=ROOT,
             capture_output=True, text=True, check=False)
@@ -1556,15 +1654,21 @@ try:
             result = json.loads(completed.stdout)
             result["question_source"] = question_source
             result["research_topic"] = research_topic
+            result["line_id"] = decision.get("line_id", "")
+            result["anchors"] = decision.get("anchors", [])
             result["self_prompt_accepted"] = self_prompt_accepted
             world = record(result)
             result["action"] = (action(base_url, world["cycle"]) if world["cycle"] % 4 == 0
                                 else {"action": "local-behavioral-probe", "status": "skipped-this-cycle"})
             result["recruitment"] = recruit(base_url, world["cycle"])
-            result["autonomy"] = govern(base_url, world["cycle"], question, research_topic)
+            result["autonomy"] = govern(base_url, world["cycle"], question, research_topic,
+                                        decision.get("line_id", ""), decision.get("anchors", []))
             # Autonomy may have constructed or transformed internal rooms.
             # Reload the canonical topology before publishing this cycle.
             world = runtime_world()
+            closures = settle_line(world["cycle"], world)
+            result["line_closures"] = closures
+            world = note_line_events(world["cycle"], world, decision, closures)
             if args.publish:
                 publish(result, world, model_health=model_health)
             print(json.dumps({"cycle": world["cycle"], "metrics": metrics(result), "action": result["action"],

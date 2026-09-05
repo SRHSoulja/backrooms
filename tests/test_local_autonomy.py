@@ -698,6 +698,39 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertTrue(local_autonomy.PHYSICAL_NEEDS.search("I need clean water and shelter"))
         self.assertFalse(local_autonomy.PHYSICAL_NEEDS.search("I need a public dataset and compute"))
 
+    def test_findings_on_the_council_line_carry_its_anchors_and_drift_is_rejected(self):
+        payloads = iter([
+            {"claim": "Roskomnadzor blocked access to GitHub in December 2014.", "quote": "Roskomnadzor blocked access to GitHub", "confidence": 0.9},
+            {"claim": "Users can choose to hide their private contributions on GitHub.", "quote": "hide their private contributions", "confidence": 0.8},
+        ])
+
+        class FakeResponse:
+            def read(self):
+                return json.dumps({"choices": [{"message": {"content": json.dumps(next(payloads))}}]}).encode()
+            def __enter__(self):
+                return self
+            def __exit__(self, *_args):
+                return False
+
+        agent = {"id": "local-test", "room": "archive", "capabilities": [], "research_assignment": {"cycle": 5, "origin": "council-question"}}
+        original_line = dict(local_autonomy.CURRENT_LINE)
+        local_autonomy.CURRENT_LINE.update({"id": "line-000300-abcdef01", "anchors": ["roskomnadzor"]})
+        original = local_autonomy.urllib.request.urlopen
+        local_autonomy.urllib.request.urlopen = lambda *_args, **_kwargs: FakeResponse()
+        try:
+            on_line = local_autonomy.extract_finding("http://127.0.0.1:1", agent, 5,
+                {"source": "https://techcrunch.com/2014/12/03/github-russia/", "excerpt": "Roskomnadzor blocked access to GitHub in December 2014 over suicide content.",
+                 "source_hash": "hash-a", "query": "roskomnadzor github block"})
+            drifted = local_autonomy.extract_finding("http://127.0.0.1:1", agent, 5,
+                {"source": "https://docs.github.com/en/profile-contributions", "excerpt": "Users can choose to hide their private contributions on GitHub profiles.",
+                 "source_hash": "hash-b", "query": "roskomnadzor github block"})
+        finally:
+            local_autonomy.urllib.request.urlopen = original
+            local_autonomy.CURRENT_LINE.clear()
+            local_autonomy.CURRENT_LINE.update(original_line)
+        self.assertEqual((on_line["status"], on_line["line_id"], on_line["anchors"]), ("unreviewed", "line-000300-abcdef01", ["roskomnadzor"]))
+        self.assertEqual((drifted["status"], drifted["rejection_reason"]), ("rejected", "off-topic"))
+
     def test_extraction_from_a_persons_profile_is_rejected_as_profile_subject(self):
         excerpt = "roscom. Ross Cameron. Roscommon Pty Ltd. Sydney, Australia. 12 repositories."
         tool = {"source": "https://github.com/roscom", "excerpt": excerpt, "source_hash": "hash-p",

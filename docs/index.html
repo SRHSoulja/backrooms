@@ -283,7 +283,14 @@ fetch(`./frontier.json?t=${Date.now()}`).then(r => r.json()).then(f => {
   const corroborations = (f.corroborations || []).slice(-4).reverse();
   const contradictions = (f.contradictions || []).slice(-3).reverse();
   const leads = (f.leads || []).slice(-3).reverse();
-  document.getElementById('frontier').innerHTML =
+  const rl = f.research_lines || {};
+  const lines = { open: (rl.lines || []).find(l => l.status === 'open'), closed: (rl.lines || []).filter(l => l.status === 'closed').slice(-3).reverse(), queue: (rl.queue || []).length };
+  const lineBlock = (lines.open
+    ? `<p><strong>Research line</strong> · ${escapeHtml(lines.open.root || '')}<br><span class="label">anchors: ${escapeHtml((lines.open.anchors || []).join(', ') || 'none')} · question ${escapeHtml((lines.open.hops || []).length)} of ${escapeHtml(rl.hop_cap ?? 3)} · ${escapeHtml(lines.open.findings ?? 0)} findings · ${escapeHtml(lines.open.empty_cycles ?? 0)} empty cycles · opened cycle ${escapeHtml(lines.open.opened_cycle ?? '')} · ${escapeHtml(lines.open.origin || '')}</span>${(lines.open.hops || []).slice(1).map(h => `<br><span class="label">then, cycle ${escapeHtml(h.cycle ?? '')} · ${escapeHtml(h.source || '')}:</span> ${escapeHtml(h.question || '')}`).join('')}</p>`
+    : `<p><strong>Research line</strong> · none open</p>`) +
+    (lines.closed.length ? `<p><strong>Closed lines</strong></p>` + lines.closed.map(l => `<p>${escapeHtml(l.root || '')}<br><span class="label">${escapeHtml(l.closed_reason || '')} · cycles ${escapeHtml(l.opened_cycle ?? '')} to ${escapeHtml(l.closed_cycle ?? '')} · ${escapeHtml(l.findings ?? 0)} findings${(l.rooms || []).length ? ' · room ' + escapeHtml(l.rooms.join(', ')) : ''}</span></p>`).join('') : '') +
+    (lines.queue ? `<p class="label">${escapeHtml(lines.queue)} subject${lines.queue === 1 ? '' : 's'} queued for the next line</p>` : '');
+  document.getElementById('frontier').innerHTML = lineBlock +
     `<p><span class="label">${escapeHtml((f.open_questions || []).length)} questions · ${escapeHtml((f.tasks || []).length)} tasks · ${escapeHtml(corroborations.length ? (f.corroborations || []).length : 0)} judged pairs · ${escapeHtml((f.contradictions || []).length)} contradictions · ${escapeHtml((f.leads || []).length)} outside leads</span></p>` +
     (questions.length ? `<p><strong>Open questions</strong></p>` + questions.map(item => `<p>${escapeHtml(item.question || '')}<br><span class="label">${escapeHtml(item.id || '')} · cycle ${escapeHtml(item.cycle ?? '')}</span></p>`).join('') : '<p>No open council questions.</p>') +
     (corroborations.length ? `<p><strong>Judged pairs</strong></p>` + corroborations.map(item => `<p>${escapeHtml(item.relation || '')} · ${escapeHtml(item.topic || '')}<br><span class="label">${escapeHtml((item.domains || []).join(' + '))} · ${escapeHtml((item.finding_ids || []).join(', '))}</span></p>`).join('') : '<p>No cross-domain finding pairs judged yet.</p>') +

@@ -22,7 +22,7 @@ class JournalTests(unittest.TestCase):
     def test_digest_counts_only_the_day(self):
         d = digest()
         self.assertEqual(d["counts"], {"accepted_findings": 1, "rejected_findings": 1, "judged_pairs": 1, "supports": 1, "contradicts": 0,
-                                       "rooms_built": 1, "tasks_completed": 1, "retractions": 1, "retired": 1, "room_changes": 1, "hired": 0, "rooms_withdrawn": 0, "rooms_collapsed": 0, "day_zero_cycle": None})
+                                       "rooms_built": 1, "tasks_completed": 1, "retractions": 1, "retired": 1, "room_changes": 1, "hired": 0, "rooms_withdrawn": 0, "rooms_collapsed": 0, "lines_opened": 0, "lines_closed": 0, "day_zero_cycle": None})
         self.assertEqual(d["contributors"], [{"id": "local-004", "name": "Lumina"}])
 
     def test_verifier_rejects_invented_ids_numbers_and_length(self):

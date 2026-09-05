@@ -291,6 +291,9 @@ def extract_finding(url, agent, cycle, tool, target_claim=None, topic_override=N
     if target_claim and target_claim.get("id"):
         record["verifies"] = target_claim.get("id")
         record["verifies_claim"] = str(target_claim.get("claim", ""))[:300]
+    if record["origin"] != "resident-target" and CURRENT_LINE.get("id"):
+        record["line_id"] = CURRENT_LINE["id"]
+        record["anchors"] = list(CURRENT_LINE.get("anchors") or [])
     if status == "rejected":
         record["rejection_reason"] = reason
     elif search_page(record.get("url")):
@@ -1225,6 +1228,9 @@ def verification_query(claim, topic, limit=8):
 
 
 VERIFY_ATTEMPTS = 3
+# The research line the council is working this cycle; findings made on its
+# behalf carry its id and anchors so they can be held to its subject.
+CURRENT_LINE = {"id": "", "anchors": []}
 
 
 def target_claim_for(topic):
@@ -1250,7 +1256,8 @@ def target_claim_for(topic):
     for item in reversed(accepted_findings()):
         have = {term[:6] for term in question_terms(str(item.get("topic", "")), limit=12).split()}
         overlap = len(wanted & have) / len(wanted | have) if (wanted | have) else 0.0
-        if overlap < 0.5 or item.get("id") in supported:
+        on_line = bool(CURRENT_LINE.get("id")) and item.get("line_id") == CURRENT_LINE.get("id")
+        if (overlap < 0.5 and not on_line) or item.get("id") in supported:
             continue
         if definition_source(item) or profile_subject(item) or not finding_on_topic(item):
             continue
@@ -1833,6 +1840,8 @@ def main():
     parser.add_argument("--cycle", type=int, required=True)
     parser.add_argument("--question", default="", help="the cycle's council question; half of the research turns investigate it")
     parser.add_argument("--topic", default="", help="research topic behind a follow-up question (the query that produced the finding)")
+    parser.add_argument("--line-id", default="", help="id of the open research line the council question belongs to")
+    parser.add_argument("--anchors", default="", help="comma-separated anchor terms of the open research line")
     args = parser.parse_args()
     registry = json.loads(REGISTRY.read_text()) if REGISTRY.exists() else {"agents": [], "decisions": []}
     normalize_capabilities(registry)
@@ -1866,6 +1875,8 @@ def main():
         for item in released_claims:
             emit_event(world, args.cycle, "task-claim-expired", "frontier",
                        "A claimed frontier task went uncompleted for too long and returned to the open pool.", **item)
+    CURRENT_LINE["id"] = str(args.line_id or "")[:60]
+    CURRENT_LINE["anchors"] = [term.strip() for term in str(args.anchors or "").split(",") if term.strip()][:8]
     shared_research, shared_family, shared_avoid = shared_research_target(args.question, frontier_snapshot, topic_hint=args.topic)
     # The cooperation that matters: once one resident has filed a claim on the
     # council's topic, the next residents on that topic go looking for a second,
