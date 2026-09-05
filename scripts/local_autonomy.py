@@ -2400,8 +2400,12 @@ def main():
                     # the first; prefer any other domain when one exists.
                     candidates = [url for url in candidates
                                   if urllib.parse.urlparse(url).netloc.lower() not in shared_avoid]
-                candidates.sort(key=lambda value: (0 if any(host in value.lower() for host in
-                                  ("wikipedia.org", "github.com", "arxiv.org", "crossref.org")) else 1, value))
+                reference_hosts = ("wikipedia.org", "github.com", "arxiv.org", "crossref.org", "doi.org")
+                if str(CURRENT_LINE.get("origin") or "").startswith("stream:"):
+                    # A news event is confirmed by other outlets, so reference sites go last here.
+                    candidates.sort(key=lambda value: (1 if any(host in value.lower() for host in reference_hosts) else 0, value))
+                else:
+                    candidates.sort(key=lambda value: (0 if any(host in value.lower() for host in reference_hosts) else 1, value))
                 candidates = candidates[:3]
                 if candidates:
                     fetch_budget -= 1
