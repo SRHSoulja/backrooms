@@ -38,7 +38,7 @@ class PublicStreamTests(unittest.TestCase):
         self.assertNotIn("Times of Israel", first[0][0])  # the outlet is the seed source, never part of the question
         self.assertEqual(first[0][1], "stream:wikipedia-current-events/2026-09-04")
         seed = first[0][2]
-        self.assertEqual((seed["url"], seed["outlet"]), ("https://www.timesofisrael.com/x", "The Times of Israel"))
+        self.assertEqual((seed["url"], seed["outlet"], seed["urls"]), ("https://www.timesofisrael.com/x", "The Times of Israel", ["https://www.timesofisrael.com/x"]))
         self.assertTrue(seed["claim"].startswith("The Israel Defense Forces state"))
         self.assertEqual(items[1]["citations"][0]["label"], "AFP via France 24")
         self.assertEqual(public_streams.day_page(date(2026, 9, 4)), "Portal:Current_events/2026_September_4")

@@ -325,6 +325,40 @@ def extract_finding(url, agent, cycle, tool, target_claim=None, topic_override=N
     return record
 
 
+BLOCKED_HOSTS = ROOT / "state/blocked-hosts.json"
+BLOCKED_HOST_DAYS = 7
+
+
+def blocked_hosts(now=None):
+    """Hosts that refused the broker recently (403 even as a browser); they go last, never first."""
+    try:
+        data = json.loads(BLOCKED_HOSTS.read_text())
+    except (OSError, json.JSONDecodeError):
+        return {}
+    now = now or datetime.now(timezone.utc)
+    live = {}
+    for host, stamp in data.items():
+        try:
+            when = datetime.fromisoformat(str(stamp))
+        except ValueError:
+            continue
+        if (now - when).days < BLOCKED_HOST_DAYS:
+            live[host] = stamp
+    return live
+
+
+def note_blocked_host(url):
+    host = urllib.parse.urlparse(str(url or "")).netloc.lower()
+    if not host:
+        return
+    data = blocked_hosts()
+    data[host] = datetime.now(timezone.utc).isoformat()
+    try:
+        atomic_write_json(BLOCKED_HOSTS, data)
+    except OSError:
+        pass
+
+
 def fetch_public_text(url, focus="", base_url=None):
     """The broker's public-text tool as a subprocess; a failed fetch is a dict with a status."""
     focus_part = (" :: " + str(focus)[:200]) if focus else ""
@@ -341,17 +375,25 @@ def file_seed_finding(world, cycle, seed, topic="", fetch=fetch_public_text):
     the world re-fetches that page and, if the judge finds a sentence stating
     the event, files it as the line's first finding, quoted word for word. If
     no sentence states it, nothing is filed and the line searches as usual."""
-    claim, url = str(seed.get("claim") or "").strip(), str(seed.get("url") or "").strip()
-    if not claim or not url.startswith("https://"):
+    claim = str(seed.get("claim") or "").strip()
+    urls = [str(url).strip() for url in (seed.get("urls") or [seed.get("url")]) if str(url or "").startswith("https://")]
+    if not claim or not urls:
         return None
-    fetched = fetch(url, claim)
-    if not isinstance(fetched, dict) or fetched.get("status") != "completed":
-        return None
-    excerpt = str(fetched.get("excerpt", ""))
-    probe = {"source": url, "excerpt": excerpt, "query": topic or claim, "sentences": fetched.get("sentences") or [],
-             "source_hash": hashlib.sha256(excerpt.encode()).hexdigest()}
-    finding = entailed_finding({"id": "council", "room": "relay"}, cycle, probe, {"id": None, "claim": claim}, topic_override=topic or claim)
-    if not finding or finding.get("status") == "rejected":
+    finding = None
+    for url in urls[:3]:
+        fetched = fetch(url, claim)
+        if not isinstance(fetched, dict) or fetched.get("status") != "completed":
+            if isinstance(fetched, dict) and fetched.get("http_status") == 403:
+                note_blocked_host(url)
+            continue  # unreachable or refused: the event's next citation may state it
+        excerpt = str(fetched.get("excerpt", ""))
+        probe = {"source": url, "excerpt": excerpt, "query": topic or claim, "sentences": fetched.get("sentences") or [],
+                 "source_hash": hashlib.sha256(excerpt.encode()).hexdigest()}
+        finding = entailed_finding({"id": "council", "room": "relay"}, cycle, probe, {"id": None, "claim": claim}, topic_override=topic or claim)
+        if finding and finding.get("status") != "rejected":
+            break
+        finding = None
+    if not finding:
         return None
     finding["origin"] = "seed-source"
     finding.pop("verifies", None)
@@ -2111,7 +2153,8 @@ def main():
     CURRENT_LINE["id"] = str(args.line_id or "")[:60]
     CURRENT_LINE["anchors"] = [term.strip() for term in str(args.anchors or "").split(",") if term.strip()][:8]
     CURRENT_LINE["origin"] = str(args.line_origin or "")[:80]
-    CURRENT_LINE["seed"] = {"claim": str(args.seed_claim or "")[:300], "url": str(args.seed_url or "")[:500]} if args.seed_claim and args.seed_url else None
+    seed_urls = [url for url in str(args.seed_url or "").split() if url.startswith("https://")][:3]
+    CURRENT_LINE["seed"] = {"claim": str(args.seed_claim or "")[:300], "url": seed_urls[0], "urls": seed_urls} if args.seed_claim and seed_urls else None
     try:
         for record in resident_tools.expire_trials(args.cycle):
             emit_event(world, args.cycle, "tool-expired", "council",
@@ -2447,11 +2490,15 @@ def main():
                     candidates = [url for url in candidates
                                   if urllib.parse.urlparse(url).netloc.lower() not in shared_avoid]
                 reference_hosts = ("wikipedia.org", "github.com", "arxiv.org", "crossref.org", "doi.org")
+                refusing = blocked_hosts()
+                def refused(value):
+                    return 1 if urllib.parse.urlparse(value).netloc.lower() in refusing else 0
                 if str(CURRENT_LINE.get("origin") or "").startswith("stream:"):
-                    # A news event is confirmed by other outlets, so reference sites go last here.
-                    candidates.sort(key=lambda value: (1 if any(host in value.lower() for host in reference_hosts) else 0, value))
+                    # A news event is confirmed by other outlets, so reference sites go last here,
+                    # and sites that refused the broker this week go after everything.
+                    candidates.sort(key=lambda value: (refused(value), 1 if any(host in value.lower() for host in reference_hosts) else 0, value))
                 else:
-                    candidates.sort(key=lambda value: (0 if any(host in value.lower() for host in reference_hosts) else 1, value))
+                    candidates.sort(key=lambda value: (refused(value), 0 if any(host in value.lower() for host in reference_hosts) else 1, value))
                 candidates = candidates[:3]
                 if candidates:
                     fetch_budget -= 1
@@ -2582,6 +2629,8 @@ def main():
             elif tool.get("status") != "not-requested":
                 if tool.get("status") in FAILED_SOURCE_STATES:
                     agent["target_repeats"] = max(1, int(agent.get("target_repeats", 0) or 0))
+                if tool.get("http_status") == 403 and str(tool.get("url") or query_target or "").startswith("https://"):
+                    note_blocked_host(tool.get("url") or query_target)
                 why = re.sub(r"\s+", " ", str(tool.get("reason") or "")).strip()[:140]
                 emit_event(world, args.cycle, "tool-failed", agent.get("id", "resident"),
                            f"Resident {tool.get('tool', 'tool')} attempt ended with status {tool.get('status', 'unknown')}"

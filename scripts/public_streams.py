@@ -96,7 +96,8 @@ def seed_for(item):
     citations = [c for c in (item.get("citations") or []) if str(c.get("url", "")).startswith("https://")]
     if not citations:
         return None
-    return {"claim": str(item.get("text", "")).strip()[:300], "url": str(citations[0]["url"])[:500], "outlet": str(citations[0].get("label", ""))[:80]}
+    return {"claim": str(item.get("text", "")).strip()[:300], "url": str(citations[0]["url"])[:500], "outlet": str(citations[0].get("label", ""))[:80],
+            "urls": [str(c["url"])[:500] for c in citations[:3]]}
 
 
 def stream_questions(items, cycle, limit=8):

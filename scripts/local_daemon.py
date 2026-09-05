@@ -1091,7 +1091,8 @@ def govern(base_url, cycle, question="", research_topic="", line_id="", anchors=
         "--topic", str(research_topic or "")[:160], "--line-id", str(line_id or "")[:60],
         "--anchors", ",".join(str(term) for term in (anchors or []))[:200],
         "--line-origin", str(line_origin or "")[:80],
-        "--seed-claim", str((seed or {}).get("claim") or "")[:300], "--seed-url", str((seed or {}).get("url") or "")[:500]],
+        "--seed-claim", str((seed or {}).get("claim") or "")[:300],
+        "--seed-url", " ".join(str(url)[:500] for url in ((seed or {}).get("urls") or [(seed or {}).get("url") or ""]) if url)[:1600]],
         cwd=ROOT, capture_output=True, text=True, check=False)
     if completed.returncode != 0:
         LOCAL_AUTONOMY_ERRORS.parent.mkdir(parents=True, exist_ok=True)

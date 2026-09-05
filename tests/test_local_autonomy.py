@@ -775,17 +775,22 @@ class LocalAutonomyTests(unittest.TestCase):
             fetches = []
             def fetch(url, focus=""):
                 fetches.append((url, focus[:30]))
+                if "refuses" in url:
+                    return {"status": "failed", "http_status": 403, "error_kind": "source-access-denied"}
                 return {"status": "completed", "excerpt": "Fighting raged on Thursday. Over 120 people were killed in clashes between the Houthis and the Yemeni Armed Forces, medics said.",
                         "sentences": ["Fighting raged on Thursday in the north of the country.", "Over 120 people were killed in clashes between the Houthis and the Yemeni Armed Forces, medics said."]}
+            local_autonomy.BLOCKED_HOSTS = Path(directory) / "blocked-hosts.json"
             try:
                 world = {"events": []}
-                seed = {"claim": "Over 120 people were killed in clashes between the Houthis and the Yemeni Armed Forces.", "url": "https://www.france24.com/en/x"}
+                seed = {"claim": "Over 120 people were killed in clashes between the Houthis and the Yemeni Armed Forces.", "url": "https://refuses.example/a",
+                        "urls": ["https://refuses.example/a", "https://www.france24.com/en/x"]}
                 filed = local_autonomy.file_seed_finding(world, 347, seed, topic="houthis yemeni clashes", fetch=fetch)
                 self.assertEqual((filed["origin"], filed["agent"], filed["line_id"], filed["status"]), ("seed-source", "council", "line-000347-seed", "unreviewed"))
                 self.assertIn("Over 120 people were killed", filed["quote"])
                 self.assertNotIn("verifies", filed)
                 self.assertEqual(world["events"][-1]["kind"], "seed-verified")
-                self.assertEqual(fetches[0][0], "https://www.france24.com/en/x")
+                self.assertEqual([f[0] for f in fetches], ["https://refuses.example/a", "https://www.france24.com/en/x"])  # the refusing outlet is skipped
+                self.assertIn("refuses.example", local_autonomy.blocked_hosts())
                 self.assertEqual(len(local_autonomy.FINDINGS.read_text().splitlines()), 1)
                 nothing = local_autonomy.file_seed_finding(world, 348, {"claim": "A claim the page never states in any sentence at all.", "url": "https://www.france24.com/en/y"}, fetch=fetch)
                 self.assertIsNone(nothing)
