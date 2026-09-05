@@ -45,6 +45,56 @@ class GeminiModelChoiceTests(unittest.TestCase):
         self.assertEqual((gemini["reasoning_effort"], gemini["min_max_tokens"]), ("low", 1024))
 
 
+class TransientRetryTests(unittest.TestCase):
+    def test_503_is_retried_with_exponential_backoff_then_raised(self):
+        import io
+        import json as json_module
+        import urllib.error
+        from scripts import model_client
+        calls, waits = [], []
+
+        class Response(io.BytesIO):
+            headers = {}
+            def __enter__(self):
+                return self
+            def __exit__(self, *_args):
+                return False
+
+        def opener(request, timeout=0):
+            calls.append(request.full_url)
+            if len(calls) <= 2:
+                raise urllib.error.HTTPError(request.full_url, 503, "overloaded", {}, io.BytesIO(b'[{"error": {"message": "high demand"}}]'))
+            return Response(json_module.dumps({"choices": [{"message": {"content": "ok"}}], "usage": {"prompt_tokens": 3, "completion_tokens": 1}}).encode())
+
+        provider = {"name": "gemini", "base_url": "https://example.invalid/v1beta/openai", "api_key": "k", "model": "gemini-3.8-flash",
+                    "json_schema": True, "chat_path": "/chat/completions", "reasoning_effort": "low", "min_max_tokens": 1024}
+        content, _p, _c, _l = model_client._request_with_retry(provider, [{"role": "user", "content": "hi"}], 0.1, 20, None, "x", 5, opener, waits.append)
+        self.assertEqual((content, len(calls), waits), ("ok", 3, [1.0, 2.0]))
+        calls.clear(); waits.clear()
+
+        def always(request, timeout=0):
+            calls.append(1)
+            raise urllib.error.HTTPError("u", 503, "overloaded", {}, io.BytesIO(b"{}"))
+        with self.assertRaises(urllib.error.HTTPError):
+            model_client._request_with_retry(provider, [{"role": "user", "content": "hi"}], 0.1, 20, None, "x", 5, always, waits.append)
+        self.assertEqual((len(calls), waits), (model_client.TRANSIENT_RETRIES + 1, [1.0, 2.0, 4.0]))
+
+        def bad(request, timeout=0):
+            calls.append(1)
+            raise urllib.error.HTTPError("u", 400, "bad", {}, io.BytesIO(b"{}"))
+        calls.clear()
+        with self.assertRaises(urllib.error.HTTPError):
+            model_client._request_with_retry(provider, [{"role": "user", "content": "hi"}], 0.1, 20, None, "x", 5, bad, waits.append)
+        self.assertEqual(len(calls), 1)  # a 400 is never retried
+
+    def test_thinking_setting_follows_the_docs(self):
+        from scripts.model_client import thinking_setting
+        self.assertEqual(thinking_setting("gemini-3.8-flash"), "low")
+        self.assertEqual(thinking_setting("gemini-3.6-flash"), "minimal")
+        self.assertEqual(thinking_setting("gemini-3.5-flash-lite"), "minimal")
+        self.assertEqual(thinking_setting("gemini-3.5-flash"), "low")
+
+
 class ProviderOrderTests(unittest.TestCase):
     def test_preferred_providers_move_to_the_front_without_dropping_the_rest(self):
         from scripts.model_client import ordered_providers
@@ -157,7 +207,7 @@ class ModelClientTests(unittest.TestCase):
         content, provider = model_client.complete([{"role": "user", "content": "hi"}], base_url="http://127.0.0.1:9",
                                                   opener=opener, sleep=self.sleeps.append, clock=lambda: 1000.0)
         self.assertEqual(provider, "groq")
-        self.assertEqual(sum("mistral" in url for url in attempts), 2)
+        self.assertEqual(sum("mistral" in url for url in attempts), model_client.TRANSIENT_RETRIES + 1)  # backoff retries, then fall through
         summary = {item["name"]: item for item in model_client.usage_summary("http://127.0.0.1:9")["providers"]}
         self.assertEqual(summary["mistral"]["errors"], 1)
         self.assertIn("429", summary["mistral"]["last_error"])
@@ -181,7 +231,7 @@ class ModelClientTests(unittest.TestCase):
         def opener(request, timeout=0):
             attempts.append(request.full_url)
             if "mistral" in request.full_url:
-                if sum("mistral" in url for url in attempts) <= 2:
+                if sum("mistral" in url for url in attempts) <= model_client.TRANSIENT_RETRIES + 1:
                     raise urllib.error.HTTPError(request.full_url, 429, "rate limited", {},
                                                  io.BytesIO(b'{"message": "Requests rate limit exceeded"}'))
                 return reply('{"ok": true}')
@@ -190,8 +240,8 @@ class ModelClientTests(unittest.TestCase):
         content, provider = model_client.complete([{"role": "user", "content": "hi"}], base_url="http://127.0.0.1:9",
                                                   opener=opener, sleep=sleep, clock=lambda: clock["now"])
         self.assertEqual((content, provider), ('{"ok": true}', "mistral"))
-        # one immediate retry, then the whole cooldown waited out, then success
-        self.assertEqual(sum("mistral" in url for url in attempts), 3)
+        # the backoff retries, then the whole cooldown waited out, then success
+        self.assertEqual(sum("mistral" in url for url in attempts), model_client.TRANSIENT_RETRIES + 2)
         self.assertTrue(any(seconds >= 15 for seconds in sleeps))
         summary = {item["name"]: item for item in model_client.usage_summary("http://127.0.0.1:9")["providers"]}
         self.assertEqual(summary["mistral"]["calls"], 1)

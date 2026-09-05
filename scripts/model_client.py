@@ -13,6 +13,7 @@ up one cycle. The summary published to health.json contains counts only.
 import hashlib
 import json
 import os
+import random
 import re
 import time
 import urllib.error
@@ -213,7 +214,7 @@ def _schema_hint(messages, schema):
     return hinted
 
 
-BUSY_MODEL_SECONDS = 2 * 3600
+BUSY_MODEL_SECONDS = 300  # an overloaded model is skipped for five minutes, then tried again
 GEMINI_FLASH = re.compile(r"^gemini-(\d+(?:\.\d+)?)-flash(?:-preview[-\w]*|-\d{2}-\d{4})?$")
 UNWANTED_MODEL = re.compile(r"lite|image|tts|live|audio|embed|8b|thinking|native|exp", re.I)
 
@@ -241,6 +242,18 @@ def choose_gemini_model(model_ids, fallback, failed=()):
     return best[1] if best else fallback
 
 
+MINIMAL_THINKING = re.compile(r"gemini-(?:3\.6-flash|3\.5-flash-lite|3\.1-flash-lite)")
+
+
+def thinking_setting(model, default="low"):
+    """The lightest thinking the docs allow: 'minimal' on 3.6 Flash and the Flash-Lite
+    models, 'low' on the other Gemini 3 models (thinking cannot be turned off there)."""
+    name = str(model or "")
+    if MINIMAL_THINKING.search(name):
+        return "minimal"
+    return default or "low"
+
+
 def _list_models(provider, opener=None, timeout=20):
     headers = {"Authorization": "Bearer " + provider["api_key"]} if provider.get("api_key") else {}
     request = urllib.request.Request(provider["base_url"].rstrip("/") + provider.get("models_path", "/v1/models"), headers=headers)
@@ -256,7 +269,7 @@ def resolve_model(provider, usage, opener=None):
         return provider
     cache = usage.setdefault("models", {})
     if cache.get(provider["name"]):
-        return {**provider, "model": cache[provider["name"]]}
+        return {**provider, "model": cache[provider["name"]], "reasoning_effort": thinking_setting(cache[provider["name"]], provider.get("reasoning_effort"))}
     now = time.time()
     busy = usage.get("models_busy", {}).get(provider["name"], {})
     failed = list(usage.get("models_failed", {}).get(provider["name"], [])) + [name for name, until in busy.items() if float(until or 0) > now]
@@ -268,7 +281,7 @@ def resolve_model(provider, usage, opener=None):
     usage.setdefault("models_seen", {})[provider["name"]] = [str(item).split("/")[-1][:48] for item in listed[:40]]
     chosen = choose_gemini_model(listed, provider["model"], failed)
     cache[provider["name"]] = chosen
-    return {**provider, "model": chosen}
+    return {**provider, "model": chosen, "reasoning_effort": thinking_setting(chosen, provider.get("reasoning_effort"))}
 
 
 def _request(provider, messages, temperature, max_tokens, schema, schema_name, timeout, opener=None):
@@ -397,19 +410,30 @@ def _retry_after(error):
     return _int(headers.get("Retry-After"), 15) if headers else 15
 
 
+TRANSIENT_STATUSES = (408, 429, 500, 502, 503, 504)
+TRANSIENT_RETRIES = 3
+
+
 def _request_with_retry(provider, messages, temperature, max_tokens, schema, schema_name, timeout, opener, sleep):
-    """A free tier's per-second limit produces brief 429s; wait once and retry the same
-    provider before treating it as a cooldown and falling through to the next one."""
-    try:
-        return _request(provider, messages, temperature, max_tokens, schema, schema_name, timeout, opener)
-    except urllib.error.HTTPError as error:
-        if getattr(error, "code", 0) != 429:
-            raise
-        wait = _retry_after(error) if getattr(error, "headers", None) and (error.headers or {}).get("Retry-After") else 2
-        if wait > RETRY_429_MAX_WAIT:
-            raise
-        sleep(max(1, wait))
-        return _request(provider, messages, temperature, max_tokens, schema, schema_name, timeout, opener)
+    """Transient answers (429, 408, 5xx) are retried on the same provider with
+    exponential backoff and jitter, as the provider's own guidance says: about a
+    second, then two, then four. A Retry-After longer than the backoff cap means
+    a real cooldown, so the error is raised for the provider loop to handle."""
+    delay = 1.0
+    for attempt in range(TRANSIENT_RETRIES + 1):
+        try:
+            return _request(provider, messages, temperature, max_tokens, schema, schema_name, timeout, opener)
+        except urllib.error.HTTPError as error:
+            status = getattr(error, "code", 0)
+            if status not in TRANSIENT_STATUSES or attempt == TRANSIENT_RETRIES:
+                raise
+            wait = delay
+            if getattr(error, "headers", None) and (error.headers or {}).get("Retry-After"):
+                wait = max(wait, _retry_after(error))
+            if wait > RETRY_429_MAX_WAIT:
+                raise
+            sleep(wait)
+            delay *= 2
 
 
 def ordered_providers(available, prefer=None):
