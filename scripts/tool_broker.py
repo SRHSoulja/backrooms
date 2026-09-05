@@ -476,6 +476,20 @@ def public_search(query):
         results.append({"title": title[:160], "url": url[:500]})
         if len(results) >= 5:
             break
+    if results:
+        # Wikipedia's references for the best-matching article are cited pages on
+        # other domains; merged in, a verification turn gets a second outlet for
+        # the same event even when the engine answered with only one.
+        try:
+            references = wikipedia_references(query)
+        except Exception:  # noqa: BLE001 - references are a bonus, never a failure
+            references = []
+        seen_hosts = {urllib.parse.urlparse(str(item.get("url", ""))).netloc.lower() for item in results}
+        for item in references:
+            host = urllib.parse.urlparse(str(item.get("url", ""))).netloc.lower()
+            if host and host not in seen_hosts and len(results) < 8:
+                results.append(item)
+                seen_hosts.add(host)
     if not results:
         # The engine throttles repeated requests from one address. The references
         # of the best-matching Wikipedia article are on-topic pages on other
