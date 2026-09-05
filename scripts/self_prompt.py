@@ -25,7 +25,8 @@ def ask(url, resident, context, retry_reason="", line=None):
                  "in the outside world; a new subject waits in a queue until the line closes. ")
     else:
         steer = ("No research line is open. Propose the root question of a new line: a real, documented subject in the outside world "
-                 "that two independent public sources could confirm or refute; prefer a recent_finding or an open_contradiction. ")
+                 "that two independent public sources could confirm or refute. today_public_events lists sourced events from the public "
+                 "record; a question that checks one of them for a second source or a different figure is a strong root. ")
     prompt = (f"You are {resident}. From the public context below, {role}. " + steer +
               "Never ask about this world's own rooms, residents, or telemetry, and never about an individual's account or profile. "
               + (f"Your previous proposal was rejected: {retry_reason}. Propose a different question. " if retry_reason else "") +
@@ -51,6 +52,7 @@ parser.add_argument("--base-url", default=os.getenv("BACKROOMS_LLM_BASE_URL", "h
 parser.add_argument("--state", default="state/world.json", help="public JSON state file to inspect")
 parser.add_argument("--actions", default="state/action-log.json", help="local aggregate action history")
 parser.add_argument("--line", default="", help="JSON of the open research line (root, anchors, hop, cap), if any")
+parser.add_argument("--today", default="", help="JSON list of today's sourced public events (from Wikipedia's current-events portal)")
 args = parser.parse_args()
 try:
     research_line = json.loads(args.line) if args.line else None
@@ -94,7 +96,12 @@ if research_line and research_line.get("questions"):
     open_questions = [{"question": str(item)[:200]} for item in research_line.get("questions", [])[-3:]]
 # No standing list of topics: the residents see only the world's own record
 # (charter, memory, findings, contradictions, their earlier questions).
-context = json.dumps({"research_line": research_line, "recent_findings": recent_findings[-5:], "open_contradictions": open_contradictions,
+try:
+    today_events = json.loads(args.today) if args.today else []
+except ValueError:
+    today_events = []
+context = json.dumps({"research_line": research_line, "today_public_events": today_events[:8],
+                      "recent_findings": recent_findings[-5:], "open_contradictions": open_contradictions,
                       "open_questions": open_questions,
                       "shared_memory": world.get("shared_memory", []),
                       "rooms": [{"id": room.get("id"), "description": room.get("description", "")}

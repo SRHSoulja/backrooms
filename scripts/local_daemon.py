@@ -45,6 +45,7 @@ try:
     from scripts import research_lines
     from scripts import ledger_chain
     from scripts import federation
+    from scripts import public_streams
     from scripts import model_client
     from scripts import journal as journal_module
 except ImportError:
@@ -56,6 +57,7 @@ except ImportError:
     import research_lines
     import ledger_chain
     import federation
+    import public_streams
     import model_client
     import journal as journal_module
 
@@ -781,6 +783,13 @@ def resident_proposals(base_url, line):
         command += ["--line", json.dumps({"root": line.get("root", ""), "anchors": line.get("anchors", []),
                                           "hop": len(line.get("hops", [])), "cap": research_lines.HOP_CAP,
                                           "questions": [hop.get("question", "") for hop in line.get("hops", [])][-3:]})]
+    try:
+        cached = json.loads(STREAMS.read_text()) if STREAMS.exists() else {}
+        today = [item.get("text") for item in (cached.get("items") or [])[:8]]
+    except (OSError, json.JSONDecodeError):
+        today = []
+    if today:
+        command += ["--today", json.dumps(today)]
     completed = subprocess.run(command, cwd=ROOT, capture_output=True, text=True, check=False)
     accepted, proposals = 0, []
     REJECTIONS.clear()
@@ -849,6 +858,31 @@ def hire_questions():
     return items
 
 
+STREAMS = ROOT / "state/public-streams.json"
+
+
+def stream_roots(cycle):
+    """Today's sourced current events as candidate roots, cached per day; the council's rules still apply."""
+    today = datetime.now(timezone.utc).date().isoformat()
+    try:
+        cached = json.loads(STREAMS.read_text())
+    except (OSError, json.JSONDecodeError):
+        cached = {}
+    if cached.get("day") != today or not cached.get("items"):
+        try:
+            from scripts.tool_broker import fetch as broker_fetch, RESEARCH_MAX_BYTES
+        except ImportError:
+            from tool_broker import fetch as broker_fetch, RESEARCH_MAX_BYTES
+        items = public_streams.recent_items(lambda url: json.loads(broker_fetch(url, RESEARCH_MAX_BYTES)))
+        cached = {"day": today, "fetched_at": datetime.now(timezone.utc).isoformat(), "items": items}
+        try:
+            atomic_write_json(STREAMS, cached)
+        except OSError:
+            pass
+    questions = public_streams.stream_questions(cached.get("items", []), cycle)
+    return [(question, source) for question, source in questions if not question_rejection_reason(question)]
+
+
 def next_question(base_url):
     """The council's question for this cycle, chosen on its research line.
 
@@ -869,7 +903,12 @@ def next_question(base_url):
         cycle = 1
     generic = research_lines.generic_terms([row.get("claim", "") for row in ledger_rows()
                                             if row.get("status") not in {"rejected", "retracted", "duplicate"}])
-    decision = research_lines.decide(state, cycle, proposals, line_followup, hire_questions(), FIXED_FALLBACK, generic=generic)
+    try:
+        streams = stream_roots(cycle)
+    except Exception:  # noqa: BLE001 - the stream is optional
+        streams = []
+    decision = research_lines.decide(state, cycle, proposals, line_followup, hire_questions(), FIXED_FALLBACK, generic=generic,
+                                     stream_questions=streams)
     decision["accepted"] = accepted
     decision["rejections"] = list(REJECTIONS)
     research_lines.save_state(LINES, state)

@@ -208,7 +208,7 @@ def _result(question, source, line, opened=False, closed=()):
             "opened": opened, "closed": list(closed)}
 
 
-def decide(state, cycle, proposals, followup_for, hire_questions, fallback, generic=()):
+def decide(state, cycle, proposals, followup_for, hire_questions, fallback, generic=(), stream_questions=None):
     """Choose the cycle's council question and update the line state.
 
     ``proposals`` are accepted resident proposals as (question, source) in
@@ -227,7 +227,7 @@ def decide(state, cycle, proposals, followup_for, hire_questions, fallback, gene
         anchors = anchor_terms(question, generic)
         if anchors and not in_cooldown(anchors, state, cycle):
             queue_proposal(state, cycle, question, source, anchors)
-    if line and not line.get("anchors") and (state.get("queue") or hire_questions):
+    if line and not line.get("anchors") and (state.get("queue") or stream_questions or hire_questions):
         # A line with nothing to anchor it (the fixed fallback) gives way as
         # soon as the world has a subject of its own.
         close_line(line, cycle, "superseded by a resident question")
@@ -256,6 +256,17 @@ def decide(state, cycle, proposals, followup_for, hire_questions, fallback, gene
         line = new_line(cycle, item["question"], item.get("anchors", []), "queued:" + str(item.get("source", "")))
         state["lines"].append(line)
         return _result(item["question"], item.get("source", "resident"), line, opened=True, closed=closed)
+    # Then what the public web is saying today: a sourced current event the
+    # residents can confirm from a second outlet, offered in rotation.
+    for question, source in (stream_questions or []):
+        anchors = anchor_terms(question, generic)
+        if not anchors or in_cooldown(anchors, state, cycle):
+            continue
+        if any(shares_anchor(question, line.get("anchors", [])) for line in state.get("lines", []) if line.get("status") == "open"):
+            continue
+        line = new_line(cycle, question, anchors, source)
+        state["lines"].append(line)
+        return _result(question, source, line, opened=True, closed=closed)
     used = set(state.get("used_hire_questions", []))
     for agent_id, question in (hire_questions or []):
         if agent_id in used:
