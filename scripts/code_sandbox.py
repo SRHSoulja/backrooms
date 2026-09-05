@@ -42,6 +42,13 @@ def validate_tree(tree):
     defined = {node.name for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)}
     defined |= {target.id for node in ast.walk(tree) if isinstance(node, ast.Assign) and isinstance(node.value, ast.Lambda)
                 for target in node.targets if isinstance(target, ast.Name)}
+    # A name imported from an allowlisted module (from collections import Counter,
+    # import statistics as st) is as callable as the module itself.
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and (node.module or "").split(".")[0] in SAFE_MODULES:
+            defined |= {alias.asname or alias.name for alias in node.names if alias.name != "*"}
+        elif isinstance(node, ast.Import):
+            defined |= {alias.asname for alias in node.names if alias.asname and alias.name.split(".")[0] in SAFE_MODULES}
     for node in ast.walk(tree):
         if not isinstance(node, SAFE_NODES):
             raise ValueError(f"unsupported code construct: {type(node).__name__}")

@@ -5,6 +5,19 @@ from pathlib import Path
 from scripts import code_proposal, code_view, code_sandbox
 
 
+class ImportedNamesTests(unittest.TestCase):
+    def test_names_imported_from_allowlisted_modules_are_callable(self):
+        from scripts.code_sandbox import run
+        code = ("from collections import Counter, defaultdict\nimport statistics as st\n"
+                "counts = Counter(data.split())\nbuckets = defaultdict(int)\nbuckets['x'] += 1\n"
+                "print(counts.most_common(1)[0][0], st.mean([1, 2, 3]), buckets['x'])")
+        result = run(code, data="a a b")
+        self.assertEqual(result.get("status"), "completed", result)
+        self.assertIn("a 2 1", result.get("output", ""))
+        denied = run("from os import system\nsystem('true')", data="")
+        self.assertEqual(denied.get("status"), "rejected")
+
+
 class CodeToolTests(unittest.TestCase):
     def test_sandbox_uses_networkless_isolation_and_bounded_data(self):
         result = code_sandbox.run("print(len(data))", "public excerpt")

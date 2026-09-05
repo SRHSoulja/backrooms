@@ -52,37 +52,41 @@ class LocalAutonomyTests(unittest.TestCase):
         model_client.SECRETS.update(self.original_secrets)
         self.archive_dir.cleanup()
 
-    def test_build_creates_one_connected_room_and_event(self):
+    def test_build_records_a_candidate_and_never_a_room(self):
         world = {"events": [], "rooms": [
             {"id": "relay", "name": "The Relay", "doors": [], "occupants": []}],
             "connections": []}
         registry = {"agents": [{"id": "local-test", "status": "active-local", "room": "relay",
+                                 "last_tool": {"source": "https://example.org/research", "source_hash": "abc"},
                                  "room_proposal": {"kind": "build", "name": "Signal Garden",
                                                    "description": "A bounded test room.",
-                                                   "source_room": "relay", "status": "construction-requested"}}]}
+                                                   "source_room": "relay", "status": "construction-requested", "cycle": 70}}]}
 
         changes = local_autonomy.apply_construction(world, registry, 70)
 
-        self.assertEqual(changes[0]["room"], "signal-garden")
-        self.assertEqual(world["connections"][0]["to"], "signal-garden")
-        self.assertEqual(registry["agents"][0]["room_proposal"]["status"], "constructed")
-        self.assertEqual(world["events"][0]["kind"], "room-built")
-        self.assertTrue(local_autonomy.ARCHIVE.exists())
+        self.assertEqual(len(world["rooms"]), 1)  # rooms are founded only from corroborated evidence
+        self.assertEqual(world["connections"], [])
+        self.assertEqual((changes[0]["action"], changes[0]["connected_to"]), ("build-request", "relay"))
+        self.assertEqual(world["discoveries"][0]["kind"], "build-request")
+        self.assertEqual(world["discoveries"][0]["source"], "https://example.org/research")
+        self.assertEqual(registry["agents"][0]["room_proposal"]["status"], "recorded")
+        self.assertEqual(world["events"][0]["kind"], "room-requested")
         self.assertIn("charter", world["rooms"][0])
-        self.assertIn("board", world["rooms"][1])
 
-    def test_duplicate_build_proposal_is_idempotent(self):
+    def test_duplicate_build_request_is_idempotent(self):
         world = {"events": [], "rooms": [{"id": "relay", "doors": [], "occupants": []}], "connections": []}
         proposal = {"kind": "build", "name": "Signal Garden", "source_room": "relay",
-                    "status": "construction-requested"}
+                    "status": "construction-requested", "cycle": 71}
         registry = {"agents": [{"id": "local-test", "status": "active-local", "room": "relay",
                                  "room_proposal": copy.deepcopy(proposal)}]}
 
         local_autonomy.apply_construction(world, registry, 71)
+        registry["agents"][0]["room_proposal"]["status"] = "construction-requested"
         local_autonomy.apply_construction(world, registry, 71)
 
-        self.assertEqual(len(world["rooms"]), 2)
-        self.assertEqual(len(world["connections"]), 1)
+        self.assertEqual(len(world["rooms"]), 1)
+        self.assertEqual(len(world["discoveries"]), 1)
+        self.assertEqual(world["connections"], [])
 
     def test_room_reachability_uses_declared_graph(self):
         world = {"rooms": [{"id": "atrium"}, {"id": "relay"}, {"id": "archive"}],

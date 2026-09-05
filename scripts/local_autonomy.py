@@ -197,7 +197,7 @@ def ask(url, agent, rooms, cycle, repair=False, shared_work=None, structured=Tru
               "If your inbox holds a message that needs an answer, reply with message_to and message. If pending_trades lists an offer made to you, answer it with ACCEPT_TRADE or DECLINE_TRADE and put the trade id in target. "
               + ("This turn you are assigned the council's shared research question in assigned_research: if you EXPLORE, investigate that question so your finding can be compared with other residents' findings on it. "
                  if assigned_research else "")
-              + "The Backrooms is intended to expand: when the work supports it, prefer DISCOVER to record a new room candidate, BUILD to request a new connected room, or TRANSFORM to repurpose an existing room. A room proposal needs a concrete TARGET and short PROPOSAL description. "
+              + "Rooms are founded only when two independent public sources are judged to agree on a fact; DISCOVER or BUILD records a room candidate on the ledger for that evidence to grow into, and TRANSFORM repurposes an existing room. A room proposal needs a concrete TARGET and short PROPOSAL description. "
               + prior_research
               + (" This is a post-tool decision: the fetched result above is now observed. Choose a concrete follow-up or STAY based on that evidence; do not request another external fetch in this pass."
                  if post_tool else "")
@@ -622,6 +622,7 @@ def record_analysis(agent, cycle, code, analysis):
               "agent": agent.get("id", "resident"), "cycle": cycle,
               "based_on": (agent.get("last_analysis") or {}).get("artifact_id"),
               "status": analysis.get("status", "failed"), "returncode": analysis.get("returncode"),
+              "reason": re.sub(r"\s+", " ", str(analysis.get("reason") or analysis.get("error") or "")).strip()[:160],
               "code": code, "output": output, "summary": summary,
               "code_hash": hashlib.sha256(code.encode()).hexdigest(),
               "output_chars": len(analysis.get("output", "")),
@@ -1013,37 +1014,37 @@ def apply_construction(world, registry, cycle):
                            room=source.get("id"), proposal_kind="transform")
                 changes.append({"agent": agent.get("id"), "action": "transform", "room": source.get("id")})
             continue
-        if proposal.get("room_id") or not proposal.get("name"):
+        if proposal.get("room_id") or proposal.get("discovery_id") or not proposal.get("name"):
             continue
+        # Rooms are founded only from corroborated evidence. A BUILD request is
+        # kept as a room candidate with whatever provenance the resident has,
+        # exactly like DISCOVER; no room, door, or link is created from it.
         source = room_by_id.get(proposal.get("source_room"))
         if not source:
             proposal["status"] = "rejected"
             proposal["reason"] = "source room is not declared"
             continue
-        room_id = safe_room_id(proposal["name"], room_ids)
-        room = {"id": room_id, "name": str(proposal["name"])[:60],
-                "description": str(proposal.get("description") or "Resident-built internal room")[:220],
-                "charter": str(proposal.get("description") or "Resident-built internal room")[:220],
-                "founded_by": agent.get("id"), "founded_cycle": cycle,
-                "artifacts": [], "board": [], "activity": {"last_cycle": cycle, "score": 1},
-                "doors": [f"{room_id}-gate"], "occupants": []}
-        rooms.append(room)
-        room_by_id[room_id] = room
-        room_ids.add(room_id)
-        door = f"{room_id}-gate"
-        source.setdefault("doors", []).append(door)
-        connections.append({"id": f"room-link-{next_link:03d}", "kind": "room-link",
-                            "name": f"{room['name']} Gate", "from": source["id"], "to": room_id,
-                            "door": door, "status": "declared", "scope": "internal movement only"})
-        next_link += 1
-        proposal["room_id"] = room_id
-        proposal["status"] = "constructed"
+        fingerprint = hashlib.sha256(json.dumps(
+            {"agent": agent.get("id"), "cycle": proposal.get("cycle"), "name": proposal.get("name"), "kind": "build"},
+            sort_keys=True).encode()).hexdigest()[:16]
+        candidate_id = f"discovery-{fingerprint}"
+        discoveries = world.setdefault("discoveries", [])
+        if not any(item.get("id") == candidate_id for item in discoveries):
+            discoveries.append({"id": candidate_id, "agent": agent.get("id"), "kind": "build-request",
+                                "name": str(proposal.get("name", ""))[:80],
+                                "description": str(proposal.get("description", ""))[:220],
+                                "source": str((agent.get("last_tool") or {}).get("source", ""))[:300],
+                                "analysis_artifact": (agent.get("last_analysis") or {}).get("artifact_id", ""),
+                                "source_hash": (agent.get("last_tool") or {}).get("source_hash", ""),
+                                "requested_from": source.get("id"), "cycle": proposal.get("cycle", cycle), "status": "candidate"})
+            emit_event(world, cycle, "room-requested", agent.get("id", "resident"),
+                       "Resident requested a room; rooms are founded only from corroborated evidence, so the request is kept as a candidate.",
+                       discovery_id=candidate_id, connected_to=source.get("id"), proposal_kind="build")
+            changes.append({"agent": agent.get("id"), "action": "build-request", "discovery": candidate_id,
+                            "connected_to": source.get("id")})
+        proposal["discovery_id"] = candidate_id
+        proposal["status"] = "recorded"
         proposal["completed_cycle"] = cycle
-        emit_event(world, cycle, "room-built", agent.get("id", "resident"),
-                   f"Resident built {room_id} as a connected internal room.",
-                   room=room_id, connected_to=source["id"], proposal_kind="build")
-        changes.append({"agent": agent.get("id"), "action": "build", "room": room_id,
-                        "connected_to": source["id"]})
     return changes
 
 
