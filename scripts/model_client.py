@@ -348,7 +348,7 @@ def resolve_model(provider, usage, opener=None):
     else:
         chosen = choose_preferred_model(listed, provider.get("preferred_models") or (), provider["model"], failed)
     listed_names = {str(raw or "").split("/")[-1].strip() for raw in listed}
-    if listed_names and chosen not in listed_names and chosen == provider["model"]:
+    if listed_names and (chosen in failed or chosen not in listed_names):
         # Nothing usable is listed today (every model's quota is spent): the fallback
         # name would only earn 404s, so the provider rests until tomorrow.
         _record(usage, provider["name"], last_error="every usable model's daily quota is spent; resting until tomorrow", disabled=True)
