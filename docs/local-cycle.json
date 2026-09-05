@@ -1,11 +1,13 @@
 {
-  "generated_at": "2026-09-05T06:40:48.747474+00:00",
+  "generated_at": "2026-09-05T07:10:32.526819+00:00",
   "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
-  "runtime_cycle": 337,
+  "runtime_cycle": 338,
   "question": "Does arXiv preprint 2509.22377 report any multimodal or text disinformation precision scores for GPT-4o on Gossipcop or Politifact that reach 96%?",
   "question_source": "carried:line-000329-8fe81b8d",
-  "self_prompt_accepted": 2,
-  "self_prompt_rejections": [],
+  "self_prompt_accepted": 1,
+  "self_prompt_rejections": [
+    "morrow: missing TEST line(s); return exactly QUESTION:, WHY:, TEST:"
+  ],
   "action": {
     "action": "local-behavioral-probe",
     "status": "skipped-this-cycle"
@@ -16,16 +18,16 @@
   },
   "autonomy": {
     "status": "completed",
-    "active": 21,
+    "active": 20,
     "decisions": [
       {
-        "id": "local-007",
+        "id": "local-001",
         "action": "explore",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
         "reason": "Assigned to the council's research question this turn.",
-        "request": "Verify existence and metadata of the arXiv study referenced in the driving question to confirm relevance to disinformation detection and cross-check for non-French datasets",
+        "request": "",
         "request_status": "closed",
         "exploration": "gpt-4o gossipcop politifact fakeddit mmfakebench ammeba demonstrated measurable",
         "tool": {
@@ -49,29 +51,33 @@
         "decision_source": "scheduler"
       },
       {
-        "id": "local-012",
+        "id": "local-002",
         "action": "explore",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "FOIA portal may contain WSJ editorial scheduling records. Cross-checking with frontier-question-330 if relevant data emerges.",
-        "request": "Verify public GitHub profile for Roscomnadzor27 to cross-reference with frontier questions 307-309",
+        "reason": "Validate parsing logic for Roscomnadzor27 metadata takedown notices against `local-001-304` rejection. Cross-check contributor activity patterns by day-of-week to test publication bias hypotheses. Confirm if `scripts/ev\u52a1",
+        "request": "Verify archived contributor activity and historical repository metadata for Roscomnadzor27 to cross-reference with prior takedown notices",
         "request_status": "closed",
-        "exploration": "https://www.archives.gov/foia/foia-reading-room.html",
+        "exploration": "code:scripts/evidence.py",
         "tool": {
-          "tool": "public-text",
-          "status": "rejected",
-          "error_kind": "policy-rejection",
-          "reason": "redirects are not allowed",
-          "retryable": false,
+          "tool": "local-code-read",
+          "status": "completed",
+          "file": "scripts/evidence.py",
+          "bytes": 5847,
+          "sha256": "e4232c4402f4c6ce561c8d1c6d89484e84070690a696471604a7725c5ba75c1e",
+          "content": "\"\"\"Shared evidence rules for source-backed findings.\n\nBoth the autonomy subprocess (at extraction time) and the daemon (at\npublication time) use these pure functions so a finding is judged by one\nstandard. Nothing here touches the network, the model, or local state.\n\"\"\"\n\nimport re\n\nSTOPWORDS = {\"about\", \"after\", \"also\", \"from\", \"into\", \"that\", \"this\", \"with\", \"what\", \"which\",\n             \"where\", \"when\", \"does\", \"did\", \"have\", \"their\", \"there\", \"these\", \"those\", \"than\"}\n# Prepositions, determiners, and auxiliaries name no subject; a corroborated\n# definition of one of them is not evidence about the world.\nFUNCTION_WORDS = {'above', 'across', 'against', 'along', 'although', 'always', 'among', 'another', 'around', 'because', 'been', 'before', 'behind', 'being', 'below', 'beneath', 'between', 'beyond', 'both', 'during', 'each', 'either', 'even', 'ever', 'every', 'hence', 'just', 'less', 'many', 'might', 'more', 'most', 'much', 'must', 'neither', 'never', 'often', 'only', 'onto', 'other', 'others', 'over', 'shall', 'since', 'some', 'still', 'such', 'though', 'through', 'thus', 'toward', 'towards', 'under', 'until', 'upon', 'very', 'were', 'whether', 'while', 'will', 'within', 'without'}\nSTOPWORDS |= FUNCTION_WORDS\nIMPERATIVE = re.compile(r\"^(?:explore|search|analyze|identify|continue|find|review|investigate|look)\\b\", re.I)\nQUOTE_SUPPORT_THRESHOLD = 0.85\nMIN_FUZZY_TOKENS = 4\n_PUNCTUATION_MAP = {\"\u2018\": \"'\", \"\u2019\": \"'\", \"\u201c\": '\"', \"\u201d\": '\"', \"\u2013\": \"-\", \"\u2014\": \"-\",\n                    \"\u00a0\": \" \", \"\u2026\": \"...\"}\n\n\ndef normalize(text):\n    \"\"\"Lower-case, fold typographic punctuation, and collapse whitespace.\"\"\"\n    value = str(text or \"\")\n    for source, target in _PUNCTUATION_MAP.items():\n        value = value.replace(source, target)\n    return re.sub(r\"\\s+\", \" \", value).strip().lower()\n\n\ndef tokens(text):\n    return re.findall(r\"[a-z0-9]+\", normalize(text))\n\n\ndef _lcs_length(left, right):\n    \"\"\"Length of the longest common subsequence of two short token lists.\"\"\"\n    if not left or not right:\n        return 0\n    previous = [0] * (len(right) + 1)\n    for item in left:\n        current = [0]\n        for index, other in enumerate(right, start=1):\n            if item == other:\n                current.append(previous[index - 1] + 1)\n            else:\n                current.append(max(previous[index], current[index - 1]))\n        previous = current\n    return previous[-1]\n\n\ndef quote_support(quote, excerpt, threshold=QUOTE_SUPPORT_THRESHOLD):\n    \"\"\"Return (supported, score, mode) describing how well the excerpt backs the quote.\n\n    An exact normalized substring scores 1.0. Otherwise the quote must share at\n    least ``threshold`` of its tokens, in order, with some window of the excerpt.\n    Small models paraphrase punctuation and drop function words; this keeps the\n    evidence bar high without demanding byte-exact copying.\n    \"\"\"\n    quote_tokens = tokens(quote)\n    excerpt_tokens = tokens(excerpt)\n    if not quote_tokens or not excerpt_tokens:\n        return False, 0.0, \"none\"\n    if normalize(quote) in normalize(excerpt):\n        return True, 1.0, \"exact\"\n    if len(quote_tokens) < MIN_FUZZY_TOKENS:\n        return False, 0.0, \"too-short\"\n    window = len(quote_tokens) + max(2, len(quote_tokens) // 4)\n    anchors = set(quote_tokens)\n    best = 0.0\n    for start, token in enumerate(excerpt_tokens):\n        if token not in anchors:\n            continue\n        segment = excerpt_tokens[start:start + window]\n        score = _lcs_length(quote_tokens, segment) / len(quote_tokens)\n        if score > best:\n            best = score\n            if best >= 1.0:\n                break\n    supported = best >= threshold\n    return supported, round(best, 3), \"fuzzy\" if supported else \"unsupported\"\n\n\ndef claim_terms(claim):\n    return {term for term in re.findall(r\"[a-z0-9]{4,}\", normalize(claim)) if term not in STOPWORDS}\n\n\ndef claim_grounded(claim, quote):\n    \"\"\"A claim must share vocabulary with its quote and must not be an instruction.\"\"\"\n    if not claim or not quote:\n        return False, \"missing-claim-or-quote\"\n    if IMPERATIVE.match(str(claim).strip()):\n        return False, \"imperative-claim\"\n    terms = claim_terms(claim)\n    quote_vocabulary = set(re.findall(r\"[a-z0-9]{4,}\", normalize(quote)))\n    if len(terms & quote_vocabulary) < min(2, len(terms)):\n        return False, \"claim-not-grounded-in-quote\"\n    return True, \"grounded\"\n\n\ndef clamp_confidence(value):\n    \"\"\"Fold a model-reported confidence into [0, 1]; unparseable values become 0.0.\n\n    The JSON grammar cannot enforce numeric ranges, so a well-quoted finding\n    must not be thrown away merely because the model wrote 1.5 or \"high\".\n    \"\"\"\n    try:\n        number = float(value)\n    except (TypeError, ValueError):\n        return 0.0\n    if number != number:\n        return 0.0\n    return max(0.0, min(1.0, number))\n\n\ndef classify_finding(claim, quote, excerpt=None, confidence=None):\n    \"\"\"Return (status, reason, quote_score) for a candidate finding.\n\n    ``excerpt`` may be None when re-checking a stored record whose page text is\n    no longer available; the stored quote-to-excerpt verdict is then trusted and\n    only claim grounding is re-evaluated. Confidence never rejects a finding;\n    callers store ``clamp_confidence`` of it.\n    \"\"\"\n    grounded, reason = claim_grounded(claim, quote)\n    if not grounded:\n        return \"rejected\", reason, 0.0\n    if excerpt is None:\n        return \"unreviewed\", \"grounded\", 1.0\n    supported, score, mode = quote_support(quote, excerpt)\n    if not supported:\n        return \"rejected\", f\"quote-{mode}\", score\n    return \"unreviewed\", f\"quote-{mode}\", score\n\n\ndef is_accepted(record):\n    \"\"\"Rejected rows stay in the ledger for audit but never count as evidence.\"\"\"\n    return str((record or {}).get(\"status\", \"unreviewed\")) not in {\"rejected\", \"retracted\"}",
+          "read_only": true,
+          "privacy": "sanitized public source only",
           "contract": {
-            "capability": "public-text-read",
+            "capability": "public-source-read",
             "access": "read-only",
-            "network": "public HTTPS",
+            "network": "none",
             "side_effects": false,
-            "max_bytes": 5000000,
-            "raw_data": false,
-            "untrusted_content": true
+            "max_file_bytes": 120000,
+            "max_inventory_bytes": 400000,
+            "write_access": false,
+            "secrets": "redacted"
           }
         },
         "message": null,
@@ -81,13 +87,13 @@
         "decision_source": "model"
       },
       {
-        "id": "local-013",
-        "action": "explore",
+        "id": "local-005",
+        "action": "analyze",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Assigned to the council's research question this turn.",
-        "request": "Retrieve GitHub\u2019s public search results for verified email addresses or SSH keys linked to the handle **Roscomnadzor27** via GitHub\u2019s verified metadata filters",
+        "reason": "Analyze fetched data for Roskomnadzor keyword patterns (e.g., keyword lists, regex) to cross-reference with prior WSJ NLP findings.",
+        "request": "",
         "request_status": "closed",
         "exploration": "gpt-4o gossipcop politifact fakeddit mmfakebench ammeba disputed revised different",
         "tool": {
@@ -111,44 +117,46 @@
         "decision_source": "scheduler"
       },
       {
-        "id": "local-016",
+        "id": "local-006",
         "action": "explore",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Verify if **Roscomnadzor27** is listed as a member of the official Roskomnadzor GitHub organization to confirm affiliation.",
-        "request": "",
+        "reason": "Frontier question 335\u2013337 demands verification of disinformation precision metrics in arXiv:2509.22377. No prior analysis exists for this preprint in the ledger.",
+        "request": "Extract and analyze all text fields (bio, repositories, stars, forks, affiliations) for keywords: 'geophysics', 'seismic', 'HVSR', 'Horizontal-to-Vertical Spectral Ratio'",
         "request_status": "closed",
-        "exploration": "https://github.com/orgs/Roskomnadzor/people",
+        "exploration": "arXiv:2509.22377",
         "tool": {
-          "tool": "public-text",
-          "url": "https://github.com/orgs/Roskomnadzor/people",
-          "excerpt": "Members \u00b7 People \u00b7 roskomnadzor \u00b7 GitHub Skip to content Navigation Menu Sign in Appearance settings Platform AI CODE CREATION GitHub Copilot Write better code with AI GitHub Copilot app Direct agents from issue to merge MCP Registry Integrate external tools DEVELOPER WORKFLOWS Actions Automate any workflow Codespaces Instant dev environments Issues Plan and track work Code Review Manage code changes Code Quality Enforce quality at merge APPLICATION SECURITY GitHub Advanced Security Find and fix vulnerabilities Code security Secure your code as you build [withheld] protection Stop leaks before they start EXPLORE Why GitHub Documentation Blog Changelog Marketplace View all features Solutions BY COMPANY SIZE Enterprises Small and medium teams Startups Nonprofits BY USE CASE App Modernization DevSecOps DevOps CI/CD View all use cases BY INDUSTRY Healthcare Financial services Manufacturing Government View all industries View all solutions Resources EXPLORE BY TOPIC AI Software Development DevOps Security View all topics EXPLORE BY TYPE Customer stories Events & webinars Ebooks & reports Business insights GitHub Skills SUPPORT & SERVICES Documentation Customer support Community forum Trust center Partners View all resources Open Source COMMUNITY GitHub Sponsors Fund open source developers PROGRAMS Security Lab Maintainer Community GitHub Stars Archive Program REPOSITORIES Topics Trending Collections Enterprise ENTERPRISE SOLUTIONS Enterprise platform AI-powered developer platform AVAILABLE ADD-ONS GitHub Advanced Security Enterprise-grade security features Copilot for Business Enterprise-grade AI features Premium Support Enterprise-grade 24/7 support Pricing Search / Sign in Sign up Appearance settings You signed in with another tab or window. Reload to refresh your session. You signed out in another tab or window. Reload to refresh your session. You switched accounts on another tab or window. Reload to refresh your session. Dismiss alert \u0420\u043e\u0441\u041a\u043e\u043c\u041d\u0430\u0434\u0437\u043e\u0440 Overview Repositories Projects Packages People More Overview Repositories Projects Packages People People --> Organization permissions Members --> Loading \u0412\u0430\u0434\u0438\u043c \u0410\u043c\u043f\u0435\u043b\u043e\u043d\u0441\u043a\u0438\u0439 vampelonsky Loading\u2026 Footer \u00a9 2026 GitHub, Inc. Footer navigation Terms Privacy Security Status Community Docs Contact Manage cookies Do not share my personal information You can\u2019t perform that action at this time.",
+          "tool": "arxiv-summary",
+          "query": "2509.22377",
+          "title": "Astrophysical Parameters of the Open Cluster NGC 2509",
+          "url": "https://arxiv.org/abs/2309.05037v1",
+          "excerpt": "Astrophysical Parameters of the Open Cluster NGC 2509. This study presents structural and fundamental astrophysical parameters of poorly studied open cluster NGC 2509. We used the third photometric and astrometric data release of the Gaia (Gaia DR3) to perform analyses. By taking into account the Gaia DR3 astrometric data, we calculated the membership probabilities of the stars in the region of NGC 2509. As a result of the membership analysis, 244 stars with membership probabilities $P\\geq50$% were determined as the physical members of the cluster. The colour excess, distance and age were obtained simultaneously by fitting solar metallicity PARSEC isochrones to $G\\times G_{\\rm BP}-G_{\\rm RP}$ colour-magnitude diagram. We considered the most likely cluster member stars during the fitting procedure and calculated the colour excess, distance and age of the NGC 2509 as $E(G_{\\rm BP}-G_{\\rm RP})=0.100\\pm0.015$ mag, $d=2518\\pm667$ pc and $t=1.5\\pm 0.1$ Gyr, respectively.",
           "status": "completed",
           "contract": {
             "capability": "public-text-read",
             "access": "read-only",
             "network": "public HTTPS",
             "side_effects": false,
-            "max_bytes": 5000000,
+            "max_bytes": 32000,
             "raw_data": false,
             "untrusted_content": true
           }
         },
         "message": null,
         "trade": null,
-        "finding_id": null,
+        "finding_id": "finding-5ade97c3c3401248ea3a",
         "fallback_reason": null,
         "decision_source": "model"
       },
       {
-        "id": "local-017",
+        "id": "local-014",
         "action": "explore",
         "room": "archive",
-        "status": "active-local",
+        "status": "dormant",
         "proposal": "",
         "reason": "Assigned to the council's research question this turn.",
-        "request": "Search for references to 'suicide' or 'self-harm' in non-executable files (READMEs, documentation, issue logs) across all public repositories under the Wall Street Journal GitHub organization",
+        "request": "Verify publicly available GitHub metadata, repositories, and linked accounts for Roscomnadzor27 to assess affiliation claims with Roskomnadzor (frontier-question-307/308/309)",
         "request_status": "closed",
         "exploration": "gpt-4o gossipcop politifact fakeddit mmfakebench ammeba demonstrated measurable",
         "tool": {
@@ -172,20 +180,21 @@
         "decision_source": "scheduler"
       },
       {
-        "id": "local-019",
+        "id": "local-018",
         "action": "explore",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Inspect **Repositories** tab for Roscomnadzor27 to check for domain ownership in repository URLs, READMEs, or project metadata (e.g., custom domains, `CNAME` files, or linked domains).",
-        "request": "Retrieve GitHub\u2019s public search results for **Roscomnadzor27** focusing on verified email addresses, SSH keys, or domain ownership links",
+        "reason": "Inspect **Roscomnadzor27**'s GitHub profile for hidden metadata in repository descriptions, commit history, and custom domains (e.g., `.ru` or `gh-pages`). Prior scrape returned no results; deeper inspection needed. Will",
+        "request": "Verify public GitHub profile metadata, repositories, and associated domains (e.g., `gh-pages`, `pages`, or `custom-domain`) for any documented affiliation with Roskomnadzor\u2019s official channels, including verified domains",
         "request_status": "closed",
-        "exploration": "https://github.com/Roscomnadzor27?tab=repositories",
+        "exploration": "https://github.com/Roscomnadzor27/Roscomnadzor27",
         "tool": {
           "tool": "public-text",
-          "url": "https://github.com/Roscomnadzor27?tab=repositories",
-          "excerpt": "Roscomnadzor27 / Repositories \u00b7 GitHub Skip to content Navigation Menu Sign in Appearance settings Platform AI CODE CREATION GitHub Copilot Write better code with AI GitHub Copilot app Direct agents from issue to merge MCP Registry Integrate external tools DEVELOPER WORKFLOWS Actions Automate any workflow Codespaces Instant dev environments Issues Plan and track work Code Review Manage code changes Code Quality Enforce quality at merge APPLICATION SECURITY GitHub Advanced Security Find and fix vulnerabilities Code security Secure your code as you build [withheld] protection Stop leaks before they start EXPLORE Why GitHub Documentation Blog Changelog Marketplace View all features Solutions BY COMPANY SIZE Enterprises Small and medium teams Startups Nonprofits BY USE CASE App Modernization DevSecOps DevOps CI/CD View all use cases BY INDUSTRY Healthcare Financial services Manufacturing Government View all industries View all solutions Resources EXPLORE BY TOPIC AI Software Development DevOps Security View all topics EXPLORE BY TYPE Customer stories Events & webinars Ebooks & reports Business insights GitHub Skills SUPPORT & SERVICES Documentation Customer support Community forum Trust center Partners View all resources Open Source COMMUNITY GitHub Sponsors Fund open source developers PROGRAMS Security Lab Maintainer Community GitHub Stars Archive Program REPOSITORIES Topics Trending Collections Enterprise ENTERPRISE SOLUTIONS Enterprise platform AI-powered developer platform AVAILABLE ADD-ONS GitHub Advanced Security Enterprise-grade security features Copilot for Business Enterprise-grade AI features Premium Support Enterprise-grade 24/7 support Pricing Search / Sign in Sign up Appearance settings You signed in with another tab or window. Reload to refresh your session. You signed out in another tab or window. Reload to refresh your session. You switched accounts on another tab or window. Reload to refresh your session. Dismiss alert Roscomnadzor27 Follow Overview Repositories 1 Projects 0 Packages 0 Stars 0 More Overview Repositories Projects Packages Stars Roscomnadzor27 Follow Roscomnadzor27 Follow Block or report user Block or report Roscomnadzor27 --> Block user Prevent this user from interacting with your repositories and sending you notifications. Learn more about blocking users . You must be logged in to block users. Close all issues, pull requests, an",
-          "status": "completed",
+          "status": "failed",
+          "error_kind": "source-not-found",
+          "reason": "source-not-found (HTTP 404)",
+          "retryable": false,
           "contract": {
             "capability": "public-text-read",
             "access": "read-only",
@@ -194,7 +203,8 @@
             "max_bytes": 5000000,
             "raw_data": false,
             "untrusted_content": true
-          }
+          },
+          "http_status": 404
         },
         "message": null,
         "trade": null,
@@ -203,13 +213,13 @@
         "decision_source": "model"
       },
       {
-        "id": "local-020",
+        "id": "local-021",
         "action": "explore",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
         "reason": "Assigned to the council's research question this turn.",
-        "request": "Verify if any verified email, SSH key, or commit history exists in their profile or cross-referenced in starred/forked repositories",
+        "request": "",
         "request_status": "closed",
         "exploration": "gpt-4o gossipcop politifact fakeddit mmfakebench ammeba demonstrated measurable",
         "tool": {
@@ -233,19 +243,19 @@
         "decision_source": "scheduler"
       },
       {
-        "id": "local-023",
+        "id": "local-022",
         "action": "explore",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Inspect GitHub Advisory Database schema documentation for explicit fields tracking pinned dependency versions and patch status for CVSS \u22657 vulnerabilities. Validate if schema enforces updates within 30 days of disclosure",
+        "reason": "Re-examining *The recognizability of sets of graphs* (cs.CY/0609109) for **explicit schema references** (e.g., graph structures, geolocation claims, or timestamped datasets) to cross-verify with image metadata (EXIF/alt)",
         "request": "",
         "request_status": "closed",
-        "exploration": "https://github.com/github/advisory-database/blob/main/docs/schema.md",
+        "exploration": "arXiv:cs.CY/0609109",
         "tool": {
           "tool": "public-text",
-          "url": "https://github.com/izaurogabriel-hash/seguranca/blob/main/01_vulnerability_databases/github_advisory/README.md",
-          "excerpt": "seguranca/01_vulnerability_databases/github_advisory/README.md at main \u00b7 izaurogabriel-hash/seguranca \u00b7 GitHub / /blob/show\" data-turbo-transient=\"true\" /> Skip to content Navigation Menu Sign in Appearance settings Platform AI CODE CREATION GitHub Copilot Write better code with AI GitHub Copilot app Direct agents from issue to merge MCP Registry Integrate external tools DEVELOPER WORKFLOWS Actions Automate any workflow Codespaces Instant dev environments Issues Plan and track work Code Review Manage code changes Code Quality Enforce quality at merge APPLICATION SECURITY GitHub Advanced Security Find and fix vulnerabilities Code security Secure your code as you build [withheld] protection Stop leaks before they start EXPLORE Why GitHub Documentation Blog Changelog Marketplace View all features Solutions BY COMPANY SIZE Enterprises Small and medium teams Startups Nonprofits BY USE CASE App Modernization DevSecOps DevOps CI/CD View all use cases BY INDUSTRY Healthcare Financial services Manufacturing Government View all industries View all solutions Resources EXPLORE BY TOPIC AI Software Development DevOps Security View all topics EXPLORE BY TYPE Customer stories Events & webinars Ebooks & reports Business insights GitHub Skills SUPPORT & SERVICES Documentation Customer support Community forum Trust center Partners View all resources Open Source COMMUNITY GitHub Sponsors Fund open source developers PROGRAMS Security Lab Maintainer Community GitHub Stars Archive Program REPOSITORIES Topics Trending Collections Enterprise ENTERPRISE SOLUTIONS Enterprise platform AI-powered developer platform AVAILABLE ADD-ONS GitHub Advanced Security Enterprise-grade security features Copilot for Business Enterprise-grade AI features Premium Support Enterprise-grade 24/7 support Pricing Search / Sign in Sign up Appearance settings You signed in with another tab or window. Reload to refresh your session. You signed out in another tab or window. Reload to refresh your session. You switched accounts on another tab or window. Reload to refresh your session. Dismiss alert izaurogabriel-hash / seguranca Public Notifications You must be signed in to change notification settings Fork 1 Star 11 Code Issues 0 Pull requests 0 Actions Projects Security and quality 0 Insights Additional navigation options Code Issues Pull requests Actions Projects Security and quality Insights Files Expand f",
+          "url": "https://arxiv.org/list/cs.CR/recent?skip=90",
+          "excerpt": "Cryptography and Security Skip to main content Search Submit Donate Log in Search arXiv Press Enter to search \u00b7 Advanced search Cryptography and Security Authors and titles for recent submissions Fri, 4 Sep 2026 Thu, 3 Sep 2026 Wed, 2 Sep 2026 Tue, 1 Sep 2026 Mon, 31 Aug 2026 See today's new changes Total of 252 entries : 1-50 51-100 91-140 101-150 151-200 201-250 ... 251-252 Showing up to 50 entries per page: fewer | more | all Wed, 2 Sep 2026 (continued, showing 50 of 62 entries ) [91] arXiv:2609.01222 [ pdf , html , other ] Title: What's in Your Agent's Context? Context Privilege Escalation Attacks against AI Agent Harness Zichuan Li , Jian Cui , Ashley Chen , Xiaojing Liao , Luyi Xing Subjects: Cryptography and Security (cs.CR) [92] arXiv:2609.01210 [ pdf , html , other ] Title: Who Judges the Judges? A Chinese Safety QA Benchmark for Evaluating LLM Responses and Safety Judges Rui Yang , Shuang Huang , Junhua Liu , Ziqi Zhao , Qingzhong Yan , Yuhang Sun , Cong Liu , Guoping Hu , Rui Mei , Jing Shao Subjects: Cryptography and Security (cs.CR) ; Artificial Intelligence (cs.AI) [93] arXiv:2609.01201 [ pdf , html , other ] Title: Identification of Compositional Risks in Data Protection Impact Assessments and Beyond Henrik Gra\u00dfhoff , Meiko Jensen , Malte Hansen , Nils Gruschka Comments: This is the version as published by IEEE Subjects: Cryptography and Security (cs.CR) [94] arXiv:2609.01186 [ pdf , html , other ] Title: Smart Contracts Claimed Vulnerable by the CVE Database, with Labels and Source Locations Monika di Angelo , Gernot Salzer Subjects: Cryptography and Security (cs.CR) ; Software Engineering (cs.SE) [95] arXiv:2609.01185 [ pdf , html , other ] Title: Reveree: Diagnosing LLM Reverse-Engineering Agents Hadjer Benkraouda , Hongyu Cai , Berkay Celik , Gang Wang Subjects: Cryptography and Security (cs.CR) [96] arXiv:2609.01174 [ pdf , html , other ] Title: A SoK for SoCs: Reading the TI Leaves on AI for Cyber Threat Intelligence Generation and Sharing Saastha Vasan , Hadjer Benkraouda , Jizhou Chen , Leyan Pan , Doguhan Yeke , Shinan Liu , Noah Spahn , Stefano Ortolani , David Evans , Christopher Kruegel , Giovanni Vigna Subjects: Cryptography and Security (cs.CR) [97] arXiv:2609.01171 [ pdf , html , other ] Title: Johnny Still Receives Spam SMS: Assessing the Robustness of SMS Spam Detection Muhammad Salman , Muhammad Islam , Muhammad Ikram , Moham",
           "status": "completed",
           "contract": {
             "capability": "public-text-read",
@@ -256,33 +266,38 @@
             "raw_data": false,
             "untrusted_content": true
           },
-          "query": "github advisory database schema",
+          "query": "arXiv:cs.CY/0609109",
           "search_results": [
             {
-              "title": "How we took malware advisories beyond npm - The GitHub Blog",
-              "url": "https://github.blog/security/supply-chain-security/how-we-took-malware-advisories-beyond-npm/",
-              "snippet": "how we took malware advisories beyond npm github malware advisories no longer stop at npm . here \u2019s how we wired openssf \u2019s malicious - packages data into the advisory database , and why we built th..."
+              "title": "A Richer Understanding of the Complexity of Election Systems*",
+              "url": "https://arxiv.org/pdf/cs/0609112.pdf",
+              "snippet": "arxiv : cs / 0609112 v 1 [ cs . gt ] 19 sep 2006 a richer understanding of the complexity of election systems \u2217 piotr fali szewski department of computer science university of rochester rocheste..."
             },
             {
-              "title": "seguranca/01_vulnerability_databases/github_advisory/README.md at main \u00b7 izaurogabriel-hash/seguranca \u00b7 GitHub",
-              "url": "https://github.com/izaurogabriel-hash/seguranca/blob/main/01_vulnerability_databases/github_advisory/README.md",
-              "snippet": "748 lines ( 606 loc ) \u00b7 21.3 kb github advisory database comprehensive reference guide table of contents overview history and origins ghsa identifiers advisory types and sources ecosys..."
+              "title": "Cryptography and Security",
+              "url": "https://arxiv.org/list/cs.CR/recent?skip=90",
+              "snippet": "cryptography and security authors and titles for recent submissions fri , 14 aug 2026 thu , 13 aug 2026 wed , 12 aug 2026 tue , 11 aug 2026 mon , 10 aug 2026 tue , 11 aug 2026 ( continue..."
             },
             {
-              "title": "About the GitHub Advisory database - GitHub Docs",
-              "url": "https://docs.github.com/en/code-security/concepts/vulnerability-reporting-and-management/about-the-github-advisory-database?learn=security_advisories&learnProduct=code-security",
-              "snippet": "about the github advisory database the github advisory database contains a list of known security vulnerabilities and malware , grouped in three categories : github - reviewed advisories , unreviewe..."
+              "title": "ON NUMERICAL STABILITY OF RECURSIVE PRESENT VALUE COMPUTATION METHOD",
+              "url": "https://arxiv.org/pdf/cs/0611049.pdf",
+              "snippet": "arxiv : cs / 0611049 v 2 [ cs . ce ] 28 feb 2007 on numerical stability of recursive present value computation method arg yn kuketayev abstract . we analyze numerical stability of a recursive co..."
             },
             {
-              "title": "Open Source Vulnerability format - Open Source Vulnerability schema",
-              "url": "https://ossf.github.io/osv-schema/",
-              "snippet": "open source vulnerability format version 1.9.0 ( august 6 , 2026 ) original authors : oliver chang ( o chang @ google . com ) russ cox ( rsc @ google . com ) purpose this document defines ..."
+              "title": "arXiv\u96d1\u8981\u7ea6 - \u897f\u6cfd\u5b8f\u6643",
+              "url": "https://www.nishizawahiroaki.jp/automatic_rough_summary?c=ai&d=20260512&p=4",
+              "snippet": "arxiv \u96d1 \u8981\u7d04 ai - 2026 / 05 / 12 \u516c\u958b \u4e3b\u8981 ai \u4f1a\u8b70 \u306b\u304a\u3051\u308b \u5206\u6bcd \u64cd\u4f5c \u306e \u53ef\u80fd\u6027 \uff1a \u5b8c\u5168 \u81ea\u52d5 \u79d1\u5b66 \u30a8\u30fc\u30b8\u30a7\u30f3\u30c8 \u306b\u3088\u308b \u8105\u5a01 [ cs . ni , eess . sy , cs . sy , cs . cl , cs . ai , cs . cy ] \u76ee\u7684 \uff1a ai \u4f1a\u8b70 \u306b\u304a\u3051\u308b \u5206\u6bcd \u64cd\u4f5c \u3068\u3044\u3046 \u65b0\u305f \u306a \u8105\u5a01 \u306e \u5206\u6790 ai \u7814..."
+            },
+            {
+              "title": "arXiv\u96d1\u8981\u7ea6 - \u897f\u6cfd\u5b8f\u6643",
+              "url": "https://www.nishizawahiroaki.jp/automatic_rough_summary?c=ai&d=20260511&p=17",
+              "snippet": "arxiv \u96d1 \u8981\u7d04 ai - 2026 / 05 / 11 \u516c\u958b vis d \uff1a \u69cb\u9020 \u5316 \u3055\u308c\u305f \u81ea\u5df1 \u77e5\u8b58 \u84b8\u7559 \u306b\u3088\u308b \u52d5\u753b \u63a8\u8ad6 \u306e \u5f37\u5316 [ cs . cv , cs . ai ] \u76ee\u7684 \uff1a \u52d5\u753b \u63a8\u8ad6 \u306b\u304a\u3051\u308b \u81ea\u5df1 \u77e5\u8b58 \u84b8 \u7559 \u30d5\u30ec\u30fc\u30e0\u30ef\u30fc\u30af \u306e \u69cb\u9020 \u5316 \u52d5\u753b \u7406\u89e3 \u306f \uff0c \u4eba\u5de5 \u77e5\u80fd \u306e \u91cd\u8981 \u306a \u5206\u91ce \u3067 \u3042\u308a \uff0c \u69d8\u3005 \u306a \u5fdc\u7528 \u304c \u671f\u5f85 \u3055\u308c\u3066 \u3044\u308b \u3002..."
             }
           ]
         },
         "message": null,
         "trade": null,
-        "finding_id": "finding-e1aa9873ca09400d5807",
+        "finding_id": null,
         "fallback_reason": null,
         "decision_source": "model"
       }
@@ -301,12 +316,13 @@
         "arxiv.org"
       ]
     },
-    "dormant": 2
+    "dormant": 3
   },
   "metrics": {
-    "jaccard_overlap": 0.189,
+    "jaccard_overlap": 0.179,
     "morrow_audit_markers": [
       "counterexample",
+      "assumption",
       "missing control"
     ],
     "response_completeness": "thin-or-missing",
@@ -314,8 +330,8 @@
     "distinction_status": "needs-audit"
   },
   "continuity_audit": {
-    "generated_at": "2026-09-05T06:40:48.738228+00:00",
-    "cycle": 337,
+    "generated_at": "2026-09-05T07:10:32.495092+00:00",
+    "cycle": 338,
     "status": "pass",
     "checks": {
       "archive_parse": true,
@@ -325,7 +341,7 @@
       "room_link_integrity": true,
       "resident_room_integrity": true
     },
-    "archive_records": 2626,
+    "archive_records": 2640,
     "malformed_archive_records": 0,
     "raw_output_fields_found": 0,
     "duplicate_archive_ids": [],
@@ -339,8 +355,8 @@
   },
   "health": {
     "schema_version": 1,
-    "generated_at": "2026-09-05T06:40:48.739701+00:00",
-    "cycle": 337,
+    "generated_at": "2026-09-05T07:10:32.496406+00:00",
+    "cycle": 338,
     "daemon": "running",
     "model_status": "ready",
     "model_probe_ok": true,
@@ -353,9 +369,9 @@
         {
           "name": "mistral",
           "model": "ministral-14b-2512",
-          "calls": 409,
-          "input_tokens": 641335,
-          "output_tokens": 85859,
+          "calls": 422,
+          "input_tokens": 666198,
+          "output_tokens": 88714,
           "errors": 0,
           "last_error": "",
           "daily_request_budget": null,
@@ -363,7 +379,7 @@
           "limit_rpm": 30,
           "limit_tpm": 937500,
           "requests_last_minute": 10,
-          "tokens_last_minute": 15622,
+          "tokens_last_minute": 17972,
           "status": "ready"
         },
         {
@@ -401,9 +417,9 @@
         {
           "name": "gemini",
           "model": "gemini-3.8-flash",
-          "calls": 17,
-          "input_tokens": 31250,
-          "output_tokens": 2508,
+          "calls": 19,
+          "input_tokens": 36365,
+          "output_tokens": 2880,
           "errors": 9,
           "last_error": "429 rate limited (self-prompt): [{\n  \"error\": {\n    \"code\": 429,\n    \"message\": \"You exceeded your current quota, please",
           "daily_request_budget": 240,
@@ -432,111 +448,6 @@
         }
       ],
       "recent_calls": [
-        {
-          "at": 1788588588.2,
-          "class": "council",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "4b13f87566b3fc40"
-        },
-        {
-          "at": 1788588599.9,
-          "class": "council",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "af7cf1dda569d246"
-        },
-        {
-          "at": 1788588603.8,
-          "class": "probe",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "ede7999c53a1022c"
-        },
-        {
-          "at": 1788588607.8,
-          "class": "probe",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "a81f121a834fbb13"
-        },
-        {
-          "at": 1788588612.7,
-          "class": "recruitment",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "349ee2c1ec5a757c"
-        },
-        {
-          "at": 1788588617.6,
-          "class": "recruitment",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "4e2814b998254de3"
-        },
-        {
-          "at": 1788588626.6,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "85a2164f870b4f89"
-        },
-        {
-          "at": 1788588632.6,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "8a409a953e635125"
-        },
-        {
-          "at": 1788588640.9,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "063fe7d75de5a78a"
-        },
-        {
-          "at": 1788588644.8,
-          "class": "extraction",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "c185f94b6a4c943d"
-        },
-        {
-          "at": 1788588651.4,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "45ef62cb14610e45"
-        },
-        {
-          "at": 1788588656.8,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "1f1bea7b31fe828c"
-        },
-        {
-          "at": 1788588663.2,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "9543ad46b7108ac3"
-        },
-        {
-          "at": 1788588668.8,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "b301f633617d53ff"
-        },
-        {
-          "at": 1788588676.4,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "e97f9e1e8d7cf758"
-        },
         {
           "at": 1788588681.2,
           "class": "decision",
@@ -641,6 +552,111 @@
           "provider": "mistral",
           "model": "ministral-14b-2512",
           "prompt_sha256_16": "1c74fd84a3efb108"
+        },
+        {
+          "at": 1788592151.9,
+          "class": "self-prompt",
+          "provider": "gemini",
+          "model": "gemini-3.8-flash",
+          "prompt_sha256_16": "6ac66dda407d1237"
+        },
+        {
+          "at": 1788592154.1,
+          "class": "self-prompt",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "cf9f7d926e53b1c5"
+        },
+        {
+          "at": 1788592159.0,
+          "class": "self-prompt",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "1e412978b3e10f89"
+        },
+        {
+          "at": 1788592161.1,
+          "class": "council",
+          "provider": "gemini",
+          "model": "gemini-3.8-flash",
+          "prompt_sha256_16": "0c9cb1ed2b1ead2a"
+        },
+        {
+          "at": 1788592168.3,
+          "class": "council",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "2569ee65fe3dd2d6"
+        },
+        {
+          "at": 1788592172.5,
+          "class": "recruitment",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "70bdee0a517dc242"
+        },
+        {
+          "at": 1788592176.7,
+          "class": "recruitment",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "5143cd00036235ff"
+        },
+        {
+          "at": 1788592182.7,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "e4f83c7d9e25f16d"
+        },
+        {
+          "at": 1788592192.2,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "28f4e71564bf3699"
+        },
+        {
+          "at": 1788592197.8,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "fe86e437c4c68203"
+        },
+        {
+          "at": 1788592208.0,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "148a5ecc91f6fdc4"
+        },
+        {
+          "at": 1788592212.7,
+          "class": "extraction",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "17c264df9385834f"
+        },
+        {
+          "at": 1788592219.5,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "cac2ad14fc9ff00c"
+        },
+        {
+          "at": 1788592225.5,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "e17a7bec1e208f7a"
+        },
+        {
+          "at": 1788592230.0,
+          "class": "extraction",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "25f24bf42429871f"
         }
       ],
       "models_seen": {
@@ -707,33 +723,35 @@
     "publication_status": {
       "outcome": "pushed",
       "reason": "",
-      "at": "2026-09-05T05:08:18.113588+00:00"
+      "at": "2026-09-05T06:40:49.898863+00:00"
     },
     "question_source": "carried:line-000329-8fe81b8d",
-    "self_prompt_accepted": 2,
-    "self_prompt_rejections": [],
+    "self_prompt_accepted": 1,
+    "self_prompt_rejections": [
+      "morrow: missing TEST line(s); return exactly QUESTION:, WHY:, TEST:"
+    ],
     "activity_feed": "docs/activity.json",
     "feed_freshness_seconds": 0,
     "activity_records": 110,
-    "note_records": 479,
-    "print_jobs": 36,
+    "note_records": 487,
+    "print_jobs": 37,
     "failed_print_jobs": 0,
-    "analysis_runs": 50,
-    "analysis_completed": 21,
+    "analysis_runs": 51,
+    "analysis_completed": 22,
     "analysis_failed": 0,
     "analysis_rejected": 29,
     "analysis_timed_out": 0,
     "analysis_feed": "docs/analysis.json",
-    "research_records": 20,
+    "research_records": 19,
     "research_stale": 0,
     "research_feed": "docs/research.json",
-    "findings": 55,
-    "finding_candidates": 55,
-    "findings_rejected": 73,
+    "findings": 56,
+    "finding_candidates": 56,
+    "findings_rejected": 74,
     "findings_retracted": 0,
     "findings_duplicates": 0,
-    "findings_excluded": 73,
-    "findings_total": 128,
+    "findings_excluded": 74,
+    "findings_total": 130,
     "corroborated_findings": 0,
     "findings_feed": "docs/findings.json",
     "frontier_leads": 0,
@@ -747,11 +765,11 @@
       ],
       "hops": 3,
       "findings": 6,
-      "empty_cycles": 2
+      "empty_cycles": 3
     },
-    "frontier_questions": 62,
-    "frontier_findings": 55,
-    "frontier_tasks": 9,
+    "frontier_questions": 63,
+    "frontier_findings": 56,
+    "frontier_tasks": 10,
     "frontier_feed": "docs/frontier.json",
     "code_proposals": 0,
     "code_proposals_ready": 0,
