@@ -1278,8 +1278,13 @@ def publish_failure(reason, model_health, base_url=None):
     except (OSError, json.JSONDecodeError):
         health = {}
     now = datetime.now(timezone.utc).isoformat()
+    model_ok = bool((model_health or {}).get("ok")) if isinstance(model_health, dict) else bool(model_health)
+    provider = (model_health or {}).get("provider") if isinstance(model_health, dict) else health.get("model_provider")
+    health.pop("local_model", None)
+    health.pop("local_model_probe", None)
     health.update({"generated_at": now, "autonomy": "failed", "failure_reason": reason[:300], "failed_at": now,
-                   "host": RUNTIME_HOST, "model_probe_ok": bool((model_health or {}).get("ok")) if isinstance(model_health, dict) else bool(model_health)})
+                   "host": RUNTIME_HOST, "model_status": "ready" if model_ok else "unavailable",
+                   "model_probe_ok": model_ok, "model_backend": "local-server" if provider == "local" else "hosted-api"})
     try:
         health["model_usage"] = model_client.usage_summary(base_url)
         health["model_provider"] = (model_health or {}).get("provider") if isinstance(model_health, dict) else health.get("model_provider")
@@ -1375,10 +1380,11 @@ def publish(result, world, model_health=True):
         "schema_version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "cycle": world["cycle"], "daemon": "running",
-        "local_model": "ready" if model_ok else "unavailable",
-        "local_model_probe": bool(model_ok),
+        "model_status": "ready" if model_ok else "unavailable",
+        "model_probe_ok": bool(model_ok),
         "model_provider": (model_health or {}).get("provider") if isinstance(model_health, dict) else None,
         "model_name": (model_health or {}).get("model") if isinstance(model_health, dict) else None,
+        "model_backend": "local-server" if isinstance(model_health, dict) and model_health.get("provider") == "local" else "hosted-api",
         "model_usage": model_client.usage_summary(base_url),
         "rooms": len(world.get("rooms", [])),
         "active_residents": core_residents + sum(agent.get("status") not in {"fired", "retired"} for agent in registry.get("agents", [])),

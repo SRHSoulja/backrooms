@@ -2,6 +2,7 @@
 these checks keep its safety properties from regressing."""
 
 import unittest
+import json
 from pathlib import Path
 
 
@@ -46,6 +47,16 @@ class CycleWorkflowTests(unittest.TestCase):
 class PublicRepositoryTests(unittest.TestCase):
     def test_state_directory_is_never_tracked_publicly(self):
         self.assertIn("\nstate/\n", Path(".gitignore").read_text())
+
+    def test_public_health_names_the_actual_model_backend(self):
+        health = json.loads(Path("docs/health.json").read_text())
+        self.assertNotIn("local_model", health)
+        self.assertNotIn("local_model_probe", health)
+        self.assertEqual(health["model_backend"], "hosted-api")
+        self.assertEqual(health["model_status"], "ready")
+        source = Path("scripts/local_daemon.py").read_text()
+        self.assertNotIn('"local_model": "ready"', source)
+        self.assertIn('"model_backend": "local-server"', source)
 
 
 if __name__ == "__main__":
