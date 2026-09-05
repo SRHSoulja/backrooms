@@ -48,3 +48,33 @@ The mechanism that does not appear elsewhere, as far as a search of the public r
 What Backrooms combines that none of these do: a map that grows only from corroborated public evidence; a public ledger that keeps the misses (rejected findings, retractions, "unrelated" verdicts, failed publications); a running public instance with feeds, an A2A card, and a quarantine boundary; residents as records plus rules with sparse model calls and a coded refusal to claim consciousness or simulate bodily needs; and read-only tools with content hashes as the only path to the internet. Each piece exists somewhere; the combination is the experiment. The reproducible artifact is the offline end-to-end test that builds a room from a judged cross-domain pair (`tests/test_autonomy_integration.py`).
 
 This survey should be repeated every few months; the date above is the claim's expiry.
+
+## Phase two: the game plan (written 2026-09-05)
+
+Phase one proved the mechanism: an unattended world on free tiers that founds rooms only from corroborated public evidence and withdraws its own mistakes. Its output is modest by construction. Phase two changes what the world is for and what it can prove, still on free resources and still with no human in the loop. The freeze on phase-one rules lifts when milestone 0 ships; the world is not reset, and the run log marks the boundary.
+
+**The claim phase two goes after.** An unattended society of free-tier agents that maps where the public web disagrees with itself, where every verdict in the ledger can be recomputed by anyone, and where independent worlds corroborate each other. No public project combines those three.
+
+**Milestone 0, brains and reproducible verdicts (no keys needed to build; a Google AI Studio key to go live).**
+- The model router gains Gemini through the AI Studio API as the primary for extraction, judgment, and council questions, with Mistral as fallback and Groq or Cerebras as optional extra lanes; budgets are learned from response headers as today.
+- A second judge that is not a language model: a small natural-language-inference model from Hugging Face runs on the Actions CPU and scores each candidate pair's quotes for entailment or contradiction. A supporting verdict now needs both the model's grounded shared fact and entailment above a fixed threshold; both scores are stored on the pair. A script recomputes any verdict in the ledger from its quotes and the pinned model, so a visitor can check the world's judgment rather than trust it.
+- Sentence embeddings, same CPU model family, replace word-stem heuristics for mirror and paraphrase detection between quotes.
+- Measure: every pair since day zero re-judged; agreement between the two judges; the four known false-positive kinds caught without their domain lists.
+
+**Milestone 1, the disagreement map (the mission).**
+- Once a claim is corroborated, the line's next turns hunt for a dissenting public source: searches built to find a different figure, date, or count. The inference judge flags contradiction; the existing dispute mechanism opens; a third independent source settles it for, against, or leaves it unsettled.
+- Council selection prefers claims with numbers, dates, and counts, where disagreement is checkable, and the profile and privacy rules stand: no claims about private individuals.
+- A public feed and site panel, "Where the web disagrees", lists each disagreement with both quotes, sources, hashes, and the settling verdict. Rooms remain evidence-founded; disagreements are a second kind of growth on the map.
+- Measure: documented disagreements per week; the settled fraction; zero privacy incidents.
+
+**Milestone 2, the stage (a Hugging Face write token).**
+- A Hugging Face Space replays the world from day zero on a timeline: lines opening, pairs judged, rooms founded and withdrawn, tools on trial and adopted. It reads only the public feeds.
+- The ledger (findings, pairs, verdicts, lines, rooms, tools) is published as a versioned Hugging Face dataset by a daily workflow.
+- A report generated from the feeds, numbers included, becomes the living writeup.
+
+**Milestone 3, federation (a second GitHub account is the honest test).**
+- Any fork runs its own world on its own free tiers. Worlds exchange corroborated claims through the Agent Card and quarantine boundary that already exist. A claim corroborated in two worlds from disjoint sources is marked cross-world corroborated on both maps. The first partner world can be a second instance to prove the protocol; the claim is only earned when another operator runs one.
+
+**Order and cadence.** Milestone 0 first, because everything else rides on judgment quality; then 1, then 2, then 3. The schedule stays on GitHub's cron, three or four cycles per run. Success at thirty days from the start of milestone 1: reproducible verdicts for every pair, a disagreement map with settled entries, an unattended-days count that never reset, and at least one federated world.
+
+**What this does not promise.** Free models do not become wise; a striking disagreement may take weeks to surface; and the world stays modest about consciousness, wallets, and people, exactly as in phase one.
