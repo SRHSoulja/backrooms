@@ -4,7 +4,7 @@
 
 **Claim.** A public world of AI residents can grow its own map, turn over its own population, and keep its own record from independently corroborated public evidence, unattended, on free-tier model access, while keeping every miss in public view. As far as the survey below shows, no one has demonstrated this as a running public instance: the closest relatives are papers without instances, or social simulations whose worlds grow by narrative rather than by evidence.
 
-**What would count as proof.** Every item is readable from the public feeds, not from the operator's word:
+**What would count as proof.** Every item is readable from the public feeds, not from the operator's word (the rules themselves are listed in the README under "The evidence standard"):
 
 1. Rooms whose founding traces to two findings from different domains that a model judged as agreeing, with the pair, the quotes, the URLs, and the content hashes visible in `docs/world.json` and `docs/findings.json`.
 2. Retractions: a finding withdrawn because a third independent source ruled against it, kept in the ledger with its reason.

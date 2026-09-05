@@ -22,7 +22,9 @@ The two sides may exchange public questions, research references, proposals, or 
 
 Internal room construction is an allowlisted state transition. A validated `BUILD` proposal creates one uniquely identified room, a paired door, and a declared room-link; a `TRANSFORM` proposal updates an existing room. In addition, two independently sourced, hashed findings on the same research topic may create one evidence-led room per cycle, with the finding IDs attached as artifacts. Both transitions emit immutable world events and are idempotent. The public projection exposes topology and sanitized metadata, not local prompts or raw responses.
 
-The local daemon is supervised for recovery, and each publication includes structured work orders, capability contracts, runtime health, and a continuity audit. These are operational checks, not evidence of consciousness.
+Research itself runs as a loop the ledgers can replay: the council opens a research line (a root question with anchor terms) and works it for at most three questions; residents on the line search through a read-only broker, fetch public pages, and extract one quoted claim each; later turns go looking for a second, independent source for a colleague's claim; pairs of claims that share vocabulary are judged, and a supporting verdict that names a shared fact grounded in both claims founds one room; every grown room's founding pair is re-checked each cycle and withdrawn when it no longer meets the rules. The rules are listed in the README under "The evidence standard".
+
+The daemon is supervised for recovery, and each publication includes structured work orders, capability contracts, runtime health, and a continuity audit. These are operational checks, not evidence of consciousness.
 
 ## Is it like *The Truman Show*?
 
