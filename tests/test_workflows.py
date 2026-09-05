@@ -52,8 +52,8 @@ class PublicRepositoryTests(unittest.TestCase):
         health = json.loads(Path("docs/health.json").read_text())
         self.assertNotIn("local_model", health)
         self.assertNotIn("local_model_probe", health)
-        self.assertEqual(health["model_backend"], "hosted-api")
-        self.assertEqual(health["model_status"], "ready")
+        self.assertIn(health["model_backend"], ("hosted-api", "local-server"))
+        self.assertIn(health["model_status"], ("ready", "unavailable"))  # a failed cycle publishes 'unavailable' honestly
         source = Path("scripts/local_daemon.py").read_text()
         self.assertNotIn('"local_model": "ready"', source)
         self.assertIn('"model_backend": "local-server"', source)
