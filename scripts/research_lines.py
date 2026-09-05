@@ -247,8 +247,13 @@ def decide(state, cycle, proposals, followup_for, hire_questions, fallback, gene
         if candidate and candidate.lower() != last.lower():
             line["cap_reached_cycle"] = line.get("cap_reached_cycle") or cycle
         return _result(last, "carried:" + line["id"], line, closed=closed)
-    # No open line: the next root is the oldest queued resident subject, then a
-    # resident's own hiring question, then the fixed fallback.
+    # No open line: roots alternate between the residents' queued subjects and
+    # the day's public record, so neither starves the other; then a resident's
+    # own hiring question, then the fixed fallback.
+    if stream_questions and len(state.get("lines", [])) % 2 == 1:
+        opened = _open_from_stream(state, cycle, stream_questions, generic, closed)
+        if opened:
+            return opened
     queue = state.get("queue", [])
     while queue:
         item = queue.pop(0)
@@ -257,17 +262,9 @@ def decide(state, cycle, proposals, followup_for, hire_questions, fallback, gene
         line = new_line(cycle, item["question"], item.get("anchors", []), "queued:" + str(item.get("source", "")))
         state["lines"].append(line)
         return _result(item["question"], item.get("source", "resident"), line, opened=True, closed=closed)
-    # Then what the public web is saying today: a sourced current event the
-    # residents can confirm from a second outlet, offered in rotation.
-    for question, source in (stream_questions or []):
-        anchors = anchor_terms(question, generic)
-        if not anchors or in_cooldown(anchors, state, cycle):
-            continue
-        if any(shares_anchor(question, line.get("anchors", [])) for line in state.get("lines", []) if line.get("status") == "open"):
-            continue
-        line = new_line(cycle, question, anchors, source)
-        state["lines"].append(line)
-        return _result(question, source, line, opened=True, closed=closed)
+    opened = _open_from_stream(state, cycle, stream_questions, generic, closed)
+    if opened:
+        return opened
     used = set(state.get("used_hire_questions", []))
     for agent_id, question in (hire_questions or []):
         if agent_id in used:
@@ -282,6 +279,20 @@ def decide(state, cycle, proposals, followup_for, hire_questions, fallback, gene
     line = new_line(cycle, fallback, [], "fallback")
     state["lines"].append(line)
     return _result(fallback, "fixed-fallback", line, opened=True, closed=closed)
+
+
+def _open_from_stream(state, cycle, stream_questions, generic, closed):
+    """A sourced current event the residents can confirm from a second outlet, offered in rotation."""
+    for question, source in (stream_questions or []):
+        anchors = anchor_terms(question, generic)
+        if not anchors or in_cooldown(anchors, state, cycle):
+            continue
+        if any(shares_anchor(question, line.get("anchors", [])) for line in state.get("lines", []) if line.get("status") == "open"):
+            continue
+        line = new_line(cycle, question, anchors, source)
+        state["lines"].append(line)
+        return _result(question, source, line, opened=True, closed=closed)
+    return None
 
 
 def note_outcome(state, cycle, accepted_on_line, room_ids=()):

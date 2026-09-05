@@ -51,6 +51,21 @@ class PublicStreamTests(unittest.TestCase):
         again = research_lines.decide(state, 341, [], lambda line: "", [], "fallback", stream_questions=streams)
         self.assertEqual(again["line_id"], decision["line_id"])
 
+    def test_roots_alternate_between_resident_subjects_and_the_public_record(self):
+        state = research_lines.empty_state()
+        streams = [("Do independent public sources confirm that Over 120 people were killed in clashes between the Houthis and the Yemeni Armed Forces?", "stream:wikipedia-current-events/2026-09-04")]
+        proposal = [("Did Meta's Ad Library report deceptive political deepfake ads during the 2024 Brazilian elections?", "resident:echo")]
+        first = research_lines.decide(state, 1, proposal, lambda line: "", [], "fallback", stream_questions=streams)
+        self.assertEqual((first["source"], research_lines.open_line(state)["origin"]), ("resident:echo", "queued:resident:echo"))  # first: a resident's subject
+        for cycle in range(1, 1 + research_lines.EMPTY_CYCLES_CAP):
+            research_lines.note_outcome(state, cycle, 0)
+        second = research_lines.decide(state, 6, proposal, lambda line: "", [], "fallback", stream_questions=streams)
+        self.assertEqual(second["source"], "stream:wikipedia-current-events/2026-09-04")  # the second: the public record
+        for cycle in range(6, 6 + research_lines.EMPTY_CYCLES_CAP):
+            research_lines.note_outcome(state, cycle, 0)
+        third = research_lines.decide(state, 11, [("Did BlackRock report 15 trillion in assets in 2026?", "resident:morrow")], lambda line: "", [], "fallback", stream_questions=streams)
+        self.assertTrue(research_lines.open_line(state)["origin"].startswith("queued:resident"))
+
 
 if __name__ == "__main__":
     unittest.main()

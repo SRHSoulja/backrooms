@@ -311,6 +311,7 @@ def resolve_model(provider, usage, opener=None):
     else:
         chosen = choose_preferred_model(listed, provider.get("preferred_models") or (), provider["model"], failed)
     cache[provider["name"]] = chosen
+    usage.setdefault("models_last", {})[provider["name"]] = chosen
     # A choice made while a better model was busy lasts only until that model's window ends.
     def _choose(without):
         if provider.get("resolve_model") == "gemini-flash":
@@ -629,7 +630,7 @@ def usage_summary(local_base_url=None):
     for provider in providers(local_base_url):
         entry = usage["providers"].get(provider["name"], {})
         summary["providers"].append({
-            "name": provider["name"], "model": usage.get("models", {}).get(provider["name"]) or provider["model"], "calls": entry.get("calls", 0),
+            "name": provider["name"], "model": usage.get("models", {}).get(provider["name"]) or usage.get("models_last", {}).get(provider["name"]) or provider["model"], "calls": entry.get("calls", 0),
             "input_tokens": entry.get("input_tokens", 0), "output_tokens": entry.get("output_tokens", 0),
             "errors": entry.get("errors", 0), "last_error": str(entry.get("last_error", ""))[:120],
             "daily_request_budget": provider["rpd"], "daily_token_budget": provider["tpd"],
