@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-09-05T08:16:19.218916+00:00",
+  "generated_at": "2026-09-05T08:21:54.201540+00:00",
   "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
-  "runtime_cycle": 341,
-  "question": "Did Brazil's Superior Electoral Court (TSE) order Meta to remove political ads from its Ad Library for non-compliance with deepfake disclosure rules during the 2024 municipal elections?",
+  "runtime_cycle": 342,
+  "question": "Did Meta's Ad Library disclose explicit labels for AI-generated political ad content targeting Brazilian voters during the October 2024 municipal elections?",
   "question_source": "resident:echo",
   "self_prompt_accepted": 1,
   "self_prompt_rejections": [
-    "morrow: the question is about this world's own rooms, residents, or telemetry; ask about the outside world"
+    "morrow: missing TEST line(s); return exactly QUESTION:, WHY:, TEST:"
   ],
   "action": {
     "action": "local-behavioral-probe",
@@ -14,7 +14,7 @@
   },
   "recruitment": {
     "status": "rejected",
-    "reason": "reserved core resident name"
+    "reason": "name shares a stem with current resident Vex-9"
   },
   "autonomy": {
     "status": "completed",
@@ -58,6 +58,11 @@
               "snippet": "international panel on the information environment # the role of generative ai use in 2024 elections worldwide < \u6b64\u5904 \u6709 \u56fe 71 baeba 06 b 82 b 19 c - 53 cd 436 fa 010 e 2 ad > # the role of generati..."
             },
             {
+              "title": "\u9078\u6319\u30ad\u30e3\u30f3\u30da\u30fc\u30f3\u306b\u304a\u3051\u308b\u751f\u6210AI\uff1a\u56fd\u969b\u7684\u30d1\u30bf\u30fc\u30f3\u306e\u30de\u30c3\u30d4\u30f3\u30b0",
+              "url": "https://cdn.prod.website-files.com/643ecb10be528d2c1da863cb/690a0cad92d810a0f2eb7909_Final%20JP%20Elections%20SFP.pdf",
+              "snippet": "# \u9078\u6319 \u30ad\u30e3\u30f3\u30da\u30fc\u30f3 \u306b\u304a\u3051\u308b \u751f\u6210 ai \uff1a \u56fd\u969b\u7684 \u30d1\u30bf\u30fc\u30f3 \u306e \u30de\u30c3\u30d4\u30f3\u30b0 \u653f\u7b56 \u7acb\u6848 \u8005 \u5411\u3051 \u30b5\u30de\u30ea\u30fc 2025 . 1 # # \u6982\u8981 \u3053\u306e \u300c \u653f\u7b56 \u7acb\u6848 \u8005 \u5411\u3051 \u30b5\u30de\u30ea\u30fc \u300d \u306f \u3001 i pie \u30c6\u30af\u30cb\u30ab\u30eb \u30da\u30fc\u30d1\u30fc \u300c 2024 \u5e74 \u4e16\u754c \u9078\u6319 \u306b\u304a\u3051\u308b \u751f\u6210 ai \u6d3b\u7528 \u306e \u5f79\u5272 \u300d \uff08 tp 2025 . 2 \uff09 \u306e \u8abf\u67fb \u7d50\u679c \u3092 \u30cf\u30a4\u30ec\u30d9\u30eb \u3067 \u30ec\u30d3\u30e5\u30fc..."
+            },
+            {
               "title": "What Does the \u2018Year of Elections\u2019 Tell Us About Democracy? - European Democracy Hub",
               "url": "https://europeandemocracyhub.epd.eu/what-does-the-year-of-elections-tell-us-about-democracy/",
               "snippet": "spotlight what does the \u2018 year of elections \u2019 tell us about democracy ? december 23 , 2024 elene panchuli dze , ken godfrey , christian leffler , patrick costello , francisco alfaro pareja , rav..."
@@ -66,44 +71,27 @@
         },
         "message": null,
         "trade": null,
-        "finding_id": "finding-e5f8899338409b574833",
+        "finding_id": null,
         "fallback_reason": null,
         "decision_source": "scheduler"
       },
       {
-        "id": "local-002",
-        "action": "explore",
+        "id": "local-003",
+        "action": "stay",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Validate day-of-week parsing logic in `scripts/evidence.py` to ensure accurate extraction of contributor activity patterns. Confirm alignment with `local-001-304` rejection criteria and cross-check for gaps in temporal (",
-        "request": "Verify archived contributor activity and historical repository metadata for Roscomnadzor27 to cross-reference with prior takedown notices",
+        "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
+        "request": "",
         "request_status": "closed",
-        "exploration": "code:scripts/evidence.py",
+        "exploration": "arXiv:2509.22377",
         "tool": {
-          "tool": "local-code-read",
-          "status": "completed",
-          "file": "scripts/evidence.py",
-          "bytes": 5847,
-          "sha256": "e4232c4402f4c6ce561c8d1c6d89484e84070690a696471604a7725c5ba75c1e",
-          "content": "\"\"\"Shared evidence rules for source-backed findings.\n\nBoth the autonomy subprocess (at extraction time) and the daemon (at\npublication time) use these pure functions so a finding is judged by one\nstandard. Nothing here touches the network, the model, or local state.\n\"\"\"\n\nimport re\n\nSTOPWORDS = {\"about\", \"after\", \"also\", \"from\", \"into\", \"that\", \"this\", \"with\", \"what\", \"which\",\n             \"where\", \"when\", \"does\", \"did\", \"have\", \"their\", \"there\", \"these\", \"those\", \"than\"}\n# Prepositions, determiners, and auxiliaries name no subject; a corroborated\n# definition of one of them is not evidence about the world.\nFUNCTION_WORDS = {'above', 'across', 'against', 'along', 'although', 'always', 'among', 'another', 'around', 'because', 'been', 'before', 'behind', 'being', 'below', 'beneath', 'between', 'beyond', 'both', 'during', 'each', 'either', 'even', 'ever', 'every', 'hence', 'just', 'less', 'many', 'might', 'more', 'most', 'much', 'must', 'neither', 'never', 'often', 'only', 'onto', 'other', 'others', 'over', 'shall', 'since', 'some', 'still', 'such', 'though', 'through', 'thus', 'toward', 'towards', 'under', 'until', 'upon', 'very', 'were', 'whether', 'while', 'will', 'within', 'without'}\nSTOPWORDS |= FUNCTION_WORDS\nIMPERATIVE = re.compile(r\"^(?:explore|search|analyze|identify|continue|find|review|investigate|look)\\b\", re.I)\nQUOTE_SUPPORT_THRESHOLD = 0.85\nMIN_FUZZY_TOKENS = 4\n_PUNCTUATION_MAP = {\"\u2018\": \"'\", \"\u2019\": \"'\", \"\u201c\": '\"', \"\u201d\": '\"', \"\u2013\": \"-\", \"\u2014\": \"-\",\n                    \"\u00a0\": \" \", \"\u2026\": \"...\"}\n\n\ndef normalize(text):\n    \"\"\"Lower-case, fold typographic punctuation, and collapse whitespace.\"\"\"\n    value = str(text or \"\")\n    for source, target in _PUNCTUATION_MAP.items():\n        value = value.replace(source, target)\n    return re.sub(r\"\\s+\", \" \", value).strip().lower()\n\n\ndef tokens(text):\n    return re.findall(r\"[a-z0-9]+\", normalize(text))\n\n\ndef _lcs_length(left, right):\n    \"\"\"Length of the longest common subsequence of two short token lists.\"\"\"\n    if not left or not right:\n        return 0\n    previous = [0] * (len(right) + 1)\n    for item in left:\n        current = [0]\n        for index, other in enumerate(right, start=1):\n            if item == other:\n                current.append(previous[index - 1] + 1)\n            else:\n                current.append(max(previous[index], current[index - 1]))\n        previous = current\n    return previous[-1]\n\n\ndef quote_support(quote, excerpt, threshold=QUOTE_SUPPORT_THRESHOLD):\n    \"\"\"Return (supported, score, mode) describing how well the excerpt backs the quote.\n\n    An exact normalized substring scores 1.0. Otherwise the quote must share at\n    least ``threshold`` of its tokens, in order, with some window of the excerpt.\n    Small models paraphrase punctuation and drop function words; this keeps the\n    evidence bar high without demanding byte-exact copying.\n    \"\"\"\n    quote_tokens = tokens(quote)\n    excerpt_tokens = tokens(excerpt)\n    if not quote_tokens or not excerpt_tokens:\n        return False, 0.0, \"none\"\n    if normalize(quote) in normalize(excerpt):\n        return True, 1.0, \"exact\"\n    if len(quote_tokens) < MIN_FUZZY_TOKENS:\n        return False, 0.0, \"too-short\"\n    window = len(quote_tokens) + max(2, len(quote_tokens) // 4)\n    anchors = set(quote_tokens)\n    best = 0.0\n    for start, token in enumerate(excerpt_tokens):\n        if token not in anchors:\n            continue\n        segment = excerpt_tokens[start:start + window]\n        score = _lcs_length(quote_tokens, segment) / len(quote_tokens)\n        if score > best:\n            best = score\n            if best >= 1.0:\n                break\n    supported = best >= threshold\n    return supported, round(best, 3), \"fuzzy\" if supported else \"unsupported\"\n\n\ndef claim_terms(claim):\n    return {term for term in re.findall(r\"[a-z0-9]{4,}\", normalize(claim)) if term not in STOPWORDS}\n\n\ndef claim_grounded(claim, quote):\n    \"\"\"A claim must share vocabulary with its quote and must not be an instruction.\"\"\"\n    if not claim or not quote:\n        return False, \"missing-claim-or-quote\"\n    if IMPERATIVE.match(str(claim).strip()):\n        return False, \"imperative-claim\"\n    terms = claim_terms(claim)\n    quote_vocabulary = set(re.findall(r\"[a-z0-9]{4,}\", normalize(quote)))\n    if len(terms & quote_vocabulary) < min(2, len(terms)):\n        return False, \"claim-not-grounded-in-quote\"\n    return True, \"grounded\"\n\n\ndef clamp_confidence(value):\n    \"\"\"Fold a model-reported confidence into [0, 1]; unparseable values become 0.0.\n\n    The JSON grammar cannot enforce numeric ranges, so a well-quoted finding\n    must not be thrown away merely because the model wrote 1.5 or \"high\".\n    \"\"\"\n    try:\n        number = float(value)\n    except (TypeError, ValueError):\n        return 0.0\n    if number != number:\n        return 0.0\n    return max(0.0, min(1.0, number))\n\n\ndef classify_finding(claim, quote, excerpt=None, confidence=None):\n    \"\"\"Return (status, reason, quote_score) for a candidate finding.\n\n    ``excerpt`` may be None when re-checking a stored record whose page text is\n    no longer available; the stored quote-to-excerpt verdict is then trusted and\n    only claim grounding is re-evaluated. Confidence never rejects a finding;\n    callers store ``clamp_confidence`` of it.\n    \"\"\"\n    grounded, reason = claim_grounded(claim, quote)\n    if not grounded:\n        return \"rejected\", reason, 0.0\n    if excerpt is None:\n        return \"unreviewed\", \"grounded\", 1.0\n    supported, score, mode = quote_support(quote, excerpt)\n    if not supported:\n        return \"rejected\", f\"quote-{mode}\", score\n    return \"unreviewed\", f\"quote-{mode}\", score\n\n\ndef is_accepted(record):\n    \"\"\"Rejected rows stay in the ledger for audit but never count as evidence.\"\"\"\n    return str((record or {}).get(\"status\", \"unreviewed\")) not in {\"rejected\", \"retracted\"}",
-          "read_only": true,
-          "privacy": "sanitized public source only",
-          "contract": {
-            "capability": "public-source-read",
-            "access": "read-only",
-            "network": "none",
-            "side_effects": false,
-            "max_file_bytes": 120000,
-            "max_inventory_bytes": 400000,
-            "write_access": false,
-            "secrets": "redacted"
-          }
+          "status": "not-requested"
         },
         "message": null,
         "trade": null,
         "finding_id": null,
-        "fallback_reason": null,
+        "fallback_reason": "unstructured-output",
         "decision_source": "model"
       },
       {
@@ -133,6 +121,11 @@
           "sentences": [],
           "query": "fully 80 2024 genai four-fifths countries disputed revised different",
           "search_results": [
+            {
+              "title": "Press Release - IPIE Report Shows Widespread Use of GenAI Incidents in 2024 National Elections Globally",
+              "url": "https://www.ipie.info/news/press-release-global-trend-of-widespread-role-of-genai-in-national-elections-in-2024",
+              "snippet": "ipie press release - ipie report shows widespread use of genai incidents in 2024 national elections globally may 27 , 2025 - z\u00fcrich , switzerland - there is substantial global evidence that genera..."
+            },
             {
               "title": "Elections in the Deepfake Era: How Countries Fight AI Lies",
               "url": "https://aichronicle.co/elections-in-the-deepfake-era-how-50-countries-are-preparing-for-ai-misinformation-2/",
@@ -177,8 +170,8 @@
         "exploration": "fully 80 2024 genai four-fifths countries holding elections",
         "tool": {
           "tool": "public-text",
-          "url": "https://aichronicle.co/elections-in-the-deepfake-era-how-50-countries-are-preparing-for-ai-misinformation-2/",
-          "excerpt": "AI Chronicle | Latest AI News, Tools & Expert Reviews Edit with",
+          "url": "https://www.ipie.info/news/press-release-global-trend-of-widespread-role-of-genai-in-national-elections-in-2024",
+          "excerpt": "Built from rigorous analysis of global media and vetted by a scientific panel, the findings offer the most authoritative account to date of how synthetic content is reshaping the practice of elections. It is based on the IPIE\u2019s capturing all reported political uses of GenAI across all 50 countries holding competitive elections in 2024, from deepfakes to precision voter targeting, including coordinated campaigns and foreign interference. The incident database records which actors used GenAI and how, and evaluates the role of GenAI in campaign communications, public opinion formation, and election turnout. Key findings: Fully four-fifths (80%) of the countries holding elections in 2024 had GenAI incidents. The vast majority (90%) of incidents involved content creation, such as audio messages, images, videos, and social media posts. ... Press Release - IPIE Report Shows Widespread Use of GenAI Incidents in 2024 National Elections Globally Reports View All Reports Summaries for Policymakers Technical Papers Synthesis Reports Scientific Panels All Panels AI & Economic Inclusion AI & Peacebuilding Child Protection & Social Media Information Integrity & Climate Transition Indexing the Information Environment Standards for AI Audits Scientists News About About the IPIE Committees and Working Groups Board and Management Support Our Work Join the newsletter Eng \ud83c\uddee\ud83c\uddf9 IT \ud83c\uddea\ud83c\uddf8 ES \ud83c\uddeb\ud83c\uddf7 FR News Press Release - IPIE Report Shows Widespread Use",
           "status": "completed",
           "contract": {
             "capability": "public-text-read",
@@ -189,18 +182,36 @@
             "raw_data": false,
             "untrusted_content": true
           },
-          "sentences": [],
+          "sentences": [
+            "Key findings: Fully four-fifths (80%) of the countries holding elections in 2024 had GenAI incidents.",
+            "It is based on the IPIE\u2019s capturing all reported political uses of GenAI across all 50 countries holding competitive elections in 2024, from deepfakes to precision voter targeting, including coordinated campaigns and foreign interference.",
+            "The IPIE\u2019s recent assessment shows that 80% of the countries that held elections in 2024 had GenAI incidents.",
+            "The IPIE\u2019s new Technical Paper, The Role of Generative AI Use in 2024 Elections Worldwide: Searching for Solutions , is based on the first open-access database of GenAI election incidents.",
+            "The incident database records which actors used GenAI and how, and evaluates the role of GenAI in campaign communications, public opinion formation, and election turnout.",
+            "The IPIE\u2019s assessment shows that more than two-thirds of reported GenAI incidents (69%) were portrayed as having a harmful role in the election.",
+            "More than two-thirds (69%) of the incidents were cataloged as having a harmful role in the election.",
+            "The IPIE\u2019s work on this topic fills the current gap in global insights on the impact of GenAI in political content proliferation and provides data-driven analysis to inform policy recommendations that strengthen election administration in democracies.",
+            "There is a wide range of expert views on the use of GenAI in political contexts, including its potential to impact voters\u2019 behavior on a scale and interfere with election integrity.",
+            "It remains difficult to measure the specific impact of GenAI\u2014or any technology\u2014on particular elections.",
+            "But the use of GenAI for electioneering is no longer speculative or theoretical, it is observable and global.",
+            "Built from rigorous analysis of global media and vetted by a scientific panel, the findings offer the most authoritative account to date of how synthetic content is reshaping the practice of elections.",
+            "The vast majority (90%) of incidents involved content creation, such as audio messages, images, videos, and social media posts.",
+            "Almost half of the incidents have no known source (46%), a quarter were produced by political candidates and parties (25%), a fifth were produced by foreign actors (20%), and the remainder came from other sources (9%).",
+            "In 2024, the potential benefits of these technologies were largely eclipsed by their harmful misuse.",
+            "This demonstrates the widespread use and availability of GenAI technology as well as the political will to rely on it across the world.",
+            "Professor Sebastian Valenzuela , Chief Science Officer of the IPIE, said: This technical paper makes it clear: GenAI is no longer a future threat, it\u2019s a present force."
+          ],
           "query": "fully 80 2024 genai four-fifths countries holding elections",
           "search_results": [
+            {
+              "title": "Press Release - IPIE Report Shows Widespread Use of GenAI Incidents in 2024 National Elections Globally",
+              "url": "https://www.ipie.info/news/press-release-global-trend-of-widespread-role-of-genai-in-national-elections-in-2024",
+              "snippet": "ipie press release - ipie report shows widespread use of genai incidents in 2024 national elections globally may 27 , 2025 - z\u00fcrich , switzerland - there is substantial global evidence that genera..."
+            },
             {
               "title": "Elections in the Deepfake Era: How Countries Fight AI Lies",
               "url": "https://aichronicle.co/elections-in-the-deepfake-era-how-50-countries-are-preparing-for-ai-misinformation-2/",
               "snippet": "opinion elections in the deepfake era : how 50 + countries are preparing for ai misinformation december 25 , 2025 editorial team the year 2024 marked an unprecedented moment in democratic hist..."
-            },
-            {
-              "title": "2024: A year of global political turmoil, triumph, and challenges for democracies - India Today",
-              "url": "https://www.indiatoday.in/world/us-news/story/2024-a-year-of-global-political-turmoil-triumph-and-challenges-for-democracies-glbs-2657985-2024-12-31",
-              "snippet": "2024 : a year of global political turmoil , triumph , and challenges for democracies 2024 witnessed significant political upheaval , with elections in 80 + countries and global conflicts testing dem..."
             },
             {
               "title": "The Role of Generative AI Use in 2024 Elections Worldwide",
@@ -208,44 +219,30 @@
               "snippet": "international panel on the information environment # the role of generative ai use in 2024 elections worldwide < \u6b64\u5904 \u6709 \u56fe 71 baeba 06 b 82 b 19 c - 53 cd 436 fa 010 e 2 ad > # the role of generati..."
             },
             {
-              "title": "\u9078\u6319\u30ad\u30e3\u30f3\u30da\u30fc\u30f3\u306b\u304a\u3051\u308b\u751f\u6210AI\uff1a\u56fd\u969b\u7684\u30d1\u30bf\u30fc\u30f3\u306e\u30de\u30c3\u30d4\u30f3\u30b0",
-              "url": "https://cdn.prod.website-files.com/643ecb10be528d2c1da863cb/690a0cad92d810a0f2eb7909_Final%20JP%20Elections%20SFP.pdf",
-              "snippet": "# \u9078\u6319 \u30ad\u30e3\u30f3\u30da\u30fc\u30f3 \u306b\u304a\u3051\u308b \u751f\u6210 ai \uff1a \u56fd\u969b\u7684 \u30d1\u30bf\u30fc\u30f3 \u306e \u30de\u30c3\u30d4\u30f3\u30b0 \u653f\u7b56 \u7acb\u6848 \u8005 \u5411\u3051 \u30b5\u30de\u30ea\u30fc 2025 . 1 # # \u6982\u8981 \u3053\u306e \u300c \u653f\u7b56 \u7acb\u6848 \u8005 \u5411\u3051 \u30b5\u30de\u30ea\u30fc \u300d \u306f \u3001 i pie \u30c6\u30af\u30cb\u30ab\u30eb \u30da\u30fc\u30d1\u30fc \u300c 2024 \u5e74 \u4e16\u754c \u9078\u6319 \u306b\u304a\u3051\u308b \u751f\u6210 ai \u6d3b\u7528 \u306e \u5f79\u5272 \u300d \uff08 tp 2025 . 2 \uff09 \u306e \u8abf\u67fb \u7d50\u679c \u3092 \u30cf\u30a4\u30ec\u30d9\u30eb \u3067 \u30ec\u30d3\u30e5\u30fc..."
+              "title": "Generative AI in Electoral Campaigns: Mapping Global Patterns",
+              "url": "https://www.ipie.info/research/sfp2025-1",
+              "snippet": "may 2025 generative ai in electoral campaigns : mapping global patterns this summary for policymakers provides a high - level pr\u00e9cis of the technical paper , the role of generative ai use in 2024 ..."
             }
           ]
         },
         "message": null,
         "trade": null,
-        "finding_id": null,
+        "finding_id": "finding-1598ea6c3c954d5ba372",
         "fallback_reason": null,
         "decision_source": "scheduler"
       },
       {
-        "id": "local-018",
-        "action": "explore",
+        "id": "local-012",
+        "action": "analyze",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Inspect **Roscomnadzor27**'s GitHub Pages settings for custom domains (e.g., `.ru` or subdomains) or metadata linking to Roskomnadzor. Prior scrape missed domain artifacts; this is a direct lead for verified connections.",
-        "request": "Verify public GitHub profile metadata, repositories, and associated domains (e.g., `gh-pages`, `pages`, or `custom-domain`) for any documented affiliation with Roskomnadzor\u2019s official channels, including verified domains",
+        "reason": "One-time workbench bootstrap health check before larger tasks.",
+        "request": "Verify public GitHub profile for Roscomnadzor27 to cross-reference with frontier questions 307-309",
         "request_status": "closed",
-        "exploration": "https://github.com/Roscomnadzor27/settings/pages",
+        "exploration": "library 2024 brazilian meta deceptive political utilizing deepfakes",
         "tool": {
-          "tool": "public-text",
-          "status": "failed",
-          "error_kind": "source-not-found",
-          "reason": "source-not-found (HTTP 404)",
-          "retryable": false,
-          "contract": {
-            "capability": "public-text-read",
-            "access": "read-only",
-            "network": "public HTTPS",
-            "side_effects": false,
-            "max_bytes": 5000000,
-            "raw_data": false,
-            "untrusted_content": true
-          },
-          "http_status": 404
+          "status": "not-requested"
         },
         "message": null,
         "trade": null,
@@ -254,13 +251,13 @@
         "decision_source": "model"
       },
       {
-        "id": "local-021",
-        "action": "explore",
+        "id": "local-015",
+        "action": "analyze",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Assigned to the council's research question this turn.",
-        "request": "",
+        "reason": "Analyze fetched GitHub archived/deleted repo cache for RosComNadzor keywords (e.g., 'su', 'blocklist') in commit metadata or repo descriptions.",
+        "request": "Verify publicly archived GitHub activity (deleted repos, forked projects, or commit metadata) for traces of RosComNadzor-blocklist keywords ('su'). Focus on commit history, repository events, and associated network data",
         "request_status": "closed",
         "exploration": "fully 80 2024 genai four-fifths countries disputed revised different",
         "tool": {
@@ -289,59 +286,22 @@
         },
         "message": null,
         "trade": null,
-        "finding_id": "finding-cad14a808599ccbe81d8",
+        "finding_id": "finding-0803b27b31544598693c",
         "fallback_reason": null,
         "decision_source": "scheduler"
       },
       {
-        "id": "local-022",
-        "action": "explore",
+        "id": "local-016",
+        "action": "analyze",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Cross-verify *cs.CY/0609109* for **graph schema references** (e.g., geolocation claims, timestamped datasets) to align with image metadata. Prior scan found no structured metadata; this is a follow-up lead.",
+        "reason": "One-time workbench bootstrap health check before larger tasks.",
         "request": "",
         "request_status": "closed",
-        "exploration": "arXiv:cs.CY/0609109",
+        "exploration": "library 2024 brazilian meta deceptive political utilizing deepfakes",
         "tool": {
-          "tool": "public-search",
-          "query": "arXiv:cs.CY/0609109",
-          "results": [
-            {
-              "title": "A Richer Understanding of the Complexity of Election Systems*",
-              "url": "https://arxiv.org/pdf/cs/0609112.pdf",
-              "snippet": "arxiv : cs / 0609112 v 1 [ cs . gt ] 19 sep 2006 a richer understanding of the complexity of election systems \u2217 piotr fali szewski department of computer science university of rochester rocheste..."
-            },
-            {
-              "title": "ON NUMERICAL STABILITY OF RECURSIVE PRESENT VALUE COMPUTATION METHOD",
-              "url": "https://arxiv.org/pdf/cs/0611049.pdf",
-              "snippet": "arxiv : cs / 0611049 v 2 [ cs . ce ] 28 feb 2007 on numerical stability of recursive present value computation method arg yn kuketayev abstract . we analyze numerical stability of a recursive co..."
-            },
-            {
-              "title": "On the intersection of additive perfect codes *",
-              "url": "https://www.arxiv.org/pdf/cs/0612015",
-              "snippet": "arxiv : cs / 0612015 v 1 [ cs . it ] 4 dec 2006 on the intersection of additive perfect codes \u2217 j. rif ` a , \u2021 f. solov \u2019 eva \u2020 , m. villanueva \u2021 november 13 , 2006 abstract the intersection..."
-            },
-            {
-              "title": "arXiv\u96d1\u8981\u7ea6 - \u897f\u6cfd\u5b8f\u6643",
-              "url": "https://www.nishizawahiroaki.jp/automatic_rough_summary?c=ai&d=20260512&p=4",
-              "snippet": "arxiv \u96d1 \u8981\u7d04 ai - 2026 / 05 / 12 \u516c\u958b \u4e3b\u8981 ai \u4f1a\u8b70 \u306b\u304a\u3051\u308b \u5206\u6bcd \u64cd\u4f5c \u306e \u53ef\u80fd\u6027 \uff1a \u5b8c\u5168 \u81ea\u52d5 \u79d1\u5b66 \u30a8\u30fc\u30b8\u30a7\u30f3\u30c8 \u306b\u3088\u308b \u8105\u5a01 [ cs . ni , eess . sy , cs . sy , cs . cl , cs . ai , cs . cy ] \u76ee\u7684 \uff1a ai \u4f1a\u8b70 \u306b\u304a\u3051\u308b \u5206\u6bcd \u64cd\u4f5c \u3068\u3044\u3046 \u65b0\u305f \u306a \u8105\u5a01 \u306e \u5206\u6790 ai \u7814..."
-            },
-            {
-              "title": "\u3010 \u4e00\u6587 \u8bfb\u61c2 \u3011 arxiv - csdn \u535a\u5ba2",
-              "url": "https://blog.csdn.net/2403_86762465/article/details/141298584",
-              "snippet": "\u3010 \u4e00\u6587 \u8bfb\u61c2 \u3011 arxiv \u6700\u65b0 \u63a8\u8350 \u6587\u7ae0 \u4e8e 2026 - 08 - 13 11 : 36 : 12 \u53d1\u5e03 \u539f\u521b \u4e8e 2024 - 08 - 19 09 : 13 : 13 \u53d1\u5e03 \u00b7 1w \u9605\u8bfb arxiv \u662f \u4e00\u4e2a \u5f00\u653e \u83b7\u53d6 \u7684 \u9884\u5370\u672c \u670d\u52a1\u5668 \uff0c \u7528\u4e8e \u7269\u7406 \u3001 \u6570\u5b66 \u3001 \u8ba1\u7b97\u673a \u79d1\u5b66 \u3001 \u5b9a\u91cf \u751f\u7269\u5b66 \u3001 \u5b9a\u91cf \u91d1\u878d \u548c \u7edf\u8ba1\u5b66 \u7b49 \u591a\u4e2a \u9886\u57df \u7684 \u79d1\u7814 \u8bba\u6587 \u3002 ar..."
-            }
-          ],
-          "source": "https://api.langsearch.com/",
-          "status": "completed",
-          "contract": {
-            "capability": "public-web-read",
-            "access": "read-only",
-            "network": "public HTTPS search",
-            "side_effects": false,
-            "max_bytes": 32000
-          }
+          "status": "not-requested"
         },
         "message": null,
         "trade": null,
@@ -355,10 +315,10 @@
     "trades_settled": [],
     "corroborations": [
       {
-        "id": "pair-25bb945e61d1ea7e920c",
+        "id": "pair-92324c7f2efe268fc5bd",
         "relation": "unrelated",
         "finding_ids": [
-          "finding-cad14a808599ccbe81d8",
+          "finding-0803b27b31544598693c",
           "finding-f9b3e3cd055000636733"
         ],
         "topic": "2024 brazilian deceptive deepfakes genai library meta political utilizing",
@@ -368,28 +328,28 @@
         ]
       },
       {
-        "id": "pair-741bb288eb4a727bdf06",
+        "id": "pair-067944fc3ae55c53838d",
         "relation": "unrelated",
         "finding_ids": [
-          "finding-e5f8899338409b574833",
-          "finding-f9b3e3cd055000636733"
+          "finding-1598ea6c3c954d5ba372",
+          "finding-495fa0d5f124dfb870d5"
         ],
         "topic": "2024 brazilian deceptive deepfakes library meta political utilizing",
         "domains": [
-          "doi.org",
-          "wikipedia.org"
+          "arxiv.org",
+          "ipie.info"
         ]
       },
       {
-        "id": "pair-4ecb0a95ab1b6f3893fc",
+        "id": "pair-2d0335b39d0934cdcbfe",
         "relation": "unrelated",
         "finding_ids": [
-          "finding-495fa0d5f124dfb870d5",
+          "finding-1598ea6c3c954d5ba372",
           "finding-cad14a808599ccbe81d8"
         ],
-        "topic": "2024 audio brazilian deceptive deepfakes library meta political utilizing",
+        "topic": "2024 brazilian deceptive deepfakes genai library meta political utilizing",
         "domains": [
-          "arxiv.org",
+          "ipie.info",
           "wikipedia.org"
         ]
       }
@@ -399,16 +359,17 @@
     "room_changes": [],
     "shared_research": {
       "query": "library 2024 brazilian meta deceptive political utilizing deepfakes",
-      "family": "encyclopedia",
+      "family": "code",
       "avoid_domains": [
         "arxiv.org",
-        "doi.org"
+        "doi.org",
+        "en.wikipedia.org"
       ]
     },
     "dormant": 3
   },
   "metrics": {
-    "jaccard_overlap": 0.188,
+    "jaccard_overlap": 0.201,
     "morrow_audit_markers": [
       "counterexample",
       "assumption",
@@ -419,8 +380,8 @@
     "distinction_status": "needs-audit"
   },
   "continuity_audit": {
-    "generated_at": "2026-09-05T08:16:19.211004+00:00",
-    "cycle": 341,
+    "generated_at": "2026-09-05T08:21:54.189991+00:00",
+    "cycle": 342,
     "status": "pass",
     "checks": {
       "archive_parse": true,
@@ -430,7 +391,7 @@
       "room_link_integrity": true,
       "resident_room_integrity": true
     },
-    "archive_records": 2680,
+    "archive_records": 2692,
     "malformed_archive_records": 0,
     "raw_output_fields_found": 0,
     "duplicate_archive_ids": [],
@@ -444,8 +405,8 @@
   },
   "health": {
     "schema_version": 1,
-    "generated_at": "2026-09-05T08:16:19.212777+00:00",
-    "cycle": 341,
+    "generated_at": "2026-09-05T08:21:54.191290+00:00",
+    "cycle": 342,
     "daemon": "running",
     "model_status": "ready",
     "model_probe_ok": true,
@@ -458,17 +419,17 @@
         {
           "name": "mistral",
           "model": "ministral-14b-2512",
-          "calls": 458,
-          "input_tokens": 742776,
-          "output_tokens": 98474,
+          "calls": 472,
+          "input_tokens": 774325,
+          "output_tokens": 103040,
           "errors": 0,
           "last_error": "",
           "daily_request_budget": null,
           "daily_token_budget": 900000,
           "limit_rpm": 30,
           "limit_tpm": 937500,
-          "requests_last_minute": 3,
-          "tokens_last_minute": 8297,
+          "requests_last_minute": 7,
+          "tokens_last_minute": 19666,
           "status": "ready"
         },
         {
@@ -505,10 +466,10 @@
         },
         {
           "name": "gemini",
-          "model": "gemini-2.5-flash",
-          "calls": 26,
-          "input_tokens": 49663,
-          "output_tokens": 4123,
+          "model": "gemini-3.8-flash",
+          "calls": 30,
+          "input_tokens": 55015,
+          "output_tokens": 4770,
           "errors": 11,
           "last_error": "503 judgment: This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again",
           "daily_request_budget": 240,
@@ -516,7 +477,7 @@
           "limit_rpm": 8,
           "limit_tpm": null,
           "requests_last_minute": 2,
-          "tokens_last_minute": 736,
+          "tokens_last_minute": 735,
           "status": "ready"
         },
         {
@@ -538,17 +499,17 @@
         {
           "name": "groq",
           "model": "openai/gpt-oss-120b",
-          "calls": 13,
-          "input_tokens": 7459,
-          "output_tokens": 2232,
+          "calls": 16,
+          "input_tokens": 8910,
+          "output_tokens": 2685,
           "errors": 0,
           "last_error": "400 on schema mode; prompt hint used",
           "daily_request_budget": 900,
           "daily_token_budget": 190000,
           "limit_rpm": 1000,
           "limit_tpm": 8000,
-          "requests_last_minute": 3,
-          "tokens_last_minute": 1712,
+          "requests_last_minute": 2,
+          "tokens_last_minute": 1126,
           "status": "ready"
         },
         {
@@ -569,153 +530,6 @@
         }
       ],
       "recent_calls": [
-        {
-          "at": 1788594319.1,
-          "class": "extraction",
-          "provider": "groq",
-          "model": "openai/gpt-oss-120b",
-          "prompt_sha256_16": "7112180d105740f1"
-        },
-        {
-          "at": 1788594325.2,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "89e5fc1b1e2d854e"
-        },
-        {
-          "at": 1788594331.9,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "472852ef51d97d89"
-        },
-        {
-          "at": 1788594336.7,
-          "class": "extraction",
-          "provider": "groq",
-          "model": "openai/gpt-oss-120b",
-          "prompt_sha256_16": "a0197aab9bdd46f3"
-        },
-        {
-          "at": 1788594338.7,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "9bc9c32cad8f802d"
-        },
-        {
-          "at": 1788594343.6,
-          "class": "extraction",
-          "provider": "groq",
-          "model": "openai/gpt-oss-120b",
-          "prompt_sha256_16": "b92c50138b1f7ced"
-        },
-        {
-          "at": 1788594348.1,
-          "class": "extraction",
-          "provider": "groq",
-          "model": "openai/gpt-oss-120b",
-          "prompt_sha256_16": "40025dc568bb5673"
-        },
-        {
-          "at": 1788594349.9,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "400dc4fc3cb8a50b"
-        },
-        {
-          "at": 1788594355.4,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "9cd8df4504940413"
-        },
-        {
-          "at": 1788594356.0,
-          "class": "extraction",
-          "provider": "groq",
-          "model": "openai/gpt-oss-120b",
-          "prompt_sha256_16": "3694f1cff342135c"
-        },
-        {
-          "at": 1788596057.3,
-          "class": "self-prompt",
-          "provider": "gemini",
-          "model": "gemini-3.8-flash",
-          "prompt_sha256_16": "1223d3470c59f5bb"
-        },
-        {
-          "at": 1788596058.9,
-          "class": "self-prompt",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "336e5ee8930c5c70"
-        },
-        {
-          "at": 1788596063.5,
-          "class": "self-prompt",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "5214af85cde3c0e5"
-        },
-        {
-          "at": 1788596066.5,
-          "class": "council",
-          "provider": "gemini",
-          "model": "gemini-3.8-flash",
-          "prompt_sha256_16": "4ea63201e5165510"
-        },
-        {
-          "at": 1788596072.9,
-          "class": "council",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "422c3701e3a5eb6d"
-        },
-        {
-          "at": 1788596077.0,
-          "class": "recruitment",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "6db51c50246efd6d"
-        },
-        {
-          "at": 1788596084.8,
-          "class": "extraction",
-          "provider": "groq",
-          "model": "openai/gpt-oss-120b",
-          "prompt_sha256_16": "c37e4282603bde06"
-        },
-        {
-          "at": 1788596087.7,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "d4d94990301e3b69"
-        },
-        {
-          "at": 1788596098.1,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "cafb5e5a087eb387"
-        },
-        {
-          "at": 1788596098.6,
-          "class": "extraction",
-          "provider": "groq",
-          "model": "openai/gpt-oss-120b",
-          "prompt_sha256_16": "04e3bf1c1cad3d7c"
-        },
-        {
-          "at": 1788596106.2,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "34c0b8d9193c37d2"
-        },
         {
           "at": 1788596114.6,
           "class": "decision",
@@ -778,6 +592,153 @@
           "provider": "groq",
           "model": "openai/gpt-oss-120b",
           "prompt_sha256_16": "0e9f9ae500355d5a"
+        },
+        {
+          "at": 1788596395.6,
+          "class": "self-prompt",
+          "provider": "gemini",
+          "model": "gemini-3.6-flash",
+          "prompt_sha256_16": "d7830de7282306c1"
+        },
+        {
+          "at": 1788596397.7,
+          "class": "self-prompt",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "cb186acd805d51b7"
+        },
+        {
+          "at": 1788596402.8,
+          "class": "self-prompt",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "dde7d256b0c87399"
+        },
+        {
+          "at": 1788596406.8,
+          "class": "council",
+          "provider": "gemini",
+          "model": "gemini-3.6-flash",
+          "prompt_sha256_16": "07e6ced8e65545d3"
+        },
+        {
+          "at": 1788596418.7,
+          "class": "council",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "8b81d0e86419cdbd"
+        },
+        {
+          "at": 1788596423.2,
+          "class": "recruitment",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "5e38b13acd2eb079"
+        },
+        {
+          "at": 1788596427.7,
+          "class": "recruitment",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "16c71b3b9f4d6f3e"
+        },
+        {
+          "at": 1788596435.3,
+          "class": "extraction",
+          "provider": "groq",
+          "model": "openai/gpt-oss-120b",
+          "prompt_sha256_16": "c37e4282603bde06"
+        },
+        {
+          "at": 1788596441.3,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "d666ff0989ec43fe"
+        },
+        {
+          "at": 1788596448.8,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "c65e9bc923fb7291"
+        },
+        {
+          "at": 1788596459.2,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "0231f7ba136ab8ee"
+        },
+        {
+          "at": 1788596459.7,
+          "class": "extraction",
+          "provider": "groq",
+          "model": "openai/gpt-oss-120b",
+          "prompt_sha256_16": "04e3bf1c1cad3d7c"
+        },
+        {
+          "at": 1788596465.7,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "826129aa4fb015df"
+        },
+        {
+          "at": 1788596472.2,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "3abb0694304d844a"
+        },
+        {
+          "at": 1788596481.1,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "429e549936bb191a"
+        },
+        {
+          "at": 1788596486.6,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "342861d69cb034e2"
+        },
+        {
+          "at": 1788596494.7,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "05b6fa404fd795d9"
+        },
+        {
+          "at": 1788596495.2,
+          "class": "extraction",
+          "provider": "groq",
+          "model": "openai/gpt-oss-120b",
+          "prompt_sha256_16": "8ae5d14ddea7b2a6"
+        },
+        {
+          "at": 1788596499.3,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "a0dc3bcda1d4f598"
+        },
+        {
+          "at": 1788596501.3,
+          "class": "judgment",
+          "provider": "gemini",
+          "model": "gemini-3.8-flash",
+          "prompt_sha256_16": "d7da16ef0321d911"
+        },
+        {
+          "at": 1788596513.6,
+          "class": "judgment",
+          "provider": "gemini",
+          "model": "gemini-3.8-flash",
+          "prompt_sha256_16": "33623840ca33a8f9"
         }
       ],
       "models_seen": {
@@ -849,12 +810,12 @@
     "autonomy_quality": {
       "status": "active",
       "turns": 8,
-      "fallbacks": 1,
-      "fallback_rate": 0.125,
+      "fallbacks": 2,
+      "fallback_rate": 0.25,
       "fallback_reasons": {
-        "unstructured-output": 1
+        "unstructured-output": 2
       },
-      "tool_successes": 6,
+      "tool_successes": 4,
       "findings_filed": 2
     },
     "publication": "sanitized GitHub Pages snapshot",
@@ -867,16 +828,16 @@
     "question_source": "resident:echo",
     "self_prompt_accepted": 1,
     "self_prompt_rejections": [
-      "morrow: the question is about this world's own rooms, residents, or telemetry; ask about the outside world"
+      "morrow: missing TEST line(s); return exactly QUESTION:, WHY:, TEST:"
     ],
     "activity_feed": "docs/activity.json",
     "feed_freshness_seconds": 0,
     "activity_records": 110,
-    "note_records": 512,
+    "note_records": 522,
     "print_jobs": 38,
     "failed_print_jobs": 0,
-    "analysis_runs": 54,
-    "analysis_completed": 25,
+    "analysis_runs": 57,
+    "analysis_completed": 28,
     "analysis_failed": 0,
     "analysis_rejected": 29,
     "analysis_timed_out": 0,
@@ -884,13 +845,13 @@
     "research_records": 15,
     "research_stale": 0,
     "research_feed": "docs/research.json",
-    "findings": 61,
-    "finding_candidates": 61,
+    "findings": 63,
+    "finding_candidates": 63,
     "findings_rejected": 78,
     "findings_retracted": 0,
     "findings_duplicates": 0,
     "findings_excluded": 78,
-    "findings_total": 139,
+    "findings_total": 141,
     "corroborated_findings": 0,
     "findings_feed": "docs/findings.json",
     "frontier_leads": 0,
@@ -902,13 +863,13 @@
         "2024",
         "brazilian"
       ],
-      "hops": 2,
-      "findings": 4,
+      "hops": 3,
+      "findings": 6,
       "empty_cycles": 0
     },
-    "frontier_questions": 66,
-    "frontier_findings": 61,
-    "frontier_tasks": 2,
+    "frontier_questions": 67,
+    "frontier_findings": 63,
+    "frontier_tasks": 3,
     "frontier_feed": "docs/frontier.json",
     "code_proposals": 0,
     "code_proposals_ready": 0,
