@@ -63,7 +63,7 @@ def facts(state=STATE, docs=DOCS, now=None):
     rooms = [room for room in world.get("rooms", []) if room.get("founded_via") == "evidence-ledger"]
     rooms += [room for room in world.get("withdrawn_rooms", []) if room.get("founded_via") == "evidence-ledger"]
     withdrawn = [room for room in rooms if room.get("status") == "retracted" or room.get("collapsed_at")]
-    withdrawal_reasons = collections.Counter(str(room.get("retraction_reason") or "collapsed") for room in withdrawn)
+    withdrawal_reasons = collections.Counter(re.sub(r"\s*\([^)]*\)\s*$", "", str(room.get("retraction_reason") or "collapsed")) for room in withdrawn)
     registry = _json(state / "local-agents.json", {}).get("agents", [])
     zero_at = str(day_zero.get("at") or "")
     hires = [agent for agent in registry if str(agent.get("recorded_at") or agent.get("interviewed_at") or "") >= zero_at]
