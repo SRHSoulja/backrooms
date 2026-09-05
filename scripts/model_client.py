@@ -364,6 +364,8 @@ def _error_detail(error):
         return ""
     try:
         data = json.loads(body)
+        if isinstance(data, list) and data:
+            data = data[0]  # Google wraps its error object in a list
         text = data.get("message") or (data.get("error") or {}).get("message") if isinstance(data, dict) else ""
     except (ValueError, AttributeError):
         text = body

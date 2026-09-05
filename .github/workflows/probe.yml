@@ -1,0 +1,40 @@
+name: Backrooms Provider Probe
+
+on:
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: Provider name from the router (gemini, mistral, groq, cerebras, openrouter)
+        required: true
+        default: gemini
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Place the provider keys where the router reads them (never printed)
+        env:
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          install -m 600 /dev/null "$RUNNER_TEMP/backrooms.env"
+          for name in MISTRAL_API_KEY GEMINI_API_KEY GROQ_API_KEY CEREBRAS_API_KEY OPENROUTER_API_KEY; do
+            value="${!name}"
+            if [ -n "$value" ]; then printf '%s=%s\n' "$name" "$value" >> "$RUNNER_TEMP/backrooms.env"; fi
+          done
+          echo "BACKROOMS_ENV_FILE=$RUNNER_TEMP/backrooms.env" >> "$GITHUB_ENV"
+      - name: Probe the provider (model list, chosen model, one tiny call)
+        env:
+          BACKROOMS_PROVIDER_ORDER: ${{ inputs.provider }}
+        run: python3 scripts/provider_probe.py "${{ inputs.provider }}"
