@@ -567,15 +567,19 @@ def sync_tool_proposals():
         local = json.loads(LOCAL_TOOL_PROPOSALS.read_text()) if LOCAL_TOOL_PROPOSALS.exists() else {"proposals": []}
     except (OSError, json.JSONDecodeError):
         local = {"proposals": []}
-    records = [{key: item.get(key) for key in ("id", "name", "description", "resident", "cycle", "code", "status", "reason",
-                                               "tests_passed", "tests_total", "recorded_at", "approved_at", "approved_by", "path")}
+    records = [{**{key: item.get(key) for key in ("id", "name", "description", "resident", "cycle", "code", "status", "reason",
+                                                  "tests_passed", "tests_total", "recorded_at", "approved_at", "approved_by",
+                                                  "adopted_at", "adopted_by", "adopted_cycle", "expired_cycle", "path")},
+                "uses": [{"agent": use.get("agent"), "cycle": use.get("cycle"), "status": use.get("status")} for use in (item.get("uses") or [])[-6:]]}
                for item in local.get("proposals", [])[-100:]]
     public = {"schema_version": 1, "generated_at": datetime.now(timezone.utc).isoformat(),
-              "privacy": "Resident tool proposals with their sandbox-tested code; a tool runs in the world only after a human approves it into tools/.",
-              "proposals": records, "approved": [{"name": tool["name"], "description": tool["description"]} for tool in approved_tools()]}
+              "privacy": ("Resident tool proposals with their sandbox-tested code. A tool that passes its tests is on trial in every resident's "
+                          "sandbox; another resident's completed analysis that calls it adopts it. No human approves tools."),
+              "proposals": records,
+              "approved": [{"name": tool["name"], "description": tool["description"], "status": tool.get("status", "adopted")} for tool in approved_tools()]}
     atomic_write_json(PUBLIC_TOOL_PROPOSALS, public)
-    return {"tool_proposals": len(records), "tool_proposals_ready": sum(item.get("status") == "ready-for-review" for item in records),
-            "approved_tools": len(public["approved"]), "tool_proposals_feed": "docs/tool-proposals.json"}
+    return {"tool_proposals": len(records), "tool_proposals_trial": sum(item.get("status") == "trial" for item in records),
+            "adopted_tools": len(public["approved"]), "tool_proposals_feed": "docs/tool-proposals.json"}
 
 
 def sync_code_proposals(registry=None):

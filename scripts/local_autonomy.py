@@ -1050,13 +1050,16 @@ def apply_construction(world, registry, cycle):
 
 def approved_tools_prompt():
     try:
-        tools = resident_tools.approved_tools()
+        tools = resident_tools.available_tools()
     except Exception:  # noqa: BLE001
         tools = []
     if not tools:
         return ""
-    listed = "; ".join(f"tool_{tool['name']}(text): {tool['description'] or 'no description'}" for tool in tools[:12])
-    return "Approved resident tools you may call inside ANALYZE code: " + listed + ". "
+    def label(tool):
+        if tool.get("status") == "trial":
+            return f"tool_{tool['name']}(text): {tool['description'] or 'no description'} [on trial, proposed by {tool.get('resident')}; your successful use adopts it]"
+        return f"tool_{tool['name']}(text): {tool['description'] or 'no description'} [adopted]"
+    return "Resident-built tools you may call inside ANALYZE code: " + "; ".join(label(tool) for tool in tools[:16]) + ". "
 
 
 def catalog_tool_names():
@@ -1880,6 +1883,13 @@ def main():
                        "A claimed frontier task went uncompleted for too long and returned to the open pool.", **item)
     CURRENT_LINE["id"] = str(args.line_id or "")[:60]
     CURRENT_LINE["anchors"] = [term.strip() for term in str(args.anchors or "").split(",") if term.strip()][:8]
+    try:
+        for record in resident_tools.expire_trials(args.cycle):
+            emit_event(world, args.cycle, "tool-expired", "council",
+                       f"The trial tool '{record['name']}' expired: no other resident used it successfully within {resident_tools.TRIAL_CYCLES} cycles.",
+                       tool_proposal=record.get("id"), name=record.get("name"))
+    except Exception:  # noqa: BLE001
+        pass
     shared_research, shared_family, shared_avoid = shared_research_target(args.question, frontier_snapshot, topic_hint=args.topic)
     # The cooperation that matters: once one resident has filed a claim on the
     # council's topic, the next residents on that topic go looking for a second,
@@ -2058,6 +2068,17 @@ def main():
                                        "contract": analysis.get("contract", {})}
             if artifact.get("based_on"):
                 agent["analysis_followup_completed"] = True
+            try:
+                adopted_tools, tools_used = resident_tools.note_use(decision["code"], agent.get("id", "resident"), args.cycle,
+                                                                    analysis.get("status", "failed"))
+            except Exception:  # noqa: BLE001 - tool bookkeeping never aborts a turn
+                adopted_tools, tools_used = [], []
+            for record in adopted_tools:
+                emit_event(world, args.cycle, "tool-adopted", agent.get("id", "resident"),
+                           f"The tool '{record['name']}' proposed by {record.get('resident')} passed its trial: {agent.get('id')} used it in a completed analysis; it is now in every resident's toolkit.",
+                           tool_proposal=record.get("id"), name=record.get("name"), proposed_by=record.get("resident"))
+            if tools_used:
+                agent["last_analysis"]["tools_used"] = tools_used
             file_agent_record(agent, args.cycle, "note",
                               f"Bounded analysis {analysis.get('status', 'failed')}; output remains local.")
             emit_event(world, args.cycle, "analysis-run", agent.get("id", "resident"),

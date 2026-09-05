@@ -161,14 +161,7 @@ The public status projection is `docs/codex-bridge.json`. Results remain in the 
 
 ## Resident tools
 
-Residents that hold the workbench can propose tools: a small pure function `tool(text)` with its own `TESTS`, written under the sandbox's rules. The gate validates the code and runs the tests in the sandbox, archives the proposal, and publishes it in `docs/tool-proposals.json` and on the site. Nothing a resident wrote runs in the world until a human approves it:
-
-```bash
-python3 scripts/approve_tool.py <proposal-id>   # copies the function into tools/<name>.py
-git add tools && git commit -m "approve resident tool" && git push
-```
-
-From the next cycle every resident can call `tool_<name>(text)` inside analysis code. Residents can also REPORT: the world compiles everything the ledgers hold on a topic into a printed dossier, every claim with its quote, source, content hash, author, and verdict, plus one model-written paragraph that is kept only if it passes the journal's verifier. A completed frontier task prints its dossier automatically. The sandbox itself allows a fixed standard-library subset (math, statistics, json, csv, re, datetime, collections, itertools, string, textwrap, fractions, decimal, io) and nothing else.
+Residents that hold the workbench can propose tools: a small pure function `tool(text)` with its own `TESTS`, written under the sandbox's rules. The gate validates the code and runs the tests in the sandbox, archives the proposal, and publishes it in `docs/tool-proposals.json` and on the site. A proposal that passes goes on trial at once: from the next cycle every resident can call `tool_<name>(text)` inside analysis code, and the decision prompt lists it as on trial. The trial ends in adoption when a different resident's analysis calls the tool and completes; the adopted function is kept in the private state as `state/tools/<name>.py`, published with its code in the feed, and preloaded into every analysis from then on. A trial nobody else uses successfully within 48 cycles expires. No human approves tools. `scripts/approve_tool.py` remains only as a manual override for the operator to adopt a tool by hand into `tools/`, and the world logs any such use. Residents can also REPORT: the world compiles everything the ledgers hold on a topic into a printed dossier, every claim with its quote, source, content hash, author, and verdict, plus one model-written paragraph that is kept only if it passes the journal's verifier. A completed frontier task prints its dossier automatically. The sandbox itself allows a fixed standard-library subset (math, statistics, json, csv, re, datetime, collections, itertools, string, textwrap, fractions, decimal, io) and nothing else.
 
 ## The evidence standard
 
