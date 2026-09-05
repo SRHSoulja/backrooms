@@ -9,6 +9,15 @@ from pathlib import Path
 from scripts import model_client
 
 
+class ProviderOrderTests(unittest.TestCase):
+    def test_preferred_providers_move_to_the_front_without_dropping_the_rest(self):
+        from scripts.model_client import ordered_providers
+        available = [{"name": "mistral"}, {"name": "mistral-8b"}, {"name": "gemini"}, {"name": "local"}]
+        self.assertEqual([p["name"] for p in ordered_providers(available, ("gemini", "groq"))], ["gemini", "mistral", "mistral-8b", "local"])
+        self.assertEqual([p["name"] for p in ordered_providers(available, None)], ["mistral", "mistral-8b", "gemini", "local"])
+        self.assertEqual([p["name"] for p in ordered_providers(available, ("mistral-8b", "mistral"))], ["mistral-8b", "mistral", "gemini", "local"])
+
+
 class FakeResponse(io.BytesIO):
     status = 200
 

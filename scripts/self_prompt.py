@@ -32,10 +32,18 @@ def ask(url, resident, context, retry_reason="", line=None):
               "Return exactly three lines: QUESTION:, WHY:, TEST:. "
               "The test must be reversible, non-sensitive, and require no external contact. "
               "Do not mention credentials or private memory.\n\n" + context)
-    content, _provider = complete([{"role": "system", "content": "You are a bounded research resident. Do not claim sentience."},
-                                   {"role": "user", "content": prompt}], temperature=0.7, max_tokens=150,
-                                  call_class="self-prompt", base_url=url)
+    content, provider = complete([{"role": "system", "content": "You are a bounded research resident. Do not claim sentience."},
+                                  {"role": "user", "content": prompt}], temperature=0.7, max_tokens=150,
+                                 call_class="self-prompt", base_url=url, prefer=RESIDENT_PROVIDERS.get(resident))
+    LAST_PROVIDER[resident] = provider
     return content
+
+
+# Adversarial model pairs: each resident prefers a different provider family, so
+# the two voices come from different models whenever more than one key exists.
+RESIDENT_PROVIDERS = {"Echo": ("gemini", "groq", "cerebras", "openrouter", "mistral"),
+                      "Morrow": ("mistral", "mistral-8b", "mistral-small", "cerebras", "groq", "gemini")}
+LAST_PROVIDER = {}
 
 
 parser = argparse.ArgumentParser()
@@ -105,5 +113,5 @@ for resident in ("Echo", "Morrow"):
         reason = rejection_reason(proposal)
         attempts = 2
     proposals.append({"resident": resident, "accepted": not reason, "proposal": proposal, "attempts": attempts,
-                      "rejection_reason": reason})
+                      "rejection_reason": reason, "provider": LAST_PROVIDER.get(resident)})
 print(json.dumps({"proposals": proposals}, indent=2))

@@ -44,6 +44,15 @@ jobs:
           python-version: '3.x'
       - name: Install Bubblewrap when the runner allows it (the sandbox probes capability and falls back otherwise)
         run: sudo apt-get update -qq && sudo apt-get install -y -qq bubblewrap || true
+      - name: Cache the reproducible judge's models and packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/backrooms-models
+            ~/.cache/pip
+          key: judge-${{ runner.os }}-${{ hashFiles('requirements-judge.txt', 'scripts/inference_judge.py') }}
+      - name: Install the reproducible judge (two small ONNX models on CPU; the world falls back to its word rules if this fails)
+        run: pip install -q -r requirements-judge.txt || echo "judge dependencies unavailable; cycles run without the inference judge"
       - name: Place the provider keys where the router reads them (never printed, never in the checkout)
         # Any provider the router knows can be added as a repository secret of the
         # same name; unset secrets are skipped. The router uses whichever exist,
@@ -66,6 +75,8 @@ jobs:
         env:
           BACKROOMS_RUNTIME_HOST: github-actions
           BACKROOMS_LOCAL_MODEL: never
+          BACKROOMS_INFERENCE_JUDGE: "1"
+          HF_HUB_DISABLE_TELEMETRY: "1"
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # After every cycle: save the private state, then redeploy the site so
           # the page never lags the feeds (a token push does not trigger the

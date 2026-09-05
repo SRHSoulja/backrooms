@@ -25,14 +25,14 @@ except ImportError:
 try:
     from scripts.evidence import clamp_confidence, classify_finding, is_accepted, FUNCTION_WORDS
     from scripts.corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, claims_overlap, corroboration_index,
-                                       growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source, profile_subject, profile_url, SEARCH_PAGE)
-    from scripts import reports, resident_tools
+                                       growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source, profile_subject, profile_url, SEARCH_PAGE, inference_stands)
+    from scripts import reports, resident_tools, inference_judge, ledger_chain
     from scripts.world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes, retract_unfounded_rooms, collapse_withdrawn_rooms, finding_on_topic)
 except ImportError:
     from evidence import clamp_confidence, classify_finding, is_accepted, FUNCTION_WORDS
     from corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, claims_overlap, corroboration_index,
-                               growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source, profile_subject, profile_url, SEARCH_PAGE)
-    import reports, resident_tools
+                               growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source, profile_subject, profile_url, SEARCH_PAGE, inference_stands)
+    import reports, resident_tools, inference_judge, ledger_chain
     from world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes, retract_unfounded_rooms, collapse_withdrawn_rooms, finding_on_topic)
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "state/local-agents.json"
@@ -848,9 +848,7 @@ def emit_event(world, cycle, kind, actor, text, **fields):
              "actor": actor, "kind": kind, "text": text[:240], "cycle": cycle,
              "recorded_at": datetime.now(timezone.utc).isoformat(), **fields}
     world.setdefault("events", []).append(event)
-    ARCHIVE.parent.mkdir(parents=True, exist_ok=True)
-    with ARCHIVE.open("a") as archive:
-        archive.write(json.dumps(event, separators=(",", ":")) + "\n")
+    ledger_chain.append_event(ARCHIVE, event)
     return event
 
 
@@ -1492,6 +1490,68 @@ def accepted_findings():
     return findings
 
 
+INFERENCE_STATUS = ROOT / "state/inference-judge.json"
+BACKFILL_PER_CYCLE = 10
+
+
+def inference_scores(first, second):
+    """The reproducible judge's scores for a pair, or None when it is unavailable."""
+    try:
+        return inference_judge.judge_pair(first, second)
+    except Exception:  # noqa: BLE001 - never lets a cycle fail
+        return None
+
+
+def write_inference_status(extra=None):
+    try:
+        payload = {**inference_judge.status(), **(extra or {}), "recorded_at": datetime.now(timezone.utc).isoformat()}
+        atomic_write_json(INFERENCE_STATUS, payload)
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def backfill_inference(world, cycle, limit=BACKFILL_PER_CYCLE):
+    """Score up to ``limit`` older model-judged pairs that have no inference
+    scores yet, so every verdict in the ledger becomes reproducible. A
+    supporting verdict the judge cannot confirm is downgraded in place, with
+    the model's answer kept; the standing re-check then withdraws any room
+    founded on it."""
+    if not inference_judge.available():
+        write_inference_status({"scored_pairs": sum(1 for item in load_records(CORROBORATIONS) if isinstance(item.get("inference"), dict))})
+        return []
+    records = load_records(CORROBORATIONS)
+    by_id = {item.get("id"): item for item in all_findings()}
+    changed = []
+    for record in records:
+        if len(changed) >= limit:
+            break
+        if isinstance(record.get("inference"), dict) or record.get("judge") == "term-gate":
+            continue
+        ids = record.get("finding_ids") or []
+        first, second = (by_id.get(ids[0]) if ids else None), (by_id.get(ids[1]) if len(ids) > 1 else None)
+        if not first or not second:
+            continue
+        scores = inference_scores(first, second)
+        if not scores:
+            continue
+        record["inference"] = scores
+        ok, why = inference_stands(record)
+        if not ok:
+            record["downgraded_relation"] = record.get("relation")
+            record["relation"] = "unrelated"
+            record["reason"] = (why + ": " + str(record.get("reason") or ""))[:200]
+            record["downgraded_at"] = datetime.now(timezone.utc).isoformat()
+            emit_event(world, cycle, "verdict-downgraded", "inference-judge",
+                       "A model verdict was downgraded: the reproducible inference judge finds no entailment between the quoted passages.",
+                       corroboration=record.get("id"), support=scores.get("support"))
+        changed.append(record.get("id"))
+    if changed:
+        rewrite_records(CORROBORATIONS, records)
+    write_inference_status({"scored_pairs": sum(1 for item in records if isinstance(item.get("inference"), dict)),
+                            "backfilled_this_cycle": len(changed)})
+    return changed
+
+
 def judge_corroborations(url, world, cycle, limit=MAX_JUDGMENTS_PER_CYCLE):
     """Ask the local model whether cross-domain finding pairs support or contradict each other.
 
@@ -1500,6 +1560,7 @@ def judge_corroborations(url, world, cycle, limit=MAX_JUDGMENTS_PER_CYCLE):
     corroboration by itself.
     """
     findings = accepted_findings()
+    backfill_inference(world, cycle)
     judged = {item.get("id") for item in load_records(CORROBORATIONS)}
     results = []
     for first, second, identifier, similarity in candidate_pairs(findings, judged, limit):
@@ -1520,9 +1581,10 @@ def judge_corroborations(url, world, cycle, limit=MAX_JUDGMENTS_PER_CYCLE):
                 continue
         except (OSError, ValueError, TypeError, KeyError, AttributeError, json.JSONDecodeError):
             continue
-        judged_verdict = judge_verdict(first, second, verdict)
+        scores = inference_scores(first, second)
+        judged_verdict = judge_verdict(first, second, verdict, inference=scores)
         record = make_record(first, second, identifier, judged_verdict["relation"], judged_verdict["reason"], cycle, similarity,
-                             shared_claim=judged_verdict["shared_claim"], model_relation=judged_verdict["model_relation"])
+                             shared_claim=judged_verdict["shared_claim"], model_relation=judged_verdict["model_relation"], inference=scores)
         if not append_record(CORROBORATIONS, record):
             continue
         if record["relation"] == "supports":

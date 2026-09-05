@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.corroboration import (append_record, candidate_pairs, claims_overlap, corroboration_index, definition_source, profile_subject, profile_url, about_profile, republisher, not_a_document, domain_of, same_document,
+from scripts.corroboration import (append_record, candidate_pairs, claims_overlap, corroboration_index, definition_source, profile_subject, profile_url, about_profile, republisher, not_a_document, inference_stands, domain_of, same_document,
                                    founding_pair_stands, growth_candidates, judge_verdict, judgment_schema, load_records,
                                    make_record, on_topic, pair_id)
 
@@ -121,6 +121,31 @@ class CorroborationTests(unittest.TestCase):
         ok, reason = founding_pair_stands(record, github, mirror)
         self.assertFalse(ok)
         self.assertEqual(reason, "a founding finding is an individual's account or profile page")
+
+    def test_inference_scores_veto_unsupported_verdicts_and_founding(self):
+        first = {"id": "f-a", "topic": "roskomnadzor github block", "status": "accepted", "url": "https://techcrunch.com/x",
+                 "claim": "Roskomnadzor blocked GitHub in December 2014.", "quote": "Roskomnadzor blocked access to GitHub in December 2014"}
+        second = {"id": "f-b", "topic": "roskomnadzor github block", "status": "accepted", "url": "https://meduza.io/y",
+                  "claim": "Russia's regulator Roskomnadzor blocked GitHub in December 2014.", "quote": "the regulator blocked GitHub in December 2014"}
+        shared = "Roskomnadzor blocked GitHub in December 2014"
+        verdict = {"relation": "supports", "shared_claim": shared, "reason": "same event"}
+        strong = {"support": 0.97, "contradiction": 0.01, "model": "m", "revision": "r"}
+        weak = {"support": 0.04, "contradiction": 0.01, "model": "m", "revision": "r"}
+        self.assertEqual(judge_verdict(first, second, verdict, inference=strong)["relation"], "supports")
+        self.assertEqual(judge_verdict(first, second, verdict)["relation"], "supports")  # no scores: the word rules decide
+        downgraded = judge_verdict(first, second, verdict, inference=weak)
+        self.assertEqual((downgraded["relation"], downgraded["model_relation"]), ("unrelated", "supports"))
+        self.assertIn("inference judge finds no entailment", downgraded["reason"])
+        contradiction = judge_verdict(first, second, {"relation": "contradicts", "reason": "dates differ"}, inference={"support": 0.0, "contradiction": 0.05})
+        self.assertEqual((contradiction["relation"], contradiction["model_relation"]), ("unrelated", "contradicts"))
+        self.assertEqual(inference_stands({"relation": "supports", "inference": None}), (True, ""))
+        record = {"id": "pair-x", "finding_ids": ["f-a", "f-b"], "shared_claim": shared, "relation": "supports", "inference": weak}
+        ok, reason = founding_pair_stands(record, first, second)
+        self.assertEqual((ok, reason[:38]), (False, "inference judge finds no entailment be"))
+        record["inference"] = strong
+        self.assertEqual(founding_pair_stands(record, first, second), (True, ""))
+        stored = make_record(first, second, "pair-x", "supports", "ok", 5, shared_claim=shared, inference=strong)
+        self.assertEqual(stored["inference"]["support"], 0.97)
 
     def test_copies_homepages_and_search_pages_never_found_a_room(self):
         origin = {"id": "f-o", "topic": "roskomnadzor github block", "status": "accepted",

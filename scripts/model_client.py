@@ -10,6 +10,7 @@ local, gitignored ledger so budgets survive across the subprocesses that make
 up one cycle. The summary published to health.json contains counts only.
 """
 
+import hashlib
 import json
 import os
 import re
@@ -335,8 +336,26 @@ def _request_with_retry(provider, messages, temperature, max_tokens, schema, sch
         return _request(provider, messages, temperature, max_tokens, schema, schema_name, timeout, opener)
 
 
+def ordered_providers(available, prefer=None):
+    """The configured order, with the caller's preferred providers moved to the front in the order given."""
+    prefer = [name for name in (prefer or ()) if name]
+    if not prefer:
+        return list(available)
+    by_name = {item["name"]: item for item in available}
+    front = [by_name[name] for name in prefer if name in by_name]
+    return front + [item for item in available if item["name"] not in set(prefer)]
+
+
+def _note_call(usage, call_class, provider, model, messages, clock=time.time):
+    """Lineage for the record: which provider and model answered which prompt (by hash), never the text."""
+    prompt_hash = hashlib.sha256(json.dumps(messages, sort_keys=True, ensure_ascii=True).encode()).hexdigest()[:16]
+    calls = usage.setdefault("calls", [])
+    calls.append({"at": round(clock(), 1), "class": str(call_class)[:24], "provider": provider, "model": str(model)[:60], "prompt_sha256_16": prompt_hash})
+    usage["calls"] = calls[-60:]
+
+
 def complete(messages, *, temperature=0.3, max_tokens=400, schema=None, schema_name="response", call_class="general",
-             base_url=None, timeout=90, opener=None, sleep=time.sleep, clock=time.time):
+             base_url=None, timeout=90, opener=None, sleep=time.sleep, clock=time.time, prefer=None):
     """Return the model's text from the first provider that answers; raise ModelUnavailable if none does.
 
     When every provider is out and at least one is only cooling down briefly (a
@@ -346,7 +365,7 @@ def complete(messages, *, temperature=0.3, max_tokens=400, schema=None, schema_n
     """
     usage = _load_usage()
     failures = []
-    ordered = providers(base_url)
+    ordered = ordered_providers(providers(base_url), prefer)
     for attempt in range(2):
         for provider in ordered:
             now = clock()
@@ -373,6 +392,7 @@ def complete(messages, *, temperature=0.3, max_tokens=400, schema=None, schema_n
                     try:
                         content, prompt_tokens, completion_tokens, limits = _request({**provider, "json_schema": False}, messages, temperature, max_tokens, schema, schema_name, timeout, opener)
                         _note_success(usage, provider["name"], prompt_tokens, completion_tokens, limits, clock(), last_error="400 on schema mode; prompt hint used")
+                        _note_call(usage, call_class, provider["name"], provider.get("model"), messages, clock)
                         _save_usage(usage)
                         return content, provider["name"]
                     except Exception as retry_error:  # noqa: BLE001 - recorded and passed to the next provider
@@ -386,6 +406,7 @@ def complete(messages, *, temperature=0.3, max_tokens=400, schema=None, schema_n
                 failures.append(f"{provider['name']}:{type(error).__name__}")
                 continue
             _note_success(usage, provider["name"], prompt_tokens, completion_tokens, limits, clock())
+            _note_call(usage, call_class, provider["name"], provider.get("model"), messages, clock)
             _save_usage(usage)
             return content, provider["name"]
         if attempt == 0:
@@ -433,7 +454,7 @@ def probe(local_base_url=None, opener=None, timeout=8):
 def usage_summary(local_base_url=None):
     """Counts only; never keys or endpoints beyond the provider's name."""
     usage = _load_usage()
-    summary = {"day": usage.get("day"), "providers": []}
+    summary = {"day": usage.get("day"), "providers": [], "recent_calls": list(usage.get("calls", []))[-30:]}
     for provider in providers(local_base_url):
         entry = usage["providers"].get(provider["name"], {})
         summary["providers"].append({

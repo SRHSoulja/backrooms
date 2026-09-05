@@ -43,6 +43,7 @@ try:
     from scripts.self_prompt_rules import carry_forward, finding_followup_question, question_rejection_reason
     from scripts.world_rules import day_zero_from_events
     from scripts import research_lines
+    from scripts import ledger_chain
     from scripts import model_client
     from scripts import journal as journal_module
 except ImportError:
@@ -52,6 +53,7 @@ except ImportError:
     from self_prompt_rules import carry_forward, finding_followup_question, question_rejection_reason
     from world_rules import day_zero_from_events
     import research_lines
+    import ledger_chain
     import model_client
     import journal as journal_module
 
@@ -170,9 +172,8 @@ def runtime_world():
         world = json.load(handle)
     ARCHIVE.parent.mkdir(parents=True, exist_ok=True)
     if not ARCHIVE.exists():
-        with ARCHIVE.open("w") as archive:
-            for event in world.get("events", []):
-                archive.write(json.dumps(event, separators=(",", ":")) + "\n")
+        for event in world.get("events", []):
+            ledger_chain.append_event(ARCHIVE, event)
     world["events"] = world.get("events", [])[-20:]
     world["messages"] = world.get("messages", [])[-200:]
     atomic_write_json(RUNTIME_STATE, world)
@@ -873,12 +874,9 @@ def note_line_events(cycle, world, decision, closures):
     if not events:
         return world
     stamp = datetime.now(timezone.utc).isoformat()
-    ARCHIVE.parent.mkdir(parents=True, exist_ok=True)
-    with ARCHIVE.open("a") as archive:
-        for event in events:
-            event.update({"confidence": 1.0, "cycle": int(cycle), "recorded_at": stamp})
-            world.setdefault("events", []).append(event)
-            archive.write(json.dumps(event, separators=(",", ":")) + "\n")
+    for event in events:
+        event.update({"confidence": 1.0, "cycle": int(cycle), "recorded_at": stamp})
+        world.setdefault("events", []).append(ledger_chain.append_event(ARCHIVE, event))
     world["events"] = world["events"][-20:]
     atomic_write_json(RUNTIME_STATE, world)
     try:
@@ -1168,9 +1166,7 @@ def record(result):
         "purpose": "bounded resident council", "text": "Local council completed. Echo and Morrow outputs were generated from public shared state; see local daemon logs for raw output.",
         "confidence": 0.5, "cycle": world["cycle"], "recorded_at": datetime.now(timezone.utc).isoformat()
     })
-    ARCHIVE.parent.mkdir(parents=True, exist_ok=True)
-    with ARCHIVE.open("a") as archive:
-        archive.write(json.dumps(world["events"][-1], separators=(",", ":")) + "\n")
+    world["events"][-1] = ledger_chain.append_event(ARCHIVE, world["events"][-1])
     atomic_write_json(RUNTIME_STATE, world)
     return world
 
@@ -1510,6 +1506,15 @@ def publish(result, world, model_health=True):
     atomic_write_json(PUBLIC_HEALTH, health)
     sync_code_proposals(registry)
     health.update(sync_tool_proposals())
+    try:
+        health["inference_judge"] = json.loads((ROOT / "state/inference-judge.json").read_text())
+    except (OSError, json.JSONDecodeError):
+        health["inference_judge"] = {"enabled": False, "available": False, "reason": "not yet run"}
+    try:
+        ok, count, problem = ledger_chain.verify(ARCHIVE)
+        health["event_chain"] = {**ledger_chain.head(ARCHIVE), "verified": ok, "problem": problem}
+    except OSError:
+        health["event_chain"] = {"count": 0, "head": "", "verified": False, "problem": "archive unreadable"}
     sync_outside_signals()
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}

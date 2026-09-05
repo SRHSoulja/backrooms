@@ -58,6 +58,18 @@ def document_key(finding):
     return ""
 
 
+def _same_passage(first, second):
+    """The embedding model's view of whether two quotes are one passage; False when it is unavailable."""
+    try:
+        try:
+            from scripts.inference_judge import same_passage
+        except ImportError:
+            from inference_judge import same_passage
+        return bool(same_passage(first, second))
+    except Exception:  # noqa: BLE001 - the word rules stand on their own
+        return False
+
+
 def same_document(first, second):
     """Two findings are the same source when they name the same document or quote the same passage."""
     key_a, key_b = document_key(first), document_key(second)
@@ -70,7 +82,27 @@ def same_document(first, second):
         overlap = len(quote_a & quote_b) / len(quote_a | quote_b)
         if overlap >= 0.8:
             return True
+        if _same_passage(first, second):
+            return True  # a paraphrased copy of the same passage on another site
     return False
+
+
+SUPPORT_MIN = 0.5
+CONTRADICTION_VETO = 0.2
+
+
+def inference_stands(record):
+    """(ok, reason) for a record's stored inference scores against its relation.
+    A record without scores is not held to them."""
+    scores = record.get("inference") if isinstance(record, dict) else None
+    if not isinstance(scores, dict) or scores.get("support") is None:
+        return True, ""
+    relation = record.get("relation")
+    if relation == "supports" and float(scores.get("support", 0)) < SUPPORT_MIN:
+        return False, f"inference judge finds no entailment between the quotes (support {float(scores.get('support', 0)):.2f})"
+    if relation == "contradicts" and float(scores.get("contradiction", 0)) < CONTRADICTION_VETO:
+        return False, f"inference judge finds no contradiction between the quotes ({float(scores.get('contradiction', 0)):.2f})"
+    return True, ""
 
 
 def jaccard(left, right):
@@ -272,6 +304,9 @@ def founding_pair_stands(record, first, second):
         return False, "shared fact not grounded in both claims"
     if not on_topic(shared, first, second):
         return False, "shared fact is off the research topic"
+    ok, reason = inference_stands({**record, "relation": "supports"})
+    if not ok:
+        return False, reason
     return True, ""
 
 
@@ -284,9 +319,10 @@ def rewrite_records(path, records):
             handle.write(json.dumps(record, separators=(",", ":")) + "\n")
 
 
-def judge_verdict(first, second, verdict):
+def judge_verdict(first, second, verdict, inference=None):
     """Apply the evidence rule to a model verdict: 'supports' stands only when the
-    model named a shared fact grounded in both claims; otherwise it is recorded
+    model named a shared fact grounded in both claims and, when the inference
+    judge scored the pair, its quotes entail each other; otherwise it is recorded
     as 'unrelated' with the model's answer kept for the record."""
     verdict = verdict if isinstance(verdict, dict) else {}
     relation = str(verdict.get("relation", "unrelated"))
@@ -299,11 +335,15 @@ def judge_verdict(first, second, verdict):
     if relation == "supports" and not on_topic(shared_claim, first, second):
         return {"relation": "unrelated", "model_relation": "supports", "shared_claim": shared_claim,
                 "reason": ("shared fact is off the research topic: " + reason)[:200]}
+    ok, why = inference_stands({"relation": relation, "inference": inference})
+    if not ok:
+        return {"relation": "unrelated", "model_relation": relation, "shared_claim": shared_claim if relation == "supports" else "",
+                "reason": (why + ": " + reason)[:200]}
     return {"relation": relation, "model_relation": relation, "shared_claim": shared_claim if relation == "supports" else "",
             "reason": reason}
 
 
-def make_record(first, second, identifier, relation, reason, cycle, similarity=None, shared_claim="", judge="local-model", model_relation=None):
+def make_record(first, second, identifier, relation, reason, cycle, similarity=None, shared_claim="", judge="local-model", model_relation=None, inference=None):
     shared = sorted(finding_terms(first) & finding_terms(second))
     relation = relation if relation in RELATIONS else "unrelated"
     shared_claim = re.sub(r"\s+", " ", str(shared_claim or "")).strip()[:240]
@@ -316,6 +356,7 @@ def make_record(first, second, identifier, relation, reason, cycle, similarity=N
             "reason": re.sub(r"\s+", " ", str(reason or "")).strip()[:200],
             "similarity": similarity, "cycle": cycle, "judge": judge,
             "model_relation": model_relation if model_relation in RELATIONS else relation,
+            "inference": inference if isinstance(inference, dict) else None,
             "recorded_at": datetime.now(timezone.utc).isoformat()}
 
 

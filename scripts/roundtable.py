@@ -69,8 +69,14 @@ def ask(base_url, resident, question):
               "Do not claim sentience or private access. Finish every point and every numbered list; never end mid-sentence.")
     prompt = f"Public world context:\n{question}"
     content, _provider = complete([{"role": "system", "content": system}, {"role": "user", "content": prompt}],
-                                  temperature=0.4, max_tokens=800, call_class="council", base_url=base_url)
+                                  temperature=0.4, max_tokens=800, call_class="council", base_url=base_url,
+                                  prefer=RESIDENT_PROVIDERS.get(resident))
     return content
+
+
+# Adversarial model pairs: Echo and Morrow prefer different provider families.
+RESIDENT_PROVIDERS = {"Echo": ("gemini", "groq", "cerebras", "openrouter", "mistral"),
+                      "Morrow": ("mistral", "mistral-8b", "mistral-small", "cerebras", "groq", "gemini")}
 
 
 def overlap(left, right):
