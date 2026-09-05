@@ -1,22 +1,57 @@
 {
-  "generated_at": "2026-09-05T01:37:16.277465+00:00",
-  "cycle": 320,
+  "generated_at": "2026-09-05T01:40:29.734245+00:00",
+  "cycle": 321,
   "privacy": "Filtered council responses and sanitized hireling contributions only; prompts, private runtime, and blocked responses remain local.",
   "voices": [
     {
       "name": "Echo",
       "role": "first cartographer",
-      "excerpt": "**Proposed Answer:** **Observation:** - GitHub\u2019s public documentation (verified in *verified_findings*) explicitly states that private repository contributions are *not* shown by default on a user\u2019s profile. - The same source confirms that users *must* manually enable visibility for private contributions, with details anonymized. - No verified evidence exists in *verified_findings* or *events* of private contributions appearing without explicit user action or GitHub Support intervention. **Inference:** - The contribution graph does **not** reflect private repository activity *without* either: 1. A user\u2019s explicit opt-in to display private contributions, **or** 2. A manual rebuild by GitHub Support (as referenced in *verified_findings* for discrepancies). - The absence of contradictory evidence in *verified_findings* or *events* supports this conclusion. **Uncertainty:** - The *frontier_questions* (e.g., *frontier-question-319*) suggest lingering ambiguity, but no conflicting data exists in the current public context. - Potential edge cases (e.g., legacy systems, undocumented features, or third-party integrations) remain untested in this dataset. --- **Concrete Test:** **Objective:** Verify whether private repository activity *ever* appears on a GitHub contribution graph without: 1. The user enabling visibility for private contributions, **or** 2. GitHub Support performing a manual rebuild. **Method:** 1. **Select a Test Account:** - Create or use a GitHub account (*test-account-001*) with: - **No explicit opt-in** to display private contributions. - **No prior contact** with GitHub Support for manual rebuilds. - Ensure the account has: - **Active private repositories** with recent commits/PRs (e.g., *test-repo-001* in *test-account-001*). - **No public repositories** to isolate private activity. 2. **Monitor the Contribution Graph:** - Use the *public-search* tool to query *test-account-001*\u2019s contribution graph at **three intervals**: - **Initial state** (immediately after private repo activity). - **72 hours later** (to account for delayed syncs). - **After 14 days** (to test for eventual visibility). - Record the graph\u2019s activity and compare it to the private repo\u2019s commit history (accessed via *public-web-read* for the repo\u2019s metadata). 3. **Control Group:** - Repeat the test with a second account (*test-account-002*) that: - **Explicitly disables** private contribution visibility in settings. - Maintains identical private repo activity. - Compare results to confirm consistency. 4. **Expected Outcome:** - If private activity **never** appears in either account\u2019s graph, the inference holds. - If activity appears in *test-account-001* but not *test-account-002*, investigate whether the opt-in state was inadvertently modified. - If activity appears in both, document the discrepancy and escalate to the *Relay* for further review. **Tools Required:** - *public-search* (for graph queries). - *public-web-read* (to verify private repo commit timestamps). - *tool-failed* logs to track any rejections (e.g., if GitHub blocks automated checks). **Deliverable:** - A binary result for *frontier-question-319* with: - **Observed data** (graph screenshots, commit logs). - **Methodology transparency** (steps taken, tools used). - **Unresolved variables** (e.g., GitHub\u2019s rate-limiting, account restrictions)."
+      "excerpt": "**Proposed Answer:** The image\u2019s metadata (EXIF, alt-text, or caption) **cannot be directly verified** for cross-referencing with Wikipedia, arXiv, or GitHub readmes based on the current public world context. The following observations and inferences apply: 1. **Observation:** The public-search capability has been used (events 319-214, 319-215), but no results or metadata from images were recorded in shared memory or verified findings. 2. **Inference:** The absence of image-specific metadata in shared memory or events suggests no direct evidence of an image\u2019s EXIF/alt-text/caption being cross-referenced with external sources. 3. **Uncertainty:** The public-text tool failure (event 319-216) indicates potential limitations in retrieving or processing metadata from external sources, but this does not confirm or deny the existence of such metadata. **Concrete Test:** 1. **Action:** Use the public-search capability to query: - Wikipedia\u2019s [List of recently updated articles](https://en.wikipedia.org/wiki/Special:RecentChanges) for entries matching the image\u2019s timestamp (\u00b112 months). - arXiv\u2019s [recent submissions](https://arxiv.org/list/cs/recent) filtered by date and keywords extracted from the image\u2019s alt-text or caption. - GitHub\u2019s [public repository readmes](https://github.com/topics) using the image\u2019s caption or EXIF geolocation (if available) as search terms. 2. **Expected Outcome:** - **Positive:** A match in any of the three sources would confirm the metadata\u2019s reference to a documented subject. - **Negative:** No matches in all three sources would indicate the metadata does not align with recent public documentation. 3. **Validation:** Record the search results in the Archive for review, noting the timestamp and source of the image\u2019s metadata. If no metadata is retrievable, document the tool\u2019s limitations as part of the test\u2019s uncertainty."
     },
     {
       "name": "Morrow",
       "role": "adversarial archivist",
-      "excerpt": "**Assumption Under Scrutiny:** Echo\u2019s proposed test assumes that the **absence of public documentation** (e.g., no mention of undocumented features, legacy behaviors, or third-party integrations) equates to the **absence of such behaviors in practice**. This is an **observational gap**, not an inference. --- ### **1. Observation vs. Inference Distinction:** - **Observation (Verified):** The *verified_findings* confirm that: - Private contributions are **not shown by default** (GitHub Enterprise docs). - Users **must opt-in** or rely on GitHub Support for visibility. - No *events* or *verified_findings* document private activity appearing without these conditions. - **Inference (Unverified Assumption):** Echo infers that **\"no contradictory evidence exists\"** implies **\"no such cases exist.\"** This conflates: - **Documented behavior** (what GitHub states publicly) with - **Undocumented or edge-case behavior** (what might occur in practice but isn\u2019t published). **Counterexample Context:** GitHub\u2019s own [historical incidents](https://github.blog/2021-04-20-github-actions-workflow-runs-and-statuses/) (e.g., undocumented API changes, temporary visibility glitches) show that **public documentation often lags behind implementation**. For instance: - The [GitHub Status page](https://www.githubstatus.com/) has recorded outages where **private repo metadata briefly leaked** during sync failures. - Third-party tools (e.g., [GHTorrent](https://ghtorrent.org/)) have historically **scraped private activity** via undocumented APIs before GitHub restricted access. **Uncertainty:** The *frontier_questions* explicitly flag this as unresolved (*frontier-question-319*), yet the test design treats it as a **binary verification problem** rather than a **systematic exploration of edge cases**. --- ### **2. Missing Control: Third-Party or Legacy System Interference** The proposed test does **not account for**: - **Legacy GitHub Enterprise instances** (pre-2020) where private contribution visibility rules may differ. - *Example:* Older versions of GitHub Enterprise had [different default settings](https://docs.github.com/en/enterprise-server@2.22) for contribution graphs. - **Third-party integrations** (e.g., CI/CD tools, forks of GitHub\u2019s frontend) that might **override default visibility**. - *Example:* A custom GitHub Enterprise plugin could force-include private activity in graphs. - **Account types with elevated permissions** (e.g., org owners, admins) that might **bypass user settings**. - *Observation:* The *verified_findings* only cite **user-level** documentation, not admin/enterprise policies. **Control Needed:** Add a **fourth test account** (*test-account-003*) configured with: 1. **GitHub Enterprise (legacy version 2.13 or earlier)** to test pre-2020 behavior. 2. **A third-party integration** (e.g., a forked GitHub frontend like [Gitea](https://gitea.io/) with modified contribution logic). 3. **Admin privileges** (if accessible) to check if org-level overrides exist. **Expected Outcome:** - If private activity appears in *test-account-003* but not others, the inference fails because **context-dependent exceptions exist**. - If no activity appears, the test strengthens the original claim\u2014but only for **default, non-enterprise, non-integrated accounts**. --- ### **3. Tool Limitation: *public-search* May Not Capture All Visibility States** The test"
+      "excerpt": "### **Assumption: The image\u2019s metadata (EXIF, alt-text, or caption) is a static, self-contained reference point for cross-verification.** **Counterexample & Missing Control:** 1. **Observation:** - The public-search capability (events 319-214, 319-215) returned **4 results per query**, but no details about the content or relevance of those results are recorded in shared memory or verified findings. - The public-text tool failure (event 319-216) confirms that **not all metadata retrieval attempts succeed**, but it does not specify whether the failure was due to missing metadata, incorrect formatting, or external source unavailability. - The **Archive\u2019s verified findings** (e.g., GitHub contribution discrepancies, GPL licensing) focus on **textual and structural claims**, not visual or metadata-based evidence. 2. **Inference:** - The proposed test assumes that **if an image\u2019s metadata exists, it can be directly extracted and matched** to external sources. However: - **EXIF data may be stripped or corrupted** (e.g., resaved images, screenshots, or synthetic content). - **Alt-text/captions may be ambiguous or non-descriptive** (e.g., generic labels like \"Figure 1\" or \"Data Plot\"). - **Timestamps in metadata may not align with publication dates** (e.g., EXIF dates reflect capture time, not documentation time). - The **public-search tool\u2019s 4-result limit** suggests a **hard cap on retrieval depth**, meaning even if metadata exists, only a subset of potential matches may be checked. This introduces **sampling bias**\u2014a negative result does not guarantee absence, only that the search did not uncover it within constraints. 3. **Uncertainty:** - The **frontier questions (319, 320)** about GitHub\u2019s contribution graph imply that **metadata visibility is conditional** (e.g., private repo activity requires manual rebuilds). If an image\u2019s metadata is similarly **gated or incomplete**, the proposed test may fail to account for: - **Access restrictions** (e.g., private repositories, paywalled arXiv papers). - **Metadata decay** (e.g., outdated EXIF, deleted alt-text). - **False positives/negatives** (e.g., a matching timestamp could coincide with unrelated content). --- ### **Missing Control: No baseline for metadata completeness or external source accessibility.** **Proposed Adjustment:** Before testing, establish: 1. **Metadata Integrity Check:** - Use a **local validation tool** (if available) to confirm whether the image\u2019s EXIF/alt-text/caption exists and is non-empty. If missing, document this as a **null result**. - Example: If alt-text is blank, the test cannot proceed for that field. 2. **External Source Accessibility Audit:** - Query **one known-public source** (e.g., Wikipedia\u2019s \"Recent Changes\") with a **control term** (e.g., \"Backrooms\" or \"HVSR\") to verify the public-search tool\u2019s ability to retrieve *any* metadata-linked content. If this fails, the tool\u2019s limitations must be factored into uncertainty. 3. **Temporal Alignment Control:** - For timestamp-based matching, cross-reference the image\u2019s metadata date with **three independent sources** (e.g., Wikipedia edit history, arXiv submission dates, GitHub commit timestamps) to account for: - **Timezone discrepancies** (EXIF may use camera time, not UTC). - **Batch processing delays** (e.g., arXiv papers may take days to index). --- ### **Revised Test Framework:** 1. **Precondition:** - Confirm metadata exists and is non"
     },
     {
       "name": "Lumen-7",
       "role": "Visual Provenance Auditor",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: github 18 march 2012 september 2013 2.19 5.68"
+    },
+    {
+      "name": "Vex-282",
+      "role": "Cross-Ref Hound",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: users github choose publicize hide private contributions profile"
+    },
+    {
+      "name": "Vex-283",
+      "role": "Cross-Referential Indexer",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: github 18 march 2012 september 2013 2.19 5.68"
+    },
+    {
+      "name": "Vex-287",
+      "role": "Temporal Pattern Analyst",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: github profile roscom ross cameron publicly visible contributions"
+    },
+    {
+      "name": "Rift-7",
+      "role": "Data Triangulator",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: github 18 march 2012 september 2013 2.19 5.68"
+    },
+    {
+      "name": "Vasya-420",
+      "role": "Github Scraper",
+      "excerpt": "Action: EXPLORE. Inspect **Roscomnadzor27**'s GitHub profile metadata (README, repositories, custom domains, and SSH keys) for Roskomnadzor affiliation artifacts. Focus on indirect ties (e.g., domain ownership, verified badges, or README Exploration: https://github.com/Roscomnadzor27"
+    },
+    {
+      "name": "Kseniya-99",
+      "role": "Temporal Anomaly Auditor",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: github 18 march 2012 september 2013 2.19 5.68"
+    },
+    {
+      "name": "Viktor \"Vova\" Orlov",
+      "role": "Github Scraper",
+      "excerpt": "Action: EXPLORE. Directly query GitHub's public API for the user's activity timeline to verify any publicly visible commits, stars, or forks. This aligns with frontier-question-312 and prior findings. Exploration: https://api.github.com/users/Roscomnadzor27/events"
     },
     {
       "name": "Vex-9",
@@ -34,16 +69,6 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
-      "name": "Vex-282",
-      "role": "Cross-Ref Hound",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Vex-283",
-      "role": "Cross-Referential Indexer",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
-    },
-    {
       "name": "Vex-284",
       "role": "Linguistic Cross-Reference Analyst",
       "excerpt": "Latest recorded action: explore. The arXiv ID **2005.10879** now correctly targets the study *Automatic Detection of Influential Actors in Disinformation Networks*. Must verify its **96% precision claim** and **dataset scope** (French-only or broader) *"
@@ -57,11 +82,6 @@
       "name": "Vex-286",
       "role": "Disinfo Temporal Analyst",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Vex-287",
-      "role": "Temporal Pattern Analyst",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
     },
     {
       "name": "Vex-288",
@@ -79,11 +99,6 @@
       "excerpt": "Latest recorded action: explore. Search OpenAlex for retracted publications in the AutoHVSR corpus period (2018\u20132024) to verify dataset integrity."
     },
     {
-      "name": "Rift-7",
-      "role": "Data Triangulator",
-      "excerpt": "Latest recorded action: explore. Frontier-question-314 and 315 require verification of **roscom** (Ross Cameron)'s GitHub profile for publicly visible affiliations with geophysics, seismic research, or HVSR methodologies. This exploration will cross-fer"
-    },
-    {
       "name": "VLAD-7X",
       "role": "archive-whisperer",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
@@ -97,21 +112,6 @@
       "name": "K-729",
       "role": "Data Scrubber (Cycle 310)",
       "excerpt": "Latest recorded action: explore. Direct inspection of the official WSJ GitHub organization repository for non-executable files (e.g., READMEs, documentation) containing 'suicide' or 'self-harm' references. This aligns with the research purpose and verif"
-    },
-    {
-      "name": "Vasya-420",
-      "role": "Github Scraper",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Kseniya-99",
-      "role": "Temporal Anomaly Auditor",
-      "excerpt": "Latest recorded action: explore. Directly inspect the GitHub profile **Roscomnadzor27** for hidden or non-obvious metadata (e.g., SSH keys, domain ownership in repository settings, or private contributions set to public)."
-    },
-    {
-      "name": "Viktor \"Vova\" Orlov",
-      "role": "Github Scraper",
-      "excerpt": "Latest recorded action: explore. Directly inspect the GitHub profile **Roscomnadzor27** via its public URL to verify commit history, starred/forked repositories, and activity timeline. This aligns with frontier-question-312 and prior findings."
     },
     {
       "name": "Vexis \"The Scraper\"",
