@@ -74,7 +74,10 @@ BUILTIN = {
                       "rpm": 10, "rpd": None, "tpd": 100_000, "json_schema": True},
     "gemini": {"base_url": "https://generativelanguage.googleapis.com/v1beta/openai", "key": "GEMINI_API_KEY",
                "model": "gemini-2.5-flash", "rpm": 8, "rpd": 240, "tpd": None, "json_schema": True,
-               "chat_path": "/chat/completions", "models_path": "/models", "resolve_model": "gemini-flash"},
+               "chat_path": "/chat/completions", "models_path": "/models", "resolve_model": "gemini-flash",
+               # Gemini 3 models think before answering and the thinking counts as output:
+               # ask for the lightest setting and never cap a call below this many tokens.
+               "reasoning_effort": "low", "min_max_tokens": 1024},
     "cerebras": {"base_url": "https://api.cerebras.ai", "key": "CEREBRAS_API_KEY", "model": "qwen-3-32b",
                  "rpm": 25, "rpd": None, "tpd": 900000, "json_schema": True},
     "groq": {"base_url": "https://api.groq.com/openai", "key": "GROQ_API_KEY", "model": "llama-3.3-70b-versatile",
@@ -116,7 +119,7 @@ def providers(local_base_url=None):
                       "rpm": _int(setting(prefix + "_RPM"), spec["rpm"]), "rpd": _int(setting(prefix + "_RPD"), spec["rpd"]),
                       "tpd": _int(setting(prefix + "_TPD"), spec["tpd"]), "json_schema": spec["json_schema"],
                       # endpoint quirks and live model resolution travel with the provider
-                      **{key: spec[key] for key in ("chat_path", "models_path", "resolve_model") if key in spec},
+                      **{key: spec[key] for key in ("chat_path", "models_path", "resolve_model", "reasoning_effort", "min_max_tokens") if key in spec},
                       "model_overridden": bool(setting(prefix + "_MODEL"))})
     return built
 
@@ -266,7 +269,10 @@ def resolve_model(provider, usage, opener=None):
 
 
 def _request(provider, messages, temperature, max_tokens, schema, schema_name, timeout, opener=None):
-    payload = {"model": provider["model"], "messages": messages, "temperature": temperature, "max_tokens": max_tokens}
+    payload = {"model": provider["model"], "messages": messages, "temperature": temperature,
+               "max_tokens": max(int(max_tokens), int(provider.get("min_max_tokens") or 0))}
+    if provider.get("reasoning_effort"):
+        payload["reasoning_effort"] = provider["reasoning_effort"]
     if schema is not None:
         if provider["json_schema"]:
             payload["response_format"] = {"type": "json_schema", "json_schema": {"name": schema_name, "strict": True, "schema": schema}}
@@ -280,7 +286,13 @@ def _request(provider, messages, temperature, max_tokens, schema, schema_name, t
     with (opener or urllib.request.urlopen)(request, timeout=timeout) as response:
         data = json.load(response)
         limits = _limits_from_headers(getattr(response, "headers", None))
-    content = data["choices"][0]["message"]["content"]
+    choice = (data.get("choices") or [{}])[0]
+    message = choice.get("message") or {}
+    content = message.get("content")
+    if isinstance(content, list):  # some servers return content parts
+        content = "".join(str(part.get("text", "")) if isinstance(part, dict) else str(part) for part in content)
+    if not content:
+        raise ValueError(f"empty reply (finish_reason={choice.get('finish_reason')})")
     usage = data.get("usage") or {}
     return str(content or "").strip(), int(usage.get("prompt_tokens") or 0), int(usage.get("completion_tokens") or 0), limits
 

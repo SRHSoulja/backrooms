@@ -42,6 +42,7 @@ class GeminiModelChoiceTests(unittest.TestCase):
                     os.environ[key] = value
         self.assertEqual((gemini["chat_path"], gemini["models_path"], gemini["resolve_model"], gemini["model_overridden"]),
                          ("/chat/completions", "/models", "gemini-flash", False))
+        self.assertEqual((gemini["reasoning_effort"], gemini["min_max_tokens"]), ("low", 1024))
 
 
 class ProviderOrderTests(unittest.TestCase):

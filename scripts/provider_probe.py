@@ -49,7 +49,7 @@ def main():
     trial = {**provider, "model": report["chosen"]}
     try:
         content, prompt_tokens, completion_tokens, limits = model_client._request(
-            trial, [{"role": "user", "content": "Reply with the single word: ready"}], 0.0, 8, None, "probe", 60)
+            trial, [{"role": "user", "content": "Reply with the single word: ready"}], 0.0, 64, None, "probe", 60)
         report["chat"] = {"ok": True, "model": trial["model"], "reply": clean(content)[:40], "tokens": [prompt_tokens, completion_tokens], "limits": limits}
     except urllib.error.HTTPError as error:
         report["chat"] = {"ok": False, "model": trial["model"], "status": error.code, "body": clean(error.read().decode("utf-8", "replace"))}
