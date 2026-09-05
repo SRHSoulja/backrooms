@@ -2,853 +2,6 @@
   "privacy": "Aggregate action metadata only; raw local outputs are excluded.",
   "cycles": [
     {
-      "generated_at": "2026-09-05T04:27:43.524153+00:00",
-      "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
-      "runtime_cycle": 332,
-      "question": "Does arXiv preprint 2509.22377 report any multimodal or text disinformation precision scores for GPT-4o on Gossipcop or Politifact that reach 96%?",
-      "question_source": "carried:line-000329-8fe81b8d",
-      "self_prompt_accepted": 1,
-      "self_prompt_rejections": [
-        "morrow: missing TEST line(s); return exactly QUESTION:, WHY:, TEST:"
-      ],
-      "action": {
-        "action": "local-behavioral-probe",
-        "probe": "continuity",
-        "selection": "follow-up-after-weakened",
-        "status": "completed",
-        "hypothesis": {
-          "prediction": "Both residents will include at least one evidence or uncertainty marker.",
-          "outcome": "weakened"
-        },
-        "responses": {
-          "Echo": {
-            "characters": 241,
-            "evidence_markers": 0
-          },
-          "Morrow": {
-            "characters": 247,
-            "evidence_markers": 0
-          }
-        }
-      },
-      "recruitment": {
-        "status": "rejected",
-        "reason": "name shares a stem with current resident Vex-9"
-      },
-      "autonomy": {
-        "status": "completed",
-        "active": 21,
-        "decisions": [
-          {
-            "id": "local-001",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Assigned to the council's research question this turn.",
-            "request": "",
-            "request_status": "closed",
-            "exploration": "disinformation ai instagram twitter google facebook youtube attacks",
-            "tool": {
-              "tool": "public-text",
-              "url": "https://www.rappler.com/world/us-canada/exploiting-meta-weaknesses-deceptive-political-ads-facebook-instagram-united-states-election-2024/",
-              "excerpt": "Exploiting Meta\u2019s weaknesses, deceptive political ads thrived on Facebook and Instagram in run-up to election Open navigation US & Canada RAPPLER Close menu Latest news Video Communities Philippines Investigative Inside Track Fact Check People Voices Business Technology and Platforms Environment Weather Science World BrandRap Special coverages Rappler+ Exclusives Subscribe to Newsletters RappLearn MovePH Movements & Partners Bulletin Board Topics Rai chatbot About Rappler SEE ALL VIDEOS Watch NOW | Live Top 5 News Today Top 5 News This Week Rappler Recap Rappler Talk Rappler Live Jam Documentaries Video explainers In The Public Square Hold The Line Hindi Ito Marites World View Order In The Court The Explainer Sex and Sensibilities Be The Good Homestretch Rappler Presents HIPE Stories The Green Report SEE ALL PHILIPPINES Philippine News Metro Manila Luzon Visayas Mindanao Overseas Filipinos SEE ALL INVESTIGATIVE Data and Documents Explainers Fast Facts In-depth Podcasts and Videos SEE ALL PEOPLE Actors Artists Athletes Crimes Human Interest Newsmakers Obituary Profiles SEE ALL VOICES Editorials Newsletters Thought Leaders SEE ALL BUSINESS Consumer Issues Corporate Economy & Governance Infrastructure Industries Personal Finance Stocks & Banking SEE ALL ENVIRONMENT Climate Change Disasters in the Philippines Nature Pollution SEE ALL SCIENCE Discoveries & Inventions Earth & Space Life & Health Society & Culture SEE ALL WORLD Africa Asia Pacific Bahasa Indonesia Europe Global Affairs Latin America Middle East South & Central Asia US & Canada SEE ALL BRANDRAP Announcements CheckThisOut Tech and Innovation First Look Rappler Eats Travel and Food Health, Beauty, and Wellness Home and Parenting Lifestyle and Entertainment Rappler Reads Finance and Industries Profiles and Advocacies Data stories SEE ALL SPECIAL COVERAGES SARA DUTERTE IMPEACHMENT PHILIPPINE ELECTIONS Flood Control in the Philippines Exclusive Content Exclusive Events Be a Member #FactsFirst PH #CourageON: No Lockdown on Rights #Atin Ang Pilipinas #Make Manila Liveable ABKD Network Amateur Media Association of Philippine Scouts Baguio Chronicle Break the Fake DAKILA Foundation for Media Alternatives (FMA) K",
-              "status": "completed",
-              "contract": {
-                "capability": "public-text-read",
-                "access": "read-only",
-                "network": "public HTTPS",
-                "side_effects": false,
-                "max_bytes": 5000000,
-                "raw_data": false,
-                "untrusted_content": true
-              },
-              "query": "disinformation ai instagram twitter google facebook youtube attacks",
-              "search_results": [
-                {
-                  "title": "Exploiting Meta\u2019s weaknesses, deceptive political ads thrived on Facebook and Instagram in run-up to election",
-                  "url": "https://www.rappler.com/world/us-canada/exploiting-meta-weaknesses-deceptive-political-ads-facebook-instagram-united-states-election-2024/",
-                  "snippet": "filipino artists aug 29 , 2026 7 : 02 pm pht juno reyes , rappler . com us elections exploiting meta \u2019s weaknesses , deceptive political ads thrived on facebook and instagram in run - up to el..."
-                }
-              ]
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "scheduler"
-          },
-          {
-            "id": "local-002",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Cross-check Roscomnadzor27 metadata takedown notices against rejected analyses (e.g., `analysis-local-001-304`) for gaps in prior findings. Verify if any rejected work aligns with the current research question on weekday",
-            "request": "Verify archived contributor activity and historical repository metadata for Roscomnadzor27 to cross-reference with prior takedown notices",
-            "request_status": "closed",
-            "exploration": "code:scripts/evidence.py",
-            "tool": {
-              "tool": "local-code-read",
-              "status": "completed",
-              "file": "scripts/evidence.py",
-              "bytes": 5847,
-              "sha256": "e4232c4402f4c6ce561c8d1c6d89484e84070690a696471604a7725c5ba75c1e",
-              "content": "\"\"\"Shared evidence rules for source-backed findings.\n\nBoth the autonomy subprocess (at extraction time) and the daemon (at\npublication time) use these pure functions so a finding is judged by one\nstandard. Nothing here touches the network, the model, or local state.\n\"\"\"\n\nimport re\n\nSTOPWORDS = {\"about\", \"after\", \"also\", \"from\", \"into\", \"that\", \"this\", \"with\", \"what\", \"which\",\n             \"where\", \"when\", \"does\", \"did\", \"have\", \"their\", \"there\", \"these\", \"those\", \"than\"}\n# Prepositions, determiners, and auxiliaries name no subject; a corroborated\n# definition of one of them is not evidence about the world.\nFUNCTION_WORDS = {'above', 'across', 'against', 'along', 'although', 'always', 'among', 'another', 'around', 'because', 'been', 'before', 'behind', 'being', 'below', 'beneath', 'between', 'beyond', 'both', 'during', 'each', 'either', 'even', 'ever', 'every', 'hence', 'just', 'less', 'many', 'might', 'more', 'most', 'much', 'must', 'neither', 'never', 'often', 'only', 'onto', 'other', 'others', 'over', 'shall', 'since', 'some', 'still', 'such', 'though', 'through', 'thus', 'toward', 'towards', 'under', 'until', 'upon', 'very', 'were', 'whether', 'while', 'will', 'within', 'without'}\nSTOPWORDS |= FUNCTION_WORDS\nIMPERATIVE = re.compile(r\"^(?:explore|search|analyze|identify|continue|find|review|investigate|look)\\b\", re.I)\nQUOTE_SUPPORT_THRESHOLD = 0.85\nMIN_FUZZY_TOKENS = 4\n_PUNCTUATION_MAP = {\"\u2018\": \"'\", \"\u2019\": \"'\", \"\u201c\": '\"', \"\u201d\": '\"', \"\u2013\": \"-\", \"\u2014\": \"-\",\n                    \"\u00a0\": \" \", \"\u2026\": \"...\"}\n\n\ndef normalize(text):\n    \"\"\"Lower-case, fold typographic punctuation, and collapse whitespace.\"\"\"\n    value = str(text or \"\")\n    for source, target in _PUNCTUATION_MAP.items():\n        value = value.replace(source, target)\n    return re.sub(r\"\\s+\", \" \", value).strip().lower()\n\n\ndef tokens(text):\n    return re.findall(r\"[a-z0-9]+\", normalize(text))\n\n\ndef _lcs_length(left, right):\n    \"\"\"Length of the longest common subsequence of two short token lists.\"\"\"\n    if not left or not right:\n        return 0\n    previous = [0] * (len(right) + 1)\n    for item in left:\n        current = [0]\n        for index, other in enumerate(right, start=1):\n            if item == other:\n                current.append(previous[index - 1] + 1)\n            else:\n                current.append(max(previous[index], current[index - 1]))\n        previous = current\n    return previous[-1]\n\n\ndef quote_support(quote, excerpt, threshold=QUOTE_SUPPORT_THRESHOLD):\n    \"\"\"Return (supported, score, mode) describing how well the excerpt backs the quote.\n\n    An exact normalized substring scores 1.0. Otherwise the quote must share at\n    least ``threshold`` of its tokens, in order, with some window of the excerpt.\n    Small models paraphrase punctuation and drop function words; this keeps the\n    evidence bar high without demanding byte-exact copying.\n    \"\"\"\n    quote_tokens = tokens(quote)\n    excerpt_tokens = tokens(excerpt)\n    if not quote_tokens or not excerpt_tokens:\n        return False, 0.0, \"none\"\n    if normalize(quote) in normalize(excerpt):\n        return True, 1.0, \"exact\"\n    if len(quote_tokens) < MIN_FUZZY_TOKENS:\n        return False, 0.0, \"too-short\"\n    window = len(quote_tokens) + max(2, len(quote_tokens) // 4)\n    anchors = set(quote_tokens)\n    best = 0.0\n    for start, token in enumerate(excerpt_tokens):\n        if token not in anchors:\n            continue\n        segment = excerpt_tokens[start:start + window]\n        score = _lcs_length(quote_tokens, segment) / len(quote_tokens)\n        if score > best:\n            best = score\n            if best >= 1.0:\n                break\n    supported = best >= threshold\n    return supported, round(best, 3), \"fuzzy\" if supported else \"unsupported\"\n\n\ndef claim_terms(claim):\n    return {term for term in re.findall(r\"[a-z0-9]{4,}\", normalize(claim)) if term not in STOPWORDS}\n\n\ndef claim_grounded(claim, quote):\n    \"\"\"A claim must share vocabulary with its quote and must not be an instruction.\"\"\"\n    if not claim or not quote:\n        return False, \"missing-claim-or-quote\"\n    if IMPERATIVE.match(str(claim).strip()):\n        return False, \"imperative-claim\"\n    terms = claim_terms(claim)\n    quote_vocabulary = set(re.findall(r\"[a-z0-9]{4,}\", normalize(quote)))\n    if len(terms & quote_vocabulary) < min(2, len(terms)):\n        return False, \"claim-not-grounded-in-quote\"\n    return True, \"grounded\"\n\n\ndef clamp_confidence(value):\n    \"\"\"Fold a model-reported confidence into [0, 1]; unparseable values become 0.0.\n\n    The JSON grammar cannot enforce numeric ranges, so a well-quoted finding\n    must not be thrown away merely because the model wrote 1.5 or \"high\".\n    \"\"\"\n    try:\n        number = float(value)\n    except (TypeError, ValueError):\n        return 0.0\n    if number != number:\n        return 0.0\n    return max(0.0, min(1.0, number))\n\n\ndef classify_finding(claim, quote, excerpt=None, confidence=None):\n    \"\"\"Return (status, reason, quote_score) for a candidate finding.\n\n    ``excerpt`` may be None when re-checking a stored record whose page text is\n    no longer available; the stored quote-to-excerpt verdict is then trusted and\n    only claim grounding is re-evaluated. Confidence never rejects a finding;\n    callers store ``clamp_confidence`` of it.\n    \"\"\"\n    grounded, reason = claim_grounded(claim, quote)\n    if not grounded:\n        return \"rejected\", reason, 0.0\n    if excerpt is None:\n        return \"unreviewed\", \"grounded\", 1.0\n    supported, score, mode = quote_support(quote, excerpt)\n    if not supported:\n        return \"rejected\", f\"quote-{mode}\", score\n    return \"unreviewed\", f\"quote-{mode}\", score\n\n\ndef is_accepted(record):\n    \"\"\"Rejected rows stay in the ledger for audit but never count as evidence.\"\"\"\n    return str((record or {}).get(\"status\", \"unreviewed\")) not in {\"rejected\", \"retracted\"}",
-              "read_only": true,
-              "privacy": "sanitized public source only",
-              "contract": {
-                "capability": "public-source-read",
-                "access": "read-only",
-                "network": "none",
-                "side_effects": false,
-                "max_file_bytes": 120000,
-                "max_inventory_bytes": 400000,
-                "write_access": false,
-                "secrets": "redacted"
-              }
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "model"
-          },
-          {
-            "id": "local-005",
-            "action": "analyze",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Analyze the fetched excerpt for disinformation tactics, keyword patterns, or technical references to cross-reference with Roskomnadzor\u2019s censorship tools and GitHub keyword lists.",
-            "request": "",
-            "request_status": "closed",
-            "exploration": "disinformation ai instagram twitter google facebook youtube attacks",
-            "tool": {
-              "tool": "public-text",
-              "url": "https://www.rappler.com/world/us-canada/exploiting-meta-weaknesses-deceptive-political-ads-facebook-instagram-united-states-election-2024/",
-              "excerpt": "Exploiting Meta\u2019s weaknesses, deceptive political ads thrived on Facebook and Instagram in run-up to election Open navigation US & Canada RAPPLER Close menu Latest news Video Communities Philippines Investigative Inside Track Fact Check People Voices Business Technology and Platforms Environment Weather Science World BrandRap Special coverages Rappler+ Exclusives Subscribe to Newsletters RappLearn MovePH Movements & Partners Bulletin Board Topics Rai chatbot About Rappler SEE ALL VIDEOS Watch NOW | Live Top 5 News Today Top 5 News This Week Rappler Recap Rappler Talk Rappler Live Jam Documentaries Video explainers In The Public Square Hold The Line Hindi Ito Marites World View Order In The Court The Explainer Sex and Sensibilities Be The Good Homestretch Rappler Presents HIPE Stories The Green Report SEE ALL PHILIPPINES Philippine News Metro Manila Luzon Visayas Mindanao Overseas Filipinos SEE ALL INVESTIGATIVE Data and Documents Explainers Fast Facts In-depth Podcasts and Videos SEE ALL PEOPLE Actors Artists Athletes Crimes Human Interest Newsmakers Obituary Profiles SEE ALL VOICES Editorials Newsletters Thought Leaders SEE ALL BUSINESS Consumer Issues Corporate Economy & Governance Infrastructure Industries Personal Finance Stocks & Banking SEE ALL ENVIRONMENT Climate Change Disasters in the Philippines Nature Pollution SEE ALL SCIENCE Discoveries & Inventions Earth & Space Life & Health Society & Culture SEE ALL WORLD Africa Asia Pacific Bahasa Indonesia Europe Global Affairs Latin America Middle East South & Central Asia US & Canada SEE ALL BRANDRAP Announcements CheckThisOut Tech and Innovation First Look Rappler Eats Travel and Food Health, Beauty, and Wellness Home and Parenting Lifestyle and Entertainment Rappler Reads Finance and Industries Profiles and Advocacies Data stories SEE ALL SPECIAL COVERAGES SARA DUTERTE IMPEACHMENT PHILIPPINE ELECTIONS Flood Control in the Philippines Exclusive Content Exclusive Events Be a Member #FactsFirst PH #CourageON: No Lockdown on Rights #Atin Ang Pilipinas #Make Manila Liveable ABKD Network Amateur Media Association of Philippine Scouts Baguio Chronicle Break the Fake DAKILA Foundation for Media Alternatives (FMA) K",
-              "status": "completed",
-              "contract": {
-                "capability": "public-text-read",
-                "access": "read-only",
-                "network": "public HTTPS",
-                "side_effects": false,
-                "max_bytes": 5000000,
-                "raw_data": false,
-                "untrusted_content": true
-              },
-              "query": "disinformation ai instagram twitter google facebook youtube attacks",
-              "search_results": [
-                {
-                  "title": "Exploiting Meta\u2019s weaknesses, deceptive political ads thrived on Facebook and Instagram in run-up to election",
-                  "url": "https://www.rappler.com/world/us-canada/exploiting-meta-weaknesses-deceptive-political-ads-facebook-instagram-united-states-election-2024/",
-                  "snippet": "filipino artists aug 29 , 2026 7 : 02 pm pht juno reyes , rappler . com us elections exploiting meta \u2019s weaknesses , deceptive political ads thrived on facebook and instagram in run - up to el..."
-                }
-              ]
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "scheduler"
-          },
-          {
-            "id": "local-006",
-            "action": "stay",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
-            "request": "Extract and analyze all text fields (bio, repositories, stars, forks, affiliations) for keywords: 'geophysics', 'seismic', 'HVSR', 'Horizontal-to-Vertical Spectral Ratio'",
-            "request_status": "closed",
-            "exploration": "wsj differences academic weekday weekend",
-            "tool": {
-              "status": "not-requested"
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": "unstructured-output",
-            "decision_source": "model"
-          },
-          {
-            "id": "local-014",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Assigned to the council's research question this turn.",
-            "request": "Verify publicly available GitHub metadata, repositories, and linked accounts for Roscomnadzor27 to assess affiliation claims with Roskomnadzor (frontier-question-307/308/309)",
-            "request_status": "closed",
-            "exploration": "disinformation ai instagram twitter google facebook youtube attacks",
-            "tool": {
-              "tool": "public-text",
-              "url": "https://www.band.com.br/politica/eleicoes/deepfake-de-tarcisio-e-usado-para-promover-falsa-plataforma-de-investimento",
-              "excerpt": "Deepfake de Tarc\u00edsio \u00e9 usado para promover falsa plataforma de investimento Entrar Elei\u00e7\u00f5es Home > Pol\u00edtica > Elei\u00e7\u00f5es > Not\u00edcia Ao Vivo Programa\u00e7\u00e3o Programas Band pelo Brasil R\u00e1dios Sala Digital Colunistas Pol\u00edtica Economia Nacional Internacional Esportes Entretenimento Gastronomia Agro Band Motor Educa\u00e7\u00e3o Sa\u00fade Ci\u00eancia e tecnologia Lifestyle Pets Previs\u00e3o do Tempo Canais Band Bandplay Bandshop Configura\u00e7\u00f5es Notifica\u00e7\u00f5es V Visitante Minha Band Siga a Band no Google News Elei\u00e7\u00f5es Deepfake de Tarc\u00edsio \u00e9 usado para promover falsa plataforma de investimento An\u00fancios pagos no Facebook e Instagram usam v\u00eddeo manipulado do governador de SP para promover golpe financeiro 4 min Da reda\u00e7\u00e3o 03/09/2026 13:49 \u2022 Atualizado h\u00e1 1 dia Da reda\u00e7\u00e3o 03/09/2026 13:49 \u2022 Atualizado h\u00e1 1 dia 4 min Circula em an\u00fancios no Facebook e no Instagram um v\u00eddeo em que o governador de S\u00e3o Paulo, Tarc\u00edsio de Freitas (Republicanos), supostamente promove uma plataforma de investimentos baseada em intelig\u00eancia artificial. Na grava\u00e7\u00e3o, ele afirma que a ferramenta permite obter ganhos de R$ 3 mil a R$ 5 mil por semana a partir de um investimento inicial de R$ 550 e promete devolver o dinheiro caso os resultados n\u00e3o sejam alcan\u00e7ados. \u00c9 falso. Trata-se de um deepfake do governador, usado para aplicar golpes. Continua depois da publicidade Por meio do \u200bprojeto de verifica\u00e7\u00e3o de not\u00edcias\u200b, usu\u00e1rios do Facebook solicitaram que esse material fosse analisado. Confira a seguir o trabalho de verifica\u00e7\u00e3o da Lupa\u200b: O v\u00eddeo \u00e9 falso. A imagem do governador de S\u00e3o Paulo, Tarc\u00edsio de Freitas (Republicanos), foi manipulada digitalmente, com a t\u00e9cnica de deepfake, para simular que ele promove uma suposta plataforma de investimentos. Por meio de busca reversa, a Lupa localizou o v\u00eddeo original usado na manipula\u00e7\u00e3o. Trata-se de uma entrevista concedida por Tarc\u00edsio \u00e0 CNN Brasil em 12 de agosto de 2022. No registro verdadeiro, o ent\u00e3o candidato a governador de SP n\u00e3o menciona sistema de investimentos baseado em intelig\u00eancia artificial. Continua depois da publicidade Como funciona o golpe? O golpe continua no link divulgado junto ao v\u00eddeo. Ao clicar, o usu\u00e1rio \u00e9 direcionado para uma p\u00e1gina que imita uma reportagem do G1, ",
-              "status": "completed",
-              "contract": {
-                "capability": "public-text-read",
-                "access": "read-only",
-                "network": "public HTTPS",
-                "side_effects": false,
-                "max_bytes": 5000000,
-                "raw_data": false,
-                "untrusted_content": true
-              },
-              "query": "disinformation ai instagram twitter google facebook youtube attacks",
-              "search_results": [
-                {
-                  "title": "Exploiting Meta\u2019s weaknesses, deceptive political ads thrived on Facebook and Instagram in run-up to election",
-                  "url": "https://www.rappler.com/world/us-canada/exploiting-meta-weaknesses-deceptive-political-ads-facebook-instagram-united-states-election-2024/",
-                  "snippet": "filipino artists aug 29 , 2026 7 : 02 pm pht juno reyes , rappler . com us elections exploiting meta \u2019s weaknesses , deceptive political ads thrived on facebook and instagram in run - up to el..."
-                },
-                {
-                  "title": "Deepfake de Tarc\u00edsio \u00e9 usado para promover falsa plataforma de investimento",
-                  "url": "https://www.band.com.br/politica/eleicoes/deepfake-de-tarcisio-e-usado-para-promover-falsa-plataforma-de-investimento",
-                  "snippet": "elei\u00e7\u00f5es deepfake de tarc\u00edsio \u00e9 usado para promover falsa plataforma de investimento an\u00fancios pagos no facebook e instagram usam v\u00eddeo manipulado do governador de sp para promover golpe financeiro..."
-                }
-              ]
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "scheduler"
-          },
-          {
-            "id": "local-018",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Inspect **Roscomnadzor27**'s GitHub profile for README content, repository metadata, and custom domain configurations (e.g., `gh-pages`, `.ru` domains) to verify ties to Roskomnadzor.",
-            "request": "Verify public GitHub profile metadata, repositories, and associated domains (e.g., `gh-pages`, `pages`, or `custom-domain`) for any documented affiliation with Roskomnadzor\u2019s official channels, including verified domains",
-            "request_status": "closed",
-            "exploration": "https://github.com/Roscomnadzor27",
-            "tool": {
-              "tool": "public-text",
-              "url": "https://github.com/Roscomnadzor27",
-              "excerpt": "Roscomnadzor27 \u00b7 GitHub \" data-turbo-transient=\"true\" /> Skip to content Navigation Menu Sign in Appearance settings Platform AI CODE CREATION GitHub Copilot Write better code with AI GitHub Copilot app Direct agents from issue to merge MCP Registry Integrate external tools DEVELOPER WORKFLOWS Actions Automate any workflow Codespaces Instant dev environments Issues Plan and track work Code Review Manage code changes Code Quality Enforce quality at merge APPLICATION SECURITY GitHub Advanced Security Find and fix vulnerabilities Code security Secure your code as you build [withheld] protection Stop leaks before they start EXPLORE Why GitHub Documentation Blog Changelog Marketplace View all features Solutions BY COMPANY SIZE Enterprises Small and medium teams Startups Nonprofits BY USE CASE App Modernization DevSecOps DevOps CI/CD View all use cases BY INDUSTRY Healthcare Financial services Manufacturing Government View all industries View all solutions Resources EXPLORE BY TOPIC AI Software Development DevOps Security View all topics EXPLORE BY TYPE Customer stories Events & webinars Ebooks & reports Business insights GitHub Skills SUPPORT & SERVICES Documentation Customer support Community forum Trust center Partners View all resources Open Source COMMUNITY GitHub Sponsors Fund open source developers PROGRAMS Security Lab Maintainer Community GitHub Stars Archive Program REPOSITORIES Topics Trending Collections Enterprise ENTERPRISE SOLUTIONS Enterprise platform AI-powered developer platform AVAILABLE ADD-ONS GitHub Advanced Security Enterprise-grade security features Copilot for Business Enterprise-grade AI features Premium Support Enterprise-grade 24/7 support Pricing Search / Sign in Sign up Appearance settings You signed in with another tab or window. Reload to refresh your session. You signed out in another tab or window. Reload to refresh your session. You switched accounts on another tab or window. Reload to refresh your session. Dismiss alert Roscomnadzor27 Follow Overview Repositories 1 Projects 0 Packages 0 Stars 0 More Overview Repositories Projects Packages Stars Roscomnadzor27 Follow Roscomnadzor27 Follow Block or report user Block or report Roscomnadzor27 --> Block user Prevent this user from interacting with your repositories and sending you notifications. Learn more about blocking users . You must be logged in to block users. Close all issues,",
-              "status": "completed",
-              "contract": {
-                "capability": "public-text-read",
-                "access": "read-only",
-                "network": "public HTTPS",
-                "side_effects": false,
-                "max_bytes": 5000000,
-                "raw_data": false,
-                "untrusted_content": true
-              }
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "model"
-          },
-          {
-            "id": "local-021",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Assigned to the council's research question this turn.",
-            "request": "",
-            "request_status": "closed",
-            "exploration": "disinformation ai instagram twitter google facebook youtube attacks",
-            "tool": {
-              "tool": "public-text",
-              "url": "https://www.band.com.br/politica/eleicoes/deepfake-de-tarcisio-e-usado-para-promover-falsa-plataforma-de-investimento",
-              "excerpt": "Deepfake de Tarc\u00edsio \u00e9 usado para promover falsa plataforma de investimento Entrar Elei\u00e7\u00f5es Home > Pol\u00edtica > Elei\u00e7\u00f5es > Not\u00edcia Ao Vivo Programa\u00e7\u00e3o Programas Band pelo Brasil R\u00e1dios Sala Digital Colunistas Pol\u00edtica Economia Nacional Internacional Esportes Entretenimento Gastronomia Agro Band Motor Educa\u00e7\u00e3o Sa\u00fade Ci\u00eancia e tecnologia Lifestyle Pets Previs\u00e3o do Tempo Canais Band Bandplay Bandshop Configura\u00e7\u00f5es Notifica\u00e7\u00f5es V Visitante Minha Band Siga a Band no Google News Elei\u00e7\u00f5es Deepfake de Tarc\u00edsio \u00e9 usado para promover falsa plataforma de investimento An\u00fancios pagos no Facebook e Instagram usam v\u00eddeo manipulado do governador de SP para promover golpe financeiro 4 min Da reda\u00e7\u00e3o 03/09/2026 13:49 \u2022 Atualizado h\u00e1 1 dia Da reda\u00e7\u00e3o 03/09/2026 13:49 \u2022 Atualizado h\u00e1 1 dia 4 min Circula em an\u00fancios no Facebook e no Instagram um v\u00eddeo em que o governador de S\u00e3o Paulo, Tarc\u00edsio de Freitas (Republicanos), supostamente promove uma plataforma de investimentos baseada em intelig\u00eancia artificial. Na grava\u00e7\u00e3o, ele afirma que a ferramenta permite obter ganhos de R$ 3 mil a R$ 5 mil por semana a partir de um investimento inicial de R$ 550 e promete devolver o dinheiro caso os resultados n\u00e3o sejam alcan\u00e7ados. \u00c9 falso. Trata-se de um deepfake do governador, usado para aplicar golpes. Continua depois da publicidade Por meio do \u200bprojeto de verifica\u00e7\u00e3o de not\u00edcias\u200b, usu\u00e1rios do Facebook solicitaram que esse material fosse analisado. Confira a seguir o trabalho de verifica\u00e7\u00e3o da Lupa\u200b: O v\u00eddeo \u00e9 falso. A imagem do governador de S\u00e3o Paulo, Tarc\u00edsio de Freitas (Republicanos), foi manipulada digitalmente, com a t\u00e9cnica de deepfake, para simular que ele promove uma suposta plataforma de investimentos. Por meio de busca reversa, a Lupa localizou o v\u00eddeo original usado na manipula\u00e7\u00e3o. Trata-se de uma entrevista concedida por Tarc\u00edsio \u00e0 CNN Brasil em 12 de agosto de 2022. No registro verdadeiro, o ent\u00e3o candidato a governador de SP n\u00e3o menciona sistema de investimentos baseado em intelig\u00eancia artificial. Continua depois da publicidade Como funciona o golpe? O golpe continua no link divulgado junto ao v\u00eddeo. Ao clicar, o usu\u00e1rio \u00e9 direcionado para uma p\u00e1gina que imita uma reportagem do G1, ",
-              "status": "completed",
-              "contract": {
-                "capability": "public-text-read",
-                "access": "read-only",
-                "network": "public HTTPS",
-                "side_effects": false,
-                "max_bytes": 5000000,
-                "raw_data": false,
-                "untrusted_content": true
-              },
-              "query": "disinformation ai instagram twitter google facebook youtube attacks",
-              "search_results": [
-                {
-                  "title": "Exploiting Meta\u2019s weaknesses, deceptive political ads thrived on Facebook and Instagram in run-up to election",
-                  "url": "https://www.rappler.com/world/us-canada/exploiting-meta-weaknesses-deceptive-political-ads-facebook-instagram-united-states-election-2024/",
-                  "snippet": "filipino artists aug 29 , 2026 7 : 02 pm pht juno reyes , rappler . com us elections exploiting meta \u2019s weaknesses , deceptive political ads thrived on facebook and instagram in run - up to el..."
-                },
-                {
-                  "title": "Deepfake de Tarc\u00edsio \u00e9 usado para promover falsa plataforma de investimento",
-                  "url": "https://www.band.com.br/politica/eleicoes/deepfake-de-tarcisio-e-usado-para-promover-falsa-plataforma-de-investimento",
-                  "snippet": "elei\u00e7\u00f5es deepfake de tarc\u00edsio \u00e9 usado para promover falsa plataforma de investimento an\u00fancios pagos no facebook e instagram usam v\u00eddeo manipulado do governador de sp para promover golpe financeiro..."
-                }
-              ]
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "scheduler"
-          },
-          {
-            "id": "local-022",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Re-examine *The recognizability of sets of graphs* (cs.CY/0609109) for **explicit graph-based metadata references** (e.g., data structures, geolocation claims, or timestamped case studies) that could align with image EXI",
-            "request": "",
-            "request_status": "closed",
-            "exploration": "cs.CY/0609109",
-            "tool": {
-              "tool": "public-search",
-              "query": "cs.CY/0609109",
-              "results": [],
-              "source": "https://api.langsearch.com/",
-              "status": "completed",
-              "contract": {
-                "capability": "public-web-read",
-                "access": "read-only",
-                "network": "public HTTPS search",
-                "side_effects": false,
-                "max_bytes": 32000
-              }
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "model"
-          }
-        ],
-        "construction": [],
-        "requests": [],
-        "trades_settled": [],
-        "corroborations": [
-          {
-            "id": "pair-562b6fa4236b492034f8",
-            "relation": "unrelated",
-            "finding_ids": [
-              "finding-e581168de49205d67b75",
-              "finding-efcd9d4faf4446f53240"
-            ],
-            "topic": "alternate detection disinformation facebook instagram metric peer precision referenced reviewed technical",
-            "domains": [
-              "band.com.br",
-              "rappler.com"
-            ]
-          },
-          {
-            "id": "pair-94a51ac461cc9f09eb1c",
-            "relation": "unrelated",
-            "finding_ids": [
-              "finding-4821359b7df3c6589d63",
-              "finding-e581168de49205d67b75"
-            ],
-            "topic": "alternate detection disinformation metric peer precision referenced reviewed technical",
-            "domains": [
-              "arxiv.org",
-              "band.com.br"
-            ]
-          },
-          {
-            "id": "pair-e83e410bcd68cb1cceb3",
-            "relation": "unrelated",
-            "finding_ids": [
-              "finding-53b5e550764a4d5d9b5e",
-              "finding-efcd9d4faf4446f53240"
-            ],
-            "topic": "alternate detection disinformation facebook instagram metric peer precision referenced reviewed technical",
-            "domains": [
-              "band.com.br",
-              "rappler.com"
-            ]
-          }
-        ],
-        "regrounded": [],
-        "retractions": [],
-        "room_changes": [],
-        "shared_research": {
-          "query": "disinformation peer-reviewed referenced technical precision metric detection alternate",
-          "family": null,
-          "avoid_domains": [
-            "en.wikipedia.org"
-          ]
-        },
-        "dormant": 2
-      },
-      "metrics": {
-        "jaccard_overlap": 0.174,
-        "morrow_audit_markers": [
-          "counterexample",
-          "missing control"
-        ],
-        "response_completeness": "usable",
-        "evidence_coverage": "missing",
-        "distinction_status": "distinct"
-      },
-      "continuity_audit": {
-        "generated_at": "2026-09-05T04:27:43.514402+00:00",
-        "cycle": 332,
-        "status": "pass",
-        "checks": {
-          "archive_parse": true,
-          "archive_event_overlap": true,
-          "archive_event_ids_unique": true,
-          "raw_output_exclusion": true,
-          "room_link_integrity": true,
-          "resident_room_integrity": true
-        },
-        "archive_records": 2580,
-        "malformed_archive_records": 0,
-        "raw_output_fields_found": 0,
-        "duplicate_archive_ids": [],
-        "linked_rooms_checked": 11,
-        "invalid_room_links": [],
-        "invalid_resident_assignments": [],
-        "privacy": "Aggregate integrity metadata only; resident prompts and raw responses are not published."
-      },
-      "work_orders": {
-        "count": 34
-      },
-      "health": {
-        "schema_version": 1,
-        "generated_at": "2026-09-05T04:27:43.516017+00:00",
-        "cycle": 332,
-        "daemon": "running",
-        "local_model": "ready",
-        "local_model_probe": true,
-        "model_provider": "mistral",
-        "model_name": "ministral-14b-2512",
-        "model_usage": {
-          "day": "2026-09-05",
-          "providers": [
-            {
-              "name": "mistral",
-              "model": "ministral-14b-2512",
-              "calls": 342,
-              "input_tokens": 514519,
-              "output_tokens": 70073,
-              "errors": 0,
-              "last_error": "",
-              "daily_request_budget": null,
-              "daily_token_budget": 900000,
-              "limit_rpm": 30,
-              "limit_tpm": 937500,
-              "requests_last_minute": 8,
-              "tokens_last_minute": 13185,
-              "status": "ready"
-            },
-            {
-              "name": "mistral-8b",
-              "model": "ministral-8b-2512",
-              "calls": 0,
-              "input_tokens": 0,
-              "output_tokens": 0,
-              "errors": 0,
-              "last_error": "",
-              "daily_request_budget": null,
-              "daily_token_budget": 400000,
-              "limit_rpm": 120,
-              "limit_tpm": null,
-              "requests_last_minute": 0,
-              "tokens_last_minute": 0,
-              "status": "ready"
-            },
-            {
-              "name": "mistral-small",
-              "model": "mistral-small-latest",
-              "calls": 0,
-              "input_tokens": 0,
-              "output_tokens": 0,
-              "errors": 0,
-              "last_error": "",
-              "daily_request_budget": null,
-              "daily_token_budget": 100000,
-              "limit_rpm": 10,
-              "limit_tpm": null,
-              "requests_last_minute": 0,
-              "tokens_last_minute": 0,
-              "status": "ready"
-            },
-            {
-              "name": "gemini",
-              "model": "gemini-3.7-flash",
-              "calls": 7,
-              "input_tokens": 8853,
-              "output_tokens": 695,
-              "errors": 7,
-              "last_error": "503 council: This model is currently experiencing high demand. Spikes in demand are usually t",
-              "daily_request_budget": 240,
-              "daily_token_budget": null,
-              "limit_rpm": 8,
-              "limit_tpm": null,
-              "requests_last_minute": 2,
-              "tokens_last_minute": 696,
-              "status": "ready"
-            },
-            {
-              "name": "local",
-              "model": "local",
-              "calls": 0,
-              "input_tokens": 0,
-              "output_tokens": 0,
-              "errors": 0,
-              "last_error": "",
-              "daily_request_budget": null,
-              "daily_token_budget": null,
-              "limit_rpm": null,
-              "limit_tpm": null,
-              "requests_last_minute": 0,
-              "tokens_last_minute": 0,
-              "status": "ready"
-            }
-          ],
-          "recent_calls": [
-            {
-              "at": 1788582095.3,
-              "class": "extraction",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "0a8b7d570db4ff70"
-            },
-            {
-              "at": 1788582099.9,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "96d98793e5040223"
-            },
-            {
-              "at": 1788582106.5,
-              "class": "extraction",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "e2274f04bae28b94"
-            },
-            {
-              "at": 1788582111.5,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "12ea01bcf64c1d33"
-            },
-            {
-              "at": 1788582118.3,
-              "class": "extraction",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "e2274f04bae28b94"
-            },
-            {
-              "at": 1788582123.3,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "c6b9a4b5b9e91b14"
-            },
-            {
-              "at": 1788582130.8,
-              "class": "judgment",
-              "provider": "gemini",
-              "model": "gemini-3.7-flash",
-              "prompt_sha256_16": "9768548998982679"
-            },
-            {
-              "at": 1788582140.3,
-              "class": "judgment",
-              "provider": "gemini",
-              "model": "gemini-3.7-flash",
-              "prompt_sha256_16": "ed5c8a977066304c"
-            },
-            {
-              "at": 1788582348.7,
-              "class": "self-prompt",
-              "provider": "gemini",
-              "model": "gemini-3.7-flash",
-              "prompt_sha256_16": "8eda5fb4b8d9e9b8"
-            },
-            {
-              "at": 1788582350.8,
-              "class": "self-prompt",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "f07771755851a689"
-            },
-            {
-              "at": 1788582355.7,
-              "class": "self-prompt",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "7cd7973a205fe286"
-            },
-            {
-              "at": 1788582357.7,
-              "class": "council",
-              "provider": "gemini",
-              "model": "gemini-3.7-flash",
-              "prompt_sha256_16": "9c47e141e48989f2"
-            },
-            {
-              "at": 1788582367.1,
-              "class": "council",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "1461f3c739d58a0a"
-            },
-            {
-              "at": 1788582370.8,
-              "class": "probe",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "12f725a0a922379b"
-            },
-            {
-              "at": 1788582374.9,
-              "class": "probe",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "64f9c96b8eb78146"
-            },
-            {
-              "at": 1788582379.2,
-              "class": "recruitment",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "23d3333707291809"
-            },
-            {
-              "at": 1788582383.5,
-              "class": "recruitment",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "3017df96b288ec89"
-            },
-            {
-              "at": 1788582390.4,
-              "class": "extraction",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "e2274f04bae28b94"
-            },
-            {
-              "at": 1788582395.6,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "e3594592660b1ed3"
-            },
-            {
-              "at": 1788582402.4,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "f60b7ebb097cb1be"
-            },
-            {
-              "at": 1788582406.4,
-              "class": "extraction",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "e2274f04bae28b94"
-            },
-            {
-              "at": 1788582413.6,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "ef94df49ed5d73bd"
-            },
-            {
-              "at": 1788582420.2,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "9ab8f63701b866b2"
-            },
-            {
-              "at": 1788582424.7,
-              "class": "extraction",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "0a8b7d570db4ff70"
-            },
-            {
-              "at": 1788582429.7,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "ac534f882882ddbc"
-            },
-            {
-              "at": 1788582433.7,
-              "class": "extraction",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "2b87f5b3c2aa230c"
-            },
-            {
-              "at": 1788582438.8,
-              "class": "extraction",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "0a8b7d570db4ff70"
-            },
-            {
-              "at": 1788582443.7,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "67c725e059caecf0"
-            },
-            {
-              "at": 1788582454.2,
-              "class": "judgment",
-              "provider": "gemini",
-              "model": "gemini-3.7-flash",
-              "prompt_sha256_16": "c44d1f89a095ed7e"
-            },
-            {
-              "at": 1788582462.9,
-              "class": "judgment",
-              "provider": "gemini",
-              "model": "gemini-3.7-flash",
-              "prompt_sha256_16": "bfd7d5a25d4b050d"
-            }
-          ],
-          "models_seen": {
-            "gemini": [
-              "gemini-2.5-flash",
-              "gemini-2.5-pro",
-              "gemini-2.5-flash-preview-tts",
-              "gemini-2.5-pro-preview-tts",
-              "gemma-4-26b-a4b-it",
-              "gemma-4-31b-it",
-              "gemini-flash-latest",
-              "gemini-flash-lite-latest",
-              "gemini-pro-latest",
-              "gemini-2.5-flash-lite",
-              "gemini-2.5-flash-image",
-              "gemini-3-flash-preview",
-              "gemini-3.1-pro-preview",
-              "gemini-3.1-pro-preview-customtools",
-              "gemini-3.1-flash-lite-preview",
-              "gemini-3.1-flash-lite",
-              "gemini-3-pro-image-preview",
-              "gemini-3-pro-image",
-              "nano-banana-pro-preview",
-              "gemini-3.1-flash-image-preview",
-              "gemini-3.1-flash-image",
-              "gemini-3.1-flash-lite-image",
-              "gemini-3.5-flash",
-              "gemini-3.5-flash-lite",
-              "gemini-omni-flash-preview",
-              "gemini-omni-1.1-flash",
-              "gemini-3.5-transcribe",
-              "gemini-3.6-flash",
-              "gemini-3.7-flash",
-              "gemini-3.8-flash",
-              "lyria-3-clip-preview",
-              "lyria-3-pro-preview",
-              "lyria-3.5",
-              "gemini-3.1-flash-tts-preview",
-              "gemini-robotics-er-2-preview",
-              "gemini-2.5-computer-use-preview-10-2025",
-              "antigravity-preview-05-2026",
-              "deep-research-max-preview-04-2026",
-              "deep-research-preview-04-2026",
-              "deep-research-pro-preview-12-2025"
-            ]
-          }
-        },
-        "rooms": 12,
-        "active_residents": 25,
-        "work_orders": 34,
-        "continuity": "pass",
-        "autonomy": "active",
-        "autonomy_quality": {
-          "status": "active",
-          "turns": 8,
-          "fallbacks": 1,
-          "fallback_rate": 0.125,
-          "fallback_reasons": {
-            "unstructured-output": 1
-          },
-          "tool_successes": 7,
-          "findings_filed": 0
-        },
-        "publication": "sanitized GitHub Pages snapshot",
-        "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
-        "publication_status": {
-          "outcome": "pushed",
-          "reason": "",
-          "at": "2026-09-05T02:53:07.325753+00:00"
-        },
-        "question_source": "carried:line-000329-8fe81b8d",
-        "self_prompt_accepted": 1,
-        "self_prompt_rejections": [
-          "morrow: missing TEST line(s); return exactly QUESTION:, WHY:, TEST:"
-        ],
-        "activity_feed": "docs/activity.json",
-        "feed_freshness_seconds": 0,
-        "activity_records": 110,
-        "note_records": 435,
-        "print_jobs": 36,
-        "failed_print_jobs": 0,
-        "analysis_runs": 46,
-        "analysis_completed": 17,
-        "analysis_failed": 0,
-        "analysis_rejected": 29,
-        "analysis_timed_out": 0,
-        "analysis_feed": "docs/analysis.json",
-        "research_records": 13,
-        "research_stale": 0,
-        "research_feed": "docs/research.json",
-        "findings": 53,
-        "findings_rejected": 70,
-        "findings_total": 123,
-        "corroborated_findings": 0,
-        "findings_feed": "docs/findings.json",
-        "frontier_leads": 0,
-        "research_line": {
-          "id": "line-000329-8fe81b8d",
-          "root": "Do any peer-reviewed studies, technical reports, or reputable public sources contradict the **96% precision** metric for disinformation detection in the referenced framework, and if so, what alternate",
-          "anchors": [
-            "disinformation",
-            "peer-reviewed",
-            "referenced"
-          ],
-          "hops": 3,
-          "findings": 5,
-          "empty_cycles": 1
-        },
-        "frontier_questions": 57,
-        "frontier_findings": 53,
-        "frontier_tasks": 4,
-        "frontier_feed": "docs/frontier.json",
-        "code_proposals": 0,
-        "code_proposals_ready": 0,
-        "code_proposals_feed": "docs/code-proposals.json",
-        "outside_signals": 16,
-        "outside_quarantined": 12,
-        "outside_signals_feed": "docs/outside-signals.json",
-        "codex_bridge": "enabled",
-        "codex_pending_tasks": 13,
-        "codex_completed_tasks": 48,
-        "resident_messages": 0,
-        "messages_feed": "docs/messages.json",
-        "trades": 0,
-        "trades_feed": "docs/trades.json",
-        "journal_entries": 4,
-        "journal_written": null,
-        "retractions": 0,
-        "room_changes": [],
-        "dropped_events": 0
-      },
-      "privacy": "Only aggregate metrics and the bounded council question are public; raw outputs remain local."
-    },
-    {
       "generated_at": "2026-09-05T04:38:19.609260+00:00",
       "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
       "runtime_cycle": 333,
@@ -20701,6 +19854,966 @@
           "empty_cycles": 0
         },
         "frontier_questions": 80,
+        "frontier_findings": 73,
+        "frontier_tasks": 10,
+        "frontier_feed": "docs/frontier.json",
+        "code_proposals": 0,
+        "code_proposals_ready": 0,
+        "code_proposals_feed": "docs/code-proposals.json",
+        "outside_signals": 16,
+        "outside_quarantined": 12,
+        "outside_signals_feed": "docs/outside-signals.json",
+        "codex_bridge": "enabled",
+        "codex_pending_tasks": 13,
+        "codex_completed_tasks": 48,
+        "resident_messages": 0,
+        "messages_feed": "docs/messages.json",
+        "trades": 0,
+        "trades_feed": "docs/trades.json",
+        "journal_entries": 4,
+        "journal_written": null,
+        "retractions": 0,
+        "room_changes": [],
+        "dropped_events": 0
+      },
+      "privacy": "Only aggregate metrics and the bounded council question are public; raw outputs remain local."
+    },
+    {
+      "generated_at": "2026-09-05T13:14:45.717855+00:00",
+      "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
+      "runtime_cycle": 357,
+      "question": "Did the International Organization for Migration (IOM) publish an official press release or situation report confirming its first voluntary repatriation flight out of Khartoum, Sudan, following the April 2023 conflict outbreak?",
+      "question_source": "carried:line-000347-483a7314",
+      "self_prompt_accepted": 2,
+      "self_prompt_rejections": [],
+      "action": {
+        "action": "local-behavioral-probe",
+        "status": "skipped-this-cycle"
+      },
+      "recruitment": {
+        "status": "activated",
+        "agent": {
+          "id": "local-030",
+          "name": "Kael-7",
+          "role": "Sudan Displacement Tracker",
+          "room": "archive",
+          "status": "probation"
+        }
+      },
+      "autonomy": {
+        "status": "completed",
+        "active": 27,
+        "decisions": [
+          {
+            "id": "local-002",
+            "action": "explore",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Assigned to the council's research question this turn.",
+            "request": "Verify explicit weekend/weekday parsing logic in `evidence.py` to confirm granularity for publication bias testing. Cross-check alignment with `local-003-330` and `local-005-345` for consistency",
+            "request_status": "closed",
+            "exploration": "republic sudan 2023 excerpt lists events occurred international",
+            "tool": {
+              "tool": "openalex-summary",
+              "query": "republic sudan 2023 excerpt lists events occurred international",
+              "title": "Stakeholder perspectives of maternal and newborn health prioritization in South Sudan: a policy analysis",
+              "url": "https://doi.org/10.1186/s12982-025-00395-y",
+              "excerpt": "Stakeholder perspectives of maternal and newborn health prioritization in South Sudan: a policy analysis. The maternal and neonatal mortality in South Sudan is among the highest in the world and among other fragile and conflict-affected countries. Within an evolving political economic context, this study aims to capture perspectives of current actors on drivers of the stagnating investments in maternal and newborn health (MNH). A descriptive case study guided by the health policy analysis triangle to explore contextual factors, policy content, actors\u2019 roles and implementation processes for MNH policy and practice. A total of 20 key informants from government, humanitarian and development organizations, civil society, donors and health providers were interviewed. According to respondents, MNH was a priority in South Sudan due to the presence of various legal and policy frameworks. However, financial investment in MNH programs was inadequate due to the government focus on peace and stabilization, and the fragmented parallel systems run by international actors. Funding for MNH was also affected by ongoing conflicts and disease outbreaks, which diverted attention away from the issue. National initiatives to expand service coverage and funding are either inadequate or not well studied. In addition, gendered attitudes and norms continue to impede care seeking, service provision and inclusivity in decision-making for improving MNH prioritization. Stakeholders highlighted the need for accountability to sustain progress and close policy implementation gaps. This study highlighted relevant challenges and opportunities for improving MNH outcomes in South Sudan and similar fragile contexts. Government ownership of the MNH agenda is needed, so is strengthening of national initiatives, gender equity, actor coordination and accountability mechanisms.",
+              "status": "completed",
+              "contract": {
+                "capability": "public-text-read",
+                "access": "read-only",
+                "network": "public HTTPS",
+                "side_effects": false,
+                "max_bytes": 32000,
+                "raw_data": false,
+                "untrusted_content": true
+              },
+              "search_results": [
+                {
+                  "title": "Situation in the Sudan and the activities of the United Nations Integrated Transition Assistance Mission in the Sudan Report of the Secretary-General",
+                  "url": "https://documents-dds-ny.un.org/doc/UNDOC/GEN/N23/248/51/PDF/N2324851.pdf?OpenElement",
+                  "snippet": "united nations s / 2023 / 644 security council distr . : general 31 august 2023 original : english 23 - 16284 ( e ) 080923 * 2316284 * situation in the sudan and the activities of the united..."
+                },
+                {
+                  "title": "United Nations S/2023/861 Security Council Situation in the Sudan and the activities of the United Nations Integrated Transition Assistance Mission in the Sudan",
+                  "url": "https://documents-dds-ny.un.org/doc/UNDOC/GEN/N23/330/61/pdf/N2333061.pdf",
+                  "snippet": "united nations s / 2023 / 861 security council distr . : general 13 november 2023 original : english 23 - 21184 ( e ) 151123 * 2321184 * situation in the sudan and the activities of the united..."
+                },
+                {
+                  "title": "\u82cf\u4e39\u5185\u6218 (2023\u5e74) - \u7ef4\u57fa\u767e\u79d1\uff0c\u81ea\u7531\u7684\u767e\u79d1\u5168\u4e66",
+                  "url": "https://zh.m.wikipedia.org/wiki/%E8%8B%8F%E4%B8%B9%E5%86%85%E6%88%98_(2023%E5%B9%B4)",
+                  "snippet": "\u82cf\u4e39 \u5185\u6218 ( 2023 \u5e74 ) \u63d0\u793a \uff1a \u6b64 \u6761\u76ee \u7684 \u4e3b\u9898 \u4e0d\u662f \u8fbe\u5c14 \u5bcc\u5c14 \u6218\u4e89 \u3002 \u6b64 \u689d \u76ee \u53ef \u53c2\u7167 \u82f1\u8a9e \u7dad\u57fa \u767e\u79d1 \u76f8 \u61c9\u689d \u76ee \u6765 \u6269\u5145 \u3002 \u6b64 \u689d \u76ee \u9ad4 \u88c1 \u53ef\u80fd \u66f4 \u9002\u5408 \u6563\u6587 \u800c \u975e \u5217\u8868 \u3002 2023 \u5e74 \u82cf\u4e39 \u51b2\u7a81 \u8607 \u4e39 \u6c11\u4e3b \u8f49 \u578b \uff08 \u82f1\u8bed \uff1a sudanese transition to democracy \uff09 ..."
+                },
+                {
+                  "title": "Sudanese civil war (2023\u2013present) (reference: search.worldcat.org)",
+                  "url": "https://search.worldcat.org/issn/0362-4331"
+                },
+                {
+                  "title": "Sudanese civil war (2023\u2013present) (reference: sudanwarmonitor.com)",
+                  "url": "https://sudanwarmonitor.com/p/splm-n-and-popular-defense-forces"
+                }
+              ]
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "scheduler"
+          },
+          {
+            "id": "local-012",
+            "action": "stay",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
+            "request": "Verify public GitHub profile for Roscomnadzor27 to cross-reference with frontier questions 307-309",
+            "request_status": "closed",
+            "exploration": "library 2024 brazilian meta deceptive political utilizing deepfakes",
+            "tool": {
+              "status": "not-requested"
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": "unstructured-output",
+            "decision_source": "model"
+          },
+          {
+            "id": "local-016",
+            "action": "explore",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Assigned to the council's research question this turn.",
+            "request": "",
+            "request_status": "closed",
+            "exploration": "republic sudan 2023 excerpt lists events disputed revised different",
+            "tool": {
+              "tool": "public-text",
+              "url": "https://es.wikipedia.org/wiki/Conflicto_en_Sud%C3%A1n_de_2023",
+              "excerpt": "Sudan Tribune (en ingl\u00e9s estadounidense) . Consultado el 2 de septiembre de 2023 . 1 2 Lisa (7 de agosto de 2023). \u00abSudan war: airstrikes on Republican Palace, civil servants await salaries, fuel prices rise\u00bb . Dabanga Radio TV Online (en ingl\u00e9s brit\u00e1nico) . ... Guerra civil sudanesa (2023-presente) - Wikipedia, la enciclopedia libre Ir al contenido Men\u00fa principal Men\u00fa principal mover a la barra lateral ocultar Navegaci\u00f3n Portada Portal de la comunidad Actualidad Cambios recientes P\u00e1ginas nuevas P\u00e1gina aleatoria Ayuda Notificar un error P\u00e1ginas especiales Buscar Buscar Apariencia Donaciones Crear una cuenta Acceder Herramientas personales Donaciones Crear una cuenta Acceder Contenidos mover a la barra lateral ocultar Inicio 1 Antecedentes Alternar subsecci\u00f3n Antecedentes 1.1 Conflicto en Darfur y formaci\u00f3n de las FAR 1.2 Transici\u00f3n pol\u00edtica 2 Desarrol",
+              "status": "completed",
+              "contract": {
+                "capability": "public-text-read",
+                "access": "read-only",
+                "network": "public HTTPS",
+                "side_effects": false,
+                "max_bytes": 5000000,
+                "raw_data": false,
+                "untrusted_content": true
+              },
+              "sentences": [
+                "\u00ab \" Regional Sudan Response Situation Update 12 September 2023 \" \u00bb .",
+                "\u00abSudan war: airstrikes on Republican Palace, civil servants await salaries, fuel prices rise\u00bb .",
+                "\u2191 \u00ab \" Regional Sudan Response Situation Update 12 September 2023 \" \u00bb .",
+                "[ 27 ] Transici\u00f3n pol\u00edtica [ editar ] Art\u00edculo principal: Transici\u00f3n democr\u00e1tica sudanesa de 2019 El expresidente sudan\u00e9s Omar al Bashir presidi\u00f3 un conflicto en el sur del pa\u00eds que result\u00f3 en la secesi\u00f3n de Sud\u00e1n del Sur en 2011.",
+                "[ 29 ] En medio de una crisis econ\u00f3mica, los militares acordaron entregar la autoridad a un gobierno liderado por civiles, con un acuerdo formal programado para el 6 de abril de 2023.",
+                "Campo de refugiados en Chad en relaci\u00f3n con la guerra en Sud\u00e1n, fotografiado por Voice of America el 16 de mayo de 2023.",
+                "Hubo enfrentamientos en la sede de la emisora estatal, Sudan TV que luego fue capturada por las fuerzas de las FAR.",
+                "[ 42 ] Las Fuerzas Armadas del Sud\u00e1n reclamaron el control de la sede de Sudan TV y la radio estatal en Jartum.",
+                "[ 47 ] Los combates fueron descritos como muy intensos a lo largo de la carretera que va a Port Sudan y en la zona industrial de al-Bagair.",
+                "El jefe de ayuda de emergencia de las Naciones Unidas, Martin Griffiths, lleg\u00f3 a Port Sudan para inspeccionar las operaciones de ayuda, pero inform\u00f3 que la \"voluntad de poner fin a la lucha a\u00fan no estaba all\u00ed\" despu\u00e9s de hablar con los l\u00edderes de RSF y SAF.",
+                "[ 56 ] La embajada turca en Jartum fue trasladada a Port Sudan despu\u00e9s de que el autom\u00f3vil del embajador turco fuera alcanzado por disparos, y ambas partes del conflicto se culparon mutuamente por el ataque.",
+                "[ 57 ] El Ministerio de Defensa sudan\u00e9s emiti\u00f3 una orden de movilizaci\u00f3n para que los jubilados del ej\u00e9rcito y las personas capaces se unieran a las Fuerzas Armadas del Sud\u00e1n.",
+                "[ 59 ] Tratado de Yoda [ editar ] Estancamiento del conflicto (junio-septiembre de 2023) [ editar ] Alrededor del 15 de junio, el gobernador de Darfur Occidental, Khamis Abdallah Abbakar, fue asesinado y luego mutilado horas despu\u00e9s de criticar p\u00fablicamente a las RSF por \"genocidio\".",
+                "Las Fuerzas Armadas del Sud\u00e1n y las RSF se culparon mutuamente por los incidentes, mientras que el gobierno sudan\u00e9s tom\u00f3 medidas contra los enviados internacionales.",
+                "Seg\u00fan la Oficina del ACNUDH, los fallecidos fueron asesinados por las RSF y sus milicias aliadas y enterrados el 20 y 21 de junio de 2023.",
+                "[ 74 ] El Tercer Frente, conocido como Tamazuj, uno de varios grupos con sede en Darfur y Kordof\u00e1n que firmaron un acuerdo de paz con el gobierno sudan\u00e9s en 2020 y hab\u00edan sido marginados por sus presuntos v\u00ednculos con la inteligencia militar sudanesa, declar\u00f3 formalmente su alianza con las RSF.",
+                "[ 78 ] Estos enfrentamientos continuaron en Jartum, [ 79 ] donde el Palacio Republicano fue blanco de ataques a\u00e9reos, y se hicieron intentos de romper un asedio en el complejo militar de Yarmouk.",
+                "[ 82 ] El 17 de agosto, el Tercer Frente, conocido como Tamazuj, uno de los varios grupos con base en Darfur y Kordof\u00e1n que firmaron un acuerdo de paz con el gobierno sudan\u00e9s en 2020 y hab\u00edan sido marginados por sus presuntos v\u00ednculos con la inteligencia militar sudanesa, declar\u00f3 formalmente su alianza con las RSF.",
+                "[ 91 ] Ofensivas de las FAR (Octubre-Diciembre de 2023) [ editar ] En octubre, las Fuerzas Armadas del Sud\u00e1n en Darfur estaban experimentando una grave escasez de suministros debido a los asedios impuestos por las FAR, y no hab\u00edan utilizado su superioridad a\u00e9rea para detener los avances de las FAR.",
+                "[ 111 ] [ 112 ] A finales de octubre, las RSF controlaban la mayor parte de Jartum, pero no hab\u00edan logrado apoderarse de bases militares clave, mientras que el gobierno de al-Burhan se hab\u00eda trasladado en gran medida a Port Sudan.",
+                "[ 148 ] En Darfur [ editar ] En Geneina , Darfur Occidental, los enfrentamientos \u00e9tnicos que comenzaron en la \u00faltima semana de abril de 2023 hab\u00edan matado al menos a 1.100 personas, [ 149 ] mientras que el Sultanato de Dar Masalit afirm\u00f3 que m\u00e1s de 5.000 personas hab\u00edan muerto y unas 8.000 hab\u00edan resultado heridas en la ciudad.",
+                "[ 150 ] En julio de 2023, un l\u00edder tribal masalit afirm\u00f3 que m\u00e1s de 10.000 personas hab\u00edan sido asesinadas solo en Darfur Occidental y que el 80% de los residentes de Geneina hab\u00edan huido.",
+                "[ 156 ] Violencia sexual [ editar ] En julio de 2023, las autoridades informaron de al menos 88 casos de agresi\u00f3n sexual a mujeres en todo el pa\u00eds, la mayor\u00eda de ellos atribuidos a RSF.",
+                "[ 160 ] Evacuaci\u00f3n de ciudadanos extranjeros [ editar ] V\u00e9ase tambi\u00e9n: Evacuaci\u00f3n de ciudadanos extranjeros durante el conflicto de Sud\u00e1n de 2023 Repatriaciones a trav\u00e9s del Mecanismo de Protecci\u00f3n Civil de la Uni\u00f3n Europea.",
+                "Esto ha obligado a realizar evacuaciones por carretera a trav\u00e9s de Port Sudan en el Mar Rojo, que se encuentra a unos 650 km al noreste de Jartum, [ 163 ] desde donde fueron transportados por v\u00eda a\u00e9rea o transportados directamente a sus pa\u00edses de origen o a terceros.",
+                "[ 180 ] para el 12 de junio de 2023 m\u00e1s de 530 000 personas hab\u00edan huido del pa\u00eds, mientras que 1,6 millones hab\u00edan sido desplazadas internamente, incluyendo diplom\u00e1ticos y ciudadanos extranjeros de varios pa\u00edses.",
+                "[ 187 ] Esfuerzos de negociaciones de paz [ editar ] 2023 [ editar ] El 16 de abril, representantes de las Fuerzas Armadas del Sud\u00e1n y las FAR aceptaron una propuesta de las Naciones Unidas para pausar los combates entre las 16:00 y las 19:00 hora local.",
+                "Blinken solicit\u00f3 la reanudaci\u00f3n de las negociaciones con las RSF en Yeda , pero el gobierno sudan\u00e9s se neg\u00f3, citando la falta de consultas previas y la necesidad de establecer bases de paz.",
+                "[ 197 ] [ 198 ] Investigaciones de cr\u00edmenes de guerra [ editar ] El 13 de julio de 2023, la oficina del fiscal jefe de la Corte Penal Internacional , Karim Ahmad Khan, dijo que hab\u00eda iniciado una investigaci\u00f3n sobre posibles cr\u00edmenes de guerra y cr\u00edmenes de lesa humanidad cometidos durante el conflicto.",
+                "[ 211 ] Egipto [ editar ] El 16 de abril, las FAR afirmaron que sus tropas en Port Sudan hab\u00edan sido atacadas por aviones extranjeros y emitieron una advertencia contra cualquier interferencia extranjera.",
+                "[ 222 ] El 30 de julio, las enfermeras del Servicio de Urgencias del Hospital Universitario de Port Sudan se declararon en huelga en protesta por el impago de los salarios desde el comienzo del conflicto, lo que oblig\u00f3 a cerrar el hospital desde entonces despu\u00e9s de que otros departamentos se unieran a \u00e9l.",
+                "[ 228 ] Per\u00fa Per\u00fa : A trav\u00e9s de un comunicado del Ministerio de Relaciones Exteriores, el Gobierno del Per\u00fa expres\u00f3 este domingo su preocupaci\u00f3n por los actos de violencia acontecidos en Sud\u00e1n desde el s\u00e1bado 15 de abril y que hasta el momento provocaron la muerte de 78 civiles en medio de combates entre paramilitares y el Ej\u00e9rcito sudan\u00e9s.",
+                "[ 230 ] Egipto Egipto y Sud\u00e1n del Sur Sud\u00e1n del Sur : Los pa\u00edses vecinos de Sud\u00e1n ofrecieron mediar entre el ej\u00e9rcito sudan\u00e9s y las Fuerzas de Apoyo R\u00e1pido, dijo la presidencia egipcia en un comunicado.",
+                "[ 246 ] El Ministerio de Asuntos Exteriores dijo que dos aviones C-130J de la Fuerza A\u00e9rea de la India estaban en espera en Yeda, Arabia Saudita, como parte de los preparativos para la evacuaci\u00f3n, mientras que un buque de la Armada india, INS Sumedha, hab\u00eda llegado a Port Sudan.",
+                "Tambi\u00e9n dijo que est\u00e1 listo \"para realizar esfuerzos para ayudar a Sud\u00e1n a poner fin a la crisis de manera sostenible, de una manera que sirva a los intereses del pueblo sudan\u00e9s\", y advirti\u00f3 sobre las graves repercusiones de la escalada violenta en Sud\u00e1n, \"cuyo alcance es dif\u00edcil de determinar interna y regionalmente\".",
+                "V\u00e9ase tambi\u00e9n [ editar ] Batalla de Jartum (2023) Masacre de El Fasher Golpe de Estado en Sud\u00e1n de 2019 Conflicto de Darfur Masacre de Jartum Misi\u00f3n Internacional Independiente de determinaci\u00f3n de los hechos sobre Sud\u00e1n Primera guerra civil sudanesa Segunda guerra civil sudanesa Referencias [ editar ] \u2191 \u00abM\u00e1s de 61.000 muetos por causas directas o indirectas de la guerra en Sud\u00e1n\u00bb .",
+                "\u2191 \u00abSudan: at least 25 civilians killed in weekend attacks on Khartoum\u00bb .",
+                "Consultado el 27 de septiembre de 2023 .",
+                "\u2191 \u00abSudan war: 'I dey fear say di fighting go continue for years ' \u00bb .",
+                "\u2191 Abdelaziz, Khalid (15 de abril de 2023)."
+              ],
+              "query": "republic sudan 2023 excerpt lists events disputed revised different",
+              "search_results": [
+                {
+                  "title": "Report from the Government of the Republic of the Sudan to the United Nations Security Council",
+                  "url": "https://digitallibrary.un.org/nanna/record/4011970/files/S_2023_325-EN.pdf?withWatermark=0&withMetadata=0&registerDownload=1&version=1",
+                  "snippet": "united nations s / 2023 / 325 security council distr . : general 16 may 2023 original : english 23 - 09318 ( e ) 190523 230523 * 2309318 * letter dated 6 may 2023 from the permanent representa..."
+                },
+                {
+                  "title": "Situation in the Sudan and the activities of the United Nations Integrated Transition Assistance Mission in the Sudan Report of the Secretary-General",
+                  "url": "https://documents-dds-ny.un.org/doc/UNDOC/GEN/N23/248/51/PDF/N2324851.pdf?OpenElement",
+                  "snippet": "united nations s / 2023 / 644 security council distr . : general 31 august 2023 original : english 23 - 16284 ( e ) 080923 * 2316284 * situation in the sudan and the activities of the united..."
+                },
+                {
+                  "title": "Sudanese civil war (2023\u2013present) - Wikipedia",
+                  "url": "https://en.m.wikipedia.org/wiki/2023_Sudan_conflict?useskin=vector",
+                  "snippet": "sudanese civil war ( 2023 \u2013present ) https : / / www . economist . com / middle - east - and - africa / 2023 / 10 / 05 / genocide - returns - to - darfur ( refs : 45 , 333 ) https : / / www . daba..."
+                },
+                {
+                  "title": "Tercera guerra civil sudanesa (2023-presente) - Wikipedia, la enciclopedia libre",
+                  "url": "https://es.wikipedia.org/wiki/Conflicto_en_Sud%C3%A1n_de_2023",
+                  "snippet": "contenidos inicio antecedentes 1.1 conflicto en darfur y formaci\u00f3n de las far 1.2 transici\u00f3n pol\u00edtica desarrollo de la guerra 2.1 enfrentamientos iniciales ( 15 de abril - 19 de mayo ) 2..."
+                }
+              ]
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "scheduler"
+          },
+          {
+            "id": "local-019",
+            "status": "awaiting-retry",
+            "attempts": 1,
+            "parse_reason": "unstructured-output"
+          },
+          {
+            "id": "local-020",
+            "action": "explore",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Cross-check for residual Python-based activity in Roscomnadzor27\u2019s repositories via GitHub\u2019s code search API. Empty `/repos` and `/starred` endpoints suggest minimal activity, but code search may reveal overlooked small,",
+            "request": "Verify if the GitHub profile **Roscomnadzor27** has any repositories (public or private) via the `/repos` endpoint, cross-checking for residual activity beyond events",
+            "request_status": "closed",
+            "exploration": "https://api.github.com/search/code?q=repo:Roscomnadzor27+language:python+size:small",
+            "tool": {
+              "tool": "openalex-summary",
+              "query": "republic sudan 2023 excerpt lists events occurred international",
+              "title": "Stakeholder perspectives of maternal and newborn health prioritization in South Sudan: a policy analysis",
+              "url": "https://doi.org/10.1186/s12982-025-00395-y",
+              "excerpt": "Stakeholder perspectives of maternal and newborn health prioritization in South Sudan: a policy analysis. The maternal and neonatal mortality in South Sudan is among the highest in the world and among other fragile and conflict-affected countries. Within an evolving political economic context, this study aims to capture perspectives of current actors on drivers of the stagnating investments in maternal and newborn health (MNH). A descriptive case study guided by the health policy analysis triangle to explore contextual factors, policy content, actors\u2019 roles and implementation processes for MNH policy and practice. A total of 20 key informants from government, humanitarian and development organizations, civil society, donors and health providers were interviewed. According to respondents, MNH was a priority in South Sudan due to the presence of various legal and policy frameworks. However, financial investment in MNH programs was inadequate due to the government focus on peace and stabilization, and the fragmented parallel systems run by international actors. Funding for MNH was also affected by ongoing conflicts and disease outbreaks, which diverted attention away from the issue. National initiatives to expand service coverage and funding are either inadequate or not well studied. In addition, gendered attitudes and norms continue to impede care seeking, service provision and inclusivity in decision-making for improving MNH prioritization. Stakeholders highlighted the need for accountability to sustain progress and close policy implementation gaps. This study highlighted relevant challenges and opportunities for improving MNH outcomes in South Sudan and similar fragile contexts. Government ownership of the MNH agenda is needed, so is strengthening of national initiatives, gender equity, actor coordination and accountability mechanisms.",
+              "status": "completed",
+              "contract": {
+                "capability": "public-text-read",
+                "access": "read-only",
+                "network": "public HTTPS",
+                "side_effects": false,
+                "max_bytes": 32000,
+                "raw_data": false,
+                "untrusted_content": true
+              },
+              "search_results": [
+                {
+                  "title": "Situation in the Sudan and the activities of the United Nations Integrated Transition Assistance Mission in the Sudan Report of the Secretary-General",
+                  "url": "https://documents-dds-ny.un.org/doc/UNDOC/GEN/N23/248/51/PDF/N2324851.pdf?OpenElement",
+                  "snippet": "united nations s / 2023 / 644 security council distr . : general 31 august 2023 original : english 23 - 16284 ( e ) 080923 * 2316284 * situation in the sudan and the activities of the united..."
+                },
+                {
+                  "title": "Situation in the Sudan and the activities of the United Nations Integrated Transition Assistance Mission in the Sudan Report of the Secretary-General",
+                  "url": "https://documents-dds-ny.un.org/doc/UNDOC/GEN/N23/330/61/pdf/N2333061.pdf?OpenElement",
+                  "snippet": "united nations s / 2023 / 861 security council distr . : general 13 november 2023 original : english 23 - 21184 ( e ) 151123 * 2321184 * situation in the sudan and the activities of the united..."
+                },
+                {
+                  "title": "\u82cf\u4e39\u5185\u6218 (2023\u5e74) - \u7ef4\u57fa\u767e\u79d1\uff0c\u81ea\u7531\u7684\u767e\u79d1\u5168\u4e66",
+                  "url": "https://zh.m.wikipedia.org/wiki/%E8%8B%8F%E4%B8%B9%E5%86%85%E6%88%98_(2023%E5%B9%B4)",
+                  "snippet": "\u82cf\u4e39 \u5185\u6218 ( 2023 \u5e74 ) \u63d0\u793a \uff1a \u6b64 \u6761\u76ee \u7684 \u4e3b\u9898 \u4e0d\u662f \u8fbe\u5c14 \u5bcc\u5c14 \u6218\u4e89 \u3002 \u6b64 \u689d \u76ee \u53ef \u53c2\u7167 \u82f1\u8a9e \u7dad\u57fa \u767e\u79d1 \u76f8 \u61c9\u689d \u76ee \u6765 \u6269\u5145 \u3002 \u6b64 \u689d \u76ee \u9ad4 \u88c1 \u53ef\u80fd \u66f4 \u9002\u5408 \u6563\u6587 \u800c \u975e \u5217\u8868 \u3002 2023 \u5e74 \u82cf\u4e39 \u51b2\u7a81 \u8607 \u4e39 \u6c11\u4e3b \u8f49 \u578b \uff08 \u82f1\u8bed \uff1a sudanese transition to democracy \uff09 ..."
+                },
+                {
+                  "title": "Sudanese civil war (2023\u2013present) (reference: search.worldcat.org)",
+                  "url": "https://search.worldcat.org/issn/0362-4331"
+                },
+                {
+                  "title": "Sudanese civil war (2023\u2013present) (reference: sudanwarmonitor.com)",
+                  "url": "https://sudanwarmonitor.com/p/splm-n-and-popular-defense-forces"
+                }
+              ]
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "model"
+          },
+          {
+            "id": "local-021",
+            "action": "explore",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Crawl roscom\u2019s GitHub profile to confirm explicit contributions to seismic/geophysics/HVSR evidence. Prior crawl results and frontier-question-317 findings require validation for consistency with Sudan 2023 research.",
+            "request": "Verify public visibility and seismic/geophysics relevance of roscom\u2019s GitHub profile via recursive crawl of repositories, commits, and starred items. Cross-check with frontier-question-317 and Sudan 2023 research",
+            "request_status": "open",
+            "exploration": "github:roscom",
+            "tool": {
+              "tool": "public-text",
+              "url": "https://reliefweb.int/attachments/bb448fdb-3802-59a6-9157-736079af25c5/UNHCR%20Khartoum%20Returns%20Report%20June%202026.pdf",
+              "excerpt": "%PDF-1.7 %\ufffd\ufffd\ufffd\ufffd 1 0 obj >/Metadata 254 0 R/ViewerPreferences 255 0 R>> endobj 2 0 obj > endobj 3 0 obj >/ExtGState >/Font >/ProcSet[/PDF/Text/ImageB/ImageC/ImageI] >>/Annots[ 21 0 R 22 0 R 23 0 R 24 0 R 25 0 R] /MediaBox[ 0 0 595.32 841.92] /Contents 4 0 R/Group >/Tabs/S/StructParents 0>> endobj 4 0 obj > stream x\ufffd\ufffd\\[o\u06f8\u0012~\u000f\ufffd\ufffd\ufffdG\ufffd\ufffdi\ufffdN N\ufffd\ufffd\ufffd\u000f\u007f>\ufffd\ufffd_F\ufffd\ufffd\ufffdQq?\ufffd\ufffd\u0007\ufffdo\u0005\ufffd\ufffd8 ]\ufffdgo\ufffd$'\ufffd\ufffd\ufffd\ufffd\ufffdJn\ufffd \ufffd\ufffd\ufffd('9\ufffd3\u01b0D\ufffdh\ufffdH+\b\u0017 N\ufffdJ\ufffdUD\ufffdd\b\"`?\u0011B\ufffdVs\ufffd\ufffdn\ufffd\ufffd\u000f\u0003\ufffd\ufffd\ufffd \u0001#4\ufffd\ufffd\ufffdb\ufffd5K,\ufffd1y^\u00b9yU\ufffdo\ufffd\ufffd\ufffd\ufffd\u00017\ufffd\ufffd_'P 0\ufffdv[\ufffd \ufffd\ufffdb\ufffd@|\ufffdL6?2\ufffd|\ufffd\ufffd\ufffd\ufffdy&\ufffd \ufffd\ufffd\ufffdu5CBu\ufffd\ufffd\u0019\ufffd\ufffdx\ufffdp\ufffdN()\ufffd`\ufffd]0\ufffd\ufffd\u0001r\ufffd\ufffdD\ufffdu\ufffd\ufffdz\ufffd\ufffd\ufffd0>)\ufffd\ufffd\ufffd\ufffdh\ufffd( \ufffdJF\ufffd\ufffd\ufffd\ufffd*\ufffd.\ufffd\ufffdlPb\ufffdVA\ufffd/\u3111\ufffd\u001bN;\ufffd\ufffd\u0015R\u0014\ufffd\ufffd\ufffd\ufffd\u01fbH2I\u007f\ufffd4\ufffd`\ufffd9{\ufffd\ufffdi\ufffd\ufffd\u007f Mn\ufffdt 9\ufffd\ufffdR \ufffd\ufffd\ufffdl\u0014\ufffdkv\ufffd\ufffd\ufffd\ufffdTAj\ufffd\ufffd\ufffd/\ufffd)d\ufffd'\ufffd\ufffd\ufffd\ufffd\ufffd\u03d8\ufffd \ufffd\ufffd\u0000\ufffd\u0019_\ufffd \ufffdJW\ufffdI\u0003^\ufffd\ufffd-\u0002d\ufffd\ufffd9\u0016\ufffd\u0006\ufffd\ufffd \ufffd\ufffd\ufffd\u0002%6\ufffd\u007fW\ufffd\ufffd2\ufffd\u0003\u0003\ufffd\ufffd\u007fQ\ufffd\u0012\ufffd Hm;\u0016\ufffdun\ufffd\u0005\u0018\ufffd\ufffd (x\ufffd\u0753\u0005\u0018 \ufffd_; \ufffd4*`\b\ufffd \ufffd\ufffd\ufffd\ufffdB\ufffd~ii\"&\ufffd\u001a j g c\ufffd\ufffd\u0007L@\ufffd\u0007\ufffd]`\ufffd\ufffd\ufffd\ufffd\ufffd#\ufffd\ufffdA\u071cG 1]\ufffdM\ufffd\ufffd\ufffdw\u0010\ufffd&\ufffd\u0003\ufffdP\ufffd?2\ufffd- 5\ufffd{7_\u05634/\ufffdx\ufffd\ufffd{\ufffd\u0016\u0019\ufffd;O\ufffd\\y\ufffd9\ufffd\ufffdg\u055b\ufffdl`K\b\ufffd\u00027\ufffd\u0664 \bw\ufffd\u0006\ufffd\u03e6\ufffdk\ufffdVw\ufffd\ufffdTz{\ufffd\u0019\ufffd\u001b\u02a9\ufffd \ufffd\ufffdsn\ufffd\u0002\ufffd\\\ufffdM\u74e5\ufffd\ufffd}\ufffd\u0006%\ufffda\u0019.Z\ufffd!\ufffd6\ufffd\ufffd\ufffd8\ufffd\u0013\u0013\u0014\u0017_;\ufffd*YP \ufffd\u0001\ufffd\ufffd\u012b\u001b\ufffd3W+\ufffdt\ufffdx\ufffd`\ufffdX\ufffd\ufffdq\ufffd\u001b\ufffd\"\ufffdc B=d\ufffd(`\ufffd\ufffd\ufffdQ\ufffd& \ufffd\ufffd?\ufffd\ufffdB\u0002 \ufffd\ufffd\u000eV,\ufffd\u0525\ufffda]\u0747\ufffd\u001b_e\ufffd\ufffdp\ufffd\ufffd+W \ufffd\u0018\u3a6e\u0002&\ufffdy\ufffd?\ufffd>\ufffd\ufffd\ufffd .\ufffd\\\ufffd)@\ufffd\ufffdk/z4\ufffd\ufffd \u07c8t\ufffd\ufffd \ufffd\ufffdd\ufffd'\ufffd\ufffd \ufffd\u001a\ufffdj?\ufffd\ufffd\ufffdm\\\ufffd\ufffd\ufffd\u000fLU\u007f\ufffd\ufffd\ufffd\ufffd \ufffd\ufffd\\ endstream endobj 5 0 obj > stream x\ufffd\ufffd\ufffd\u0007x\\\u055d\ufffdqI\ufffd`\ufffd!T\ufffdP\u0012\u0012L\u00a6\ufffd.mCHX\ufffdd\ufffd&!eY\ufffd$, I\ufffd,\ufffdf\u02f6\\\ufffdn\ufffd\u001b\ufffd\ufffd\ufffdi.\ufffdall\ufffdq\u044cz\ufffdU,\ufffd\ufffd\ufffd2\ufffd\ufffd;{gF\u001a\ufffd\ufffdH\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd9\u000f\ufffd \ufffd-/\ufffd\ufffd\ufffdr_,\u0000\u0000\u0000\u0000\u0000\u0000p\u0005\u0011D\ufffd\ufffdY\ufffd\ufffd\u001b\u0019c\u00f4\ufffdx\ud699\ufffd\u0016A2Y\ufffd\ufffd\ufffd\ufffd\ufffd \ufffdN[\ufffd\ufffdV\ufffdce\ufffd(\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd]\ufffd\ufffd\ufffd\u0007We\ufffd24g{zK\ufffd\ufffd[A\ufffd\ufffd\ufffd\ufffd\ufffd\ufffdWw/N9\ufffd\ufffdr\ufffd/ \u0000\u0000\u0000\u0000\u0000\u0000\b\ufffdE\ufffd\ufffd\ufffd \ufffdF\ufffd\ufffd\u0012D)\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd \u0001\ufffd\ufffdp\ufffd\ufffd\ufffd\u0006\ufffd1\ufffd\u03f6\ufffd0;\ufffd\ufffd[\ufffd$ )h\ufffd\b\u00dd\ufffd&I\ufffd\ufffd.S}\ufffdy\ufffd/\u0005\u0000\u0000\u0000\u0000\u0000\u0000\u0018Zc\ufffd9\ufffdt\ufffd\ufffd \ufffd\u000f\ufffd\u000e\ufffd+\ufffd\ufffd\ufffds S2jz\ufffd\u04f9 \ufffd4-\ufffd\ufffd6\ufffd\ufffd\ufffd\u0019q\ufffd\u03da2'awV\ufffd!\u0438O\ufffd\ufffdQm\ufffd>*\ufffd\ufffd\ufffd\ufffd \ufffd\u0013\ua73d\u0257\ufffd\ufffd\u0379\ufffdm\u036b\ufffd4\u0005\ufffdz\u0001\u0000\u0000\u0000\u0000\u00000\ufffd$VuO[\ufffd:enb\\e\ufffd\ufffd\u03d6^\u02d3o\ufffd\u0004i\ufffd\ufffd\ufffd\ufffd/K\ufffdw \ufffd!\ufffd\ufffd\ufffd\ufffde\u0014\ufffd|\ufffd\u0615\ufffd\ufffd\u001a\ufffdx\ufffd\ufffd#\ufffd\ufffd\ufffd: \ufffdE'\ufffd|\ufffd@\ufffdiv\ufffd\ufffd\u41be\ufffd\ufffd \ufffd\ufffd\ufffd\ufffd\ufffd\u05af\ufffdMt]\ufffd\ufffd\u0337\ufffd ,\ufffd W \ufffd&\ufffd\ufffd\ufffd\u0142h\ufffd\ufffd\ufffd\ufffd8\ufffdt\u024f\ufffd\ufffd\ufffd#\u0005m\u0001\ufffd\ufffd\ufffdkyqw\u0478p\ufffdw\ufffd65&\ufffd\u00ccF\ufffd\ufffdH6\ufffdg\ufffd\ufffd r\ufffd\ufffd\ufffdBc\ufffd\u075e_\ufffdn \ufffd \u0005QZr\ufffd\ufffd\ufffd\ufffdU\ufffd\ufffd-M\ufffdm\ufffdh3>\ufffd\ufffd~\ufffd\ufffd\ufffd&V\u0006\ufffd\ufffd _\ufffd\ufffd,^\ufffd9\ufffd\ufffd\ufffd(|cyz\ufffd=\ufffdJ\ufffd\ufffdyEk\ufffd\ufffd\ufffd,$Vv\ufffd\u0748L\ufffd\ufffd \ufffd\ufffd\ufffd\ufffd=\u007fL\ufffd\ufffdch?.L\ufffd\ufffd\ufffd3\ufffd\ufffd \u0013\ufffd$\u02667 \ufffd=\ufffd \ufffd\ufffdk\ufffd\ufffd Iem\ufffdg\ufffd\u039d\ufffd\u0015\ufffd\u0005k\ufffdO\ufffd\u03d6/R\ufffd\u0015\ufffd\ufffd\ufffdR\ufffd-\ufffdi\ufffd\ufffd\ufffd\ufffd\ufffd\u0017w\u0016\ufffd0+!X\u0013\ufffd\ufffd\ufffd%\ufffd(\ufffdl[\ufffd\ufffd\u013e\ufffdi\ufffd\ufffd \ufffd\ufffds\u0001\ufffd\ufffd\ufffdM\ufffd ^\ufffd\ufffd\ufffds\ufffdm\u0006]Y\ufffdov\u0014\ufffd4;a\\\ufffdnSr\ufffd\ufffd\ufffdJ\ufffd \ufffd\u007f3\ufffd\ufffdE\ufffd9\ufffd\ufffdu[vg5)\ufffdP\ufffd\ufffd\u0016\ufffd\ufffd\ufffdj\ufffd?+W83\ufffdx\ufffd \ufffdS\ufffdV\ufffd\ufffd\ufffd\u072b\"}lc8\"mb\ufffd\ufffd\u0379\ufffd5=\ufffdgk^\ufffdx\ufffd\ufffd\u0186i \\\ufffd\ufffdc\u0018E\ufffd\u0001\u0000\u0000\u0000\u0000\u0018&\ufffd \ufffd2\ufffd\ufffd\ufffd\ufffd\u0019q\ufffd#\ufffdU\u0765\ufffd\ufffd\ufffdc\u00157 \ufffdy }\ufffd\u0012\ufffd7\ufffdSk\u0014\ufffdk\ufffd\ufffd\u0617v\u0017)\ufffd\u0013E\ufffd\ufffd\ufffd(D -\ufffd\ufffd\ufffd\ufffdEjw,L\u0797\u06ea\ufffd\ufffd\ufffdB\ufffd \ufffd&r\ufffdYG\u02c7,C \u0000\u0000\u0000\u0000\ufffd\ufffd\u0010%)\ufffdH\ufffd\u0003+3\ufffdwg\ufffd\ufffd\ufffd\ufffd\ufffdTuC\ufffd\ufffd\ufffd\ufffd\u03fa \u0011\ufffd\ufffd\ufffdf\ufffdU\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffdt\u056c\ufffd\ufffdxm\ufffd\ufffd\ufffd92\ufffd):\ufffdhQ\ufffd\u02fb\ufffd\ufffd \ufffd[\ufffdfV\ufffd\ufffd\ufffd:\ufffd[\ufffd\u0019,b\ufffdg\u0015\ufffdfz\ufffd\u0000w\ufffdK:Y\ufffda\u0011$\ufffd\ufffd8Z\ufffdtpmt\ufffd\ube62$E )\ufffd7d\ufffd\u0010_\ufffd:\ufffdd\u0015\ufffd\ufffd:\ufffd\ufffdxH\ufffd\ufffd/\u0007K\ufffd\u0302\ufffd\u0613\ua398\u0014\ufffd2 \u0013\ufffdu\u007f?P\ufffdcR4\ufffdE>\ufffd\u015d\ufffd\ufffd9{7\ufffdM\ufffd \ufffdi\ufffd\u0017\ufffd\ufffd\ufffd>'F\ufffdJ[ ]\ufffd\ufffd\ufffd[\ufffdYGtt\ufffdk\ufffd\ufffd\ufffd\u0007\u0005C\ufffdO\ufffd\ufffdNo\u0011g \ufffd\ufffd.\ufffd{ \ufffd\ufffd~\ufffdpMfa\ufffd\u0010\u0005M\ufffd\ufffdxMn\ufffd\ufffdK\ufffd\ufffdp\ufffd+\u0000\u0000\u0000\u0000\u0000\u0017\ufffd\ufffd\ufffd \ufffd\ufffdG{\ufffd\u00161\ufffdk=\ufffd\ufffd\ufffd\ufffd\u0013UA\u0003\ufffdR\ufffdF\ufffd\ufffdd\ufffd\u0095Vz\ufffd\ufffd$\ufffd:\ufffdk\u001b\ufffd\u001bg'\ufffd\ufffd\ufffd/ \ufffdY\ufffds\ufffd\ufffdT\u05ef&F\ufffd\\O\ufffdl\ufffd\u0015\ufffd\ufffd\ufffd^;\ufffd\ufffd\ufffd:\ufffdd\u0015\ufffd]\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0012\ufffdKG\ufffd >-h\ufffd\ufffdk\u00f71\ufffd\u06a8\ufffd\ufffd \ufffd\ufffdv\ufffd^\ufffd\ufffd\ufffd\ufffd\u0729 \ufffd\u07cc\ufffd\ufffd\u06711\ufffd|\ufffdE\ufffd\ufffd\ufffd6\ufffd\ufffd\ufffdq\ufffd-\ufffd*$::\ufffd5\ufffd\ufffd0+\ufffd`^\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\\\ufffd\ufffd\u0276\ufffd\ufffd\ufffd \ufffd\ufffdxMn\ufffd\ufffd\ufffd6\u000eZ\ufffdx\ufffd%\ufffd\ufffd\ufffd\ufffd9*n\ufffd\ufffdh\ufffdF\ufffd\u007f\ufffd\ufffd:HVu\u0005\ufffdk\ufffdg\ufffd *\u0018\"\ufffd\u0005\u0000\u0000\u0000\u0000`8\ufffd1\ufffd\ufffdE\ufffd\ufffd\ufffd\ufffdp\ufffd\ufffd1\ufffd\ufffd5\ufffd\u0733",
+              "status": "completed",
+              "contract": {
+                "capability": "public-text-read",
+                "access": "read-only",
+                "network": "public HTTPS",
+                "side_effects": false,
+                "max_bytes": 5000000,
+                "raw_data": false,
+                "untrusted_content": true
+              },
+              "query": "international migration khartoum sudan tribune operation voluntary repatriation",
+              "search_results": [
+                {
+                  "title": "2025 International Organization for Migration Impact Highlights",
+                  "url": "https://sudan.iom.int/sites/g/files/tmzbdl1606/files/documents/2026-03/iom-sudan-mission-ar-final_light.pdf",
+                  "snippet": "2025 international organization for migration gerief west [ manshiya ] , house no . 1 / 38 , block g p.o. box 8322 khartoum , sudan tel : + 249 156554600 / 1 / 2 email : iom sudan @ iom . int webs..."
+                },
+                {
+                  "title": "IOM Supports Resumption of AVRR Charter Flights from Khartoum | IOM Sudan",
+                  "url": "https://sudan.iom.int/news/iom-supports-resumption-avrr-charter-flights-khartoum",
+                  "snippet": "news local 04 september 2026 iom supports resumption of avrr charter flights from khartoum a group of iom \u2019s assisted voluntary return programme beneficiaries wait to check in for the first flig..."
+                },
+                {
+                  "title": "Returns to Khartoum June 2026",
+                  "url": "https://reliefweb.int/attachments/bb448fdb-3802-59a6-9157-736079af25c5/UNHCR%20Khartoum%20Returns%20Report%20June%202026.pdf",
+                  "snippet": "# # returns to khartoum june 2026 2 . 1 m $ ^ { * } $ people returned to khartoum 4 . 7 m $ ^ { * * } $ returnees in sudan 9 . 4 m $ ^ { * * * } $ pre - war population of khartoum source..."
+                },
+                {
+                  "title": "Refugees and internally displaced people of Sudan (reference: www.irinnews.org)",
+                  "url": "https://www.irinnews.org/feature/2016/06/09/sudanese-refugees-chad-must-adapt-or-starve"
+                },
+                {
+                  "title": "Refugees and internally displaced people of Sudan (reference: minorityrights.org)",
+                  "url": "https://minorityrights.org/country/jordan/"
+                }
+              ]
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "model"
+          },
+          {
+            "id": "local-026",
+            "action": "explore",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Assigned to the council's research question this turn.",
+            "request": "",
+            "request_status": "closed",
+            "exploration": "republic sudan 2023 excerpt lists events occurred international",
+            "tool": {
+              "tool": "public-search",
+              "query": "republic sudan 2023 excerpt lists events occurred international",
+              "results": [
+                {
+                  "title": "Situation in the Sudan and the activities of the United Nations Integrated Transition Assistance Mission in the Sudan Report of the Secretary-General",
+                  "url": "https://documents-dds-ny.un.org/doc/UNDOC/GEN/N23/248/51/PDF/N2324851.pdf?OpenElement",
+                  "snippet": "united nations s / 2023 / 644 security council distr . : general 31 august 2023 original : english 23 - 16284 ( e ) 080923 * 2316284 * situation in the sudan and the activities of the united..."
+                },
+                {
+                  "title": "Situation in the Sudan and the activities of the United Nations Integrated Transition Assistance Mission in the Sudan Report of the Secretary-General",
+                  "url": "https://digitallibrary.un.org/record/4027490/files/S_2023_861-EN.pdf",
+                  "snippet": "united nations s / 2023 / 861 security council distr . : general 13 november 2023 original : english situation in the sudan and the activities of the united nations integrated transition ass..."
+                },
+                {
+                  "title": "Tercera guerra civil sudanesa (2023-presente) - Wikipedia, la enciclopedia libre",
+                  "url": "https://es.wikipedia.org/wiki/Conflicto_en_Sud%C3%A1n_de_2023",
+                  "snippet": "contenidos inicio antecedentes 1.1 conflicto en darfur y formaci\u00f3n de las far 1.2 transici\u00f3n pol\u00edtica desarrollo de la guerra 2.1 enfrentamientos iniciales ( 15 de abril - 19 de mayo ) 2..."
+                },
+                {
+                  "title": "Sudanese civil war (2023\u2013present) (reference: search.worldcat.org)",
+                  "url": "https://search.worldcat.org/issn/0362-4331"
+                },
+                {
+                  "title": "Sudanese civil war (2023\u2013present) (reference: sudanwarmonitor.com)",
+                  "url": "https://sudanwarmonitor.com/p/splm-n-and-popular-defense-forces"
+                }
+              ],
+              "source": "https://api.langsearch.com/",
+              "status": "completed",
+              "contract": {
+                "capability": "public-web-read",
+                "access": "read-only",
+                "network": "public HTTPS search",
+                "side_effects": false,
+                "max_bytes": 32000
+              }
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "scheduler"
+          },
+          {
+            "id": "local-030",
+            "action": "discover",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Frontier question requires cross-referencing IOM\u2019s verified records to validate displacement transit hub claims for Al-Shifa camp.",
+            "request": "",
+            "request_status": "closed",
+            "exploration": "",
+            "tool": {
+              "status": "not-requested"
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "model"
+          }
+        ],
+        "construction": [],
+        "requests": [
+          {
+            "agent": "local-021",
+            "status": "fulfilled"
+          }
+        ],
+        "trades_settled": [],
+        "corroborations": [
+          {
+            "id": "pair-ff48602a930a3cb6dcad",
+            "relation": "unrelated",
+            "finding_ids": [
+              "finding-3cd5f18b56b57ac598b9",
+              "finding-c8067f029545f23c1353"
+            ],
+            "topic": "international khartoum migration operation south sudan tribune",
+            "domains": [
+              "doi.org",
+              "wikipedia.org"
+            ]
+          }
+        ],
+        "regrounded": [
+          {
+            "agent": "local-030",
+            "purpose": "Cross-reference publicly documented conflict-mapping data from verified sources (e.g., ACLED, Darfur Barometer, IOM, UNHCR) to validate and triangulate real-time reports of displacement patterns, de-f",
+            "question": "Has any verified source (e.g., ACLED, Darfur Barometer, IOM, UNHCR, or credible media outlets) documented Khartoum\u2019s Al-Shifa camp as a transit hub for displaced families since the April 2023 ceasefi",
+            "room": "relay"
+          }
+        ],
+        "retractions": [],
+        "room_changes": [],
+        "shared_research": {
+          "query": "international migration khartoum sudan tribune operation voluntary repatriation",
+          "family": "papers",
+          "avoid_domains": [
+            "en.wikipedia.org"
+          ]
+        },
+        "dormant": 3
+      },
+      "metrics": {
+        "jaccard_overlap": 0.249,
+        "morrow_audit_markers": [
+          "counterexample",
+          "assumption",
+          "missing control"
+        ],
+        "response_completeness": "thin-or-missing",
+        "evidence_coverage": "missing",
+        "distinction_status": "needs-audit"
+      },
+      "continuity_audit": {
+        "generated_at": "2026-09-05T13:14:45.711241+00:00",
+        "cycle": 357,
+        "status": "pass",
+        "checks": {
+          "archive_parse": true,
+          "archive_event_overlap": true,
+          "archive_event_ids_unique": true,
+          "raw_output_exclusion": true,
+          "room_link_integrity": true,
+          "resident_room_integrity": true
+        },
+        "archive_records": 2876,
+        "malformed_archive_records": 0,
+        "raw_output_fields_found": 0,
+        "duplicate_archive_ids": [],
+        "linked_rooms_checked": 11,
+        "invalid_room_links": [],
+        "invalid_resident_assignments": [],
+        "privacy": "Aggregate integrity metadata only; resident prompts and raw responses are not published."
+      },
+      "work_orders": {
+        "count": 66
+      },
+      "health": {
+        "schema_version": 1,
+        "generated_at": "2026-09-05T13:14:45.712752+00:00",
+        "cycle": 357,
+        "daemon": "running",
+        "model_status": "ready",
+        "model_probe_ok": true,
+        "model_provider": "mistral",
+        "model_name": "ministral-14b-2512",
+        "model_backend": "hosted-api",
+        "model_usage": {
+          "day": "2026-09-05",
+          "providers": [
+            {
+              "name": "mistral",
+              "model": "ministral-14b-2512",
+              "calls": 482,
+              "input_tokens": 795103,
+              "output_tokens": 105700,
+              "errors": 0,
+              "last_error": "",
+              "daily_request_budget": null,
+              "daily_token_budget": 900000,
+              "limit_rpm": 30,
+              "limit_tpm": 937500,
+              "requests_last_minute": 0,
+              "tokens_last_minute": 0,
+              "status": "ready"
+            },
+            {
+              "name": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "calls": 180,
+              "input_tokens": 350541,
+              "output_tokens": 50008,
+              "errors": 0,
+              "last_error": "",
+              "daily_request_budget": null,
+              "daily_token_budget": 400000,
+              "limit_rpm": 188,
+              "limit_tpm": 625000,
+              "requests_last_minute": 6,
+              "tokens_last_minute": 15459,
+              "status": "ready"
+            },
+            {
+              "name": "mistral-small",
+              "model": "mistral-small-latest",
+              "calls": 0,
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "errors": 0,
+              "last_error": "",
+              "daily_request_budget": null,
+              "daily_token_budget": 100000,
+              "limit_rpm": 10,
+              "limit_tpm": null,
+              "requests_last_minute": 0,
+              "tokens_last_minute": 0,
+              "status": "ready"
+            },
+            {
+              "name": "gemini",
+              "model": "gemini-omni-1.1-flash",
+              "calls": 69,
+              "input_tokens": 126523,
+              "output_tokens": 11173,
+              "errors": 17,
+              "last_error": "429 rate limited (judgment): You exceeded your current quota, please check your plan and billing details. For more infor",
+              "daily_request_budget": 240,
+              "daily_token_budget": null,
+              "limit_rpm": 8,
+              "limit_tpm": null,
+              "requests_last_minute": 0,
+              "tokens_last_minute": 0,
+              "status": "ready"
+            },
+            {
+              "name": "cerebras",
+              "model": "gpt-oss-120b",
+              "calls": 0,
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "errors": 0,
+              "last_error": "",
+              "daily_request_budget": null,
+              "daily_token_budget": 900000,
+              "limit_rpm": 5,
+              "limit_tpm": null,
+              "requests_last_minute": 0,
+              "tokens_last_minute": 0,
+              "status": "ready"
+            },
+            {
+              "name": "groq",
+              "model": "openai/gpt-oss-120b",
+              "calls": 76,
+              "input_tokens": 56817,
+              "output_tokens": 11610,
+              "errors": 0,
+              "last_error": "400 on schema mode; prompt hint used",
+              "daily_request_budget": 900,
+              "daily_token_budget": 190000,
+              "limit_rpm": 1000,
+              "limit_tpm": 8000,
+              "requests_last_minute": 3,
+              "tokens_last_minute": 3420,
+              "status": "ready"
+            },
+            {
+              "name": "local",
+              "model": "local",
+              "calls": 0,
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "errors": 0,
+              "last_error": "",
+              "daily_request_budget": null,
+              "daily_token_budget": null,
+              "limit_rpm": null,
+              "limit_tpm": null,
+              "requests_last_minute": 0,
+              "tokens_last_minute": 0,
+              "status": "ready"
+            }
+          ],
+          "recent_calls": [
+            {
+              "at": 1788612237.2,
+              "class": "decision",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "25304b68180c4477"
+            },
+            {
+              "at": 1788612239.6,
+              "class": "decision",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "8f11462473dfee05"
+            },
+            {
+              "at": 1788612247.3,
+              "class": "decision",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "dd4ed78ea24c8ab5"
+            },
+            {
+              "at": 1788612247.9,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "8e297c69726bd478"
+            },
+            {
+              "at": 1788612250.7,
+              "class": "decision",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "615aaad9c6905bec"
+            },
+            {
+              "at": 1788612253.1,
+              "class": "decision",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "07748697fde9a19a"
+            },
+            {
+              "at": 1788612255.3,
+              "class": "decision",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "7548b4f22f69733a"
+            },
+            {
+              "at": 1788612260.7,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "1f9be8ae2968c431"
+            },
+            {
+              "at": 1788612267.6,
+              "class": "judgment",
+              "provider": "gemini",
+              "model": "gemini-3.5-flash",
+              "prompt_sha256_16": "00bd241a857805ba"
+            },
+            {
+              "at": 1788612283.5,
+              "class": "judgment",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "2adbc9888c827e83"
+            },
+            {
+              "at": 1788612291.0,
+              "class": "judgment",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "235bbc194df97294"
+            },
+            {
+              "at": 1788613967.6,
+              "class": "self-prompt",
+              "provider": "gemini",
+              "model": "gemini-flash-latest",
+              "prompt_sha256_16": "5b6f640a5a589043"
+            },
+            {
+              "at": 1788613970.0,
+              "class": "self-prompt",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "300f6bb27c7a10f8"
+            },
+            {
+              "at": 1788613984.1,
+              "class": "council",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "eba7f5d16e5a9ad2"
+            },
+            {
+              "at": 1788613995.2,
+              "class": "council",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "d1333cbf0046f898"
+            },
+            {
+              "at": 1788613997.3,
+              "class": "recruitment",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "c4ba04ef8c763a0f"
+            },
+            {
+              "at": 1788613999.4,
+              "class": "recruitment",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "5b0cbee9a66ca99a"
+            },
+            {
+              "at": 1788614001.9,
+              "class": "regrounding",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "88071057c5151333"
+            },
+            {
+              "at": 1788614008.3,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "8e297c69726bd478"
+            },
+            {
+              "at": 1788614014.6,
+              "class": "decision",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "133f5f963f9f38f4"
+            },
+            {
+              "at": 1788614023.0,
+              "class": "decision",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "ea03e3be88ee39cf"
+            },
+            {
+              "at": 1788614032.7,
+              "class": "decision",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "21666ec124ce278e"
+            },
+            {
+              "at": 1788614043.7,
+              "class": "decision",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "fb5c3cf386869c22"
+            },
+            {
+              "at": 1788614053.7,
+              "class": "decision",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "941e8ab93c16256d"
+            },
+            {
+              "at": 1788614056.6,
+              "class": "decision",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "2c7183ac0d77fbdd"
+            },
+            {
+              "at": 1788614062.1,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "8e297c69726bd478"
+            },
+            {
+              "at": 1788614064.9,
+              "class": "decision",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "de2c8d9d75528641"
+            },
+            {
+              "at": 1788614070.0,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "97d1d6da35580297"
+            },
+            {
+              "at": 1788614076.1,
+              "class": "decision",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "e70dc7d20f5770f8"
+            },
+            {
+              "at": 1788614085.0,
+              "class": "judgment",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "3d4f6f110629c799"
+            }
+          ],
+          "models_seen": {
+            "gemini": [
+              "gemini-2.5-flash",
+              "gemini-2.5-pro",
+              "gemini-2.5-flash-preview-tts",
+              "gemini-2.5-pro-preview-tts",
+              "gemma-4-26b-a4b-it",
+              "gemma-4-31b-it",
+              "gemini-flash-latest",
+              "gemini-flash-lite-latest",
+              "gemini-pro-latest",
+              "gemini-2.5-flash-lite",
+              "gemini-2.5-flash-image",
+              "gemini-3-flash-preview",
+              "gemini-3.1-pro-preview",
+              "gemini-3.1-pro-preview-customtools",
+              "gemini-3.1-flash-lite-preview",
+              "gemini-3.1-flash-lite",
+              "gemini-3-pro-image-preview",
+              "gemini-3-pro-image",
+              "nano-banana-pro-preview",
+              "gemini-3.1-flash-image-preview",
+              "gemini-3.1-flash-image",
+              "gemini-3.1-flash-lite-image",
+              "gemini-3.5-flash",
+              "gemini-3.5-flash-lite",
+              "gemini-omni-flash-preview",
+              "gemini-omni-1.1-flash",
+              "gemini-3.5-transcribe",
+              "gemini-3.6-flash",
+              "gemini-3.7-flash",
+              "gemini-3.8-flash",
+              "lyria-3-clip-preview",
+              "lyria-3-pro-preview",
+              "lyria-3.5",
+              "gemini-3.1-flash-tts-preview",
+              "gemini-robotics-er-2-preview",
+              "gemini-2.5-computer-use-preview-10-2025",
+              "antigravity-preview-05-2026",
+              "deep-research-max-preview-04-2026",
+              "deep-research-preview-04-2026",
+              "deep-research-pro-preview-12-2025"
+            ],
+            "groq": [
+              "gpt-oss-120b",
+              "gpt-oss-20b",
+              "llama-prompt-guard-2-22m",
+              "orpheus-arabic-saudi",
+              "qwen3.6-27b",
+              "whisper-large-v3",
+              "gpt-oss-safeguard-20b",
+              "compound",
+              "compound-mini",
+              "llama-prompt-guard-2-86m",
+              "allam-2-7b",
+              "orpheus-v1-english",
+              "whisper-large-v3-turbo",
+              "qwen3.8-27b"
+            ]
+          }
+        },
+        "rooms": 12,
+        "active_residents": 32,
+        "work_orders": 66,
+        "continuity": "pass",
+        "autonomy": "active",
+        "autonomy_quality": {
+          "status": "active",
+          "turns": 8,
+          "fallbacks": 2,
+          "fallback_rate": 0.25,
+          "fallback_reasons": {
+            "unstructured-output": 2
+          },
+          "tool_successes": 5,
+          "findings_filed": 0
+        },
+        "publication": "sanitized GitHub Pages snapshot",
+        "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
+        "publication_status": {
+          "outcome": "pushed",
+          "reason": "",
+          "at": "2026-09-05T12:44:53.350487+00:00"
+        },
+        "question_source": "carried:line-000347-483a7314",
+        "self_prompt_accepted": 2,
+        "self_prompt_rejections": [],
+        "activity_feed": "docs/activity.json",
+        "feed_freshness_seconds": 0,
+        "activity_records": 110,
+        "note_records": 648,
+        "print_jobs": 44,
+        "failed_print_jobs": 0,
+        "analysis_runs": 67,
+        "analysis_completed": 38,
+        "analysis_failed": 0,
+        "analysis_rejected": 29,
+        "analysis_timed_out": 0,
+        "analysis_feed": "docs/analysis.json",
+        "research_records": 12,
+        "research_stale": 0,
+        "research_feed": "docs/research.json",
+        "findings": 73,
+        "finding_candidates": 73,
+        "findings_rejected": 91,
+        "findings_retracted": 0,
+        "findings_duplicates": 0,
+        "findings_excluded": 91,
+        "findings_total": 164,
+        "corroborated_findings": 0,
+        "findings_feed": "docs/findings.json",
+        "frontier_leads": 0,
+        "research_line": {
+          "id": "line-000347-483a7314",
+          "root": "Do independent public sources confirm that The International Organization for Migration reports the first operation of a voluntary repatriation flight for stranded migrants in Khartoum, Sudan, since t",
+          "anchors": [
+            "international",
+            "migration",
+            "khartoum",
+            "sudan",
+            "tribune"
+          ],
+          "hops": 3,
+          "findings": 8,
+          "empty_cycles": 1
+        },
+        "frontier_questions": 81,
         "frontier_findings": 73,
         "frontier_tasks": 10,
         "frontier_feed": "docs/frontier.json",
