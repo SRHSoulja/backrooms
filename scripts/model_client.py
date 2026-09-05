@@ -213,6 +213,7 @@ def _schema_hint(messages, schema):
     return hinted
 
 
+BUSY_MODEL_SECONDS = 2 * 3600
 GEMINI_FLASH = re.compile(r"^gemini-(\d+(?:\.\d+)?)-flash(?:-preview[-\w]*|-\d{2}-\d{4})?$")
 UNWANTED_MODEL = re.compile(r"lite|image|tts|live|audio|embed|8b|thinking|native|exp", re.I)
 
@@ -256,7 +257,9 @@ def resolve_model(provider, usage, opener=None):
     cache = usage.setdefault("models", {})
     if cache.get(provider["name"]):
         return {**provider, "model": cache[provider["name"]]}
-    failed = usage.get("models_failed", {}).get(provider["name"], [])
+    now = time.time()
+    busy = usage.get("models_busy", {}).get(provider["name"], {})
+    failed = list(usage.get("models_failed", {}).get(provider["name"], [])) + [name for name, until in busy.items() if float(until or 0) > now]
     try:
         listed = _list_models(provider, opener)
     except Exception as error:  # noqa: BLE001 - the configured name is used and the listing retried on the next call
@@ -474,7 +477,12 @@ def complete(messages, *, temperature=0.3, max_tokens=400, schema=None, schema_n
                 else:
                     detail = _error_detail(error)
                     _record(usage, provider["name"], errors=1, last_error=(f"{status} {call_class}" + (f": {detail}" if detail else ""))[:160],
-                            cooldown_until=clock() + 30)
+                            cooldown_until=clock() + (0 if status in (502, 503) and provider.get("resolve_model") else 30))
+                    if status in (502, 503) and provider.get("resolve_model"):
+                        # The newest model is overloaded on the free tier: step down to the next
+                        # one for a while instead of losing the provider, and try again at once.
+                        usage.setdefault("models_busy", {}).setdefault(provider["name"], {})[provider["model"]] = clock() + BUSY_MODEL_SECONDS
+                        usage.get("models", {}).pop(provider["name"], None)
                     if status == 404 and provider.get("resolve_model"):
                         # A stale model name: remember it failed, take the provider's own
                         # suggestion when the message names one, and otherwise list again.
