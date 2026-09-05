@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.corroboration import (append_record, candidate_pairs, claims_overlap, corroboration_index, definition_source, profile_subject, profile_url, about_profile, republisher, not_a_document, inference_stands, domain_of, same_document,
+from scripts.corroboration import (append_record, candidate_pairs, claims_overlap, corroboration_index, definition_source, profile_subject, profile_url, about_profile, republisher, not_a_document, inference_stands, shared_subject, domain_of, same_document,
                                    founding_pair_stands, growth_candidates, judge_verdict, judgment_schema, load_records,
                                    make_record, on_topic, pair_id)
 
@@ -146,6 +146,28 @@ class CorroborationTests(unittest.TestCase):
         self.assertEqual(founding_pair_stands(record, first, second), (True, ""))
         stored = make_record(first, second, "pair-x", "supports", "ok", 5, shared_claim=shared, inference=strong)
         self.assertEqual(stored["inference"]["support"], 0.97)
+
+    def test_a_contradiction_needs_a_shared_subject_and_both_judges(self):
+        linear = {"id": "f-lin", "topic": "github growth study", "status": "accepted", "url": "https://a.example/x",
+                  "claim": "GitHub's user base grew linearly over the 18-month study period.", "quote": "grew linearly over the 18-month study period"}
+        exponential = {"id": "f-exp", "topic": "github growth study", "status": "accepted", "url": "https://b.example/y",
+                       "claim": "GitHub's user base grew exponentially, doubling every six months during the study.", "quote": "doubling every six months"}
+        gpl = {"id": "f-gpl", "topic": "gpl obligations", "status": "accepted", "url": "https://c.example/z",
+               "claim": "The GPL does not require publishing modifications to the public at large.", "quote": "does not require"}
+        self.assertTrue(shared_subject(linear, exponential))   # GitHub
+        self.assertFalse(shared_subject(exponential, gpl))
+        self.assertTrue(shared_subject({"claim": "x", "line_id": "line-1"}, {"claim": "y", "line_id": "line-1"}))
+        verdict = {"relation": "contradicts", "reason": "growth shape differs"}
+        strong = {"support": 0.0, "contradiction": 0.99}
+        weak = {"support": 0.0, "contradiction": 0.3}
+        self.assertEqual(judge_verdict(linear, exponential, verdict, inference=strong)["relation"], "contradicts")
+        self.assertEqual(judge_verdict(linear, exponential, verdict)["relation"], "contradicts")  # no scores: subject test alone
+        softened = judge_verdict(linear, exponential, verdict, inference=weak)
+        self.assertEqual((softened["relation"], softened["model_relation"]), ("unrelated", "contradicts"))
+        self.assertIn("does not confirm a contradiction", softened["reason"])
+        unrelated = judge_verdict(exponential, gpl, verdict, inference=strong)
+        self.assertEqual((unrelated["relation"], unrelated["model_relation"]), ("unrelated", "contradicts"))
+        self.assertIn("share no name or number", unrelated["reason"])
 
     def test_copies_homepages_and_search_pages_never_found_a_room(self):
         origin = {"id": "f-o", "topic": "roskomnadzor github block", "status": "accepted",

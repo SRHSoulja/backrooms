@@ -38,7 +38,7 @@ except ImportError:
     from runtime_process import port_in_use, reap_recorded_model, startup_delay, rotate_log, hosted_elsewhere
 try:
     from scripts.evidence import classify_finding, is_accepted
-    from scripts.corroboration import corroboration_index, load_records
+    from scripts.corroboration import corroboration_index, load_records, domain_of
     from scripts.codex_reviews import consume_outbox
     from scripts.self_prompt_rules import carry_forward, finding_followup_question, question_rejection_reason
     from scripts.world_rules import day_zero_from_events
@@ -48,7 +48,7 @@ try:
     from scripts import journal as journal_module
 except ImportError:
     from evidence import classify_finding, is_accepted
-    from corroboration import corroboration_index, load_records
+    from corroboration import corroboration_index, load_records, domain_of
     from codex_reviews import consume_outbox
     from self_prompt_rules import carry_forward, finding_followup_question, question_rejection_reason
     from world_rules import day_zero_from_events
@@ -110,6 +110,7 @@ LOCAL_INBOX = ROOT / "state/quarantine-inbox.json"
 PUBLIC_CODE_PROPOSALS = ROOT / "docs/code-proposals.json"
 LOCAL_TOOL_PROPOSALS = ROOT / "state/tool-proposals.json"
 PUBLIC_TOOL_PROPOSALS = ROOT / "docs/tool-proposals.json"
+PUBLIC_DISAGREEMENTS = ROOT / "docs/disagreements.json"
 LOCAL_CODE_PROPOSALS = ROOT / "state/code-proposals.json"
 PUBLIC_VOICE_BLOCKED = BLOCKED
 ARCHIVE = ROOT / "state/archive/events.jsonl"
@@ -581,6 +582,49 @@ def sync_tool_proposals():
     atomic_write_json(PUBLIC_TOOL_PROPOSALS, public)
     return {"tool_proposals": len(records), "tool_proposals_trial": sum(item.get("status") == "trial" for item in records),
             "adopted_tools": len(public["approved"]), "tool_proposals_feed": "docs/tool-proposals.json"}
+
+
+def sync_disagreements():
+    """Where the web disagrees: every judged contradiction with both quotes, sources,
+    hashes, the two judges' scores, and how a third source settled it, if one has."""
+    try:
+        frontier = json.loads(LOCAL_FRONTIER.read_text()) if LOCAL_FRONTIER.exists() else {}
+    except (OSError, json.JSONDecodeError):
+        frontier = {}
+    findings = {row.get("id"): row for row in ledger_rows() if row.get("id")}
+    records = {record.get("id"): record for record in load_records(LOCAL_CORROBORATIONS)}
+    entries = []
+    for item in frontier.get("contradictions", []):
+        record = records.get(str(item.get("id", "")).replace("contradiction-", "", 1)) or {}
+        sides = []
+        for finding_id in (item.get("finding_ids") or record.get("finding_ids") or [])[:2]:
+            row = findings.get(finding_id) or {}
+            sides.append({"finding": finding_id, "claim": str(row.get("claim", ""))[:300], "quote": str(row.get("quote", ""))[:300],
+                          "url": str(row.get("url", ""))[:300], "domain": domain_of(row) if row else "", "content_hash": row.get("content_hash", ""),
+                          "agent": row.get("agent"), "cycle": row.get("cycle"), "status": row.get("status"), "retracted_by": row.get("retracted_by")})
+        loser = next((side for side in sides if side.get("status") == "retracted" and side.get("retracted_by")), None)
+        settlement = None
+        if loser:
+            third = findings.get(loser["retracted_by"]) or {}
+            kept = next((side for side in sides if side is not loser), {})
+            settlement = {"kept": kept.get("finding"), "retracted": loser.get("finding"), "settled_by": loser.get("retracted_by"),
+                          "settling_domain": domain_of(third) if third else "", "settling_url": str(third.get("url", ""))[:300],
+                          "settling_quote": str(third.get("quote", ""))[:300]}
+        inference = record.get("inference") if isinstance(record.get("inference"), dict) else None
+        entries.append({"id": item.get("id"), "cycle": item.get("cycle"), "topic": str(item.get("topic", ""))[:160],
+                        "domains": item.get("domains", []), "sides": sides, "model_relation": record.get("model_relation"),
+                        "inference": ({"support": inference.get("support"), "contradiction": inference.get("contradiction"),
+                                       "model": inference.get("model"), "revision": inference.get("revision")} if inference else None),
+                        "status": "settled" if settlement else str(item.get("status") or "open"), "settlement": settlement})
+    public = {"schema_version": 1, "generated_at": datetime.now(timezone.utc).isoformat(),
+              "privacy": ("Judged contradictions between independent public sources: both quotes, sources, and content hashes, the language "
+                          "model's and the inference judge's answers, and the third source that settled each one. A disagreement opens only when "
+                          "the two claims share a name or number and both judges call it a contradiction."),
+              "counts": {"open": sum(item["status"] == "open" for item in entries), "settled": sum(item["status"] == "settled" for item in entries)},
+              "entries": entries[-100:]}
+    atomic_write_json(PUBLIC_DISAGREEMENTS, public)
+    return {"disagreements": len(entries), "disagreements_open": public["counts"]["open"],
+            "disagreements_settled": public["counts"]["settled"], "disagreements_feed": "docs/disagreements.json"}
 
 
 def sync_code_proposals(registry=None):
@@ -1506,6 +1550,7 @@ def publish(result, world, model_health=True):
     atomic_write_json(PUBLIC_HEALTH, health)
     sync_code_proposals(registry)
     health.update(sync_tool_proposals())
+    health.update(sync_disagreements())
     try:
         health["inference_judge"] = json.loads((ROOT / "state/inference-judge.json").read_text())
     except (OSError, json.JSONDecodeError):
@@ -1519,12 +1564,12 @@ def publish(result, world, model_health=True):
     sync_outside_signals()
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}
-    allowlisted = {"docs/local-cycle.json",  "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/trades.json", "docs/code-proposals.json", "docs/tool-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json", "docs/journal.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json", "state/frontier.json", "state/codex-bridge-status.json"}
+    allowlisted = {"docs/local-cycle.json",  "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/trades.json", "docs/code-proposals.json", "docs/tool-proposals.json", "docs/disagreements.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json", "docs/journal.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json", "state/frontier.json", "state/codex-bridge-status.json"}
     offending = {path for path in changed if path not in allowlisted and not path.startswith("journal/")}
     if offending:
         note_publish("skipped", "other local changes present: " + ", ".join(sorted(offending)[:5])[:160])
         return
-    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/trades.json", "docs/code-proposals.json", "docs/tool-proposals.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json", "docs/journal.json"], cwd=ROOT, check=True)
+    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/trades.json", "docs/code-proposals.json", "docs/tool-proposals.json", "docs/disagreements.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json", "docs/journal.json"], cwd=ROOT, check=True)
     subprocess.run(["git", "add", "journal"], cwd=ROOT, check=False)
     commit = subprocess.run(["git", "commit", "-m", "chore: publish local council signal"], cwd=ROOT, capture_output=True)
     if commit.returncode == 0:

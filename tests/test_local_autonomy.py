@@ -702,6 +702,13 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertTrue(local_autonomy.PHYSICAL_NEEDS.search("I need clean water and shelter"))
         self.assertFalse(local_autonomy.PHYSICAL_NEEDS.search("I need a public dataset and compute"))
 
+    def test_dissent_query_hunts_for_a_different_figure(self):
+        query = local_autonomy.dissent_query("Roskomnadzor blocked GitHub in December 2014 over pages about suicide.", "roskomnadzor github")
+        self.assertTrue(query.startswith("roskomnadzor github december 2014") or "roskomnadzor" in query.split()[:3], query)
+        for marker in ("disputed", "revised", "different"):
+            self.assertIn(marker, query)
+        self.assertLessEqual(len(query), 160)
+
     def test_only_the_open_line_steers_shared_research(self):
         frontier = {"open_questions": [
             {"id": "q-old", "cycle": 319, "status": "open", "question": "Does GitHub's contribution graph reflect private activity?",

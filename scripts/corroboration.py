@@ -14,9 +14,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 try:
-    from scripts.evidence import claim_terms, is_accepted
+    from scripts.evidence import STOPWORDS, claim_terms, is_accepted
 except ImportError:
-    from evidence import claim_terms, is_accepted
+    from evidence import STOPWORDS, claim_terms, is_accepted
 
 PAIR_MIN_SIMILARITY = 0.2
 TOPIC_DEDUP_SIMILARITY = 0.6
@@ -88,7 +88,23 @@ def same_document(first, second):
 
 
 SUPPORT_MIN = 0.5
-CONTRADICTION_VETO = 0.2
+CONTRADICTION_MIN = 0.6
+SUBJECT_TOKEN = re.compile(r"\b(?:[A-Z][A-Za-z0-9\-]{3,}|\d[\d,.]*%?)\b")
+
+
+def subject_tokens(finding):
+    """The names and numbers a claim is about, lower-cased; the line's anchors count too."""
+    tokens = {token.strip(".,").lower() for token in SUBJECT_TOKEN.findall(str(finding.get("claim", "")))}
+    tokens |= {str(item).lower() for item in (finding.get("anchors") or [])}
+    return {token for token in tokens if token and token not in STOPWORDS}
+
+
+def shared_subject(first, second):
+    """Two findings are about the same thing when they sit on one research line
+    or their claims share a name or a number. Only then can they disagree."""
+    if first.get("line_id") and first.get("line_id") == second.get("line_id"):
+        return True
+    return bool(subject_tokens(first) & subject_tokens(second))
 
 
 def inference_stands(record):
@@ -100,8 +116,8 @@ def inference_stands(record):
     relation = record.get("relation")
     if relation == "supports" and float(scores.get("support", 0)) < SUPPORT_MIN:
         return False, f"inference judge finds no entailment between the quotes (support {float(scores.get('support', 0)):.2f})"
-    if relation == "contradicts" and float(scores.get("contradiction", 0)) < CONTRADICTION_VETO:
-        return False, f"inference judge finds no contradiction between the quotes ({float(scores.get('contradiction', 0)):.2f})"
+    if relation == "contradicts" and float(scores.get("contradiction", 0)) < CONTRADICTION_MIN:
+        return False, f"inference judge does not confirm a contradiction between the quotes ({float(scores.get('contradiction', 0)):.2f})"
     return True, ""
 
 
@@ -335,6 +351,11 @@ def judge_verdict(first, second, verdict, inference=None):
     if relation == "supports" and not on_topic(shared_claim, first, second):
         return {"relation": "unrelated", "model_relation": "supports", "shared_claim": shared_claim,
                 "reason": ("shared fact is off the research topic: " + reason)[:200]}
+    if relation == "contradicts" and not shared_subject(first, second):
+        # Two claims about different things cannot disagree; the inference model
+        # calls most unrelated pairs 'contradiction', so the subject test comes first.
+        return {"relation": "unrelated", "model_relation": "contradicts", "shared_claim": "",
+                "reason": ("claims share no name or number to disagree about: " + reason)[:200]}
     ok, why = inference_stands({"relation": relation, "inference": inference})
     if not ok:
         return {"relation": "unrelated", "model_relation": relation, "shared_claim": shared_claim if relation == "supports" else "",
