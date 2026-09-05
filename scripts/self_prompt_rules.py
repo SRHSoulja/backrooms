@@ -47,8 +47,7 @@ SELF_REFERENTIAL = re.compile(
 def rejection_reason(proposal):
     """Why a proposal fails the council's rules, or "" when it passes; the
     resident is told this once and may try again."""
-    fields = {line.split(":", 1)[0].strip().upper(): line.split(":", 1)[1].strip()
-              for line in str(proposal or "").splitlines() if ":" in line}
+    fields = parse_fields(proposal)
     if len(str(proposal or "")) > 1200:
         return "too long"
     if FORBIDDEN.search(str(proposal or "")):
@@ -81,6 +80,30 @@ def about_profile(text):
     except ImportError:
         from corroboration import about_profile as check
     return check(text)
+
+
+def parse_fields(proposal):
+    """QUESTION / WHY / TEST from a proposal however the model dressed it: plain
+    lines, markdown bold or bullets, a dash instead of a colon, or a JSON object."""
+    text = str(proposal or "").strip()
+    fields = {}
+    if text.startswith("{"):
+        try:
+            data = json.loads(text)
+            if isinstance(data, dict):
+                for key, value in data.items():
+                    name = re.sub(r"[^A-Z]", "", str(key).upper())
+                    if name in ("QUESTION", "WHY", "TEST") and str(value or "").strip():
+                        fields[name] = re.sub(r"\s+", " ", str(value)).strip()
+                return fields
+        except ValueError:
+            pass
+    for line in text.splitlines():
+        line = re.sub(r"^[\s*#>\-\u2022]+", "", line).strip()
+        match = re.match(r"^\**\s*(QUESTION|WHY|TEST)\s*\**\s*[:\-\u2013\u2014=]\**\s*(.+)$", line, re.I)
+        if match and match.group(1).upper() not in fields:
+            fields[match.group(1).upper()] = match.group(2).strip()  # the value keeps its markup: a bolded handle still reads as a handle
+    return fields
 
 
 def valid(proposal):

@@ -56,15 +56,16 @@ class PublicStreamTests(unittest.TestCase):
         streams = [("Do independent public sources confirm that Over 120 people were killed in clashes between the Houthis and the Yemeni Armed Forces?", "stream:wikipedia-current-events/2026-09-04")]
         proposal = [("Did Meta's Ad Library report deceptive political deepfake ads during the 2024 Brazilian elections?", "resident:echo")]
         first = research_lines.decide(state, 1, proposal, lambda line: "", [], "fallback", stream_questions=streams)
-        self.assertEqual((first["source"], research_lines.open_line(state)["origin"]), ("resident:echo", "queued:resident:echo"))  # first: a resident's subject
+        self.assertEqual(first["source"], "stream:wikipedia-current-events/2026-09-04")  # first: the public record
         for cycle in range(1, 1 + research_lines.EMPTY_CYCLES_CAP):
             research_lines.note_outcome(state, cycle, 0)
         second = research_lines.decide(state, 6, proposal, lambda line: "", [], "fallback", stream_questions=streams)
-        self.assertEqual(second["source"], "stream:wikipedia-current-events/2026-09-04")  # the second: the public record
+        self.assertEqual((second["source"], research_lines.open_line(state)["origin"]), ("resident:echo", "queued:resident:echo"))  # second: a resident's subject
         for cycle in range(6, 6 + research_lines.EMPTY_CYCLES_CAP):
             research_lines.note_outcome(state, cycle, 0)
-        third = research_lines.decide(state, 11, [("Did BlackRock report 15 trillion in assets in 2026?", "resident:morrow")], lambda line: "", [], "fallback", stream_questions=streams)
-        self.assertTrue(research_lines.open_line(state)["origin"].startswith("queued:resident"))
+        third = research_lines.decide(state, 11, [("Did BlackRock report 15 trillion in assets in 2026?", "resident:morrow")], lambda line: "", [], "fallback",
+                                      stream_questions=[("Do independent public sources confirm that Argentina repatriated a looted Ceruti painting (first reported by AFP)?", "stream:x")])
+        self.assertEqual(third["source"], "stream:x")
 
 
 if __name__ == "__main__":

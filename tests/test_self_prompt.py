@@ -35,6 +35,18 @@ class SelfPromptTests(unittest.TestCase):
         self.assertEqual(context["open_contradictions"][0]["reason"], "r")
         self.assertEqual(context["untrusted_outside_leads"][0]["text"], "outside review text")
 
+    def test_proposals_are_read_however_the_model_dressed_them(self):
+        from scripts.self_prompt_rules import parse_fields
+        dressed = ("**QUESTION:** Did Roskomnadzor block GitHub in December 2014?\n"
+                   "- **WHY** - Two outlets differ on the date.\n"
+                   "* Test: compare the archived notices.")
+        self.assertEqual(parse_fields(dressed), {"QUESTION": "Did Roskomnadzor block GitHub in December 2014?", "WHY": "Two outlets differ on the date.",
+                                                 "TEST": "compare the archived notices."})
+        self.assertTrue(valid(dressed))
+        as_json = '{"question": "Did Roskomnadzor block GitHub in December 2014?", "why": "dates differ", "test": "compare notices"}'
+        self.assertTrue(valid(as_json))
+        self.assertIn("missing", rejection_reason("Some prose with no fields at all."))
+
     def test_rejects_self_referential_marker_loop(self):
         proposal = ("QUESTION: Why did Echo's evidence markers decrease after the hypothesis weakened?\n"
                     "WHY: The metric changed.\nTEST: Count markers again.")

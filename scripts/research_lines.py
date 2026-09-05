@@ -250,7 +250,7 @@ def decide(state, cycle, proposals, followup_for, hire_questions, fallback, gene
     # No open line: roots alternate between the residents' queued subjects and
     # the day's public record, so neither starves the other; then a resident's
     # own hiring question, then the fixed fallback.
-    if stream_questions and len(state.get("lines", [])) % 2 == 1:
+    if stream_questions and len(state.get("lines", [])) % 2 == 0:
         opened = _open_from_stream(state, cycle, stream_questions, generic, closed)
         if opened:
             return opened
