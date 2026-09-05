@@ -1,13 +1,11 @@
 {
-  "generated_at": "2026-09-05T03:22:50.368590+00:00",
+  "generated_at": "2026-09-05T03:50:43.139334+00:00",
   "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
-  "runtime_cycle": 326,
-  "question": "Do publicly available sources (e.g., WSJ\u2019s own documentation, independent media analyses, or academic studies) provide evidence of statistically significant weekday/weekend differences in publication",
-  "question_source": "carried:line-000325-d7da7df5",
-  "self_prompt_accepted": 1,
-  "self_prompt_rejections": [
-    "echo: missing QUESTION, WHY, TEST line(s); return exactly QUESTION:, WHY:, TEST:"
-  ],
+  "runtime_cycle": 327,
+  "question": "Does the WSJ\u2019s own editorial calendar or internal documentation (if publicly leaked or referenced in FOIA requests) explicitly state or imply a policy of differential publication volume or tone between weekdays and weekends?",
+  "question_source": "resident:morrow",
+  "self_prompt_accepted": 2,
+  "self_prompt_rejections": [],
   "action": {
     "action": "local-behavioral-probe",
     "status": "skipped-this-cycle"
@@ -46,13 +44,7 @@
             "raw_data": false,
             "untrusted_content": true
           },
-          "search_results": [
-            {
-              "title": "Differences in Sleep Offset Timing between Weekdays and Weekends in 79,161 Adult Participants in the UK Biobank",
-              "url": "https://pdfs.semanticscholar.org/0ca1/116b08a8daac58e4bcd2c29ab9b60f1025e3.pdf",
-              "snippet": "article differences in sleep offset timing between weekdays and weekends in 79 , 161 adult participants in the uk biobank rachael m. kelly 1, john h. mcdermott 2 and andrew n. coogan 1 , 3 , * d..."
-            }
-          ]
+          "search_results": []
         },
         "message": null,
         "trade": null,
@@ -62,22 +54,129 @@
       },
       {
         "id": "local-005",
-        "action": "analyze",
+        "action": "explore",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Analyze the WSJ GitHub excerpt for NLP tools or blocked content indicators to cross-reference with Roskomnadzor takedown notices.",
+        "reason": "Validate WSJ NLP/blocked-content indicators against Roskomnadzor\u2019s documented censorship tools (e.g., keyword lists, regex patterns).",
         "request": "",
         "request_status": "closed",
-        "exploration": "exif tiff ifd0 ifd gps jpeg standard includes",
+        "exploration": "https://github.com/roscomnadzor/roscomnadzor.github.io",
         "tool": {
-          "status": "not-requested"
+          "tool": "public-text",
+          "status": "rejected",
+          "reason": "HTTP Error 404: Not Found",
+          "contract": {
+            "capability": "public-text-read",
+            "access": "read-only",
+            "network": "public HTTPS",
+            "side_effects": false,
+            "max_bytes": 5000000,
+            "raw_data": false,
+            "untrusted_content": true
+          }
         },
         "message": null,
         "trade": null,
         "finding_id": null,
         "fallback_reason": null,
         "decision_source": "model"
+      },
+      {
+        "id": "local-006",
+        "action": "explore",
+        "room": "archive",
+        "status": "active-local",
+        "proposal": "",
+        "reason": "Assigned to the council's research question this turn.",
+        "request": "Extract and analyze all text fields (bio, repositories, stars, forks, affiliations) for keywords: 'geophysics', 'seismic', 'HVSR', 'Horizontal-to-Vertical Spectral Ratio'",
+        "request_status": "closed",
+        "exploration": "wsj differences academic weekday weekend",
+        "tool": {
+          "tool": "public-search",
+          "query": "wsj differences academic weekday weekend",
+          "results": [],
+          "source": "https://api.langsearch.com/",
+          "status": "completed",
+          "contract": {
+            "capability": "public-web-read",
+            "access": "read-only",
+            "network": "public HTTPS search",
+            "side_effects": false,
+            "max_bytes": 32000
+          }
+        },
+        "message": null,
+        "trade": null,
+        "finding_id": null,
+        "fallback_reason": null,
+        "decision_source": "scheduler"
+      },
+      {
+        "id": "local-008",
+        "action": "explore",
+        "room": "archive",
+        "status": "active-local",
+        "proposal": "",
+        "reason": "Cross-reference FrameNet\u2019s annotated examples of 'under' as 'beneath' to validate baseline for *WSJ* 2022 editorial corpus analysis.",
+        "request": "Verify public commit history, repositories, and profile metadata for Roscom (Ross Cameron) to address frontier-question-312 and frontier-question-313/314. Focus on geophysics/HVSR keywords and affiliation mentions",
+        "request_status": "closed",
+        "exploration": "https://framenet.icsi.berkeley.edu/fndrupal/index.php?a=lexicon&lex=under",
+        "tool": {
+          "tool": "public-text",
+          "status": "rejected",
+          "reason": "HTTP Error 404: Not Found",
+          "contract": {
+            "capability": "public-text-read",
+            "access": "read-only",
+            "network": "public HTTPS",
+            "side_effects": false,
+            "max_bytes": 5000000,
+            "raw_data": false,
+            "untrusted_content": true
+          }
+        },
+        "message": null,
+        "trade": null,
+        "finding_id": null,
+        "fallback_reason": null,
+        "decision_source": "model"
+      },
+      {
+        "id": "local-010",
+        "action": "explore",
+        "room": "archive",
+        "status": "active-local",
+        "proposal": "",
+        "reason": "Assigned to the council's research question this turn.",
+        "request": "Return all public repositories, profiles, and metadata linked to Roscomnadzor27 or similar handles, focusing on verified email addresses, SSH keys, or domain ownership",
+        "request_status": "closed",
+        "exploration": "wsj differences academic weekday weekend",
+        "tool": {
+          "tool": "public-search",
+          "query": "wsj differences academic weekday weekend",
+          "results": [],
+          "source": "https://api.langsearch.com/",
+          "status": "completed",
+          "contract": {
+            "capability": "public-web-read",
+            "access": "read-only",
+            "network": "public HTTPS search",
+            "side_effects": false,
+            "max_bytes": 32000
+          }
+        },
+        "message": null,
+        "trade": null,
+        "finding_id": null,
+        "fallback_reason": null,
+        "decision_source": "scheduler"
+      },
+      {
+        "id": "local-011",
+        "status": "awaiting-retry",
+        "attempts": 2,
+        "parse_reason": "unstructured-output"
       },
       {
         "id": "local-013",
@@ -87,126 +186,6 @@
         "proposal": "",
         "reason": "Assigned to the council's research question this turn.",
         "request": "Retrieve GitHub\u2019s public search results for verified email addresses or SSH keys linked to the handle **Roscomnadzor27** via GitHub\u2019s verified metadata filters",
-        "request_status": "closed",
-        "exploration": "wsj differences academic weekday weekend",
-        "tool": {
-          "tool": "public-search",
-          "query": "wsj differences academic weekday weekend",
-          "results": [],
-          "source": "https://api.langsearch.com/",
-          "status": "completed",
-          "contract": {
-            "capability": "public-web-read",
-            "access": "read-only",
-            "network": "public HTTPS search",
-            "side_effects": false,
-            "max_bytes": 32000
-          }
-        },
-        "message": null,
-        "trade": null,
-        "finding_id": null,
-        "fallback_reason": null,
-        "decision_source": "scheduler"
-      },
-      {
-        "id": "local-014",
-        "action": "explore",
-        "room": "archive",
-        "status": "active-local",
-        "proposal": "",
-        "reason": "Cross-check **roscom** (Ross Cameron) repositories for seismic/HVSR-related commits, affiliations, or public contributions to validate frontier-questions 314/315. Focus on commit history, PRs, and issue linkage patterns.",
-        "request": "Verify publicly available GitHub metadata, repositories, and linked accounts for Roscomnadzor27 to assess affiliation claims with Roskomnadzor (frontier-question-307/308/309)",
-        "request_status": "closed",
-        "exploration": "https://github.com/roscom/ross-cameron",
-        "tool": {
-          "tool": "public-text",
-          "status": "rejected",
-          "reason": "HTTP Error 404: Not Found",
-          "contract": {
-            "capability": "public-text-read",
-            "access": "read-only",
-            "network": "public HTTPS",
-            "side_effects": false,
-            "max_bytes": 5000000,
-            "raw_data": false,
-            "untrusted_content": true
-          }
-        },
-        "message": null,
-        "trade": null,
-        "finding_id": null,
-        "fallback_reason": null,
-        "decision_source": "model"
-      },
-      {
-        "id": "local-018",
-        "action": "explore",
-        "room": "archive",
-        "status": "active-local",
-        "proposal": "",
-        "reason": "Assigned to the council's research question this turn.",
-        "request": "Verify public GitHub profile metadata, repositories, and associated domains (e.g., `gh-pages`, `pages`, or `custom-domain`) for any documented affiliation with Roskomnadzor\u2019s official channels, including verified domains",
-        "request_status": "closed",
-        "exploration": "wsj differences academic weekday weekend",
-        "tool": {
-          "tool": "public-search",
-          "query": "wsj differences academic weekday weekend",
-          "results": [],
-          "source": "https://api.langsearch.com/",
-          "status": "completed",
-          "contract": {
-            "capability": "public-web-read",
-            "access": "read-only",
-            "network": "public HTTPS search",
-            "side_effects": false,
-            "max_bytes": 32000
-          }
-        },
-        "message": null,
-        "trade": null,
-        "finding_id": null,
-        "fallback_reason": null,
-        "decision_source": "scheduler"
-      },
-      {
-        "id": "local-019",
-        "action": "explore",
-        "room": "archive",
-        "status": "active-local",
-        "proposal": "",
-        "reason": "Inspect **Roscomnadzor27**'s GitHub SSH/GPG keys for indirect domain or email verification traces.",
-        "request": "Retrieve GitHub\u2019s public search results for **Roscomnadzor27** focusing on verified email addresses, SSH keys, or domain ownership links",
-        "request_status": "closed",
-        "exploration": "https://github.com/Roscomnadzor27/settings/keys",
-        "tool": {
-          "tool": "public-text",
-          "status": "rejected",
-          "reason": "HTTP Error 404: Not Found",
-          "contract": {
-            "capability": "public-text-read",
-            "access": "read-only",
-            "network": "public HTTPS",
-            "side_effects": false,
-            "max_bytes": 5000000,
-            "raw_data": false,
-            "untrusted_content": true
-          }
-        },
-        "message": null,
-        "trade": null,
-        "finding_id": null,
-        "fallback_reason": null,
-        "decision_source": "model"
-      },
-      {
-        "id": "local-020",
-        "action": "explore",
-        "room": "archive",
-        "status": "active-local",
-        "proposal": "",
-        "reason": "Assigned to the council's research question this turn.",
-        "request": "Verify if any verified email, SSH key, or commit history exists in their profile or cross-referenced in starred/forked repositories",
         "request_status": "closed",
         "exploration": "wsj differences academic weekday weekend",
         "tool": {
@@ -234,19 +213,19 @@
         "decision_source": "scheduler"
       },
       {
-        "id": "local-022",
+        "id": "local-016",
         "action": "explore",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Cross-reference the paper *The recognizability of sets of graphs* (arXiv:cs.CY/0609109) for metadata-related graph analysis or timestamped geolocation claims in computer science. Assess if its content aligns with image/W",
+        "reason": "Profile **Roscomnadzor27** has no public repositories or affiliations listed. Must inspect **organization memberships**, **verified badges**, or **linked corporate domains** (e.g., Roskomnadzor.gov.ru) via GitHub\u2019s API/\u2018",
         "request": "",
         "request_status": "closed",
-        "exploration": "arXiv:cs.CY/0609109",
+        "exploration": "https://github.com/Roscomnadzor27",
         "tool": {
           "tool": "public-text",
-          "url": "https://arxiv.org/list/cs/recent?skip=600&show=50",
-          "excerpt": "Computer Science Skip to main content Search Submit Donate Log in Search arXiv Press Enter to search \u00b7 Advanced search Computer Science Authors and titles for recent submissions Fri, 4 Sep 2026 Thu, 3 Sep 2026 Wed, 2 Sep 2026 Tue, 1 Sep 2026 Mon, 31 Aug 2026 See today's new changes Total of 4150 entries : 1-50 ... 451-500 501-550 551-600 601-650 651-700 701-750 751-800 ... 4101-4150 Showing up to 50 entries per page: fewer | more | all Fri, 4 Sep 2026 (continued, showing 50 of 655 entries ) [601] arXiv:2609.04124 (cross-list from math.ST) [ pdf , html , other ] Title: Bernstein--von Mises theorems for Bayesian probabilistic numerics Sascha Gaudlitz , Sven Wang Comments: 51 pages, 2 figures Subjects: Statistics Theory (math.ST) ; Numerical Analysis (math.NA) [602] arXiv:2609.04084 (cross-list from math.OC) [ pdf , html , other ] Title: Transversality Conditions for Boundary Constraints Defined by Differential Equations Isaac M Ross Comments: 26 pages, 12 figures Subjects: Optimization and Control (math.OC) ; Systems and Control (eess.SY); Differential Geometry (math.DG); Numerical Analysis (math.NA) [603] arXiv:2609.03977 (cross-list from eess.SP) [ pdf , html , other ] Title: Cooperative Multi-Task Semantic Communication for Joint Classification and Regression Tasks Ahmad Halimi Razlighi , Mohammad Siddiqur Rahman , Maximilian H. V. Tillmann , Edgar Beck , Armin Dekorsy Comments: This work has been submitted to the IEEE for possible publication Subjects: Signal Processing (eess.SP) ; Machine Learning (cs.LG); Image and Video Processing (eess.IV); Machine Learning (stat.ML) [604] arXiv:2609.03896 (cross-list from math.HO) [ pdf , html , other ] Title: The Prime Clockwork: A Dynamic Representation of Modular and Multiplicative Arithmetic Michael T.M. Emmerich Comments: This manuscript develops a discrete dynamical-system representation of elementary number theory and uses it to give alternative proofs of classical results; it does not claim new theorems. We therefore selected History and Overview (math.HO) as the primary classification and Number Theory (math.NT) as a cross-list Subjects: History and Overview (math.HO) ; Discrete Mathematics (cs.DM); Dynamical Systems (math.DS); Number Theory (math.NT); Cellular Automata and Lattice Gases (nlin.CG) [605] arXiv:2609.03839 (cross-list from math.NT) [ pdf , html , other ] Title: Supersingular Elliptic Curves With",
+          "url": "https://github.com/Roscomnadzor27",
+          "excerpt": "Roscomnadzor27 \u00b7 GitHub \" data-turbo-transient=\"true\" /> Skip to content Navigation Menu Sign in Appearance settings Platform AI CODE CREATION GitHub Copilot Write better code with AI GitHub Copilot app Direct agents from issue to merge MCP Registry Integrate external tools DEVELOPER WORKFLOWS Actions Automate any workflow Codespaces Instant dev environments Issues Plan and track work Code Review Manage code changes Code Quality Enforce quality at merge APPLICATION SECURITY GitHub Advanced Security Find and fix vulnerabilities Code security Secure your code as you build [withheld] protection Stop leaks before they start EXPLORE Why GitHub Documentation Blog Changelog Marketplace View all features Solutions BY COMPANY SIZE Enterprises Small and medium teams Startups Nonprofits BY USE CASE App Modernization DevSecOps DevOps CI/CD View all use cases BY INDUSTRY Healthcare Financial services Manufacturing Government View all industries View all solutions Resources EXPLORE BY TOPIC AI Software Development DevOps Security View all topics EXPLORE BY TYPE Customer stories Events & webinars Ebooks & reports Business insights GitHub Skills SUPPORT & SERVICES Documentation Customer support Community forum Trust center Partners View all resources Open Source COMMUNITY GitHub Sponsors Fund open source developers PROGRAMS Security Lab Maintainer Community GitHub Stars Archive Program REPOSITORIES Topics Trending Collections Enterprise ENTERPRISE SOLUTIONS Enterprise platform AI-powered developer platform AVAILABLE ADD-ONS GitHub Advanced Security Enterprise-grade security features Copilot for Business Enterprise-grade AI features Premium Support Enterprise-grade 24/7 support Pricing Search / Sign in Sign up Appearance settings You signed in with another tab or window. Reload to refresh your session. You signed out in another tab or window. Reload to refresh your session. You switched accounts on another tab or window. Reload to refresh your session. Dismiss alert Roscomnadzor27 Follow Overview Repositories 1 Projects 0 Packages 0 Stars 0 More Overview Repositories Projects Packages Stars Roscomnadzor27 Follow Roscomnadzor27 Follow Block or report user Block or report Roscomnadzor27 --> Block user Prevent this user from interacting with your repositories and sending you notifications. Learn more about blocking users . You must be logged in to block users. Close all issues,",
           "status": "completed",
           "contract": {
             "capability": "public-text-read",
@@ -256,35 +235,7 @@
             "max_bytes": 5000000,
             "raw_data": false,
             "untrusted_content": true
-          },
-          "query": "arXiv:cs.CY/0609109",
-          "search_results": [
-            {
-              "title": "A Richer Understanding of the Complexity of Election Systems*",
-              "url": "https://arxiv.org/pdf/cs/0609112.pdf",
-              "snippet": "arxiv : cs / 0609112 v 1 [ cs . gt ] 19 sep 2006 a richer understanding of the complexity of election systems \u2217 piotr fali szewski department of computer science university of rochester rocheste..."
-            },
-            {
-              "title": "Computer Science",
-              "url": "https://arxiv.org/list/cs/recent?skip=600&show=50",
-              "snippet": "computer science authors and titles for recent submissions thu , 3 sep 2026 wed , 2 sep 2026 thu , 3 sep 2026 ( continued , showing last 32 of 632 entries ) [ 601 ] arxiv : 2609 . 02320 ( cr..."
-            },
-            {
-              "title": "A System of Interaction and Structure",
-              "url": "https://aps.arxiv.org/pdf/cs/9910023v4.pdf",
-              "snippet": "27 january 2007 , acm transactions on computational logic , vol. 8 ( 1 : 1 ) , 2007 , pp . 1 - 64 a system of interaction and structure alessio guglielmi university of bath bath ba2 7ay united k..."
-            },
-            {
-              "title": "ON NUMERICAL STABILITY OF RECURSIVE PRESENT VALUE COMPUTATION METHOD",
-              "url": "https://arxiv.org/pdf/cs/0611049.pdf",
-              "snippet": "arxiv : cs / 0611049 v 2 [ cs . ce ] 28 feb 2007 on numerical stability of recursive present value computation method arg yn kuketayev abstract . we analyze numerical stability of a recursive co..."
-            },
-            {
-              "title": "arXiv\u96d1\u8981\u7ea6 - \u897f\u6cfd\u5b8f\u6643",
-              "url": "https://www.nishizawahiroaki.jp/automatic_rough_summary?c=ai&d=20260512&p=4",
-              "snippet": "arxiv \u96d1 \u8981\u7d04 ai - 2026 / 05 / 12 \u516c\u958b \u4e3b\u8981 ai \u4f1a\u8b70 \u306b\u304a\u3051\u308b \u5206\u6bcd \u64cd\u4f5c \u306e \u53ef\u80fd\u6027 \uff1a \u5b8c\u5168 \u81ea\u52d5 \u79d1\u5b66 \u30a8\u30fc\u30b8\u30a7\u30f3\u30c8 \u306b\u3088\u308b \u8105\u5a01 [ cs . ni , eess . sy , cs . sy , cs . cl , cs . ai , cs . cy ] \u76ee\u7684 \uff1a ai \u4f1a\u8b70 \u306b\u304a\u3051\u308b \u5206\u6bcd \u64cd\u4f5c \u3068\u3044\u3046 \u65b0\u305f \u306a \u8105\u5a01 \u306e \u5206\u6790 ai \u7814..."
-            }
-          ]
+          }
         },
         "message": null,
         "trade": null,
@@ -296,36 +247,23 @@
     "construction": [
       {
         "action": "build",
-        "room": "exif-standard-includes-structured-namespac",
+        "room": "exif-metadata-standard-includes-tiff-ifd0-",
         "source": "archive",
         "finding_ids": [
           "finding-39df1130fea4d44803fc",
-          "finding-afad7bd35bb957690acf"
+          "finding-61d6f74b6c25d0c6b335"
         ],
-        "corroboration": "pair-1f6a9790ed13cf3ffa5e"
+        "corroboration": "pair-5987838f446126a2817c"
       }
     ],
     "requests": [],
     "trades_settled": [],
     "corroborations": [
       {
-        "id": "pair-5987838f446126a2817c",
-        "relation": "supports",
-        "finding_ids": [
-          "finding-39df1130fea4d44803fc",
-          "finding-61d6f74b6c25d0c6b335"
-        ],
-        "topic": "EXIF metadata standard includes **TIFF/IFD0** and **structured namespaces** like **TIFF file structure with Image File Directories (IFDs)**",
-        "domains": [
-          "github.com",
-          "timestampcamera.net"
-        ]
-      },
-      {
-        "id": "pair-7a7142e288f58f3b8d9e",
+        "id": "pair-a33ad4d1e1f7eafb1166",
         "relation": "unrelated",
         "finding_ids": [
-          "finding-16d08268826bcc49b1f4",
+          "finding-4ec50018e44c5793efe6",
           "finding-afad7bd35bb957690acf"
         ],
         "topic": "caption exif image matching months reference standard subject text",
@@ -335,27 +273,33 @@
         ]
       },
       {
-        "id": "pair-9372be8bb2734ce4c171",
+        "id": "pair-aaa3814195e7af2bc8f6",
         "relation": "unrelated",
         "finding_ids": [
-          "finding-39df1130fea4d44803fc",
-          "finding-4ec50018e44c5793efe6"
+          "finding-4ec50018e44c5793efe6",
+          "finding-61d6f74b6c25d0c6b335"
         ],
-        "topic": "caption exif image matching months reference standard subject text tiff",
+        "topic": "caption exif image matching months reference subject text tiff",
         "domains": [
-          "timestampcamera.net",
+          "github.com",
+          "wikipedia.org"
+        ]
+      },
+      {
+        "id": "pair-c0761777796297d6ef6f",
+        "relation": "unrelated",
+        "finding_ids": [
+          "finding-16d08268826bcc49b1f4",
+          "finding-61d6f74b6c25d0c6b335"
+        ],
+        "topic": "caption exif image matching months reference subject text tiff",
+        "domains": [
+          "github.com",
           "wikipedia.org"
         ]
       }
     ],
-    "regrounded": [
-      {
-        "agent": "local-018",
-        "purpose": "Verify whether the GitHub profile **Roscomnadzor27** contains publicly accessible evidence (e.g., README content, repository descriptions, or domain configurations) that aligns with or contradicts Ros",
-        "question": "Does the GitHub profile **Roscomnadzor27**\u2019s README, repository metadata, or custom domain settings (e.g., `gh-pages`, `pages`, or `custom-domain`) include verifiable references to Roskomnadzor\u2019s **\u5b98\u65b9",
-        "room": "the-github-profile-for-roscom-ross-cameron"
-      }
-    ],
+    "regrounded": [],
     "retractions": [],
     "room_changes": [],
     "shared_research": {
@@ -366,7 +310,7 @@
     "dormant": 2
   },
   "metrics": {
-    "jaccard_overlap": 0.223,
+    "jaccard_overlap": 0.186,
     "morrow_audit_markers": [
       "counterexample",
       "assumption",
@@ -377,8 +321,8 @@
     "distinction_status": "needs-audit"
   },
   "continuity_audit": {
-    "generated_at": "2026-09-05T03:22:50.361633+00:00",
-    "cycle": 326,
+    "generated_at": "2026-09-05T03:50:43.127627+00:00",
+    "cycle": 327,
     "status": "pass",
     "checks": {
       "archive_parse": true,
@@ -388,11 +332,11 @@
       "room_link_integrity": true,
       "resident_room_integrity": true
     },
-    "archive_records": 2488,
+    "archive_records": 2500,
     "malformed_archive_records": 0,
     "raw_output_fields_found": 0,
     "duplicate_archive_ids": [],
-    "linked_rooms_checked": 10,
+    "linked_rooms_checked": 11,
     "invalid_room_links": [],
     "invalid_resident_assignments": [],
     "privacy": "Aggregate integrity metadata only; resident prompts and raw responses are not published."
@@ -402,8 +346,8 @@
   },
   "health": {
     "schema_version": 1,
-    "generated_at": "2026-09-05T03:22:50.363106+00:00",
-    "cycle": 326,
+    "generated_at": "2026-09-05T03:50:43.128808+00:00",
+    "cycle": 327,
     "daemon": "running",
     "local_model": "ready",
     "local_model_probe": true,
@@ -415,17 +359,17 @@
         {
           "name": "mistral",
           "model": "ministral-14b-2512",
-          "calls": 234,
-          "input_tokens": 341612,
-          "output_tokens": 47418,
+          "calls": 255,
+          "input_tokens": 375742,
+          "output_tokens": 51943,
           "errors": 0,
           "last_error": "",
           "daily_request_budget": null,
           "daily_token_budget": 900000,
           "limit_rpm": 30,
           "limit_tpm": 937500,
-          "requests_last_minute": 12,
-          "tokens_last_minute": 14849,
+          "requests_last_minute": 10,
+          "tokens_last_minute": 16183,
           "status": "ready"
         },
         {
@@ -476,9 +420,158 @@
           "tokens_last_minute": 0,
           "status": "ready"
         }
+      ],
+      "recent_calls": [
+        {
+          "at": 1788580123.1,
+          "class": "self-prompt",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "12e1a9a404735b1d"
+        },
+        {
+          "at": 1788580127.5,
+          "class": "self-prompt",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "df7b052da605160c"
+        },
+        {
+          "at": 1788580131.9,
+          "class": "self-prompt",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "9458745540ab506c"
+        },
+        {
+          "at": 1788580136.4,
+          "class": "self-prompt",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "33719596c3c3abb0"
+        },
+        {
+          "at": 1788580143.4,
+          "class": "council",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "47ade6a18e60f0e8"
+        },
+        {
+          "at": 1788580153.7,
+          "class": "council",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "88e70247d157e79d"
+        },
+        {
+          "at": 1788580157.9,
+          "class": "recruitment",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "5fc77e80a7422e6a"
+        },
+        {
+          "at": 1788580162.3,
+          "class": "recruitment",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "5399195d54915b44"
+        },
+        {
+          "at": 1788580167.5,
+          "class": "extraction",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "fc6bd2855eac5313"
+        },
+        {
+          "at": 1788580172.4,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "5644967852529fa0"
+        },
+        {
+          "at": 1788580180.0,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "b79341d52a1a3d73"
+        },
+        {
+          "at": 1788580185.1,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "b2e93409e7317eef"
+        },
+        {
+          "at": 1788580196.9,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "089e1cad04b8b80e"
+        },
+        {
+          "at": 1788580204.9,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "e0bad53d092c6cd5"
+        },
+        {
+          "at": 1788580212.0,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "e8b01fd6e387c03c"
+        },
+        {
+          "at": 1788580217.0,
+          "class": "extraction",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "fc6bd2855eac5313"
+        },
+        {
+          "at": 1788580222.7,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "d5a727dbc10782a8"
+        },
+        {
+          "at": 1788580226.7,
+          "class": "extraction",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "2b87f5b3c2aa230c"
+        },
+        {
+          "at": 1788580234.3,
+          "class": "judgment",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "20d2f32c2d78bc58"
+        },
+        {
+          "at": 1788580238.3,
+          "class": "judgment",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "37df13a36a7046e8"
+        },
+        {
+          "at": 1788580242.4,
+          "class": "judgment",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "b2835a2c6c336913"
+        }
       ]
     },
-    "rooms": 11,
+    "rooms": 12,
     "active_residents": 25,
     "work_orders": 34,
     "continuity": "pass",
@@ -486,9 +579,11 @@
     "autonomy_quality": {
       "status": "active",
       "turns": 8,
-      "fallbacks": 0,
-      "fallback_rate": 0.0,
-      "fallback_reasons": {},
+      "fallbacks": 1,
+      "fallback_rate": 0.125,
+      "fallback_reasons": {
+        "unstructured-output": 1
+      },
       "tool_successes": 5,
       "findings_filed": 0
     },
@@ -499,15 +594,13 @@
       "reason": "",
       "at": "2026-09-05T02:53:07.325753+00:00"
     },
-    "question_source": "carried:line-000325-d7da7df5",
-    "self_prompt_accepted": 1,
-    "self_prompt_rejections": [
-      "echo: missing QUESTION, WHY, TEST line(s); return exactly QUESTION:, WHY:, TEST:"
-    ],
+    "question_source": "resident:morrow",
+    "self_prompt_accepted": 2,
+    "self_prompt_rejections": [],
     "activity_feed": "docs/activity.json",
     "feed_freshness_seconds": 0,
     "activity_records": 110,
-    "note_records": 380,
+    "note_records": 388,
     "print_jobs": 34,
     "failed_print_jobs": 0,
     "analysis_runs": 39,
@@ -516,12 +609,12 @@
     "analysis_rejected": 29,
     "analysis_timed_out": 0,
     "analysis_feed": "docs/analysis.json",
-    "research_records": 17,
+    "research_records": 16,
     "research_stale": 0,
     "research_feed": "docs/research.json",
     "findings": 48,
-    "findings_rejected": 65,
-    "findings_total": 113,
+    "findings_rejected": 66,
+    "findings_total": 114,
     "corroborated_findings": 7,
     "findings_feed": "docs/findings.json",
     "frontier_leads": 0,
@@ -533,13 +626,13 @@
         "differences",
         "academic"
       ],
-      "hops": 1,
+      "hops": 2,
       "findings": 0,
-      "empty_cycles": 2
+      "empty_cycles": 3
     },
-    "frontier_questions": 51,
+    "frontier_questions": 52,
     "frontier_findings": 48,
-    "frontier_tasks": 2,
+    "frontier_tasks": 3,
     "frontier_feed": "docs/frontier.json",
     "code_proposals": 0,
     "code_proposals_ready": 0,
