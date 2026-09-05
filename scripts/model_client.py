@@ -537,6 +537,9 @@ def complete(messages, *, temperature=0.3, max_tokens=400, schema=None, schema_n
                         usage.get("models", {}).pop(provider["name"], None)
                 elif status in (401, 403):
                     _record(usage, provider["name"], errors=1, last_error=f"{status} rejected credentials", disabled=True)
+                elif status == 402:
+                    # The provider wants payment: this key has no free allowance today; retried tomorrow.
+                    _record(usage, provider["name"], errors=1, last_error="402 payment required (no free allowance on this account)", disabled=True)
                 elif status == 400 and schema is not None and provider["json_schema"]:
                     # Some endpoints reject schema mode for a given model; retry once with a prompt hint.
                     try:
