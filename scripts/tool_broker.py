@@ -562,6 +562,35 @@ def clean_excerpt(text):
     return re.sub(r"\S{61,}", lambda match: " " if CODE_PUNCTUATION.search(match.group(0)) else match.group(0), text)
 
 
+MAX_CANDIDATE_SENTENCES = 40
+
+
+def candidate_sentences(text, focus, limit=MAX_CANDIDATE_SENTENCES):
+    """The page's sentences that share the most vocabulary with the focus, best first,
+    so a verification turn can test each one against the claim it was sent to check."""
+    terms = {term[:6] for term in re.findall(r"[a-z0-9]{4,}", str(focus or "").lower())}
+    if not terms:
+        return []
+    scored = []
+    for sentence in re.split(r"(?<=[.!?])\s+", re.sub(r"\s+", " ", str(text or "")).strip()):
+        sentence = sentence.strip()
+        if not 40 <= len(sentence) <= 400 or "[withheld]" in sentence:
+            continue
+        score = len(terms & {term[:6] for term in re.findall(r"[a-z0-9]{4,}", sentence.lower())})
+        if score:
+            scored.append((score, sentence))
+    scored.sort(key=lambda item: -item[0])
+    seen, out = set(), []
+    for _score, sentence in scored:
+        if sentence in seen:
+            continue
+        seen.add(sentence)
+        out.append(sentence)
+        if len(out) >= limit:
+            break
+    return out
+
+
 def public_text(url, focus=""):
     raw = SCRIPT_STYLE.sub(" ", fetch(url, RESEARCH_MAX_BYTES))
     text = clean_excerpt(re.sub(r"<[^>]+>", " ", html.unescape(raw)))
@@ -569,8 +598,11 @@ def public_text(url, focus=""):
     text = SENSITIVE_ASSIGNMENT.sub("[withheld]", text)
     text = BLOCKED.sub("[withheld]", text)
     excerpt = focused_passage(text, focus) if focus else text[:2400]
-    return {"tool": "public-text", "url": url, "excerpt": excerpt[:2400], "status": "completed",
-            "contract": TOOL_CONTRACTS["public-text"]}
+    result = {"tool": "public-text", "url": url, "excerpt": excerpt[:2400], "status": "completed",
+              "contract": TOOL_CONTRACTS["public-text"]}
+    if focus:
+        result["sentences"] = candidate_sentences(text, focus)
+    return result
 
 
 def failure_result(tool, error):

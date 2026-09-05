@@ -720,6 +720,41 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertTrue(local_autonomy.PHYSICAL_NEEDS.search("I need clean water and shelter"))
         self.assertFalse(local_autonomy.PHYSICAL_NEEDS.search("I need a public dataset and compute"))
 
+    def test_the_judge_picks_the_verification_quote_from_the_page(self):
+        class StubJudge:
+            SUPPORT_MIN, CONTRADICTION_MIN, NLI_REPO, NLI_REVISION = 0.5, 0.6, "stub", "rev"
+            def available(self):
+                return True
+            def nli(self, premise, hypothesis):
+                if "blocked access to GitHub in December 2014" in premise:
+                    return {"entailment": 0.97, "contradiction": 0.01, "neutral": 0.02}
+                if "never blocked" in premise:
+                    return {"entailment": 0.01, "contradiction": 0.95, "neutral": 0.04}
+                return {"entailment": 0.03, "contradiction": 0.02, "neutral": 0.95}
+        original = local_autonomy.inference_judge
+        local_autonomy.inference_judge = StubJudge()
+        try:
+            agent = {"id": "local-test", "room": "archive"}
+            target = {"id": "finding-target", "claim": "Roskomnadzor blocked GitHub in December 2014."}
+            tool = {"source": "https://meduza.io/en/news/github", "source_hash": "hash-m", "query": "roskomnadzor github block",
+                    "excerpt": "An unrelated opening sentence about Moscow weather this week.",
+                    "sentences": ["The regulator never blocked anything, its spokesman insisted on Tuesday.",
+                                  "Russia's regulator blocked access to GitHub in December 2014 after the site hosted pages about suicide."]}
+            found = local_autonomy.entailed_finding(agent, 7, tool, target)
+            self.assertEqual((found["status"], found["origin"], found["claim_origin"], found["verifies"]), ("unreviewed", "verify-claim", "entailed-quote", "finding-target"))
+            self.assertEqual(found["claim"], found["quote"])
+            self.assertIn("blocked access to GitHub in December 2014", found["quote"])
+            self.assertEqual(found["entailment"]["entailment"], 0.97)
+            dissent = local_autonomy.entailed_finding(agent, 7, tool, target, dissent=True)
+            self.assertEqual((dissent["origin"], dissent["entailment"]["contradiction"]), ("dissent-claim", 0.95))
+            self.assertIn("never blocked", dissent["quote"])
+            nothing = local_autonomy.entailed_finding(agent, 7, {**tool, "sentences": ["Moscow had mild weather that week, residents said happily."]}, target)
+            self.assertIsNone(nothing)
+            profile = local_autonomy.entailed_finding(agent, 7, {**tool, "source": "https://github.com/someone"}, target)
+            self.assertEqual((profile["status"], profile["rejection_reason"]), ("rejected", "profile-subject"))
+        finally:
+            local_autonomy.inference_judge = original
+
     def test_dissent_query_hunts_for_a_different_figure(self):
         query = local_autonomy.dissent_query("Roskomnadzor blocked GitHub in December 2014 over pages about suicide.", "roskomnadzor github")
         self.assertTrue(query.startswith("roskomnadzor github december 2014") or "roskomnadzor" in query.split()[:3], query)

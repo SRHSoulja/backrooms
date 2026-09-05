@@ -7,6 +7,18 @@ from scripts import tool_broker
 from scripts.tool_broker import TOOL_CONTRACTS
 
 
+class CandidateSentenceTests(unittest.TestCase):
+    def test_sentences_sharing_the_focus_vocabulary_come_first(self):
+        from scripts.tool_broker import candidate_sentences
+        text = ("Welcome to the site. Roskomnadzor blocked access to GitHub in December 2014 after pages about suicide appeared there. "
+                "The weather was mild that week in Moscow, according to residents. GitHub said the block was lifted two days later when the pages were removed. Short.")
+        out = candidate_sentences(text, "Roskomnadzor blocked GitHub December 2014 suicide pages")
+        self.assertTrue(out[0].startswith("Roskomnadzor blocked access to GitHub"))
+        self.assertTrue(all(40 <= len(item) <= 400 for item in out))
+        self.assertNotIn("Short.", out)
+        self.assertEqual(candidate_sentences(text, ""), [])
+
+
 class ToolContractTests(unittest.TestCase):
     def test_public_catalog_matches_broker_contracts(self):
         catalog = json.loads(Path("docs/tool-catalog.json").read_text())

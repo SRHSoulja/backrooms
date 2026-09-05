@@ -324,6 +324,59 @@ def extract_finding(url, agent, cycle, tool, target_claim=None, topic_override=N
     return record
 
 
+def split_sentences(text):
+    return [item.strip() for item in re.split(r"(?<=[.!?])\s+", re.sub(r"\s+", " ", str(text or "")).strip()) if 40 <= len(item.strip()) <= 400]
+
+
+def entailed_finding(agent, cycle, tool, target_claim, dissent=False, topic_override=None):
+    """A verification finding chosen by the reproducible judge, not by a paraphrase:
+    the sentence on the fetched page that entails the colleague's claim (or, on a
+    dissent turn, contradicts it) becomes both the quote and the claim, word for
+    word. Returns None when no sentence reaches the bar, and the model extraction
+    runs instead."""
+    if not target_claim or not target_claim.get("claim") or not inference_judge.available():
+        return None
+    source = str(tool.get("source", ""))
+    if not source.startswith("https://") or not tool.get("source_hash"):
+        return None
+    pool = [str(item) for item in (tool.get("sentences") or [])] or split_sentences(tool.get("excerpt", ""))
+    best = None
+    for sentence in pool[:40]:
+        try:
+            scores = inference_judge.nli(sentence, str(target_claim["claim"]))
+        except Exception:  # noqa: BLE001
+            return None
+        key = scores["contradiction"] if dissent else scores["entailment"]
+        if best is None or key > best[0]:
+            best = (key, sentence, scores)
+    bar = inference_judge.CONTRADICTION_MIN if dissent else inference_judge.SUPPORT_MIN
+    if best is None or best[0] < bar:
+        return None
+    sentence = best[1][:300]
+    source_hash = str(tool.get("source_hash"))
+    lineage = f"{agent.get('id')}:{source}:{source_hash}"
+    origin = "dissent-claim" if dissent else "verify-claim"
+    record = {"id": "finding-" + hashlib.sha256(lineage.encode()).hexdigest()[:20], "agent": agent.get("id"), "cycle": cycle,
+              "topic": str(topic_override or tool.get("query") or agent.get("question") or "research frontier")[:160],
+              "origin": origin, "claim": sentence, "quote": sentence, "url": source[:500], "content_hash": source_hash,
+              "confidence": round(float(best[0]), 4), "quote_score": 1.0, "claim_origin": "entailed-quote",
+              "quote_match": "entailed-sentence", "relates_to": [agent.get("room") or "unassigned"], "status": "unreviewed",
+              "verifies": target_claim.get("id"), "verifies_claim": str(target_claim.get("claim", ""))[:300],
+              "entailment": {"entailment": best[2]["entailment"], "contradiction": best[2]["contradiction"],
+                             "model": inference_judge.NLI_REPO, "revision": inference_judge.NLI_REVISION},
+              "recorded_at": datetime.now(timezone.utc).isoformat()}
+    if CURRENT_LINE.get("id"):
+        record["line_id"] = CURRENT_LINE["id"]
+        record["anchors"] = list(CURRENT_LINE.get("anchors") or [])
+    for test, reason in ((search_page(record["url"]), "search-page"), (not urllib.parse.urlparse(record["url"]).path.strip("/"), "homepage"),
+                         (definition_source(record), "definition-source"), (profile_subject(record), "profile-subject")):
+        if test:
+            record["status"], record["rejection_reason"] = "rejected", reason
+            record["id"] = "finding-rejected-" + hashlib.sha256(f"{lineage}:{cycle}".encode()).hexdigest()[:20]
+            break
+    return record
+
+
 def claim_key(finding):
     """Same source and the same claim in different punctuation or case is the same finding."""
     claim = re.sub(r"[^a-z0-9 ]+", " ", str(finding.get("claim", "")).lower())
@@ -2405,9 +2458,22 @@ def main():
                     # verification finding; a workbench holder that chose its own target did not.
                     took_verify = ((agent.get("research_assignment") or {}).get("cycle") == args.cycle
                                    and (agent.get("research_assignment") or {}).get("origin") in ("verify-claim", "dissent-claim"))
-                    finding = extract_finding(args.base_url, agent, args.cycle, agent["last_tool"],
-                                              target_claim=verifying if took_verify else None,
-                                              topic_override=shared_research if took_verify else None)
+                    finding = None
+                    if took_verify and verifying:
+                        # The judge picks the quote: the page's sentence that states the
+                        # colleague's fact, or on a dissent turn contradicts it.
+                        finding = entailed_finding(agent, args.cycle, {**agent["last_tool"], "sentences": tool.get("sentences") or []}, verifying,
+                                                   dissent=(agent.get("research_assignment") or {}).get("origin") == "dissent-claim",
+                                                   topic_override=shared_research)
+                        if finding:
+                            emit_event(world, args.cycle, "quote-entailed", agent.get("id", "resident"),
+                                       "The reproducible judge found a sentence on the fetched page that states the colleague's claim; it is quoted word for word.",
+                                       entailment=finding.get("entailment", {}).get("entailment"), contradiction=finding.get("entailment", {}).get("contradiction"),
+                                       verifies=finding.get("verifies"))
+                    if finding is None:
+                        finding = extract_finding(args.base_url, agent, args.cycle, agent["last_tool"],
+                                                  target_claim=verifying if took_verify else None,
+                                                  topic_override=shared_research if took_verify else None)
                     if record_finding(finding) and is_accepted(finding):
                         agent["last_finding_id"] = finding["id"]
                         agent["last_finding_cycle"] = args.cycle
