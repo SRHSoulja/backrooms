@@ -174,6 +174,10 @@ def _record(usage, name, **fields):
             entry[key] = entry.get(key, 0) + value
         else:
             entry[key] = value
+    if fields.get("errors"):
+        entry["consecutive_errors"] = int(entry.get("consecutive_errors", 0)) + int(fields["errors"])
+    if fields.get("calls"):
+        entry["consecutive_errors"] = 0
     return entry
 
 
@@ -190,6 +194,16 @@ def _available(provider, usage, now):
     return True, ""
 
 
+CONSECUTIVE_ERRORS_LIMIT = 3
+
+
+def _answering(provider, usage):
+    """A provider that has failed its last several calls today without a single
+    success is not one the world can rely on this cycle, whatever its budget says."""
+    entry = usage["providers"].get(provider["name"], {})
+    return int(entry.get("consecutive_errors", 0)) < CONSECUTIVE_ERRORS_LIMIT
+
+
 def readiness(local_base_url=None, now=None):
     """Which providers could answer right now, and why the others cannot: the
     daemon pauses a cycle instead of failing it when nothing is ready."""
@@ -198,6 +212,8 @@ def readiness(local_base_url=None, now=None):
     report = []
     for provider in providers(local_base_url):
         ok, why = _available(provider, usage, now)
+        if ok and not _answering(provider, usage):
+            ok, why = False, "repeated-errors"
         report.append({"name": provider["name"], "ready": bool(ok), "reason": why})
     return report
 

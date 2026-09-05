@@ -128,6 +128,30 @@ class TransientRetryTests(unittest.TestCase):
         self.assertIsNone(thinking_setting("qwen-3.8-27b"))
 
 
+class ReadinessTests(unittest.TestCase):
+    def test_a_provider_that_only_errors_is_not_ready(self):
+        import os
+        from scripts import model_client
+        previous = {key: os.environ.get(key) for key in ("MISTRAL_API_KEY", "BACKROOMS_ENV_FILE", "BACKROOMS_PROVIDER_ORDER", "BACKROOMS_LOCAL_MODEL")}
+        os.environ.update({"MISTRAL_API_KEY": "k", "BACKROOMS_ENV_FILE": "", "BACKROOMS_PROVIDER_ORDER": "mistral-small", "BACKROOMS_LOCAL_MODEL": "never"})
+        try:
+            usage = {"day": "x", "providers": {}}
+            entry = model_client._record(usage, "mistral-small", errors=1)
+            model_client._record(usage, "mistral-small", errors=1)
+            model_client._record(usage, "mistral-small", errors=1)
+            self.assertEqual(entry["consecutive_errors"], 3)
+            provider = {"name": "mistral-small", "rpd": None, "tpd": None}
+            self.assertFalse(model_client._answering(provider, usage))
+            model_client._record(usage, "mistral-small", calls=1)
+            self.assertTrue(model_client._answering(provider, usage))
+        finally:
+            for key, value in previous.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
+
+
 class ProviderOrderTests(unittest.TestCase):
     def test_preferred_providers_move_to_the_front_without_dropping_the_rest(self):
         from scripts.model_client import ordered_providers
