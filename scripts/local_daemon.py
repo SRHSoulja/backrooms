@@ -1050,7 +1050,7 @@ def sync_frontier(result, world, registry):
     atomic_write_json(LOCAL_FRONTIER, frontier)
     public = {"schema_version": 1, "updated_at": frontier["updated_at"],
               "privacy": "Sanitized frontier questions, finding metadata, and open task summaries only.",
-              "open_questions": [{key: item.get(key) for key in ("id", "cycle", "source", "question_source", "question", "status")}
+              "open_questions": [{key: item.get(key) for key in ("id", "cycle", "source", "question_source", "question", "status", "line_id", "closed_reason")}
                                  for item in frontier["open_questions"][-50:]],
               "findings": [{key: item.get(key) for key in ("id", "cycle", "source", "room", "claim", "status", "source_url", "source_hash")}
                            for item in frontier["findings"][-50:]],
