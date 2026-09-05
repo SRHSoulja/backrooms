@@ -246,7 +246,8 @@ def extract_finding(url, agent, cycle, tool, target_claim=None, topic_override=N
                 {"role": "user", "content": prompt}]
     try:
         finding, _provider = complete_json(messages, temperature=0.1, max_tokens=240, schema=schema,
-                                           schema_name="source_finding", call_class="extraction", base_url=url)
+                                           schema_name="source_finding", call_class="extraction", base_url=url,
+                                           prefer=("cerebras", "groq", "gemini"))  # the strongest free lane reads the page
         if not isinstance(finding, dict):
             return None
     except (OSError, ValueError, TypeError, KeyError, AttributeError, json.JSONDecodeError):

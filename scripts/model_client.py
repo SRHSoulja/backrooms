@@ -79,10 +79,16 @@ BUILTIN = {
                # Gemini 3 models think before answering and the thinking counts as output:
                # ask for the lightest setting and never cap a call below this many tokens.
                "reasoning_effort": "low", "min_max_tokens": 1024},
-    "cerebras": {"base_url": "https://api.cerebras.ai", "key": "CEREBRAS_API_KEY", "model": "qwen-3-32b",
-                 "rpm": 25, "rpd": None, "tpd": 900000, "json_schema": True},
-    "groq": {"base_url": "https://api.groq.com/openai", "key": "GROQ_API_KEY", "model": "llama-3.3-70b-versatile",
-             "rpm": 4, "rpd": 900, "tpd": None, "json_schema": True},
+    # Cerebras free trial (docs, 2026-09): gpt-oss-120b and qwen-3.8-27b, 5 requests a minute, 1M tokens a day.
+    "cerebras": {"base_url": "https://api.cerebras.ai", "key": "CEREBRAS_API_KEY", "model": "gpt-oss-120b",
+                 "rpm": 5, "rpd": None, "tpd": 900000, "json_schema": True, "resolve_model": "preferred",
+                 "preferred_models": (r"^gpt-oss-120b$", r"^qwen-3\.\d+-\d+b$", r"^llama-?3\.3-70b$", r"^llama", r"^qwen"),
+                 "reasoning_effort": "low", "min_max_tokens": 1024},
+    # Groq free plan (docs, 2026-09): about 30 requests a minute, 1K a day, 200K tokens a day per model.
+    "groq": {"base_url": "https://api.groq.com/openai", "key": "GROQ_API_KEY", "model": "openai/gpt-oss-120b",
+             "rpm": 25, "rpd": 900, "tpd": 190000, "json_schema": True, "resolve_model": "preferred",
+             "preferred_models": (r"^openai/gpt-oss-120b$", r"^openai/gpt-oss-20b$", r"qwen.*(?:32b|27b)", r"llama-3\.3-70b", r"llama"),
+             "reasoning_effort": "low", "min_max_tokens": 1024},
     "openrouter": {"base_url": "https://openrouter.ai/api", "key": "OPENROUTER_API_KEY",
                    "model": "mistralai/mistral-small-3.2-24b-instruct:free", "rpm": 15, "rpd": 45, "tpd": None,
                    "json_schema": False},
@@ -120,7 +126,7 @@ def providers(local_base_url=None):
                       "rpm": _int(setting(prefix + "_RPM"), spec["rpm"]), "rpd": _int(setting(prefix + "_RPD"), spec["rpd"]),
                       "tpd": _int(setting(prefix + "_TPD"), spec["tpd"]), "json_schema": spec["json_schema"],
                       # endpoint quirks and live model resolution travel with the provider
-                      **{key: spec[key] for key in ("chat_path", "models_path", "resolve_model", "reasoning_effort", "min_max_tokens") if key in spec},
+                      **{key: spec[key] for key in ("chat_path", "models_path", "resolve_model", "preferred_models", "reasoning_effort", "min_max_tokens") if key in spec},
                       "model_overridden": bool(setting(prefix + "_MODEL"))})
     return built
 
@@ -246,12 +252,29 @@ MINIMAL_THINKING = re.compile(r"gemini-(?:3\.6-flash|3\.5-flash-lite|3\.1-flash-
 
 
 def thinking_setting(model, default="low"):
-    """The lightest thinking the docs allow: 'minimal' on 3.6 Flash and the Flash-Lite
-    models, 'low' on the other Gemini 3 models (thinking cannot be turned off there)."""
+    """The lightest thinking a model allows: 'minimal' on 3.6 Flash and the Flash-Lite
+    models, 'low' on the other Gemini 3 models and on gpt-oss, and nothing at all
+    for models that do not take the parameter."""
     name = str(model or "")
     if MINIMAL_THINKING.search(name):
         return "minimal"
-    return default or "low"
+    if name.startswith("gemini") or "gpt-oss" in name:
+        return default or "low"
+    return None
+
+
+def choose_preferred_model(model_ids, preferred, fallback, failed=()):
+    """The first preference pattern that matches a listed model id wins; a
+    failed or busy id is skipped. Used by providers whose free lineup changes."""
+    failed = {str(item) for item in (failed or ())}
+    names = [str(raw or "").split("models/")[-1].strip() for raw in (model_ids or [])]
+    for pattern in preferred or ():
+        for name in names:
+            if name in failed:
+                continue
+            if re.search(pattern, name, re.I):
+                return name
+    return fallback
 
 
 def _list_models(provider, opener=None, timeout=20):
@@ -281,10 +304,17 @@ def resolve_model(provider, usage, opener=None):
         usage.setdefault("models_seen", {})[provider["name"]] = ["listing failed: " + type(error).__name__]
         return provider
     usage.setdefault("models_seen", {})[provider["name"]] = [str(item).split("/")[-1][:48] for item in listed[:40]]
-    chosen = choose_gemini_model(listed, provider["model"], failed)
+    if provider.get("resolve_model") == "gemini-flash":
+        chosen = choose_gemini_model(listed, provider["model"], failed)
+    else:
+        chosen = choose_preferred_model(listed, provider.get("preferred_models") or (), provider["model"], failed)
     cache[provider["name"]] = chosen
     # A choice made while a better model was busy lasts only until that model's window ends.
-    skipped = [float(busy[name]) for name in busy_now if choose_gemini_model(listed, provider["model"], [n for n in failed if n != name]) != chosen]
+    def _choose(without):
+        if provider.get("resolve_model") == "gemini-flash":
+            return choose_gemini_model(listed, provider["model"], without)
+        return choose_preferred_model(listed, provider.get("preferred_models") or (), provider["model"], without)
+    skipped = [float(busy[name]) for name in busy_now if _choose([n for n in failed if n != name]) != chosen]
     usage.setdefault("models_until", {})[provider["name"]] = min(skipped) if skipped else None
     return {**provider, "model": chosen, "reasoning_effort": thinking_setting(chosen, provider.get("reasoning_effort"))}
 

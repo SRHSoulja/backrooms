@@ -109,12 +109,23 @@ class TransientRetryTests(unittest.TestCase):
         usage["models_busy"]["gemini"]["gemini-3.8-flash"] = time.time() - 1
         self.assertEqual(resolve_model(provider, usage, opener)["model"], "gemini-3.8-flash")
 
+    def test_preference_lists_resolve_a_providers_live_lineup(self):
+        from scripts.model_client import choose_preferred_model
+        listed = ["openai/gpt-oss-20b", "qwen/qwen3-32b", "openai/gpt-oss-120b", "whisper-large-v3"]
+        preferred = (r"^openai/gpt-oss-120b$", r"^openai/gpt-oss-20b$", r"qwen.*32b")
+        self.assertEqual(choose_preferred_model(listed, preferred, "x"), "openai/gpt-oss-120b")
+        self.assertEqual(choose_preferred_model(listed, preferred, "x", failed=["openai/gpt-oss-120b"]), "openai/gpt-oss-20b")
+        self.assertEqual(choose_preferred_model(["whisper-large-v3"], preferred, "fallback"), "fallback")
+
     def test_thinking_setting_follows_the_docs(self):
         from scripts.model_client import thinking_setting
         self.assertEqual(thinking_setting("gemini-3.8-flash"), "low")
         self.assertEqual(thinking_setting("gemini-3.6-flash"), "minimal")
         self.assertEqual(thinking_setting("gemini-3.5-flash-lite"), "minimal")
         self.assertEqual(thinking_setting("gemini-3.5-flash"), "low")
+        self.assertEqual(thinking_setting("openai/gpt-oss-120b"), "low")
+        self.assertIsNone(thinking_setting("ministral-14b-2512"))
+        self.assertIsNone(thinking_setting("qwen-3.8-27b"))
 
 
 class ProviderOrderTests(unittest.TestCase):
@@ -390,8 +401,9 @@ class ModelClientTests(unittest.TestCase):
 
         model_client.complete([{"role": "user", "content": "1"}], base_url="http://127.0.0.1:9", opener=opener, sleep=self.sleeps.append)
         model_client.complete([{"role": "user", "content": "2"}], base_url="http://127.0.0.1:9", opener=opener, sleep=self.sleeps.append)
-        self.assertIn("groq", seen[0])
-        self.assertIn("127.0.0.1:9", seen[1])
+        chats = [url for url in seen if "/models" not in url]  # the model listing is not a call against the budget
+        self.assertIn("groq", chats[0])
+        self.assertIn("127.0.0.1:9", chats[1])
 
     def test_pacing_sleeps_between_calls_on_a_rate_limited_provider(self):
         model_client.SECRETS.clear()
