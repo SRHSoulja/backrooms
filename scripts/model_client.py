@@ -268,11 +268,13 @@ def resolve_model(provider, usage, opener=None):
     if not provider.get("resolve_model") or provider.get("model_overridden"):
         return provider
     cache = usage.setdefault("models", {})
-    if cache.get(provider["name"]):
-        return {**provider, "model": cache[provider["name"]], "reasoning_effort": thinking_setting(cache[provider["name"]], provider.get("reasoning_effort"))}
     now = time.time()
+    expiry = usage.get("models_until", {}).get(provider["name"])
+    if cache.get(provider["name"]) and not (expiry and float(expiry) <= now):
+        return {**provider, "model": cache[provider["name"]], "reasoning_effort": thinking_setting(cache[provider["name"]], provider.get("reasoning_effort"))}
     busy = usage.get("models_busy", {}).get(provider["name"], {})
-    failed = list(usage.get("models_failed", {}).get(provider["name"], [])) + [name for name, until in busy.items() if float(until or 0) > now]
+    busy_now = [name for name, until in busy.items() if float(until or 0) > now]
+    failed = list(usage.get("models_failed", {}).get(provider["name"], [])) + busy_now
     try:
         listed = _list_models(provider, opener)
     except Exception as error:  # noqa: BLE001 - the configured name is used and the listing retried on the next call
@@ -281,6 +283,9 @@ def resolve_model(provider, usage, opener=None):
     usage.setdefault("models_seen", {})[provider["name"]] = [str(item).split("/")[-1][:48] for item in listed[:40]]
     chosen = choose_gemini_model(listed, provider["model"], failed)
     cache[provider["name"]] = chosen
+    # A choice made while a better model was busy lasts only until that model's window ends.
+    skipped = [float(busy[name]) for name in busy_now if choose_gemini_model(listed, provider["model"], [n for n in failed if n != name]) != chosen]
+    usage.setdefault("models_until", {})[provider["name"]] = min(skipped) if skipped else None
     return {**provider, "model": chosen, "reasoning_effort": thinking_setting(chosen, provider.get("reasoning_effort"))}
 
 
@@ -400,7 +405,7 @@ def _error_detail(error):
         text = data.get("message") or (data.get("error") or {}).get("message") if isinstance(data, dict) else ""
     except (ValueError, AttributeError):
         text = body
-    return re.sub(r"[A-Za-z0-9_\-]{24,}", "[redacted]", str(text or ""))[:80]
+    return re.sub(r"[A-Za-z0-9_\-]{24,}", "[redacted]", str(text or ""))[:200]
 
 
 def _retry_after(error):
@@ -483,9 +488,17 @@ def complete(messages, *, temperature=0.3, max_tokens=400, schema=None, schema_n
                 if status == 429:
                     retry_after = _retry_after(error)
                     detail = _error_detail(error)
+                    spent = provider.get("resolve_model") and "quota" in detail.lower()
                     _record(usage, provider["name"], errors=1, last_call_at=clock(),
                             last_error=f"429 rate limited ({call_class})" + (f": {detail}" if detail else ""),
-                            cooldown_until=clock() + max(15, min(retry_after, 900)))
+                            cooldown_until=clock() + (0 if spent else max(15, min(retry_after, 900))))
+                    if spent:
+                        # A per-model daily quota is spent: that model is done for the day;
+                        # the next call resolves another one instead of waiting.
+                        failed = usage.setdefault("models_failed", {}).setdefault(provider["name"], [])
+                        if provider["model"] not in failed:
+                            failed.append(provider["model"])
+                        usage.get("models", {}).pop(provider["name"], None)
                 elif status in (401, 403):
                     _record(usage, provider["name"], errors=1, last_error=f"{status} rejected credentials", disabled=True)
                 elif status == 400 and schema is not None and provider["json_schema"]:

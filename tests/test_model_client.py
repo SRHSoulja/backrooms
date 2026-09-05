@@ -87,6 +87,28 @@ class TransientRetryTests(unittest.TestCase):
             model_client._request_with_retry(provider, [{"role": "user", "content": "hi"}], 0.1, 20, None, "x", 5, bad, waits.append)
         self.assertEqual(len(calls), 1)  # a 400 is never retried
 
+    def test_a_spent_daily_quota_retires_that_model_for_the_day_and_a_step_down_expires(self):
+        from scripts.model_client import choose_gemini_model, resolve_model
+        listed = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash"]
+        provider = {"name": "gemini", "model": "gemini-2.5-flash", "resolve_model": "gemini-flash", "api_key": "k", "base_url": "https://example.invalid", "models_path": "/models"}
+        usage = {"models": {}, "models_failed": {"gemini": ["gemini-3.8-flash"]}}
+        import json as json_module, io
+        class Response(io.BytesIO):
+            def __enter__(self): return self
+            def __exit__(self, *_a): return False
+        opener = lambda request, timeout=0: Response(json_module.dumps({"data": [{"id": "models/" + name} for name in listed]}).encode())
+        self.assertEqual(resolve_model(provider, usage, opener)["model"], "gemini-3.7-flash")  # 3.8 spent for the day
+        self.assertIsNone(usage["models_until"]["gemini"])
+        # a busy 3.8 gives 3.7 only until 3.8's window ends
+        import time
+        usage = {"models": {}, "models_busy": {"gemini": {"gemini-3.8-flash": time.time() + 120}}}
+        chosen = resolve_model(provider, usage, opener)
+        self.assertEqual(chosen["model"], "gemini-3.7-flash")
+        self.assertAlmostEqual(usage["models_until"]["gemini"], time.time() + 120, delta=5)
+        usage["models_until"]["gemini"] = time.time() - 1
+        usage["models_busy"]["gemini"]["gemini-3.8-flash"] = time.time() - 1
+        self.assertEqual(resolve_model(provider, usage, opener)["model"], "gemini-3.8-flash")
+
     def test_thinking_setting_follows_the_docs(self):
         from scripts.model_client import thinking_setting
         self.assertEqual(thinking_setting("gemini-3.8-flash"), "low")
