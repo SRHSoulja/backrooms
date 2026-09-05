@@ -1389,6 +1389,8 @@ def shared_research_target(current_question, frontier, topic_hint=""):
     for question in reversed(list((frontier or {}).get("open_questions", []))[-6:]):
         if question.get("status") != "open":
             continue
+        if CURRENT_LINE.get("id") and question.get("line_id") != CURRENT_LINE.get("id"):
+            continue  # only the open research line steers the residents; earlier questions are history
         query = str(question.get("research_topic") or "").strip() or question_terms(question.get("question", ""))
         if pursuit_exhausted(query):
             # Pursued for several cycles without a new accepted finding: this

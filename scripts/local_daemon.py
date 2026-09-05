@@ -691,24 +691,34 @@ def action(base_url, cycle):
         return {"action": "local-behavioral-probe", "status": "invalid-result"}
 
 
+REJECTIONS = []  # why the residents' proposals were refused this cycle (reasons only, never the text)
+
+
 def resident_proposals(base_url, line):
     """Ask Echo and Morrow for a question; returns ([(question, source)], accepted_count)."""
     command = [sys.executable, str(ROOT / "scripts/self_prompt.py"), "--base-url", base_url, "--state", str(RUNTIME_STATE),
                "--actions", str(ROOT / "state/action-log.json")]
     if line:
         command += ["--line", json.dumps({"root": line.get("root", ""), "anchors": line.get("anchors", []),
-                                          "hop": len(line.get("hops", [])), "cap": research_lines.HOP_CAP})]
+                                          "hop": len(line.get("hops", [])), "cap": research_lines.HOP_CAP,
+                                          "questions": [hop.get("question", "") for hop in line.get("hops", [])][-3:]})]
     completed = subprocess.run(command, cwd=ROOT, capture_output=True, text=True, check=False)
     accepted, proposals = 0, []
+    REJECTIONS.clear()
     if completed.returncode != 0:
+        REJECTIONS.append("self-prompt failed")
         return proposals, accepted
     try:
         items = json.loads(completed.stdout).get("proposals", [])
     except (json.JSONDecodeError, TypeError, AttributeError):
+        REJECTIONS.append("self-prompt output unreadable")
         return proposals, accepted
     for resident in ("Echo", "Morrow"):
         for proposal in items:
-            if proposal.get("resident") != resident or not proposal.get("accepted"):
+            if proposal.get("resident") != resident:
+                continue
+            if not proposal.get("accepted"):
+                REJECTIONS.append(f"{resident.lower()}: {str(proposal.get('rejection_reason') or 'rejected')[:100]}")
                 continue
             accepted += 1
             for text in str(proposal.get("proposal", "")).splitlines():
@@ -782,6 +792,7 @@ def next_question(base_url):
                                             if row.get("status") not in {"rejected", "retracted", "duplicate"}])
     decision = research_lines.decide(state, cycle, proposals, line_followup, hire_questions(), FIXED_FALLBACK, generic=generic)
     decision["accepted"] = accepted
+    decision["rejections"] = list(REJECTIONS)
     research_lines.save_state(LINES, state)
     return decision
 
@@ -807,7 +818,36 @@ def settle_line(cycle, world):
              and founding.get(room.get("corroboration_id"), set()) & line_findings]
     closures = research_lines.note_outcome(state, cycle, accepted, rooms)
     research_lines.save_state(LINES, state)
+    close_line_questions(cycle, {closure.get("id") for closure in closures})
     return closures
+
+
+def close_line_questions(cycle, closed_line_ids):
+    """An open question belongs to its line: it closes when the line closes, and
+    questions asked before lines existed close once a line has been opened."""
+    try:
+        frontier = json.loads(LOCAL_FRONTIER.read_text()) if LOCAL_FRONTIER.exists() else {}
+    except (OSError, json.JSONDecodeError):
+        return 0
+    state = research_lines.load_state(LINES)
+    closed = {line.get("id") for line in state.get("lines", []) if line.get("status") == "closed"} | set(closed_line_ids or ())
+    changed = 0
+    for question in frontier.get("open_questions", []):
+        if question.get("status") != "open":
+            continue
+        line_id = str(question.get("line_id") or "")
+        if line_id and line_id in closed:
+            question["status"], question["closed_reason"], question["closed_cycle"] = "closed", "its research line closed", int(cycle)
+            changed += 1
+        elif not line_id and state.get("lines"):
+            question["status"], question["closed_reason"], question["closed_cycle"] = "closed", "asked before research lines; superseded", int(cycle)
+            changed += 1
+    if changed:
+        try:
+            atomic_write_json(LOCAL_FRONTIER, frontier)
+        except OSError:
+            return 0
+    return changed
 
 
 def note_line_events(cycle, world, decision, closures):
@@ -1306,6 +1346,7 @@ def publish(result, world, model_health=True):
         "publication_status": dict(PUBLISH_STATUS) if PUBLISH_STATUS.get("at") else previous_publication_status(),
         "question_source": result.get("question_source", "unknown"),
         "self_prompt_accepted": result.get("self_prompt_accepted", 0),
+        "self_prompt_rejections": result.get("self_prompt_rejections", []),
         "activity_feed": "docs/activity.json",
         "feed_freshness_seconds": 0
         ,**resource_health, **analysis_health, **research_health, **findings_health, **frontier_health, **sync_code_proposals(registry), **sync_outside_signals(), **sync_codex_bridge(), **sync_messages(world), **sync_trades(world["cycle"]), **sync_journal(world, registry, result),
@@ -1319,6 +1360,7 @@ def publish(result, world, model_health=True):
         "question": result.get("question", ""),
         "question_source": result.get("question_source", "unknown"),
         "self_prompt_accepted": result.get("self_prompt_accepted", 0),
+        "self_prompt_rejections": result.get("self_prompt_rejections", []),
         "action": result.get("action", {"status": "not-run"}),
         "recruitment": result.get("recruitment", {"status": "not-run"}),
         "autonomy": result.get("autonomy", {"status": "not-run"}),
@@ -1657,6 +1699,7 @@ try:
             result["line_id"] = decision.get("line_id", "")
             result["anchors"] = decision.get("anchors", [])
             result["self_prompt_accepted"] = self_prompt_accepted
+            result["self_prompt_rejections"] = decision.get("rejections", [])
             world = record(result)
             result["action"] = (action(base_url, world["cycle"]) if world["cycle"] % 4 == 0
                                 else {"action": "local-behavioral-probe", "status": "skipped-this-cycle"})
@@ -1672,7 +1715,8 @@ try:
             if args.publish:
                 publish(result, world, model_health=model_health)
             print(json.dumps({"cycle": world["cycle"], "metrics": metrics(result), "action": result["action"],
-                              "codex": codex_task,
+                              "codex": codex_task, "line": {"id": decision.get("line_id"), "source": question_source,
+                                                            "rejections": decision.get("rejections", []), "closed": closures},
                               "autonomy": result["autonomy"], "recruitment": result["recruitment"]}), flush=True)
         else:
             detail = re.sub(r"[A-Za-z0-9_\-]{28,}", "[redacted]", (completed.stderr or "").strip().splitlines()[-1] if (completed.stderr or "").strip() else "")[:200]

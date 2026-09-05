@@ -698,6 +698,29 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertTrue(local_autonomy.PHYSICAL_NEEDS.search("I need clean water and shelter"))
         self.assertFalse(local_autonomy.PHYSICAL_NEEDS.search("I need a public dataset and compute"))
 
+    def test_only_the_open_line_steers_shared_research(self):
+        frontier = {"open_questions": [
+            {"id": "q-old", "cycle": 319, "status": "open", "question": "Does GitHub's contribution graph reflect private activity?",
+             "research_topic": "github contribution graph private"},
+            {"id": "q-line", "cycle": 321, "status": "open", "line_id": "line-000321-abcdef01", "question": "Does EXIF metadata reference documented subjects?",
+             "research_topic": "exif metadata caption"}]}
+        findings = [{"id": "f-old", "topic": "github contribution graph private", "status": "unreviewed", "url": "https://docs.github.com/x",
+                     "claim": "Contribution graphs may need a rebuild."}]
+        original = (dict(local_autonomy.CURRENT_LINE), local_autonomy.accepted_findings, local_autonomy.load_records, local_autonomy.load_pursuit)
+        local_autonomy.accepted_findings = lambda: findings
+        local_autonomy.load_records = lambda _path: []
+        local_autonomy.load_pursuit = lambda: {}
+        try:
+            local_autonomy.CURRENT_LINE.update({"id": "", "anchors": []})
+            query, family, _avoid = local_autonomy.shared_research_target("Does EXIF metadata reference documented subjects?", frontier, topic_hint="exif metadata caption")
+            self.assertEqual(query, "github contribution graph private")  # before lines, the old question with findings steered
+            local_autonomy.CURRENT_LINE.update({"id": "line-000321-abcdef01", "anchors": ["exif"]})
+            query, family, _avoid = local_autonomy.shared_research_target("Does EXIF metadata reference documented subjects?", frontier, topic_hint="exif metadata caption")
+            self.assertEqual((query, family), ("exif metadata caption", None))  # on a line, only the line steers
+        finally:
+            local_autonomy.CURRENT_LINE.clear(); local_autonomy.CURRENT_LINE.update(original[0])
+            local_autonomy.accepted_findings, local_autonomy.load_records, local_autonomy.load_pursuit = original[1:]
+
     def test_findings_on_the_council_line_carry_its_anchors_and_drift_is_rejected(self):
         payloads = iter([
             {"claim": "Roskomnadzor blocked access to GitHub in December 2014.", "quote": "Roskomnadzor blocked access to GitHub", "confidence": 0.9},

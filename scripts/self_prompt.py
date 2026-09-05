@@ -80,6 +80,10 @@ try:
     open_questions = [{"question": str(item.get("question", ""))[:200], "cycle": item.get("cycle")} for item in (own or [i for i in items if i.get("status") == "open"])[-3:]]
 except (OSError, ValueError):
     open_questions = []
+if research_line and research_line.get("questions"):
+    # On an open line the residents see that line's own questions, not the
+    # world's whole backlog, so a proposal follows the line rather than an old subject.
+    open_questions = [{"question": str(item)[:200]} for item in research_line.get("questions", [])[-3:]]
 # No standing list of topics: the residents see only the world's own record
 # (charter, memory, findings, contradictions, their earlier questions).
 context = json.dumps({"research_line": research_line, "recent_findings": recent_findings[-5:], "open_contradictions": open_contradictions,

@@ -91,7 +91,7 @@ def anchor_terms(question, generic=()):
                 if token.lower() not in ANCHOR_STOPWORDS and token.lower() not in generic]
     proper, common = [], []
     for term in acronyms + content_terms(text):
-        if term in ANCHOR_STOPWORDS or term in generic:
+        if term in ANCHOR_STOPWORDS or term in generic or term in proper or term in common:
             continue
         if term in acronyms or term in capitalised or any(char.isdigit() for char in term):
             proper.append(term)

@@ -17,6 +17,10 @@ class AnchorTests(unittest.TestCase):
         common = anchor_terms("How do published open-source agent systems implement persistent memory across restarts?")
         self.assertTrue(common and all(term not in {"github", "agent", "systems", "published"} for term in common))
         self.assertEqual(anchor_terms("Which sources support the claim?"), [])
+        # one acronym plus common words: the acronym does not crowd the common anchors out
+        exif = anchor_terms("Does the image's metadata (EXIF, alt-text, or caption) reference a subject documented in Wikipedia with matching timestamps?")
+        self.assertEqual(exif[0], "exif")
+        self.assertEqual(len(exif), 3)
 
     def test_anchor_matching_is_by_stem_and_generic_words_do_not_count(self):
         anchors = anchor_terms("Does the GitHub profile Roscomnadzor27 have any publicly documented affiliation with Roskomnadzor's official channels?")
