@@ -782,6 +782,21 @@ class LocalAutonomyTests(unittest.TestCase):
             local_autonomy.CURRENT_LINE.update(original_line)
         self.assertEqual((on_line["status"], on_line["line_id"], on_line["anchors"]), ("unreviewed", "line-000300-abcdef01", ["roskomnadzor"]))
         self.assertEqual((drifted["status"], drifted["rejection_reason"]), ("rejected", "off-topic"))
+        # a resident's own target, recovered through search after a dead link, is not the council's line
+        recovered_agent = {"id": "local-test", "room": "archive", "capabilities": [], "research_assignment": {"cycle": 5, "origin": "failed-target-recovery"}}
+        payloads_again = iter([{"claim": "Users can choose to hide their private contributions on GitHub.", "quote": "hide their private contributions", "confidence": 0.8}])
+        local_autonomy.urllib.request.urlopen = lambda *_args, **_kwargs: type("R", (), {"read": lambda self: json.dumps({"choices": [{"message": {"content": json.dumps(next(payloads_again))}}]}).encode(), "__enter__": lambda self: self, "__exit__": lambda self, *a: False})()
+        try:
+            local_autonomy.CURRENT_LINE.update({"id": "line-000300-abcdef01", "anchors": ["roskomnadzor"]})
+            own = local_autonomy.extract_finding("http://127.0.0.1:1", recovered_agent, 5,
+                {"source": "https://docs.github.com/en/profile-contributions", "excerpt": "Users can choose to hide their private contributions on GitHub profiles.",
+                 "source_hash": "hash-c", "query": "github profile contributions"})
+        finally:
+            local_autonomy.urllib.request.urlopen = original
+            local_autonomy.CURRENT_LINE.clear()
+            local_autonomy.CURRENT_LINE.update(original_line)
+        self.assertEqual(own.get("line_id"), None)
+        self.assertEqual(own["status"], "unreviewed")
 
     def test_extraction_from_a_persons_profile_is_rejected_as_profile_subject(self):
         excerpt = "roscom. Ross Cameron. Roscommon Pty Ltd. Sydney, Australia. 12 repositories."

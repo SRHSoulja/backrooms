@@ -292,7 +292,9 @@ def extract_finding(url, agent, cycle, tool, target_claim=None, topic_override=N
     if target_claim and target_claim.get("id"):
         record["verifies"] = target_claim.get("id")
         record["verifies_claim"] = str(target_claim.get("claim", ""))[:300]
-    if record["origin"] != "resident-target" and CURRENT_LINE.get("id"):
+    if record["origin"] not in ("resident-target", "failed-target-recovery") and CURRENT_LINE.get("id"):
+        # Only work done for the council's line is held to the line's anchors; a
+        # resident's own target, or the search that recovers a dead one, is not.
         record["line_id"] = CURRENT_LINE["id"]
         record["anchors"] = list(CURRENT_LINE.get("anchors") or [])
     if status == "rejected":
