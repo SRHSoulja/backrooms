@@ -1697,7 +1697,7 @@ def evidence_room_growth(world, registry, cycle):
             "description": f"Connected research room for corroborated findings about {topic[:120]}.",
             "charter": f"Compare and preserve public evidence about {topic[:180]}.",
             "growth_topic": topic, "founded_by": sorted({item.get("agent") for item in pair if item.get("agent")}),
-            "founded_via": "evidence-ledger", "founded_cycle": cycle,
+            "founded_via": "evidence-ledger", "founded_cycle": cycle, "cross_world": bool(record.get("cross_world")),
             "founded_at": datetime.now(timezone.utc).isoformat(), "corroboration_id": record.get("id"),
             "artifacts": [item["id"] for item in pair],
             "board": [{"task": "Review the corroborating sources and record the next question.", "claimed_by": None, "status": "open"}],

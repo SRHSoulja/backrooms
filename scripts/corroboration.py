@@ -378,6 +378,7 @@ def make_record(first, second, identifier, relation, reason, cycle, similarity=N
             "similarity": similarity, "cycle": cycle, "judge": judge,
             "model_relation": model_relation if model_relation in RELATIONS else relation,
             "inference": inference if isinstance(inference, dict) else None,
+            "cross_world": bool(first.get("peer") or second.get("peer")),  # one side was imported from a peer world
             "recorded_at": datetime.now(timezone.utc).isoformat()}
 
 

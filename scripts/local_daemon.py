@@ -44,6 +44,7 @@ try:
     from scripts.world_rules import day_zero_from_events
     from scripts import research_lines
     from scripts import ledger_chain
+    from scripts import federation
     from scripts import model_client
     from scripts import journal as journal_module
 except ImportError:
@@ -54,6 +55,7 @@ except ImportError:
     from world_rules import day_zero_from_events
     import research_lines
     import ledger_chain
+    import federation
     import model_client
     import journal as journal_module
 
@@ -111,6 +113,8 @@ PUBLIC_CODE_PROPOSALS = ROOT / "docs/code-proposals.json"
 LOCAL_TOOL_PROPOSALS = ROOT / "state/tool-proposals.json"
 PUBLIC_TOOL_PROPOSALS = ROOT / "docs/tool-proposals.json"
 PUBLIC_DISAGREEMENTS = ROOT / "docs/disagreements.json"
+PUBLIC_FEDERATION = ROOT / "docs/federation.json"
+SITE_URL = "https://srhsoulja.github.io/backrooms"
 LOCAL_CODE_PROPOSALS = ROOT / "state/code-proposals.json"
 PUBLIC_VOICE_BLOCKED = BLOCKED
 ARCHIVE = ROOT / "state/archive/events.jsonl"
@@ -925,6 +929,54 @@ def close_line_questions(cycle, closed_line_ids):
     return changed
 
 
+def note_world_events(cycle, world, events):
+    """Append events to the runtime world, the canonical world, and the chained archive."""
+    if not events:
+        return world
+    stamp = datetime.now(timezone.utc).isoformat()
+    stored = []
+    for index, event in enumerate(events):
+        event = {"id": f"event-{event.get('kind', 'event')}-{int(cycle):06d}-{index}", "confidence": 1.0, "purpose": "federation",
+                 **event, "cycle": int(cycle), "recorded_at": stamp}
+        stored.append(ledger_chain.append_event(ARCHIVE, event))
+        world.setdefault("events", []).append(stored[-1])
+    world["events"] = world["events"][-20:]
+    atomic_write_json(RUNTIME_STATE, world)
+    try:
+        canonical = json.loads(STATE.read_text())
+        canonical["events"] = (canonical.get("events", []) + stored)[-200:]
+        atomic_write_json(STATE, canonical)
+    except (OSError, json.JSONDecodeError):
+        pass
+    return world
+
+
+def run_federation(cycle, world):
+    """Read the peer worlds, file verified imports, and record the events; never lets a peer fail the cycle."""
+    peers = federation.load_peers()
+    if not peers:
+        return {"peers": 0, "imported": 0}
+    try:
+        from scripts.tool_broker import fetch as broker_fetch, public_text as broker_text, RESEARCH_MAX_BYTES
+    except ImportError:
+        from tool_broker import fetch as broker_fetch, public_text as broker_text, RESEARCH_MAX_BYTES
+    try:
+        summary = federation.federate(cycle, peers, lambda url: json.loads(broker_fetch(url, RESEARCH_MAX_BYTES)), broker_text)
+    except Exception as error:  # noqa: BLE001
+        return {"peers": len(peers), "imported": 0, "error": type(error).__name__}
+    note_world_events(cycle, world, summary.get("events", []))
+    return {"peers": len(peers), "imported": len(summary.get("imported", [])), "skipped": summary.get("skipped", {})}
+
+
+def sync_federation():
+    peers = federation.load_peers()
+    state = federation.load_state()
+    public = federation.public_view(state, peers, ledger_rows(), load_records(LOCAL_CORROBORATIONS), site_url=SITE_URL)
+    atomic_write_json(PUBLIC_FEDERATION, public)
+    return {"federation_peers": len(peers), "federation_imported": public["imported"], "cross_world_pairs": public["cross_world_pairs"],
+            "federation_feed": "docs/federation.json"}
+
+
 def note_line_events(cycle, world, decision, closures):
     """Record line openings and closings as world events so the feed and the journal show them."""
     events = []
@@ -1073,7 +1125,7 @@ def sync_frontier(result, world, registry):
             "topic": str(record.get("topic", ""))[:160], "finding_ids": list(record.get("finding_ids", []))[:8],
             "domains": list(record.get("domains", [])), "reason": str(record.get("reason", ""))[:200], "status": "open"})
         known_contradictions.add(contradiction_id)
-    frontier["corroborations"] = [{key: record.get(key) for key in ("id", "relation", "model_relation", "shared_claim", "judge", "finding_ids", "topic", "domains", "cycle")}
+    frontier["corroborations"] = [{key: record.get(key) for key in ("id", "relation", "model_relation", "shared_claim", "judge", "finding_ids", "topic", "domains", "cycle", "cross_world")}
                                   for record in corroborations[-100:]]
     previous_tasks = {item.get("id"): item for item in frontier.get("tasks", []) if item.get("id")}
     tasks = []
@@ -1584,6 +1636,7 @@ def publish(result, world, model_health=True):
     sync_code_proposals(registry)
     health.update(sync_tool_proposals())
     health.update(sync_disagreements())
+    health.update(sync_federation())
     try:
         health["inference_judge"] = json.loads((ROOT / "state/inference-judge.json").read_text())
     except (OSError, json.JSONDecodeError):
@@ -1597,12 +1650,12 @@ def publish(result, world, model_health=True):
     sync_outside_signals()
     status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True)
     changed = {line[3:] for line in status.stdout.splitlines() if len(line) >= 4}
-    allowlisted = {"docs/local-cycle.json",  "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/trades.json", "docs/code-proposals.json", "docs/tool-proposals.json", "docs/disagreements.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json", "docs/journal.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json", "state/frontier.json", "state/codex-bridge-status.json"}
+    allowlisted = {"docs/local-cycle.json",  "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/trades.json", "docs/code-proposals.json", "docs/tool-proposals.json", "docs/disagreements.json", "docs/federation.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json", "docs/journal.json", "state/world.json", "state/work-orders.json", "state/whiteboard.json", "state/printer-queue.json", "state/frontier.json", "state/codex-bridge-status.json"}
     offending = {path for path in changed if path not in allowlisted and not path.startswith("journal/")}
     if offending:
         note_publish("skipped", "other local changes present: " + ", ".join(sorted(offending)[:5])[:160])
         return
-    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/trades.json", "docs/code-proposals.json", "docs/tool-proposals.json", "docs/disagreements.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json", "docs/journal.json"], cwd=ROOT, check=True)
+    subprocess.run(["git", "add", "docs/local-cycle.json", "docs/action-history.json", "docs/local-hirelings.json", "docs/agent-requests.json", "docs/voices.json", "docs/world.json", "docs/continuity-audit.json", "docs/work-orders.json", "docs/health.json", "docs/whiteboard.json", "docs/printer.json", "docs/resident-notes.json", "docs/activity.json", "docs/analysis.json", "docs/research.json", "docs/findings.json", "docs/messages.json", "docs/trades.json", "docs/code-proposals.json", "docs/tool-proposals.json", "docs/disagreements.json", "docs/federation.json", "docs/outside-signals.json", "docs/frontier.json", "docs/codex-bridge.json", "docs/journal.json"], cwd=ROOT, check=True)
     subprocess.run(["git", "add", "journal"], cwd=ROOT, check=False)
     commit = subprocess.run(["git", "commit", "-m", "chore: publish local council signal"], cwd=ROOT, capture_output=True)
     if commit.returncode == 0:
@@ -1789,6 +1842,7 @@ try:
             result["self_prompt_accepted"] = self_prompt_accepted
             result["self_prompt_rejections"] = decision.get("rejections", [])
             world = record(result)
+            result["federation"] = run_federation(world["cycle"], world)
             result["action"] = (action(base_url, world["cycle"]) if world["cycle"] % 4 == 0
                                 else {"action": "local-behavioral-probe", "status": "skipped-this-cycle"})
             result["recruitment"] = recruit(base_url, world["cycle"])
