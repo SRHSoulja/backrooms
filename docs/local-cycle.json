@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-09-06T10:27:19.315354+00:00",
+  "generated_at": "2026-09-06T10:31:19.086437+00:00",
   "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
-  "runtime_cycle": 385,
+  "runtime_cycle": 386,
   "question": "Which independent public source (e.g., a national statistical office, an official parliamentary record, or a reputable international database) provides a definitive timeline of Italian government durations that can be used to verify the exact date when Giorgia Meloni\u2019s cabinet surpassed the post\u2011war",
   "question_source": "carried:line-000381-25f0ea7e",
   "self_prompt_accepted": 2,
@@ -19,13 +19,13 @@
     "active": 32,
     "decisions": [
       {
-        "id": "local-001",
+        "id": "local-007",
         "action": "explore",
-        "room": "prime-minister-giorgia-meloni",
+        "room": "archive",
         "status": "active-local",
         "proposal": "",
         "reason": "Assigned to the council's research question this turn.",
-        "request": "",
+        "request": "Verify existence and metadata of the arXiv study referenced in the driving question to confirm relevance to disinformation detection and cross-check for non-French datasets",
         "request_status": "closed",
         "exploration": "spain italy recovery resilience facility authors find meaningful",
         "tool": {
@@ -51,14 +51,14 @@
               "snippet": "the eu \u2019s recovery and resilience facility : experience and lessons for the next multiannual financial framework author : matthias busse matthias busse , francesca caselli francesca casell..."
             },
             {
-              "title": "Legitimacy and political dissensus in the implementation of the Recovery and Resilience Facility: the case of Italy | European Political Science | Cambridge Cor",
-              "url": "https://www.cambridge.org/core/journals/european-political-science/article/legitimacy-and-political-dissensus-in-the-implementation-of-the-recovery-and-resilience-facility-the-case-of-italy/D67C72349379AE9FF5A07290F981E71B",
-              "snippet": "legitimacy and political dissensus in the implementation of the recovery and resilience facility : the case of italy published online by cambridge university press : 01 january 2026 andrea capati ..."
+              "title": "Alignment and asymmetry: European and national crisis governance under the Recovery and Resilience Facility | Policy and Society | Oxford Academic",
+              "url": "https://academic.oup.com/policyandsociety/article/45/1/71/8455641",
+              "snippet": "journal article alignment and asymmetry : european and national crisis governance under the recovery and resilience facility eugenio borgognoni , eugenio borgognoni department of political sci..."
             },
             {
-              "title": "Full article: Socio-technical Governance and Legitimation Processes: A Comparative Analysis of the Belgian, Italian, and Spanish National Recovery and Resilienc",
-              "url": "https://www.tandfonline.com/doi/full/10.1080/13876988.2026.2666244",
-              "snippet": "journal of comparative policy analysis : research and practice volume 28 , 2026 - issue 3 open access research article socio - technical governance and legitimation processes : a comparative a..."
+              "title": "Healthcare Policy\u2010Making Through the EU Recovery and Resilience Facility: A Multi\u2010Level Governance and Policy Design Approach - Natali - 2025 - Risk, Hazards & ",
+              "url": "https://onlinelibrary.wiley.com/doi/10.1002/rhc3.70038",
+              "snippet": "risk , hazards & crisis in public policy volume 16 , issue 4 e70038 original article open access healthcare policy - making through the eu recovery and resilience facility : a multi - level go..."
             }
           ]
         },
@@ -69,32 +69,49 @@
         "decision_source": "scheduler"
       },
       {
-        "id": "local-003",
-        "action": "stay",
+        "id": "local-008",
+        "action": "explore",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
-        "request": "",
+        "reason": "No FrameNet data available; baseline examples from project source are needed to establish a reference for comparison.",
+        "request": "Run Python sandbox code to parse annotated examples and calculate usage patterns",
         "request_status": "closed",
-        "exploration": "arXiv:2509.22377",
+        "exploration": "code:scripts/evidence.py",
         "tool": {
-          "status": "not-requested"
+          "tool": "local-code-read",
+          "status": "completed",
+          "file": "scripts/evidence.py",
+          "bytes": 5847,
+          "sha256": "e4232c4402f4c6ce561c8d1c6d89484e84070690a696471604a7725c5ba75c1e",
+          "content": "\"\"\"Shared evidence rules for source-backed findings.\n\nBoth the autonomy subprocess (at extraction time) and the daemon (at\npublication time) use these pure functions so a finding is judged by one\nstandard. Nothing here touches the network, the model, or local state.\n\"\"\"\n\nimport re\n\nSTOPWORDS = {\"about\", \"after\", \"also\", \"from\", \"into\", \"that\", \"this\", \"with\", \"what\", \"which\",\n             \"where\", \"when\", \"does\", \"did\", \"have\", \"their\", \"there\", \"these\", \"those\", \"than\"}\n# Prepositions, determiners, and auxiliaries name no subject; a corroborated\n# definition of one of them is not evidence about the world.\nFUNCTION_WORDS = {'above', 'across', 'against', 'along', 'although', 'always', 'among', 'another', 'around', 'because', 'been', 'before', 'behind', 'being', 'below', 'beneath', 'between', 'beyond', 'both', 'during', 'each', 'either', 'even', 'ever', 'every', 'hence', 'just', 'less', 'many', 'might', 'more', 'most', 'much', 'must', 'neither', 'never', 'often', 'only', 'onto', 'other', 'others', 'over', 'shall', 'since', 'some', 'still', 'such', 'though', 'through', 'thus', 'toward', 'towards', 'under', 'until', 'upon', 'very', 'were', 'whether', 'while', 'will', 'within', 'without'}\nSTOPWORDS |= FUNCTION_WORDS\nIMPERATIVE = re.compile(r\"^(?:explore|search|analyze|identify|continue|find|review|investigate|look)\\b\", re.I)\nQUOTE_SUPPORT_THRESHOLD = 0.85\nMIN_FUZZY_TOKENS = 4\n_PUNCTUATION_MAP = {\"\u2018\": \"'\", \"\u2019\": \"'\", \"\u201c\": '\"', \"\u201d\": '\"', \"\u2013\": \"-\", \"\u2014\": \"-\",\n                    \"\u00a0\": \" \", \"\u2026\": \"...\"}\n\n\ndef normalize(text):\n    \"\"\"Lower-case, fold typographic punctuation, and collapse whitespace.\"\"\"\n    value = str(text or \"\")\n    for source, target in _PUNCTUATION_MAP.items():\n        value = value.replace(source, target)\n    return re.sub(r\"\\s+\", \" \", value).strip().lower()\n\n\ndef tokens(text):\n    return re.findall(r\"[a-z0-9]+\", normalize(text))\n\n\ndef _lcs_length(left, right):\n    \"\"\"Length of the longest common subsequence of two short token lists.\"\"\"\n    if not left or not right:\n        return 0\n    previous = [0] * (len(right) + 1)\n    for item in left:\n        current = [0]\n        for index, other in enumerate(right, start=1):\n            if item == other:\n                current.append(previous[index - 1] + 1)\n            else:\n                current.append(max(previous[index], current[index - 1]))\n        previous = current\n    return previous[-1]\n\n\ndef quote_support(quote, excerpt, threshold=QUOTE_SUPPORT_THRESHOLD):\n    \"\"\"Return (supported, score, mode) describing how well the excerpt backs the quote.\n\n    An exact normalized substring scores 1.0. Otherwise the quote must share at\n    least ``threshold`` of its tokens, in order, with some window of the excerpt.\n    Small models paraphrase punctuation and drop function words; this keeps the\n    evidence bar high without demanding byte-exact copying.\n    \"\"\"\n    quote_tokens = tokens(quote)\n    excerpt_tokens = tokens(excerpt)\n    if not quote_tokens or not excerpt_tokens:\n        return False, 0.0, \"none\"\n    if normalize(quote) in normalize(excerpt):\n        return True, 1.0, \"exact\"\n    if len(quote_tokens) < MIN_FUZZY_TOKENS:\n        return False, 0.0, \"too-short\"\n    window = len(quote_tokens) + max(2, len(quote_tokens) // 4)\n    anchors = set(quote_tokens)\n    best = 0.0\n    for start, token in enumerate(excerpt_tokens):\n        if token not in anchors:\n            continue\n        segment = excerpt_tokens[start:start + window]\n        score = _lcs_length(quote_tokens, segment) / len(quote_tokens)\n        if score > best:\n            best = score\n            if best >= 1.0:\n                break\n    supported = best >= threshold\n    return supported, round(best, 3), \"fuzzy\" if supported else \"unsupported\"\n\n\ndef claim_terms(claim):\n    return {term for term in re.findall(r\"[a-z0-9]{4,}\", normalize(claim)) if term not in STOPWORDS}\n\n\ndef claim_grounded(claim, quote):\n    \"\"\"A claim must share vocabulary with its quote and must not be an instruction.\"\"\"\n    if not claim or not quote:\n        return False, \"missing-claim-or-quote\"\n    if IMPERATIVE.match(str(claim).strip()):\n        return False, \"imperative-claim\"\n    terms = claim_terms(claim)\n    quote_vocabulary = set(re.findall(r\"[a-z0-9]{4,}\", normalize(quote)))\n    if len(terms & quote_vocabulary) < min(2, len(terms)):\n        return False, \"claim-not-grounded-in-quote\"\n    return True, \"grounded\"\n\n\ndef clamp_confidence(value):\n    \"\"\"Fold a model-reported confidence into [0, 1]; unparseable values become 0.0.\n\n    The JSON grammar cannot enforce numeric ranges, so a well-quoted finding\n    must not be thrown away merely because the model wrote 1.5 or \"high\".\n    \"\"\"\n    try:\n        number = float(value)\n    except (TypeError, ValueError):\n        return 0.0\n    if number != number:\n        return 0.0\n    return max(0.0, min(1.0, number))\n\n\ndef classify_finding(claim, quote, excerpt=None, confidence=None):\n    \"\"\"Return (status, reason, quote_score) for a candidate finding.\n\n    ``excerpt`` may be None when re-checking a stored record whose page text is\n    no longer available; the stored quote-to-excerpt verdict is then trusted and\n    only claim grounding is re-evaluated. Confidence never rejects a finding;\n    callers store ``clamp_confidence`` of it.\n    \"\"\"\n    grounded, reason = claim_grounded(claim, quote)\n    if not grounded:\n        return \"rejected\", reason, 0.0\n    if excerpt is None:\n        return \"unreviewed\", \"grounded\", 1.0\n    supported, score, mode = quote_support(quote, excerpt)\n    if not supported:\n        return \"rejected\", f\"quote-{mode}\", score\n    return \"unreviewed\", f\"quote-{mode}\", score\n\n\ndef is_accepted(record):\n    \"\"\"Rejected rows stay in the ledger for audit but never count as evidence.\"\"\"\n    return str((record or {}).get(\"status\", \"unreviewed\")) not in {\"rejected\", \"retracted\"}",
+          "read_only": true,
+          "privacy": "sanitized public source only",
+          "contract": {
+            "capability": "public-source-read",
+            "access": "read-only",
+            "network": "none",
+            "side_effects": false,
+            "max_file_bytes": 120000,
+            "max_inventory_bytes": 400000,
+            "write_access": false,
+            "secrets": "redacted"
+          }
         },
         "message": null,
         "trade": null,
         "finding_id": null,
-        "fallback_reason": "unstructured-output",
+        "fallback_reason": null,
         "decision_source": "model"
       },
       {
-        "id": "local-005",
+        "id": "local-012",
         "action": "explore",
-        "room": "france-compensation-agricultural-2",
+        "room": "archive",
         "status": "active-local",
         "proposal": "",
         "reason": "Assigned to the council's research question this turn.",
-        "request": "",
+        "request": "Verify public GitHub profile for Roscomnadzor27 to cross-reference with frontier questions 307-309",
         "request_status": "closed",
         "exploration": "spain italy recovery resilience facility authors disputed revised different",
         "tool": {
@@ -134,11 +151,6 @@
               "title": "Recovery and Resilience Facility. Una comparazione tra paesi chiave dell'Unione europea",
               "url": "https://www.parlamento.it/application/xmanager/projects/parlamento/file/repository/affariinternazionali/osservatorio/approfondimenti/PI0181App.pdf",
               "snippet": "recovery and resilience facility . una comparazione tra paesi chiave dell \u2019 unione europea luglio 2021 181 a cura dell ' istituto per gli studi di politica internazionale osservatorio di politic..."
-            },
-            {
-              "title": "The Italian National Recovery and Resilience Plan: coordination and conditionality | Request PDF",
-              "url": "https://www.researchgate.net/publication/359352973_The_Italian_National_Recovery_and_Resilience_Plan_coordination_and_conditionality",
-              "snippet": "article the italian national recovery and resilience plan : coordination and conditionality march 2022 contemporary italian politics doi : 10 . 1080 / 23248823 . 2022 . 2046099 authors : e..."
             }
           ]
         },
@@ -149,46 +161,32 @@
         "decision_source": "scheduler"
       },
       {
-        "id": "local-006",
-        "action": "explore",
+        "id": "local-013",
+        "action": "stay",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "The MMFakeBench search results are inconclusive; direct retrieval of the arXiv preprint is needed to validate or contradict claims.",
-        "request": "Extract and analyze all text fields (bio, repositories, stars, forks, affiliations) for keywords: 'geophysics', 'seismic', 'HVSR', 'Horizontal-to-Vertical Spectral Ratio'",
+        "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
+        "request": "Retrieve GitHub\u2019s public search results for verified email addresses or SSH keys linked to the handle **Roscomnadzor27** via GitHub\u2019s verified metadata filters",
         "request_status": "closed",
-        "exploration": "arXiv:2406.08772",
+        "exploration": "france providing farmers billion help recover disputed revised different",
         "tool": {
-          "tool": "arxiv-summary",
-          "query": "2406.08772",
-          "title": "Hadronic processes at work in 5BZB J0630-2406",
-          "url": "https://arxiv.org/abs/2310.03698v2",
-          "excerpt": "Hadronic processes at work in 5BZB J0630-2406. Recent observations are shedding light on the important role that active galactic nuclei (AGN) play in the production of high-energy neutrinos. In this study, we focus on one object, 5BZB J0630-2406, which is among the blazars recently proposed as associated with neutrino emission during the first 7-yr IceCube observations. Modelling the quasi-simultaneous, broad-band spectral energy distribution, we explore various scenarios from purely leptonic to lepto-hadronic models, testing the inclusion of external photon fields. This theoretical study provides a complementary testing ground for the proposed neutrino-blazar association. Despite being historically classified as a BL Lac, our study shows that 5BZB J0630-2406 belongs to the relatively rare sub-class of high-power flat-spectrum radio quasars (FSRQs). Our results indicate that interactions between protons and external radiation fields can produce a neutrino flux that is within the reach of the IceCube detector. Furthermore, the spectral shape of the X-ray emission suggests the imprint of hadronic processes related to very energetic protons.",
-          "status": "completed",
-          "contract": {
-            "capability": "public-text-read",
-            "access": "read-only",
-            "network": "public HTTPS",
-            "side_effects": false,
-            "max_bytes": 32000,
-            "raw_data": false,
-            "untrusted_content": true
-          }
+          "status": "not-requested"
         },
         "message": null,
         "trade": null,
         "finding_id": null,
-        "fallback_reason": null,
+        "fallback_reason": "unstructured-output",
         "decision_source": "model"
       },
       {
-        "id": "local-010",
+        "id": "local-016",
         "action": "explore",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
         "reason": "Assigned to the council's research question this turn.",
-        "request": "Return all public repositories, profiles, and metadata linked to Roscomnadzor27 or similar handles, focusing on verified email addresses, SSH keys, or domain ownership",
+        "request": "",
         "request_status": "closed",
         "exploration": "spain italy recovery resilience facility authors find meaningful",
         "tool": {
@@ -209,8 +207,8 @@
           },
           "search_results": [
             {
-              "title": "The added value of the Recovery and Resilience Facility: Based on an assessment of the Recovery and Resilience Plans: France, Italy, Portugal and Spain",
-              "url": "https://buleria.unileon.es/bitstream/handle/10612/18253/Added_Value_Recovery_Resilience.pdf?sequence=1&isAllowed=y",
+              "title": "The added value of the Recovery and Resilience Facility Based on an assessment of the Recovery and Resilience Plans: France, Italy, Portugal and Spain",
+              "url": "https://www.europarl.europa.eu/RegData/etudes/STUD/2022/689452/IPOL_STU(2022)689452_EN.pdf#page=4",
               "snippet": "external authors : carlos martinez mongay mar\u00eda dolores gadea rivas beatriz barrado vanesa az\u00f3n the added value of the recovery and resilience facility based on an assessment of the reco..."
             },
             {
@@ -232,30 +230,17 @@
         "decision_source": "scheduler"
       },
       {
-        "id": "local-011",
-        "action": "explore",
+        "id": "local-019",
+        "action": "analyze",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Direct evidence needed to confirm or reject the claim before proceeding with WSJ delay analysis.",
-        "request": "Verify whether the AutoHVSR algorithm\u2019s claims (99% resonance identification accuracy, 0.05 Hz RMSE) align with independent public sources or methodological critiques",
+        "reason": "Parse the fetched GitHub profile excerpt for explicit metadata (verified emails, SSH keys, domain links) to confirm or rule out Roskomnadzor27\u2019s official affiliation.",
+        "request": "Retrieve the full profile metadata (publicly accessible fields) of Roscomnadzor27\u2019s GitHub account",
         "request_status": "closed",
-        "exploration": "arXiv:1109.6211v1",
+        "exploration": "https://github.com/Roscomnadzor27",
         "tool": {
-          "tool": "arxiv-summary",
-          "status": "failed",
-          "error_kind": "source-timeout",
-          "reason": "source-timeout",
-          "retryable": true,
-          "contract": {
-            "capability": "public-text-read",
-            "access": "read-only",
-            "network": "public HTTPS",
-            "side_effects": false,
-            "max_bytes": 32000,
-            "raw_data": false,
-            "untrusted_content": true
-          }
+          "status": "not-requested"
         },
         "message": null,
         "trade": null,
@@ -264,21 +249,21 @@
         "decision_source": "model"
       },
       {
-        "id": "local-015",
+        "id": "local-021",
         "action": "explore",
-        "room": "france-compensation-agricultural",
+        "room": "archive",
         "status": "active-local",
         "proposal": "",
         "reason": "Assigned to the council's research question this turn.",
-        "request": "Run sandboxed Python regex analysis on cached commit metadata for Roscomnadzor27\u2019s profile, targeting keywords aligned with frontier-question-355\u2019s research topic",
+        "request": "Verify public visibility and seismic/geophysics relevance of roscom\u2019s GitHub profile via recursive crawl of repositories, commits, and starred items. Cross-check with frontier-question-317 and Sudan 2023 research",
         "request_status": "closed",
         "exploration": "spain italy recovery resilience facility authors disputed revised different",
         "tool": {
           "tool": "wikipedia-summary",
           "query": "spain italy recovery resilience facility authors disputed revised different",
-          "title": "Economic impact of the 2026 Iran war",
-          "url": "https://en.wikipedia.org/wiki/Economic_impact_of_the_2026_Iran_war",
-          "excerpt": "The 2026 Iran war, including the closure of the Strait of Hormuz, has led to what the International Energy Agency has characterized as the \"largest supply disruption in the history of the global oil market\". The conflict has echoed the 1970s energy crisis through acute supply shortages, currency volatility, inflation and heightened risks of stagflation and recession. A 2026 market analysis by MCB Group placed the current disruption alongside four earlier oil-market shocks, noting that in each case the initial price spike proved larger than the eventual sustained increase. The 1990\u201391 Gulf War saw oil prices decline within about nine months of the initial spike, according to a survey of historical oil shocks. A similar pattern followed the 2003 Iraq War. The Congressional Research Service found that oil prices, after rising sharply at the outset of the conflict, returned to pre-crisis levels within a few months. Brent crude's rise to nearly $130 a barrel after Russia's 2022 invasion of Ukraine but fell back over the following months. MCB Group similarly noted that a $10\u201315 per barrel risk premium associated with the June 2025 Twelve-Day War between Israel and Iran dissipated within days after the ceasefire.",
+          "title": "Enlargement of the eurozone",
+          "url": "https://en.wikipedia.org/wiki/Enlargement_of_the_eurozone",
+          "excerpt": "The enlargement of the eurozone is an ongoing process within the European Union (EU). All member states of the European Union, except Denmark which negotiated an opt-out from the provisions, are obliged to adopt the euro as their sole currency once they meet the criteria, which include: complying with the debt and deficit criteria outlined by the Stability and Growth Pact, keeping inflation and long-term governmental interest rates below certain reference values, stabilising their currency's exchange rate versus the euro by participating in the European Exchange Rate Mechanism, and ensuring that their national laws comply with the ECB statute, ESCB statute and articles 130+131 of the Treaty on the Functioning of the European Union. The obligation for EU member states to adopt the euro was first outlined by article 109.1j of the Maastricht Treaty of 1992, which became binding on all new member states by the terms of their treaties of accession.",
           "status": "completed",
           "contract": {
             "capability": "public-text-read",
@@ -291,9 +276,9 @@
           },
           "search_results": [
             {
-              "title": "The EU\u2019s Recovery and Resilience Facility: Experience and Lessons for the Next Multiannual Financial Framework in: IMF Working Papers Volume 2026 Issue 114 (202",
-              "url": "https://www.elibrary.imf.org/view/journals/001/2026/114/article-A001-en.xml",
-              "snippet": "the eu \u2019s recovery and resilience facility : experience and lessons for the next multiannual financial framework author : matthias busse matthias busse , francesca caselli francesca casell..."
+              "title": "The added value of the Recovery and Resilience Facility Based on an assessment of the Recovery and Resilience Plans: France, Italy, Portugal and Spain",
+              "url": "https://www.europarl.europa.eu/RegData/etudes/STUD/2022/689452/IPOL_STU(2022)689452_EN.pdf#page=4",
+              "snippet": "external authors : carlos martinez mongay mar\u00eda dolores gadea rivas beatriz barrado vanesa az\u00f3n the added value of the recovery and resilience facility based on an assessment of the reco..."
             },
             {
               "title": "Alignment and asymmetry: European and national crisis governance under the Recovery and Resilience Facility | Policy and Society | Oxford Academic",
@@ -301,14 +286,14 @@
               "snippet": "journal article alignment and asymmetry : european and national crisis governance under the recovery and resilience facility eugenio borgognoni , eugenio borgognoni department of political sci..."
             },
             {
-              "title": "Italy\u2019s recovery and resilience plan - Reforms and Investments",
-              "url": "https://reforms-investments.ec.europa.eu/italys-recovery-and-resilience-plan_en",
-              "snippet": "italy \u2019s recovery and resilience plan page contents page contents rrf funded projects in italy what \u2019s in the plan ? country snapshot repowereu measures in italy \u2019s plan green transition..."
+              "title": "Recovery and Resilience Facility. Una comparazione tra paesi chiave dell'Unione europea",
+              "url": "https://www.parlamento.it/application/xmanager/projects/parlamento/file/repository/affariinternazionali/osservatorio/approfondimenti/PI0181App.pdf",
+              "snippet": "recovery and resilience facility . una comparazione tra paesi chiave dell \u2019 unione europea luglio 2021 181 a cura dell ' istituto per gli studi di politica internazionale osservatorio di politic..."
             },
             {
-              "title": "The Italian National Recovery and Resilience Plan: coordination and conditionality | Request PDF",
-              "url": "https://www.researchgate.net/publication/359352973_The_Italian_National_Recovery_and_Resilience_Plan_coordination_and_conditionality",
-              "snippet": "article the italian national recovery and resilience plan : coordination and conditionality march 2022 contemporary italian politics doi : 10 . 1080 / 23248823 . 2022 . 2046099 authors : e..."
+              "title": "Reform Agendas in National Recovery and Resilience Plans: Partisan Politics and Domestic Usages of Europe - Borghetto - 2026 - JCMS: Journal of Common Market St",
+              "url": "https://onlinelibrary.wiley.com/doi/10.1111/jcms.13738?af=R",
+              "snippet": "jcms : journal of common market studies original article open access reform agendas in national recovery and resilience plans : partisan politics and domestic usages of europe enrico borghetto..."
             }
           ]
         },
@@ -319,54 +304,17 @@
         "decision_source": "scheduler"
       },
       {
-        "id": "local-023",
-        "action": "explore",
-        "room": "france-compensation-agricultural-2",
+        "id": "local-025",
+        "action": "analyze",
+        "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "The current room is unrelated to the research. To identify repositories with recent CVEs (post-August 1, 2023) for dependency graph analysis, I need to explore GitHub repositories matching the refined search criteria.",
-        "request": "Identify pinned dependency versions in public repos with CVSS \u22657 vulnerabilities disclosed in 2023\u20132024, then cross-check GitHub Advisory Database for patched updates within 30 days",
+        "reason": "One-time workbench bootstrap health check before larger tasks.",
+        "request": "Verify archived evidence of Meta\u2019s Ad Library policies for AI-generated political ads targeting Brazilian voters in October 2024 elections, focusing on compliance with Brazilian regulations (frontier-question-344)",
         "request_status": "closed",
-        "exploration": "https://github.com/search?q=CVE-2023-+CVSS%3A7.0..10+after%3A2023-08-01+is%3Apublic+is%3Arepository+",
+        "exploration": "prime minister giorgia meloni italy government disputed revised different",
         "tool": {
-          "tool": "public-search",
-          "query": "https://github.com/search?q=CVE-2023-+CVSS%3A7.0..10+after%3A2023-08-01+is%3Apublic+is%3Arepository+",
-          "results": [
-            {
-              "title": "\u5b9e\u7528 \u641c\u7d22 \u5f15\u64ce | \u957f\u4ead \u767e\u5ddd \u4e91",
-              "url": "https://rivers.chaitin.cn/blog/cq94ahh0lnechd242s40",
-              "snippet": "\u5b9e\u7528 \u641c\u7d22 \u5f15\u64ce \u5173\u6ce8 \u5b89\u5168 \u6280\u672f 2.7k 2024 - 07 - 13 \u539f\u6587 \u94fe\u63a5 \u672c\u6587 \u6765\u6e90 \u4e8e [ ( https : / / github . com / edoard ottt / awe some - hacker - search - engines ) \u5e76\u4e14 \u505a \u4e86 \u7b80\u5355 \u7684 \u8865\u5145 \u7cbe\u9009 \u7684 \u5b9e\u7528 \u641c\u7d22 \u5f15\u64ce \u5217\u8868 \uff0c \u9002\u7528 \u4e8e \u6e17\u900f \u6d4b\u8bd5 \u3001 \u6f0f\u6d1e \u8bc4\u4f30..."
-            },
-            {
-              "title": "NVD\u8106\u5f31\u6027\u60c5\u5831\u30c8\u30c3\u30d7",
-              "url": "https://secualive.jp/feed/nvd/vulnerability/?search_display_number=50&page=3529",
-              "snippet": "nvd \u8106\u5f31\u6027 \u60c5\u5831 \u30c8\u30c3\u30d7 nvd \uff08 national vulnerability database \uff09 \u3067 \u7ba1\u7406 \u3055\u308c\u3066 \u3044\u308b \u8106\u5f31\u6027 \u306e \u4e00\u89a7 \u3092 \u691c\u7d22 \u3059\u308b \u3053\u3068 \u304c \u51fa\u6765 \u307e\u3059 \u3002 jvn \uff08 japan vulnerability note \uff09 \u3088\u308a \u5148 \u306b \u8106\u5f31\u6027 \u60c5\u5831 \u304c \u66f4\u65b0 \u3055 \u308c\u308b \u4e8b \u304c \u591a\u3044 \u305f\u3081 \u3001 j vn \u306b \u672a \u8a18\u8f09 \u306e \u8106\u5f31\u6027 \u304c \u66f4\u65b0 \u3055\u308c\u3066 \u3044\u308b ..."
-            },
-            {
-              "title": "Security Bulletin 01 November 2023",
-              "url": "https://isomer-user-content.by.gov.sg/36/1304b318-4ec5-4e70-a3c9-dc881c0ce89e/01-November-2023.pdf",
-              "snippet": "# # security bulletin 01 november 2023 singcert 's security bulletin summarises the list of vulnerabilities collated from the national institute of standards and technology (nist) 's national vulner..."
-            },
-            {
-              "title": "GitHub - darmayo/ekploits-database \u00b7 GitHub",
-              "url": "https://github.com/darmayo/ekploits-database",
-              "snippet": "dar mayo / ekploits - data base public folders and files name name last commit message last commit date license license readme.md readme.md readme mit license \ud83e\udde9 exploit data..."
-            },
-            {
-              "title": "Error\u7cfb\u5217-CVE CIS-2023\u7cfb\u7edf\u6f0f\u6d1e\u5904\u7406\u65b9\u6848\u96c6\u5408 - \u7cd6~\u8c46\u8c46 - \u535a\u5ba2\u56ed",
-              "url": "https://www.cnblogs.com/sugartang/p/17451395.html",
-              "snippet": "error \u7cfb\u5217 - cve c is - 2023 \u7cfb\u7edf \u6f0f\u6d1e \u5904\u7406 \u65b9\u6848 \u96c6\u5408 \u95ee\u9898 1 \uff1a c ve - 2023 - 29491 type : os \u6d89 \u53ca \u5230 \u7684 \u5305 \uff1a ncurses - dev , ncurses - libs , ncurses - terminfo - base \u63cf\u8ff0 \uff1a \u5f53\u524d \u7cfb\u7edf \u5b89\u88c5 \u7684 n curses \uff0c \u5b58\u5728 \u6f0f\u6d1e \uff0c \u5f53 \u88ab se ..."
-            }
-          ],
-          "source": "https://api.langsearch.com/",
-          "status": "completed",
-          "contract": {
-            "capability": "public-web-read",
-            "access": "read-only",
-            "network": "public HTTPS search",
-            "side_effects": false,
-            "max_bytes": 32000
-          }
+          "status": "not-requested"
         },
         "message": null,
         "trade": null,
@@ -380,42 +328,42 @@
     "trades_settled": [],
     "corroborations": [
       {
-        "id": "pair-97edd15652a4a5c6f5e5",
+        "id": "pair-b4c7ca94ce0c002afce0",
         "relation": "unrelated",
         "finding_ids": [
-          "finding-146cde537c2e9192be70",
-          "finding-4e96b3454809c7926b2a"
-        ],
-        "topic": "becomes giorgia government italy longest meloni minister prime",
-        "domains": [
-          "apnews.com",
-          "wikipedia.org"
-        ]
-      },
-      {
-        "id": "pair-a3fa1dbfd2a27b72c0db",
-        "relation": "unrelated",
-        "finding_ids": [
-          "finding-039a6efb4afea26febbf",
-          "finding-4e96b3454809c7926b2a"
-        ],
-        "topic": "becomes giorgia government italy longest meloni minister prime",
-        "domains": [
-          "apnews.com",
-          "doi.org"
-        ]
-      },
-      {
-        "id": "pair-a7d4f4785b4593058b90",
-        "relation": "unrelated",
-        "finding_ids": [
-          "finding-146cde537c2e9192be70",
+          "finding-0a65352fc5d6c9807d68",
           "finding-47008a8800ba51791b6f"
         ],
         "topic": "becomes giorgia government italy longest meloni minister prime",
         "domains": [
           "doi.org",
           "wikipedia.org"
+        ]
+      },
+      {
+        "id": "pair-b94a0f991e2006a3a04d",
+        "relation": "unrelated",
+        "finding_ids": [
+          "finding-146cde537c2e9192be70",
+          "finding-1c9e7dc1326533a151a6"
+        ],
+        "topic": "becomes giorgia government italy longest meloni minister prime",
+        "domains": [
+          "cambridge.org",
+          "wikipedia.org"
+        ]
+      },
+      {
+        "id": "pair-c92064237119cc226665",
+        "relation": "unrelated",
+        "finding_ids": [
+          "finding-1c9e7dc1326533a151a6",
+          "finding-4e96b3454809c7926b2a"
+        ],
+        "topic": "becomes giorgia government italy longest meloni minister prime",
+        "domains": [
+          "apnews.com",
+          "cambridge.org"
         ]
       }
     ],
@@ -434,7 +382,7 @@
     "dormant": 3
   },
   "metrics": {
-    "jaccard_overlap": 0.171,
+    "jaccard_overlap": 0.235,
     "morrow_audit_markers": [
       "counterexample",
       "assumption",
@@ -445,8 +393,8 @@
     "distinction_status": "needs-audit"
   },
   "continuity_audit": {
-    "generated_at": "2026-09-06T10:27:19.306317+00:00",
-    "cycle": 385,
+    "generated_at": "2026-09-06T10:31:19.075825+00:00",
+    "cycle": 386,
     "status": "pass",
     "checks": {
       "archive_parse": true,
@@ -456,7 +404,7 @@
       "room_link_integrity": true,
       "resident_room_integrity": true
     },
-    "archive_records": 3274,
+    "archive_records": 3285,
     "malformed_archive_records": 0,
     "raw_output_fields_found": 0,
     "duplicate_archive_ids": [],
@@ -470,8 +418,8 @@
   },
   "health": {
     "schema_version": 1,
-    "generated_at": "2026-09-06T10:27:19.308768+00:00",
-    "cycle": 385,
+    "generated_at": "2026-09-06T10:31:19.076800+00:00",
+    "cycle": 386,
     "daemon": "running",
     "model_status": "ready",
     "model_probe_ok": true,
@@ -484,17 +432,17 @@
         {
           "name": "mistral",
           "model": "ministral-14b-2512",
-          "calls": 301,
-          "input_tokens": 629931,
-          "output_tokens": 82284,
+          "calls": 314,
+          "input_tokens": 658518,
+          "output_tokens": 86504,
           "errors": 0,
           "last_error": "",
           "daily_request_budget": null,
           "daily_token_budget": 900000,
           "limit_rpm": 30,
           "limit_tpm": 937500,
-          "requests_last_minute": 6,
-          "tokens_last_minute": 17613,
+          "requests_last_minute": 7,
+          "tokens_last_minute": 19101,
           "status": "ready"
         },
         {
@@ -564,175 +512,21 @@
         {
           "name": "groq",
           "model": "openai/gpt-oss-120b",
-          "calls": 112,
-          "input_tokens": 103679,
-          "output_tokens": 19628,
+          "calls": 121,
+          "input_tokens": 114905,
+          "output_tokens": 21798,
           "errors": 0,
           "last_error": "400 on schema mode; prompt hint used",
           "daily_request_budget": 900,
           "daily_token_budget": 190000,
           "limit_rpm": 1000,
           "limit_tpm": 8000,
-          "requests_last_minute": 6,
-          "tokens_last_minute": 3912,
+          "requests_last_minute": 5,
+          "tokens_last_minute": 2954,
           "status": "ready"
         }
       ],
       "recent_calls": [
-        {
-          "at": 1788688615.4,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "b72b53aeb8e0f1d1"
-        },
-        {
-          "at": 1788688616.2,
-          "class": "extraction",
-          "provider": "groq",
-          "model": "openai/gpt-oss-120b",
-          "prompt_sha256_16": "3b874d3ea22c0e11"
-        },
-        {
-          "at": 1788688622.6,
-          "class": "judgment",
-          "provider": "groq",
-          "model": "openai/gpt-oss-120b",
-          "prompt_sha256_16": "4e8ac93669c75226"
-        },
-        {
-          "at": 1788688625.5,
-          "class": "judgment",
-          "provider": "groq",
-          "model": "openai/gpt-oss-120b",
-          "prompt_sha256_16": "d53ae0f6ed936572"
-        },
-        {
-          "at": 1788688628.3,
-          "class": "judgment",
-          "provider": "groq",
-          "model": "openai/gpt-oss-120b",
-          "prompt_sha256_16": "3e876dded5067ead"
-        },
-        {
-          "at": 1788690262.6,
-          "class": "self-prompt",
-          "provider": "groq",
-          "model": "openai/gpt-oss-120b",
-          "prompt_sha256_16": "77cff8ccfa677908"
-        },
-        {
-          "at": 1788690265.7,
-          "class": "self-prompt",
-          "provider": "groq",
-          "model": "openai/gpt-oss-120b",
-          "prompt_sha256_16": "c22560996904bdbe"
-        },
-        {
-          "at": 1788690267.5,
-          "class": "self-prompt",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "0cf07a5fc8b5b583"
-        },
-        {
-          "at": 1788690272.1,
-          "class": "self-prompt",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "810b4eb1e06106fe"
-        },
-        {
-          "at": 1788690326.9,
-          "class": "council",
-          "provider": "groq",
-          "model": "openai/gpt-oss-120b",
-          "prompt_sha256_16": "91b9672a068f9a64"
-        },
-        {
-          "at": 1788690335.3,
-          "class": "council",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "00149de864dddffe"
-        },
-        {
-          "at": 1788690339.7,
-          "class": "recruitment",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "7b79cf9ac342267e"
-        },
-        {
-          "at": 1788690343.3,
-          "class": "recruitment",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "f3d3a5ac98551309"
-        },
-        {
-          "at": 1788690349.9,
-          "class": "extraction",
-          "provider": "groq",
-          "model": "openai/gpt-oss-120b",
-          "prompt_sha256_16": "808d60d20b1e3616"
-        },
-        {
-          "at": 1788690353.5,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "f41023d7117801ce"
-        },
-        {
-          "at": 1788690358.9,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "c4116e5f15879ea1"
-        },
-        {
-          "at": 1788690367.3,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "3bef1bb626386aa7"
-        },
-        {
-          "at": 1788690372.8,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "59461f32d1a7b2f8"
-        },
-        {
-          "at": 1788690379.3,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "5ed69fcecaf5a3ad"
-        },
-        {
-          "at": 1788690379.7,
-          "class": "extraction",
-          "provider": "groq",
-          "model": "openai/gpt-oss-120b",
-          "prompt_sha256_16": "3b874d3ea22c0e11"
-        },
-        {
-          "at": 1788690387.5,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "ab8d9b055cc6ef77"
-        },
-        {
-          "at": 1788690388.2,
-          "class": "extraction",
-          "provider": "groq",
-          "model": "openai/gpt-oss-120b",
-          "prompt_sha256_16": "808d60d20b1e3616"
-        },
         {
           "at": 1788690392.6,
           "class": "decision",
@@ -788,6 +582,160 @@
           "provider": "groq",
           "model": "openai/gpt-oss-120b",
           "prompt_sha256_16": "9b6cee0e95aedd95"
+        },
+        {
+          "at": 1788690511.6,
+          "class": "self-prompt",
+          "provider": "groq",
+          "model": "openai/gpt-oss-120b",
+          "prompt_sha256_16": "20da7c4418b1a4bc"
+        },
+        {
+          "at": 1788690515.1,
+          "class": "self-prompt",
+          "provider": "groq",
+          "model": "openai/gpt-oss-120b",
+          "prompt_sha256_16": "13a9019dbaa5f5f6"
+        },
+        {
+          "at": 1788690516.7,
+          "class": "self-prompt",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "d77b486cd410ecdf"
+        },
+        {
+          "at": 1788690577.0,
+          "class": "council",
+          "provider": "groq",
+          "model": "openai/gpt-oss-120b",
+          "prompt_sha256_16": "cf7f9157a41edcbc"
+        },
+        {
+          "at": 1788690584.7,
+          "class": "council",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "b1dd00b61dec94d9"
+        },
+        {
+          "at": 1788690589.4,
+          "class": "recruitment",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "f3267d65f338b9c2"
+        },
+        {
+          "at": 1788690594.0,
+          "class": "recruitment",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "5d704ec19892f192"
+        },
+        {
+          "at": 1788690600.9,
+          "class": "extraction",
+          "provider": "groq",
+          "model": "openai/gpt-oss-120b",
+          "prompt_sha256_16": "808d60d20b1e3616"
+        },
+        {
+          "at": 1788690603.3,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "8cff6bb40c5ba635"
+        },
+        {
+          "at": 1788690612.3,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "94f90dc7609f350b"
+        },
+        {
+          "at": 1788690623.2,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "7908e6783eb9eeae"
+        },
+        {
+          "at": 1788690631.8,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "34765c3888913854"
+        },
+        {
+          "at": 1788690638.8,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "b2ecc072aa01f229"
+        },
+        {
+          "at": 1788690646.8,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "83f27dbd12711179"
+        },
+        {
+          "at": 1788690647.4,
+          "class": "extraction",
+          "provider": "groq",
+          "model": "openai/gpt-oss-120b",
+          "prompt_sha256_16": "808d60d20b1e3616"
+        },
+        {
+          "at": 1788690653.5,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "c75d396d14a3783d"
+        },
+        {
+          "at": 1788690661.3,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "1e6c085949d44565"
+        },
+        {
+          "at": 1788690661.9,
+          "class": "extraction",
+          "provider": "groq",
+          "model": "openai/gpt-oss-120b",
+          "prompt_sha256_16": "14f1c52dcb1fcdcd"
+        },
+        {
+          "at": 1788690667.8,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "2bd9a942ef2f733e"
+        },
+        {
+          "at": 1788690672.3,
+          "class": "judgment",
+          "provider": "groq",
+          "model": "openai/gpt-oss-120b",
+          "prompt_sha256_16": "949b6b48622061fe"
+        },
+        {
+          "at": 1788690675.3,
+          "class": "judgment",
+          "provider": "groq",
+          "model": "openai/gpt-oss-120b",
+          "prompt_sha256_16": "a72b6d5f9608e761"
+        },
+        {
+          "at": 1788690678.2,
+          "class": "judgment",
+          "provider": "groq",
+          "model": "openai/gpt-oss-120b",
+          "prompt_sha256_16": "3eb1c812f728e07a"
         }
       ],
       "models_seen": {
@@ -869,7 +817,7 @@
       "fallback_reasons": {
         "unstructured-output": 1
       },
-      "tool_successes": 6,
+      "tool_successes": 5,
       "findings_filed": 0
     },
     "publication": "sanitized GitHub Pages snapshot",
@@ -885,25 +833,25 @@
     "activity_feed": "docs/activity.json",
     "feed_freshness_seconds": 0,
     "activity_records": 110,
-    "note_records": 884,
+    "note_records": 895,
     "print_jobs": 48,
     "failed_print_jobs": 0,
-    "analysis_runs": 86,
-    "analysis_completed": 55,
+    "analysis_runs": 88,
+    "analysis_completed": 57,
     "analysis_failed": 0,
     "analysis_rejected": 31,
     "analysis_timed_out": 0,
     "analysis_feed": "docs/analysis.json",
-    "research_records": 23,
+    "research_records": 20,
     "research_stale": 0,
     "research_feed": "docs/research.json",
     "findings": 106,
     "finding_candidates": 106,
-    "findings_rejected": 136,
+    "findings_rejected": 139,
     "findings_retracted": 0,
     "findings_duplicates": 0,
-    "findings_excluded": 136,
-    "findings_total": 242,
+    "findings_excluded": 139,
+    "findings_total": 245,
     "corroborated_findings": 5,
     "findings_feed": "docs/findings.json",
     "frontier_leads": 0,
@@ -919,11 +867,11 @@
       ],
       "hops": 3,
       "findings": 9,
-      "empty_cycles": 1
+      "empty_cycles": 2
     },
     "frontier_questions": 100,
     "frontier_findings": 100,
-    "frontier_tasks": 6,
+    "frontier_tasks": 7,
     "frontier_feed": "docs/frontier.json",
     "code_proposals": 0,
     "code_proposals_ready": 0,
