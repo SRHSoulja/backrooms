@@ -738,7 +738,7 @@ class LocalAutonomyTests(unittest.TestCase):
             target = {"id": "finding-target", "claim": "Roskomnadzor blocked GitHub in December 2014."}
             tool = {"source": "https://meduza.io/en/news/github", "source_hash": "hash-m", "query": "roskomnadzor github block",
                     "excerpt": "An unrelated opening sentence about Moscow weather this week.",
-                    "sentences": ["The regulator never blocked anything, its spokesman insisted on Tuesday.",
+                    "sentences": ["Roskomnadzor never blocked GitHub, its spokesman insisted on Tuesday.",  # dissent names what the claim names
                                   "Russia's regulator blocked access to GitHub in December 2014 after the site hosted pages about suicide."]}
             found = local_autonomy.entailed_finding(agent, 7, tool, target)
             self.assertEqual((found["status"], found["origin"], found["claim_origin"], found["verifies"]), ("unreviewed", "verify-claim", "entailed-quote", "finding-target"))
@@ -886,6 +886,36 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(local_autonomy.strip_dateline(plain), plain)  # a lowercase continuation is not a dateline
         self.assertEqual(local_autonomy.strip_dateline("Reuters: Short."), "Reuters: Short.")  # too little would remain
 
+    def test_dissent_needs_a_sentence_about_the_same_names_or_numbers(self):
+        class StubJudge:
+            SUPPORT_MIN, CONTRADICTION_MIN, NLI_REPO, NLI_REVISION = 0.5, 0.6, "stub", "rev"
+            def available(self):
+                return True
+            def nli(self, premise, hypothesis):
+                return {"entailment": 0.0, "contradiction": 0.99, "neutral": 0.01}  # the small judge calls anything unrelated a contradiction
+        original = local_autonomy.inference_judge
+        local_autonomy.inference_judge = StubJudge()
+        try:
+            target = {"id": "t", "claim": "France allocates more than \u20ac1 billion to support farms affected by drought."}
+            unrelated = {"source": "https://en.wikipedia.org/wiki/Inflation_Reduction_Act", "source_hash": "h", "query": "q",
+                         "sentences": ["It is a budget reconciliation bill sponsored by senators Chuck Schumer and Joe Manchin."]}
+            self.assertIsNone(local_autonomy.entailed_finding({"id": "r", "room": "relay"}, 5, unrelated, target, dissent=True))
+            related = {**unrelated, "source": "https://outlet.example/a",
+                       "sentences": ["France will spend \u20ac800 million on drought aid for farms, the ministry said on Friday."]}
+            found = local_autonomy.entailed_finding({"id": "r", "room": "relay"}, 5, related, target, dissent=True)
+            self.assertEqual(found["origin"], "dissent-claim")
+        finally:
+            local_autonomy.inference_judge = original
+
+    def test_residents_leave_a_room_that_lost_its_last_fact(self):
+        world = {"events": [], "rooms": [{"id": "france-aid", "founded_via": "evidence-ledger", "status": "retracted"},
+                                         {"id": "relay", "status": "open"}]}
+        registry = {"agents": [{"id": "a", "room": "france-aid", "status": "active-local"}, {"id": "b", "room": "relay", "status": "active-local"},
+                               {"id": "c", "room": "france-aid", "status": "retired"}]}
+        self.assertEqual(local_autonomy.evict_from_withdrawn_rooms(world, registry, 373), ["a"])
+        self.assertEqual([agent["room"] for agent in registry["agents"]], ["relay", "relay", "france-aid"])
+        self.assertEqual(world["events"][-1]["kind"], "resident-moved")
+
     def test_a_wire_dateline_is_not_part_of_the_quote(self):
         wire = ("Per saperne di pi\u00f9 PARIS, Sept 4 (Reuters) - France on Friday announced more than \u20ac1 billion in aid for farmers "
                 "after this summer's record heatwaves and droughts devastated crops.")
@@ -964,7 +994,7 @@ class LocalAutonomyTests(unittest.TestCase):
         original = dict(local_autonomy.CURRENT_LINE)
         try:
             local_autonomy.CURRENT_LINE.update({"id": "line-1", "anchors": ["khartoum"], "origin": "stream:wikipedia-current-events/2026-09-03"})
-            self.assertEqual(local_autonomy.families_for_topic("khartoum migration operation"), ["web", "encyclopedia", "web"])
+            self.assertEqual(local_autonomy.families_for_topic("khartoum migration operation"), ["web"])
             local_autonomy.CURRENT_LINE.update({"origin": "resident:echo"})
             self.assertEqual(local_autonomy.families_for_topic("khartoum migration operation"), ["encyclopedia", "papers", "web"])
         finally:

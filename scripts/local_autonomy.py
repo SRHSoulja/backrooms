@@ -25,13 +25,13 @@ except ImportError:
 try:
     from scripts.evidence import clamp_confidence, classify_finding, is_accepted, FUNCTION_WORDS
     from scripts.corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, claims_overlap, corroboration_index,
-                                       growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source, profile_subject, profile_url, SEARCH_PAGE, inference_stands, domain_of, subject_for_pair, subject_room_for, make_fact)
+                                       growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source, profile_subject, profile_url, SEARCH_PAGE, inference_stands, domain_of, subject_for_pair, subject_room_for, make_fact, subject_tokens)
     from scripts import reports, resident_tools, inference_judge, ledger_chain, research_lines
     from scripts.world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes, retract_unfounded_rooms, collapse_withdrawn_rooms, finding_on_topic)
 except ImportError:
     from evidence import clamp_confidence, classify_finding, is_accepted, FUNCTION_WORDS
     from corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, claims_overlap, corroboration_index,
-                               growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source, profile_subject, profile_url, SEARCH_PAGE, inference_stands, domain_of, subject_for_pair, subject_room_for, make_fact)
+                               growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source, profile_subject, profile_url, SEARCH_PAGE, inference_stands, domain_of, subject_for_pair, subject_room_for, make_fact, subject_tokens)
     import reports, resident_tools, inference_judge, ledger_chain, research_lines
     from world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes, retract_unfounded_rooms, collapse_withdrawn_rooms, finding_on_topic)
 ROOT = Path(__file__).resolve().parents[1]
@@ -475,6 +475,8 @@ def entailed_finding(agent, cycle, tool, target_claim, dissent=False, topic_over
     for raw in pool[:40]:
         # The statement without its dateline is the better quote, but the small judge is
         # not indifferent to the prefix, so both forms are scored and the better is kept.
+        if dissent and not (subject_tokens({"claim": raw}) & subject_tokens({"claim": str(target_claim["claim"])})):
+            continue  # a different figure for the same fact names what the fact names; an unrelated sentence is not dissent
         for sentence in dict.fromkeys((strip_dateline(raw), raw)):
             try:
                 scores = inference_judge.nli(sentence, str(target_claim["claim"]))
@@ -1456,7 +1458,7 @@ def families_for_topic(topic):
     rooted in the day's public record, the web (news outlets) and the
     encyclopedia, never papers."""
     if str(CURRENT_LINE.get("origin") or "").startswith("stream:"):
-        return ["web", "encyclopedia", "web"]
+        return ["web"]  # a dated event is in outlets; its encyclopedia references already merge into the web search
     if TECHNICAL.search(str(topic or "")):
         return ["encyclopedia", "papers", "code", "web"]
     return ["encyclopedia", "papers", "web"]
@@ -1967,6 +1969,20 @@ def house_resident(world, agent, room, cycle, why):
     emit_event(world, cycle, "resident-moved", agent.get("id", "resident"),
                f"Resident moved into the {room.get('name')} room: {why}"[:240], from_room=previous, to_room=room["id"], reason=why[:120])
     return True
+
+
+def evict_from_withdrawn_rooms(world, registry, cycle, home="relay"):
+    """A room that lost its last fact houses nobody: its residents return to the relay."""
+    fallen = {room.get("id") for room in world.get("rooms", []) if room.get("founded_via") == "evidence-ledger" and room.get("status") == "retracted"}
+    moved = []
+    for agent in registry.get("agents", []):
+        if agent.get("room") in fallen and agent.get("status") not in {"fired", "retired"}:
+            previous = agent["room"]
+            agent["room"] = home
+            moved.append(agent.get("id"))
+            emit_event(world, cycle, "resident-moved", agent.get("id", "resident"),
+                       "Resident returned to the relay: the room's last established fact was withdrawn.", from_room=previous, to_room=home)
+    return moved
 
 
 def house_in_subject_room(world, agent, cycle):
@@ -2957,6 +2973,7 @@ def main():
                        "A room founded on evidence was withdrawn because its founding pair no longer meets the evidence standard.",
                        room=item["room"], reason=item["reason"], corroboration=item.get("corroboration"))
             room_changes.append({"room": item["room"], "from": "open", "to": "retracted", "reason": item["reason"]})
+        evict_from_withdrawn_rooms(world, registry, args.cycle)
     for item in collapse_withdrawn_rooms(world, args.cycle):
         emit_event(world, args.cycle, "room-collapsed", "evidence-ledger",
                    "A withdrawn room left the map and joined the withdrawn-rooms ledger; its record is kept.",
