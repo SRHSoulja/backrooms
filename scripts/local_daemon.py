@@ -1718,7 +1718,8 @@ def publish(result, world, model_health=True):
     historical_world = json.loads(PUBLIC_WORLD.read_text()) if PUBLIC_WORLD.exists() else {}
     public_rooms = []
     for room in world.get("rooms", []):
-        room_copy = {key: room.get(key) for key in ("id", "name", "description", "doors", "charter", "status", "founded_by", "founded_via", "founded_cycle", "corroboration_id", "growth_topic", "retracted_artifacts", "retracted_cycle", "retraction_reason") if key in room}
+        room_copy = {key: room.get(key) for key in ("id", "name", "description", "doors", "charter", "status", "founded_by", "founded_via", "founded_cycle", "corroboration_id", "growth_topic", "retracted_artifacts", "retracted_cycle", "retraction_reason",
+                                                    "subject", "anchors", "facts", "line_ids", "cross_world") if key in room}  # a subject room's facts are its walls; they are public
         occupants = list(room.get("occupants", []))
         occupants.extend(agent.get("id") for agent in registry.get("agents", [])
                          if agent.get("status") not in {"fired", "retired"} and agent.get("room") == room.get("id"))
