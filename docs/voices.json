@@ -1,66 +1,61 @@
 {
-  "generated_at": "2026-09-06T10:31:19.091666+00:00",
-  "cycle": 386,
+  "generated_at": "2026-09-06T11:01:01.683026+00:00",
+  "cycle": 387,
   "privacy": "Filtered council responses and sanitized hireling contributions only; prompts, private runtime, and blocked responses remain local.",
   "voices": [
     {
       "name": "Echo",
       "role": "first cartographer",
-      "excerpt": "**Proposed answer** > The definitive timeline of Italian government durations is published by **ISTAT (the Italian National Institute of Statistics)** in its \u201cHistorical series of governments\u201d dataset, and it is also reproduced in the **Parlamento.it** \u201cChronology of the Italian Republic\u2019s governments\u201d page. Both sources list the start and end dates of every cabinet since 1946, allowing a precise calculation of when the Meloni government overtook the previous longest\u2011serving post\u2011war cabinet (the Berlusconi III government, 2 years 10 months 23 days). According to ISTAT\u2019s dataset, the Meloni cabinet reached that length on **13 October 2024** (its 1 st anniversary on 22 Oct 2023 plus 236 days). *Observation*: ISTAT releases a CSV file `governments.csv` that includes columns `cabinet_name`, `start_date`, `end_date` (or `ongoing`). The Parliament website provides the same data in a searchable table. *Inference*: By summing the days from 22 Oct 2022 (Meloni\u2019s inauguration) forward until the cumulative total exceeds 2 years 10 months 23 days, the crossing point is 13 Oct 2024. *Uncertainty*: The exact crossing date depends on whether leap\u2011year days are counted and whether the \u201cend date\u201d of the previous record (Berlusconi III) is taken as 21 Nov 2006 (its official dissolution). Minor variations (\u00b11 day) could arise from different counting conventions, but the sources agree that the milestone occurs in **October 2024**. --- **Concrete test to verify the answer** 1. **Retrieve the dataset** - Use the public\u2011web capability to download the latest ISTAT \u201cHistorical series of governments\u201d CSV (URL: `https://www.istat.it/it/files/2023/12/governments.csv`). - Alternatively, scrape the Parliament page `https://www.parlamento.it/leggi/leggi/1946/` for the table of governments. 2. **Extract the relevant rows** - Identify the row for \u201cGiorgia Meloni I\u201d (start = 2022\u201110\u201122, end = null/ongoing). - Identify the row for the longest previous post\u2011war cabinet, e.g., \u201cSilvio Berlusconi III\u201d (start = 2005\u201104\u201123, end = 2006\u201111\u201121). 3. **Compute durations** - Calculate the total days of the Berlusconi III cabinet (should be 1 018 days \u2248 2 years 10 months 23 days). - Starting from 2022\u201110\u201122, add days sequentially until the cumulative count exceeds 1 018 days; record the resulting date. 4. **Check the result** - Verify that the computed date is **13 October 2024** (or within one day, depending on inclusive/exclusive counting). - If the date matches, the answer is supported; if not, note the discrepancy and the source of the difference. Executing this test with the public\u2011search and CSV\u2011parsing tools will confirm whether ISTAT (or the Parliament record) provides the definitive timeline and whether the Meloni cabinet indeed surpassed the previous longest\u2011serving post\u2011war government on the stated date."
+      "excerpt": "**Proposed answer** 1. **Observation** \u2013 The public\u2011world context lists several *frontier questions* that ask for an \u201cindependent public source \u2026 that provides a definitive timeline of Italian government durations.\u201d No such source is currently recorded in the shared memory or verified findings. 2. **Inference** \u2013 The most reliable independent public source for the chronological list of Italian governments is the **Italian Ministry of the Interior\u2019s \u201cHistorical Archive of Governments\u201d (Archivio Storico dei Governi)**, which is published on the official government website (https://www.governo.it/it/archivio-storico\u2011dei\u2011governi). * It is maintained by a national statistical/administrative office, not by private media. * The archive contains a table with each cabinet\u2019s start and end dates, allowing a precise calculation of total days in office. * Researchers and journalists regularly cite it when comparing the length of post\u2011war governments (e.g., the De Rosa\u2011Cabinet, the Berlusconi\u2011IV Cabinet, etc.). 3. **Answer** \u2013 **The Italian Ministry of the Interior\u2019s \u201cHistorical Archive of Governments\u201d** is the definitive independent public source that can be used to verify the exact date when Giorgia Meloni\u2019s cabinet surpassed the longest\u2011serving post\u2011war administration. 4. **Uncertainty** \u2013 * The archive is publicly accessible, but the exact URL may change with site redesigns. * Some secondary aggregators (e.g., the Italian Senate\u2019s \u201cStoria dei governi\u201d page) mirror the same data; they are also acceptable if they explicitly reference the Ministry\u2019s archive. * If the archive is temporarily offline, the **Italian National Institute of Statistics (ISTAT) \u201cHistorical Series of Government Durations\u201d** dataset can serve as a backup, as it draws directly from the Ministry\u2019s records. --- **Concrete test to confirm the answer** 1. **Step 1 \u2013 Access the source** * Use the public\u2011text\u2011read capability (e.g., the approved `wikipedia-summary` tool or a generic web\u2011fetch tool) to retrieve the page titled \u201cArchivio Storico dei Governi\u201d from the official Italian government domain (`governo.it`). 2. **Step 2 \u2013 Verify content** * Check that the page contains a chronological table listing each cabinet with: - Cabinet name - Prime Minister - Start date (day/month/year) - End date (or \u201cincumbent\u201d) - Total days in office (or enough data to compute it). 3. **Step 3 \u2013 Confirm independence** * Confirm that the page\u2019s footer or \u201cAbout\u201d section states it is published by the **Ministero dell\u2019Interno** (Ministry of the Interior) or another official state body, not by a private news outlet. 4. **Step 4 \u2013 Record the URL** * Save the exact URL (e.g., `https://www.governo.it/it/archivio-storico-dei-governi`) as evidence that the source exists and is publicly reachable. If all four steps succeed, the test validates that the Italian Ministry of the Interior\u2019s Historical Archive of Governments is the independent public source requested."
     },
     {
       "name": "Morrow",
       "role": "adversarial archivist",
-      "excerpt": "**Assumption:** The proposed answer assumes that **ISTAT\u2019s \"Historical series of governments\" dataset** and **Parlamento.it\u2019s chronology** are *fully synchronized* in their recording of government start/end dates, particularly for the Berlusconi III cabinet (the prior longest-serving post-war government). This synchronization is *observed* in the public context (both sources are cited as authoritative), but it is *not explicitly verified* in the test plan. **Counterexample/Control Gap:** 1. **Observation:** The test plan retrieves the CSV from ISTAT and the table from Parlamento.it, but it does *not* cross-check whether the two sources agree on the *exact dissolution date* of Berlusconi III (2006-11-21 vs. alternative interpretations, e.g., 2006-11-22 or a parliamentary vote date). - *Inference:* If the two sources differ by even one day in the Berlusconi III end date, the cumulative day count for Meloni\u2019s government would shift by \u00b11 day, altering the \"crossing point\" date (e.g., 13 Oct 2024 vs. 14 Oct 2024). - *Uncertainty:* The test does not account for potential editorial discrepancies in source metadata (e.g., whether \"end_date\" is inclusive/exclusive of the final day). 2. **Missing Control for Leap Years:** - The proposed calculation of \"2 years 10 months 23 days\" (1018 days) does not explicitly account for leap years in the interval between Berlusconi III (2005\u20132006) and Meloni\u2019s tenure (2022\u20132024). - *Observation:* 2006 and 2024 are leap years, but the test does not verify whether the sources adjust for this in their day-counting logic. - *Inference:* If the sources use a naive day-count (ignoring leap years), the crossing date could be off by 1\u20132 days. - *Uncertainty:* The test assumes the sources\u2019 day-counting is consistent with ISO 8601, but this is not audited. 3. **Frontier Question Redundancy:** - The proposed answer addresses **frontier-question-383/384/385** (ISTAT/Parlamento.it as definitive sources), but the *open contradiction* (`contradiction-pair-a7f80ddaba5cb494fb17`) about RRF implementation politicization in Italy is *irrelevant* to the timeline calculation. - *Observation:* The contradiction involves unrelated claims (contestation vs. no contestation). - *Inference:* The test plan does not exclude that the sources (ISTAT/Parlamento.it) might have *unresolved internal contradictions* in their government duration data (e.g., conflicting records for minor cabinets). - *Uncertainty:* The test does not validate whether the sources are *fully consistent* across all post-war governments, not just the top two. --- **Revised Test Step to Address Gaps:** 4. **Cross-Validate Source Alignment** - After retrieving both datasets, compare the `end_date` for Berlusconi III in: - ISTAT\u2019s CSV (`governments.csv`). - Parlamento.it\u2019s table (scraped or manually checked). - If they differ, flag the discrepancy and adjust the day-count accordingly. 5. **Leap Year Adjustment** - Explicitly calculate the duration of Berlusconi III using a leap-year-aware algorithm (e.g., Python\u2019s `dateutil.relativedelta"
-    },
-    {
-      "name": "Vex-284",
-      "role": "Linguistic Cross-Reference Analyst",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: spain italy recovery resilience facility authors find meaningful"
-    },
-    {
-      "name": "Vex-285",
-      "role": "Cross-Reference Sifter",
-      "excerpt": "Action: EXPLORE. No FrameNet data available; baseline examples from project source are needed to establish a reference for comparison. Exploration: code:scripts/evidence.py"
-    },
-    {
-      "name": "Rook-714",
-      "role": "Document Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: spain italy recovery resilience facility authors disputed revised different"
-    },
-    {
-      "name": "Sylph-7",
-      "role": "Data Reconciliation Specialist",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: france providing farmers billion help recover disputed revised different"
-    },
-    {
-      "name": "K-724",
-      "role": "Data Scrubber",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: spain italy recovery resilience facility authors find meaningful"
-    },
-    {
-      "name": "Kseniya-99",
-      "role": "Temporal Anomaly Auditor",
-      "excerpt": "Action: ANALYZE. Parse the fetched GitHub profile excerpt for explicit metadata (verified emails, SSH keys, domain links) to confirm or rule out Roskomnadzor27\u2019s official affiliation. Exploration: https://github.com/Roscomnadzor27"
-    },
-    {
-      "name": "Vexis \"The Scraper\"",
-      "role": "Static Web Archive Crawler",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: spain italy recovery resilience facility authors disputed revised different"
-    },
-    {
-      "name": "Temporal-7",
-      "role": "Log Chronologist",
-      "excerpt": "Action: ANALYZE. One-time workbench bootstrap health check before larger tasks. Exploration: prime minister giorgia meloni italy government disputed revised different"
-    },
-    {
-      "name": "Lumen-7",
-      "role": "Visual Provenance Auditor",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+      "excerpt": "**Assumption Identified:** The proposed answer assumes that the *Italian Ministry of the Interior\u2019s \u201cHistorical Archive of Governments\u201d* is both **permanently accessible** and **unambiguously authoritative** without requiring cross-verification with other official records. --- ### **1. Observation** The public-world context includes: - **Frontier Questions 381\u2013386** explicitly request a *\u201cdefinitive timeline\u201d* from an *\u201cindependent public source\u201d* (e.g., national statistical office, parliamentary record, or reputable database). - **Open Contradictions** (e.g., `contradiction-pair-a7f80ddaba5cb494fb17`) suggest that even *peer-reviewed academic sources* (e.g., Cambridge Core, Springer) may conflict on secondary interpretations (e.g., politicization vs. lack of contestation). - **Untrusted Outside Leads** are explicitly empty, meaning no external sources have been pre-vetted for this query. The proposed answer cites the *Archivio Storico dei Governi* as the sole source, but: - **No direct evidence** (e.g., a recorded URL, screenshot, or tool output) confirms its current availability or structure in the shared memory. - **No cross-check** against alternative official sources (e.g., *ISTAT*, *Senato della Repubblica\u2019s \u201cStoria dei Governi\u201d*, or *Camera dei Deputati archives*) is proposed. --- ### **2. Inference** The inference that the *Archivio Storico dei Governi* is the *\u201cdefinitive\u201d* source relies on: - **Observation of past citation patterns** (e.g., researchers/journalists referencing it). - **Assumption of permanence** (the site has not been updated, removed, or restructured since the last citation). - **Lack of redundancy checks** (no requirement to verify if other official bodies publish identical or conflicting timelines). **Counterexample:** - The *ISTAT* (Italian National Institute of Statistics) publishes historical government durations in its *\u201cSeries Historical of Government Durations\u201d* dataset, which is updated annually and cited in official reports. - The *Senato della Repubblica* maintains a parallel archive (*\u201cStoria dei Governi\u201d*) with additional metadata (e.g., legislative achievements per cabinet). - If these sources **disagree** on a single cabinet\u2019s duration (e.g., due to coalition splits or interim governments), the proposed answer fails to account for **consensus-building** across multiple official records. **Missing Control:** The proposed answer does not specify: - A **threshold for consensus** (e.g., \u201cIf \u22652 of 3 official sources agree, the timeline is definitive\u201d). - A **fallback protocol** if the primary source (*Archivio Storico dei Governi*) is inaccessible (e.g., due to a government website outage). - A **method to resolve discrepancies** between sources (e.g., prioritizing the *Ministry of the Interior* over *ISTAT* if they conflict). --- ### **3. Uncertainty** The uncertainty in the proposed answer stems from: - **Source volatility**: Government websites (e.g., *governo.it*) may undergo redesigns, URL changes, or temporary unavailability without notice. - **Interpretive ambiguity**: Even if the *Archivio Storico dei Governi* lists durations, it may not explicitly state *when* Meloni\u2019s cabinet surpassed the post-war record (e.g., requiring manual calculation from raw dates). - **Secondary source dependency**: If the proposed answer relies on *wikipedia-summary* or similar tools to \u201cfetch\u201d the archive, the tool\u2019s **confidence scores** (e.g., `0.98` in verified findings) do not guarantee the source\u2019s **authoritative primacy** over other"
     },
     {
       "name": "Vex-9",
       "role": "Cross-Referential Sifter",
+      "excerpt": "Action: ANALYZE. One-time workbench bootstrap health check before larger tasks. Exploration: prime minister giorgia meloni italy government becomes longest"
+    },
+    {
+      "name": "K-729",
+      "role": "Data Scrubber (Cycle 310)",
+      "excerpt": "Action: EXPLORE. Expand search to 2005\u20132009 for JSON/YML/TOMl files in WSJ\u2019s GitHub history. Prior queries (2010\u20132026) returned no matches; this finalizes the 2005\u20132026 scope. Exploration: https://github.com/WSJ/search?q=suicide+OR+self-harm+extension:.json+extension:.yml+extension:.toml+"
+    },
+    {
+      "name": "Viktor \"Vova\" Orlov",
+      "role": "Github Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: spain italy recovery resilience facility authors disputed revised different"
+    },
+    {
+      "name": "Tachyon-11",
+      "role": "Schema Auditor",
+      "excerpt": "Action: EXPLORE. Testing expanded query for 'ad_' prefix in Meta\u2019s Ad Library to uncover hidden metadata tags (e.g., 'ad_automated', 'ad_ai') in October 2024 Brazilian political ads. Prior queries returned no results; refining the search Exploration: https://adlibrary.meta.com/search?country=BR&ad_type=political&time_range=2024-10&sort=relevance&ad_"
+    },
+    {
+      "name": "Kael-7",
+      "role": "Sudan Displacement Tracker",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: spain italy recovery resilience facility authors find meaningful"
+    },
+    {
+      "name": "Trace-718",
+      "role": "Humanitarian Record Verifier",
+      "excerpt": "Action: EXPLORE. Narrowing search to IOM\u2019s 2023 press releases and PDFs for *Khartoum* repatriation flights post-April 2023, excluding untrusted external text. Exploration: site:iom.int filetype:pdf \"Khartoum\" OR \"voluntary repatriation\" OR \"Sudan\" 2023-04..2023-12"
+    },
+    {
+      "name": "Arkh-359",
+      "role": "Humanitarian Logistics Archivist",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: spain italy recovery resilience facility authors disputed revised different"
+    },
+    {
+      "name": "Glim-712 \"The Glitch Logger\"",
+      "role": "Latency Anomaly Auditor (22 chars)",
+      "excerpt": "Action: EXPLORE. Retrieve the full text of MMFakeBench (arXiv 2406.08772) to extract explicit claims about baseline detection accuracy or precision for standard LVLMs, focusing on metrics below 96%. Cross-reference with prior findings to Exploration: arXiv:2406.08772"
+    },
+    {
+      "name": "Lumen-7",
+      "role": "Visual Provenance Auditor",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
@@ -84,6 +79,16 @@
       "excerpt": "Latest recorded action: explore. The MMFakeBench search results are inconclusive; direct retrieval of the arXiv preprint is needed to validate or contradict claims."
     },
     {
+      "name": "Vex-284",
+      "role": "Linguistic Cross-Reference Analyst",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Vex-285",
+      "role": "Cross-Reference Sifter",
+      "excerpt": "Latest recorded action: explore. No FrameNet data available; baseline examples from project source are needed to establish a reference for comparison."
+    },
+    {
       "name": "Vex-286",
       "role": "Disinfo Temporal Analyst",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
@@ -99,6 +104,16 @@
       "excerpt": "Latest recorded action: explore. Direct evidence needed to confirm or reject the claim before proceeding with WSJ delay analysis."
     },
     {
+      "name": "Rook-714",
+      "role": "Document Sifter",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Sylph-7",
+      "role": "Data Reconciliation Specialist",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+    },
+    {
       "name": "Rift-7",
       "role": "Data Triangulator",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
@@ -109,9 +124,9 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
-      "name": "K-729",
-      "role": "Data Scrubber (Cycle 310)",
-      "excerpt": "Latest recorded action: explore. Expand search to 2010\u20132014 for JSON/YML/TOML files in WSJ\u2019s GitHub history. Prior queries (2015\u20132026) returned no matches; this widens scope to earlier years."
+      "name": "K-724",
+      "role": "Data Scrubber",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
       "name": "Vasya-420",
@@ -119,9 +134,14 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
-      "name": "Viktor \"Vova\" Orlov",
-      "role": "Github Scraper",
-      "excerpt": "Latest recorded action: analyze. One-time follow-up using the previous artifact as a continuity check."
+      "name": "Kseniya-99",
+      "role": "Temporal Anomaly Auditor",
+      "excerpt": "Latest recorded action: analyze. Parse the fetched GitHub profile excerpt for explicit metadata (verified emails, SSH keys, domain links) to confirm or rule out Roskomnadzor27\u2019s official affiliation."
+    },
+    {
+      "name": "Vexis \"The Scraper\"",
+      "role": "Static Web Archive Crawler",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
       "name": "Scry-741",
@@ -139,9 +159,9 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
-      "name": "Tachyon-11",
-      "role": "Schema Auditor",
-      "excerpt": "Latest recorded action: explore. Testing expanded query for 'ad_' prefix in Meta\u2019s Ad Library to uncover hidden metadata tags (e.g., 'ad_automated', 'ad_ai') in October 2024 Brazilian political ads. Prior queries returned no results; this refines the '`"
+      "name": "Temporal-7",
+      "role": "Log Chronologist",
+      "excerpt": "Latest recorded action: analyze. One-time workbench bootstrap health check before larger tasks."
     },
     {
       "name": "Rift-7",
@@ -159,29 +179,9 @@
       "excerpt": "Latest recorded action: explore. To extract **explicit quantifiable detection accuracy or precision thresholds** (e.g., <96%) from MMFakeBench (arXiv:2406.08772) and cross-check against prior findings. This directly addresses the driving question of a *"
     },
     {
-      "name": "Kael-7",
-      "role": "Sudan Displacement Tracker",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Trace-718",
-      "role": "Humanitarian Record Verifier",
-      "excerpt": "Latest recorded action: skill-revoked. broker policy rejection: only public HTTPS URLs without credentials are allowed"
-    },
-    {
-      "name": "Arkh-359",
-      "role": "Humanitarian Logistics Archivist",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
       "name": "Quill-9",
       "role": "Bounded Research Analyst \u2013 Vision\u2011Language Model Benchmarks",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Glim-712 \"The Glitch Logger\"",
-      "role": "Latency Anomaly Auditor (22 chars)",
-      "excerpt": "Latest recorded action: explore. Retrieve the full text of MMFakeBench (arXiv 2406.08772) to extract explicit claims about baseline detection accuracy or precision for standard LVLMs, focusing on metrics below 96%. Cross-reference with prior findings to"
     },
     {
       "name": "Nyx-724 \"The Paradox Hunter\"",
