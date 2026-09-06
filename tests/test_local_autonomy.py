@@ -907,6 +907,22 @@ class LocalAutonomyTests(unittest.TestCase):
         finally:
             local_autonomy.inference_judge = original
 
+    def test_two_facts_sharing_a_source_are_one_fact_with_more_sources(self):
+        room = {"id": "france", "name": "France", "facts": [
+            {"claim": "France allocates more than \u20ac1 billion", "corroboration_id": "pair-a", "finding_ids": ["qna", "taiwan"],
+             "domains": ["thepeninsulaqatar.com", "thetaiwantimes.com"], "status": "established"},
+            {"claim": "France announced more than 1 billion in aid", "corroboration_id": "pair-b", "finding_ids": ["reuters", "taiwan"],
+             "domains": ["internazionale.it", "thetaiwantimes.com"], "status": "established"},
+            {"claim": "An older withdrawn fact", "corroboration_id": "pair-z", "finding_ids": ["taiwan", "z"], "domains": ["z.example", "thetaiwantimes.com"], "status": "withdrawn"}]}
+        self.assertEqual(local_autonomy.merge_shared_facts(room), ["pair-b"])
+        self.assertEqual([fact["status"] for fact in room["facts"]], ["established", "withdrawn"])
+        fact = room["facts"][0]
+        self.assertEqual(fact["claim"], "France allocates more than \u20ac1 billion")  # the earlier statement is kept
+        self.assertEqual(fact["corroboration_ids"], ["pair-a", "pair-b"])
+        self.assertEqual(fact["domains"], ["internazionale.it", "thepeninsulaqatar.com", "thetaiwantimes.com"])
+        self.assertEqual(sorted(fact["finding_ids"]), ["qna", "reuters", "taiwan"])
+        self.assertEqual(local_autonomy.merge_shared_facts(room), [])  # idempotent
+
     def test_residents_leave_a_room_that_lost_its_last_fact(self):
         world = {"events": [], "rooms": [{"id": "france-aid", "founded_via": "evidence-ledger", "status": "retracted"},
                                          {"id": "relay", "status": "open"}]}

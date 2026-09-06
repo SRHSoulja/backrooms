@@ -202,16 +202,36 @@ def retract_unfounded_rooms(world, records_by_id, findings_by_id, cycle, stands)
             for fact in room["facts"]:
                 if fact.get("status") != "established":
                     continue
-                record = records_by_id.get(fact.get("corroboration_id"))
-                ids = list(fact.get("finding_ids") or [])
-                first = findings_by_id.get(ids[0]) if len(ids) > 0 else None
-                second = findings_by_id.get(ids[1]) if len(ids) > 1 else None
-                ok, why = stands(record, first, second)
-                if ok:
+                pairs = list(fact.get("pairs") or [{"corroboration_id": fact.get("corroboration_id"), "finding_ids": list(fact.get("finding_ids") or []),
+                                                      "domains": list(fact.get("domains") or [])}])
+                standing, fallen = [], []
+                for pair in pairs:
+                    record = records_by_id.get(pair.get("corroboration_id"))
+                    ids = list(pair.get("finding_ids") or [])
+                    first = findings_by_id.get(ids[0]) if len(ids) > 0 else None
+                    second = findings_by_id.get(ids[1]) if len(ids) > 1 else None
+                    ok, why = stands(record, first, second)
+                    if ok:
+                        standing.append(pair)
+                    else:
+                        fallen.append((pair.get("corroboration_id"), why))
+                if not fallen:
                     continue
+                if standing:
+                    # A fact resting on several independent pairs keeps the ones that stand; the fallen source is recorded.
+                    fact["pairs"] = standing
+                    fact["corroboration_id"] = standing[0].get("corroboration_id")
+                    fact["corroboration_ids"] = [pair.get("corroboration_id") for pair in standing]
+                    fact["finding_ids"] = list(dict.fromkeys(identifier for pair in standing for identifier in pair.get("finding_ids") or []))
+                    fact["domains"] = sorted({domain for pair in standing for domain in pair.get("domains") or []})
+                    for corroboration, why in fallen:
+                        changes.append({"room": room.get("id"), "fact": corroboration, "corroboration": corroboration, "reason": why, "kind": "fact-source-withdrawn"})
+                    continue
+                why = fallen[-1][1]
                 fact["status"], fact["withdrawn_cycle"], fact["withdrawn_reason"] = "withdrawn", cycle, why
                 last_reason = why
-                changes.append({"room": room.get("id"), "fact": fact.get("corroboration_id"), "reason": why, "kind": "fact-withdrawn"})
+                for corroboration, reason_text in fallen:
+                    changes.append({"room": room.get("id"), "fact": corroboration, "corroboration": corroboration, "reason": reason_text, "kind": "fact-withdrawn"})
             if any(fact.get("status") == "established" for fact in room["facts"]):
                 continue
             reason = "every established fact was withdrawn (last: " + (last_reason or "unknown") + ")"

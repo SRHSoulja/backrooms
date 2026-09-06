@@ -1994,6 +1994,42 @@ def house_in_subject_room(world, agent, cycle):
     return house_resident(world, agent, room, cycle, "working the line that deepens this subject") if room else False
 
 
+def merge_shared_facts(room):
+    """Two established facts that share a finding are one fact with more sources:
+    the later folds into the earlier. Returns the corroboration ids folded."""
+    facts = room.get("facts") or []
+    kept, folded = [], []
+    for fact in facts:
+        if fact.get("status") != "established":
+            kept.append(fact)
+            continue
+        same = next((item for item in kept if item.get("status") == "established"
+                     and set(item.get("finding_ids") or []) & set(fact.get("finding_ids") or [])), None)
+        if same is None:
+            fact.setdefault("pairs", [{"corroboration_id": fact.get("corroboration_id"), "finding_ids": list(fact.get("finding_ids") or []), "domains": list(fact.get("domains") or [])}])
+            fact.setdefault("corroboration_ids", [fact.get("corroboration_id")])
+            kept.append(fact)
+            continue
+        strengthen_fact(same, fact)
+        folded.append(fact.get("corroboration_id"))
+    if folded:
+        room["facts"] = kept
+    return folded
+
+
+def strengthen_fact(fact, other):
+    """Add another pair's sources to a fact."""
+    fact.setdefault("pairs", [{"corroboration_id": fact.get("corroboration_id"), "finding_ids": list(fact.get("finding_ids") or []), "domains": list(fact.get("domains") or [])}])
+    for pair in other.get("pairs") or [{"corroboration_id": other.get("corroboration_id"), "finding_ids": list(other.get("finding_ids") or []), "domains": list(other.get("domains") or [])}]:
+        if pair.get("corroboration_id") not in {item.get("corroboration_id") for item in fact["pairs"]}:
+            fact["pairs"].append(pair)
+    fact["corroboration_ids"] = [pair.get("corroboration_id") for pair in fact["pairs"]]
+    fact["finding_ids"] = list(dict.fromkeys(identifier for pair in fact["pairs"] for identifier in pair.get("finding_ids") or []))
+    fact["domains"] = sorted({domain for pair in fact["pairs"] for domain in pair.get("domains") or []})
+    fact["cross_world"] = bool(fact.get("cross_world") or other.get("cross_world"))
+    return fact
+
+
 def evidence_room_growth(world, registry, cycle):
     """Grow the map from established facts.
 
@@ -2018,11 +2054,28 @@ def evidence_room_growth(world, registry, cycle):
     except Exception:  # noqa: BLE001
         lines_by_id = {}
     changes, founded = [], 0
+    for room in subject_rooms(rooms):
+        for folded in merge_shared_facts(room):
+            emit_event(world, cycle, "fact-merged", "evidence-ledger",
+                       f"Two facts in the {room.get('name')} room shared a source and were one fact; they were merged, and the room counts them once.",
+                       room=room["id"], corroboration=folded)
     for record, pair in candidates[:MAX_FACTS_PER_CYCLE]:
         title, anchors = subject_for_pair(record, pair[0], pair[1], lines_by_id)
         fact = make_fact(record, pair, cycle)
         room = subject_room_for(rooms, anchors)
-        if room is not None:
+        same = next((item for item in (room.get("facts") or []) if item.get("status") == "established"
+                     and set(item.get("finding_ids") or []) & set(fact["finding_ids"])), None) if room is not None else None
+        if same is not None:
+            # The same statement from a further independent source strengthens the fact; it is not a new fact.
+            strengthen_fact(same, fact)
+            room["artifacts"] = list(dict.fromkeys(list(room.get("artifacts") or []) + fact["finding_ids"]))
+            room["activity"]["last_cycle"] = cycle
+            room["activity"]["score"] = room["activity"].get("score", 0) + 1
+            emit_event(world, cycle, "fact-strengthened", "evidence-ledger",
+                       f"A fact in the {room.get('name')} room gained another independent source; it now rests on {len(same['domains'])} domains.",
+                       room=room["id"], corroboration=record.get("id"), finding_ids=fact["finding_ids"], source_domains=same["domains"], sources=len(same["domains"]))
+            changes.append({"action": "strengthen", "room": room["id"], "corroboration": record.get("id"), "sources": len(same["domains"])})
+        elif room is not None:
             room.setdefault("facts", []).append(fact)
             room["artifacts"] = list(dict.fromkeys(list(room.get("artifacts") or []) + fact["finding_ids"]))
             room.setdefault("line_ids", [])
@@ -2969,8 +3022,18 @@ def main():
                 record["reason"] = ("withdrawn by rule: " + next(item["reason"] for item in retracted_rooms if item.get("corroboration") == record.get("id")))[:200]
         rewrite_records(CORROBORATIONS, ledger_records)
         for item in retracted_rooms:
+            if item.get("kind") == "fact-withdrawn":
+                emit_event(world, args.cycle, "fact-withdrawn", "evidence-ledger",
+                           "An established fact was withdrawn from its room: its sources no longer meet the evidence standard.",
+                           room=item["room"], reason=item["reason"], corroboration=item.get("corroboration"))
+                continue
+            if item.get("kind") == "fact-source-withdrawn":
+                emit_event(world, args.cycle, "fact-source-withdrawn", "evidence-ledger",
+                           "One of a fact's sources no longer meets the evidence standard; the fact stands on its other sources.",
+                           room=item["room"], reason=item["reason"], corroboration=item.get("corroboration"))
+                continue
             emit_event(world, args.cycle, "room-retracted", "evidence-ledger",
-                       "A room founded on evidence was withdrawn because its founding pair no longer meets the evidence standard.",
+                       "A room founded on evidence was withdrawn because its last established fact was withdrawn.",
                        room=item["room"], reason=item["reason"], corroboration=item.get("corroboration"))
             room_changes.append({"room": item["room"], "from": "open", "to": "retracted", "reason": item["reason"]})
         evict_from_withdrawn_rooms(world, registry, args.cycle)

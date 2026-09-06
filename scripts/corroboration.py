@@ -474,7 +474,10 @@ def subject_room_for(rooms, anchors):
 
 
 def make_fact(record, pair, cycle):
+    finding_ids = [item.get("id") for item in pair]
+    domains = list(record.get("domains") or [])
     return {"claim": str(record.get("shared_claim") or record.get("topic") or "")[:240], "corroboration_id": record.get("id"),
-            "finding_ids": [item.get("id") for item in pair], "domains": list(record.get("domains") or []),
+            "corroboration_ids": [record.get("id")], "pairs": [{"corroboration_id": record.get("id"), "finding_ids": list(finding_ids), "domains": list(domains)}],
+            "finding_ids": finding_ids, "domains": domains,
             "cross_world": bool(record.get("cross_world")), "cycle": int(cycle), "status": "established",
             "established_at": datetime.now(timezone.utc).isoformat()}

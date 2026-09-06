@@ -68,13 +68,29 @@ class WorldRuleTests(unittest.TestCase):
         findings = {key: {"id": key} for key in ("f1", "f2", "f3", "f4")}
         stands = lambda record, first, second: (record["id"] != "pair-a", "" if record["id"] != "pair-a" else "founding findings share a domain")
         changes = retract_unfounded_rooms(world, records, findings, 400, stands)
-        self.assertEqual(changes, [{"room": "houthis", "fact": "pair-a", "reason": "founding findings share a domain", "kind": "fact-withdrawn"}])
+        self.assertEqual(changes, [{"room": "houthis", "fact": "pair-a", "corroboration": "pair-a", "reason": "founding findings share a domain", "kind": "fact-withdrawn"}])
         self.assertEqual([fact["status"] for fact in world["rooms"][0]["facts"]], ["withdrawn", "established"])
         self.assertIsNone(world["rooms"][0].get("status"))
         changes = retract_unfounded_rooms(world, records, findings, 401, lambda r, a, b: (False, "inference judge finds no entailment"))
         self.assertEqual(world["rooms"][0]["status"], "retracted")
         self.assertIn("every established fact was withdrawn", world["rooms"][0]["retraction_reason"])
         self.assertEqual(changes[-1]["room"], "houthis")
+
+    def test_a_fact_with_several_pairs_stands_on_the_ones_that_stand(self):
+        from scripts.world_rules import retract_unfounded_rooms
+        fact = {"claim": "France allocates more than \u20ac1 billion", "corroboration_id": "pair-a", "corroboration_ids": ["pair-a", "pair-b"],
+                "pairs": [{"corroboration_id": "pair-a", "finding_ids": ["qna", "taiwan"], "domains": ["thepeninsulaqatar.com", "thetaiwantimes.com"]},
+                          {"corroboration_id": "pair-b", "finding_ids": ["reuters", "taiwan"], "domains": ["internazionale.it", "thetaiwantimes.com"]}],
+                "finding_ids": ["qna", "taiwan", "reuters"], "domains": ["internazionale.it", "thepeninsulaqatar.com", "thetaiwantimes.com"], "status": "established"}
+        world = {"rooms": [{"id": "france", "founded_via": "evidence-ledger", "corroboration_id": "pair-a", "facts": [fact]}]}
+        records = {"pair-a": {"id": "pair-a"}, "pair-b": {"id": "pair-b"}}
+        findings = {key: {"id": key} for key in ("qna", "taiwan", "reuters")}
+        stands = lambda record, first, second: (record["id"] != "pair-b", "" if record["id"] != "pair-b" else "founding findings carry the same wire agency's report on two sites")
+        changes = retract_unfounded_rooms(world, records, findings, 380, stands)
+        self.assertEqual(changes, [{"room": "france", "fact": "pair-b", "corroboration": "pair-b", "reason": "founding findings carry the same wire agency's report on two sites", "kind": "fact-source-withdrawn"}])
+        self.assertEqual(fact["status"], "established")
+        self.assertEqual((fact["corroboration_ids"], fact["domains"]), (["pair-a"], ["thepeninsulaqatar.com", "thetaiwantimes.com"]))
+        self.assertIsNone(world["rooms"][0].get("status"))
 
     def test_followup_question_comes_from_the_finding(self):
         question = finding_followup_question({"topic": "agent discovery cards under review", "claim": "Cards are published at a well-known path.",
