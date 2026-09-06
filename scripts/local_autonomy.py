@@ -2044,7 +2044,14 @@ def evidence_room_growth(world, registry, cycle):
     if not findings_by_id or not CORROBORATIONS.exists():
         return []
     rooms = normalize_rooms(world, cycle)
-    attached = {fact.get("corroboration_id") for room in rooms for fact in (room.get("facts") or [])}
+    for room in subject_rooms(rooms):
+        for folded in merge_shared_facts(room):
+            emit_event(world, cycle, "fact-merged", "evidence-ledger",
+                       f"Two facts in the {room.get('name')} room shared a source and were one fact; they were merged, and the room counts them once.",
+                       room=room["id"], corroboration=folded)
+    # Every pair a fact rests on is attached, so a folded pair is never offered again.
+    attached = {identifier for room in rooms for fact in (room.get("facts") or [])
+                for identifier in (fact.get("corroboration_ids") or [fact.get("corroboration_id")])}
     attached |= {room.get("corroboration_id") for room in rooms if room.get("corroboration_id")}
     candidates = growth_candidates(load_records(CORROBORATIONS), findings_by_id, attached)
     if not candidates:
@@ -2054,11 +2061,6 @@ def evidence_room_growth(world, registry, cycle):
     except Exception:  # noqa: BLE001
         lines_by_id = {}
     changes, founded = [], 0
-    for room in subject_rooms(rooms):
-        for folded in merge_shared_facts(room):
-            emit_event(world, cycle, "fact-merged", "evidence-ledger",
-                       f"Two facts in the {room.get('name')} room shared a source and were one fact; they were merged, and the room counts them once.",
-                       room=room["id"], corroboration=folded)
     for record, pair in candidates[:MAX_FACTS_PER_CYCLE]:
         title, anchors = subject_for_pair(record, pair[0], pair[1], lines_by_id)
         fact = make_fact(record, pair, cycle)
