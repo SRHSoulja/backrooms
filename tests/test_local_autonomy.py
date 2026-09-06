@@ -886,6 +886,75 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(local_autonomy.strip_dateline(plain), plain)  # a lowercase continuation is not a dateline
         self.assertEqual(local_autonomy.strip_dateline("Reuters: Short."), "Reuters: Short.")  # too little would remain
 
+    def test_a_wire_dateline_is_not_part_of_the_quote(self):
+        wire = ("Per saperne di pi\u00f9 PARIS, Sept 4 (Reuters) - France on Friday announced more than \u20ac1 billion in aid for farmers "
+                "after this summer's record heatwaves and droughts devastated crops.")
+        self.assertTrue(local_autonomy.strip_dateline(wire).startswith("France on Friday announced"))
+
+    def test_the_judge_scores_a_sentence_with_and_without_its_dateline_and_keeps_the_better(self):
+        class StubJudge:
+            SUPPORT_MIN, CONTRADICTION_MIN, NLI_REPO, NLI_REVISION = 0.5, 0.6, "stub", "rev"
+            def available(self):
+                return True
+            def nli(self, premise, hypothesis):
+                score = 0.9 if premise.startswith("QNA Paris:") else 0.1  # the small judge is not indifferent to the prefix
+                return {"entailment": score, "contradiction": 0.01, "neutral": 1 - score}
+        original = local_autonomy.inference_judge
+        local_autonomy.inference_judge = StubJudge()
+        try:
+            tool = {"source": "https://outlet.example/a", "source_hash": "h", "query": "france aid",
+                    "sentences": ["QNA Paris: France has announced the allocation of more than EUR 1 billion to support the agricultural sector."]}
+            found = local_autonomy.entailed_finding({"id": "r", "room": "relay"}, 5, tool, {"id": "t", "claim": "France allocates more than \u20ac1 billion."})
+            self.assertTrue(found["quote"].startswith("QNA Paris:"))
+            self.assertEqual(found["entailment"]["entailment"], 0.9)
+        finally:
+            local_autonomy.inference_judge = original
+
+    def test_findings_are_annotated_with_the_wire_agency_their_page_credits(self):
+        import tempfile
+        from pathlib import Path
+        original_findings, original_corr = local_autonomy.FINDINGS, local_autonomy.CORROBORATIONS
+        with tempfile.TemporaryDirectory() as directory:
+            local_autonomy.FINDINGS = Path(directory) / "findings.jsonl"
+            local_autonomy.CORROBORATIONS = Path(directory) / "corroborations.jsonl"
+            local_autonomy.ARCHIVE = Path(directory) / "events.jsonl"
+            rows = [{"id": "f1", "status": "unreviewed", "url": "https://bbc.bm/a", "cycle": 369, "claim": "x", "quote": "x"},
+                    {"id": "f2", "status": "unreviewed", "url": "https://www.internazionale.it/b", "cycle": 371, "claim": "y", "quote": "y"},
+                    {"id": "f3", "status": "rejected", "url": "https://other.example/c", "cycle": 372, "claim": "z", "quote": "z"},
+                    {"id": "f4", "status": "unreviewed", "url": "https://done.example/d", "cycle": 372, "agency": "", "claim": "w", "quote": "w"}]
+            local_autonomy.FINDINGS.write_text("".join(json.dumps(row) + "\n" for row in rows))
+            local_autonomy.CORROBORATIONS.write_text(json.dumps({"id": "pair-1", "finding_ids": ["f1", "f2"], "relation": "supports"}) + "\n")
+            world = {"events": [], "rooms": [{"id": "room", "facts": [{"corroboration_id": "pair-1", "status": "established"}]}]}
+            fetched = []
+            def fetch(url, focus="", base_url=None):
+                fetched.append(url)
+                if "bbc.bm" in url:
+                    return {"status": "completed", "wire_credit": "reuters"}
+                if "internazionale" in url:
+                    return {"status": "completed", "wire_credit": "reuters"}
+                return {"status": "failed"}
+            try:
+                changed = local_autonomy.backfill_agency(world, 373, limit=2, fetch=fetch)
+                self.assertEqual(sorted(changed), ["f1", "f2"])  # the founding pair first; f4 already read; f3 rejected
+                self.assertEqual(sorted(fetched), ["https://bbc.bm/a", "https://www.internazionale.it/b"])
+                after = {row["id"]: row for row in local_autonomy.all_findings()}
+                self.assertEqual((after["f1"]["agency"], after["f2"]["agency"]), ("reuters", "reuters"))
+                self.assertNotIn("agency", after["f3"])
+                self.assertEqual([event["kind"] for event in world["events"]], ["agency-noted", "agency-noted"])
+                self.assertEqual(local_autonomy.backfill_agency(world, 374, limit=2, fetch=fetch), [])
+            finally:
+                local_autonomy.FINDINGS, local_autonomy.CORROBORATIONS = original_findings, original_corr
+
+    def test_the_models_extraction_on_a_verification_turn_is_held_to_the_lines_subject(self):
+        from scripts.world_rules import finding_on_topic
+        base = {"anchors": ["france", "compensation", "agricultural"], "line_id": "line-1", "topic": "france compensation agricultural",
+                "claim": "BP's 2010 Deepwater Horizon oil spill cost the company more than $65 billion.",
+                "quote": "Altogether, the oil spill cost the company more than $65 billion.",
+                "verifies_claim": "France gives farmers \u20ac1 billion to recover from record heatwaves"}
+        self.assertFalse(finding_on_topic({**base, "claim_origin": "model"}))
+        self.assertTrue(finding_on_topic({**base, "claim_origin": "entailed-quote"}))  # the judge said it states the colleague's claim
+        self.assertTrue(finding_on_topic({**base, "claim": "France allocates more than \u20ac1 billion to farms.", "claim_origin": "model"}))
+
     def test_a_null_byte_in_resident_code_does_not_abort_the_cycle(self):
         result = local_autonomy.run_analysis("print('x')\x00", "data\x00")
         self.assertIsInstance(result, dict)

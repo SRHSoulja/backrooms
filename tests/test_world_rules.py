@@ -94,10 +94,12 @@ class WorldRuleTests(unittest.TestCase):
         drifted = {**anchored, "claim": "Users can hide private contributions on their GitHub profile.", "quote": "hide private contributions"}
         self.assertFalse(finding_on_topic(drifted))
         self.assertEqual(finding_followup_question(drifted), "")
-        # a verification finding may paraphrase the anchor away; it is held to the claim it verifies instead
-        verifying = {**drifted, "verifies_claim": "Roskomnadzor blocked GitHub in December 2014.",
+        # a quote the judge found to state a colleague's claim may paraphrase the anchor away; it is held to that claim instead
+        verifying = {**drifted, "verifies_claim": "Roskomnadzor blocked GitHub in December 2014.", "claim_origin": "entailed-quote",
                      "claim": "Russia's media regulator blocked GitHub over suicide content in 2014.", "quote": "blocked GitHub"}
         self.assertTrue(finding_on_topic(verifying))
+        # the model's own extraction on a verification turn is not: it must name the line's subject
+        self.assertFalse(finding_on_topic({**verifying, "claim_origin": "model"}))
         # a person's profile page leaves no question behind either: the world does not research individuals
         self.assertEqual(finding_followup_question({"topic": "github profile roscom ross cameron", "url": "https://github.com/roscom",
                                                     "claim": "The GitHub profile for 'roscom' (Ross Cameron) lists Roscommon Pty Ltd."}), "")

@@ -241,6 +241,22 @@ class CorroborationTests(unittest.TestCase):
         self.assertEqual((pairs[0][0]["id"], pairs[0][1]["id"], pairs[0][3]), ("f1", "f2", 1.5))
 
 
+    def test_two_sites_carrying_one_wire_agencys_report_are_one_source(self):
+        bermuda = {"id": "a", "status": "unreviewed", "topic": "france aid", "url": "https://bbc.bm/france-gives-farmers", "agency": "reuters",
+                   "claim": "France gives farmers \u20ac1 billion to recover from record heatwaves",
+                   "quote": "France gives farmers \u20ac1 billion to recover from record heatwaves"}
+        italy = {"id": "b", "status": "unreviewed", "topic": "france aid", "url": "https://www.internazionale.it/ultime-notizie-reuters/x", "agency": "reuters",
+                 "claim": "France on Friday announced more than \u20ac1 billion in aid for farmers after record heatwaves devastated crops.",
+                 "quote": "France on Friday announced more than \u20ac1 billion in aid for farmers after record heatwaves devastated crops."}
+        self.assertTrue(same_document(bermuda, italy))
+        self.assertEqual(candidate_pairs([bermuda, italy]), [])
+        ok, reason = founding_pair_stands({"id": "p", "finding_ids": ["a", "b"], "shared_claim": bermuda["claim"]}, bermuda, italy)
+        self.assertEqual((ok, reason), (False, "founding findings carry the same wire agency's report on two sites"))
+        qatar = {**italy, "id": "c", "url": "https://thepeninsulaqatar.com/article/x", "agency": "qna"}
+        self.assertFalse(same_document(bermuda, qatar))  # a different agency's report is a second source
+        unread = {**italy, "id": "d", "url": "https://other.example/x"}; unread.pop("agency")
+        self.assertFalse(same_document(bermuda, unread))
+
     def test_mirrors_and_subdomains_are_one_source(self):
         self.assertEqual(domain_of({"url": "https://ar5iv.labs.arxiv.org/html/2304.05559"}), "arxiv.org")
         self.assertEqual(domain_of({"url": "https://en.m.wikipedia.org/wiki/Wall"}), "wikipedia.org")

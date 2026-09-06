@@ -290,6 +290,7 @@ def extract_finding(url, agent, cycle, tool, target_claim=None, topic_override=N
               "confidence": confidence, "quote_score": quote_score, "claim_origin": claim_origin,
               "quote_match": reason, "relates_to": [agent.get("room") or "unassigned"], "status": status,
               "recorded_at": datetime.now(timezone.utc).isoformat()}
+    record["agency"] = str(tool.get("wire_credit") or "")
     if target_claim and target_claim.get("id"):
         record["verifies"] = target_claim.get("id")
         record["verifies_claim"] = str(target_claim.get("claim", ""))[:300]
@@ -372,6 +373,7 @@ def fetch_public_text(url, focus="", base_url=None):
 
 CLAUSE_BREAK = re.compile(r",\s+(?:including|which|with|as well as|among them|along with)\b|;\s+|\s+[\u2013\u2014]\s+")
 DATELINE = re.compile(r"^(?P<junk>.{0,160}?\b[A-Z][A-Za-z.'-]*(?: [A-Z][A-Za-z.'-]*){0,3}:\s+)(?=[A-Z\"\u201c'])")
+WIRE_DATELINE = re.compile(r"^(?P<junk>.{0,120}?\b[A-Z]{3,}(?:,\s+[A-Z][a-z]+\.?\s+\d{1,2})?\s+\((?:Reuters|AFP|AP|Xinhua|dpa|EFE|ANSA|QNA|PTI|ANI|Kyodo|Yonhap|TASS)\)\s*[-\u2013\u2014:]+\s+)")
 
 
 def core_clauses(claim):
@@ -394,7 +396,7 @@ def strip_dateline(sentence):
     before the statement ("Photo by ... QNA Paris: France has ..."); the quote
     starts at the statement, which is still verbatim on the page."""
     text = re.sub(r"\s+", " ", str(sentence or "")).strip()
-    match = DATELINE.match(text)
+    match = WIRE_DATELINE.match(text) or DATELINE.match(text)
     if match and len(text) - len(match.group("junk")) >= 40:
         return text[len(match.group("junk")):]
     return text
@@ -420,7 +422,7 @@ def file_seed_finding(world, cycle, seed, topic="", fetch=fetch_public_text):
         outcome["fetched"] += 1
         excerpt = str(fetched.get("excerpt", ""))
         probe = {"source": url, "excerpt": excerpt, "query": topic or claim, "sentences": fetched.get("sentences") or [],
-                 "source_hash": hashlib.sha256(excerpt.encode()).hexdigest()}
+                 "source_hash": hashlib.sha256(excerpt.encode()).hexdigest(), "wire_credit": fetched.get("wire_credit") or ""}
         for statement in core_clauses(claim):
             report = {}
             finding = entailed_finding({"id": "council", "room": "relay"}, cycle, probe, {"id": None, "claim": statement},
@@ -467,17 +469,20 @@ def entailed_finding(agent, cycle, tool, target_claim, dissent=False, topic_over
     source = str(tool.get("source", ""))
     if not source.startswith("https://") or not tool.get("source_hash"):
         return None
-    pool = [strip_dateline(item) for item in ([str(item) for item in (tool.get("sentences") or [])] or split_sentences(tool.get("excerpt", "")))
+    pool = [str(item) for item in ([str(item) for item in (tool.get("sentences") or [])] or split_sentences(tool.get("excerpt", "")))
             if " | " not in str(item)]  # a title bar is site chrome, not a sentence
     best = None
-    for sentence in pool[:40]:
-        try:
-            scores = inference_judge.nli(sentence, str(target_claim["claim"]))
-        except Exception:  # noqa: BLE001
-            return None
-        key = scores["contradiction"] if dissent else scores["entailment"]
-        if best is None or key > best[0]:
-            best = (key, sentence, scores)
+    for raw in pool[:40]:
+        # The statement without its dateline is the better quote, but the small judge is
+        # not indifferent to the prefix, so both forms are scored and the better is kept.
+        for sentence in dict.fromkeys((strip_dateline(raw), raw)):
+            try:
+                scores = inference_judge.nli(sentence, str(target_claim["claim"]))
+            except Exception:  # noqa: BLE001
+                return None
+            key = scores["contradiction"] if dissent else scores["entailment"]
+            if best is None or key > best[0]:
+                best = (key, sentence, scores)
     if report is not None and best is not None:
         report.update({"best": round(float(best[0]), 4), "sentence": best[1][:200]})
     bar = inference_judge.CONTRADICTION_MIN if dissent else inference_judge.SUPPORT_MIN
@@ -499,6 +504,7 @@ def entailed_finding(agent, cycle, tool, target_claim, dissent=False, topic_over
     if CURRENT_LINE.get("id"):
         record["line_id"] = CURRENT_LINE["id"]
         record["anchors"] = list(CURRENT_LINE.get("anchors") or [])
+    record["agency"] = str(tool.get("wire_credit") or "")
     for test, reason in ((search_page(record["url"]), "search-page"), (not urllib.parse.urlparse(record["url"]).path.strip("/"), "homepage"),
                          (definition_source(record), "definition-source"), (profile_subject(record), "profile-subject")):
         if test:
@@ -1816,6 +1822,45 @@ def backfill_inference(world, cycle, limit=BACKFILL_PER_CYCLE):
     return changed
 
 
+AGENCY_BACKFILL_PER_CYCLE = 5
+
+
+def backfill_agency(world, cycle, limit=AGENCY_BACKFILL_PER_CYCLE, fetch=fetch_public_text):
+    """Findings recorded before pages were read for a wire credit are re-fetched,
+    a few per cycle, and annotated with the agency their page credits (or ""),
+    the findings behind standing facts first; the standing re-check then
+    withdraws any fact whose two sites carry one agency's report."""
+    rows = all_findings()
+    pending = [item for item in rows if is_accepted(item) and "agency" not in item and str(item.get("url", "")).startswith("https://")]
+    if not pending:
+        return []
+    founding = set()
+    by_record = {item.get("id"): item for item in load_records(CORROBORATIONS)}
+    for room in world.get("rooms", []):
+        for fact in room.get("facts") or ([{"corroboration_id": room.get("corroboration_id")}] if room.get("corroboration_id") else []):
+            record = by_record.get(fact.get("corroboration_id")) or {}
+            founding.update(record.get("finding_ids") or [])
+    pending.sort(key=lambda item: (0 if item.get("id") in founding else 1, -int(item.get("cycle", 0) or 0)))
+    changed = []
+    for item in pending[:limit]:
+        fetched = fetch(item["url"])
+        if not isinstance(fetched, dict) or fetched.get("status") != "completed":
+            item["agency"] = ""
+            item["agency_check"] = "unreachable"
+        else:
+            item["agency"] = str(fetched.get("wire_credit") or "")
+            item["agency_check"] = "read"
+        changed.append(item["id"])
+        if item["agency"]:
+            emit_event(world, cycle, "agency-noted", "evidence-ledger",
+                       "A finding's page credits a wire agency for its text; two sites carrying the same agency's report are one source.",
+                       finding_id=item["id"], agency=item["agency"])
+    with FINDINGS.open("w") as handle:
+        for row in rows:
+            handle.write(json.dumps(row, separators=(",", ":")) + "\n")
+    return changed
+
+
 def judge_corroborations(url, world, cycle, limit=MAX_JUDGMENTS_PER_CYCLE):
     """Ask the local model whether cross-domain finding pairs support or contradict each other.
 
@@ -1823,6 +1868,7 @@ def judge_corroborations(url, world, cycle, limit=MAX_JUDGMENTS_PER_CYCLE):
     ledger. Query-term overlap only selects candidates; it never counts as
     corroboration by itself.
     """
+    backfill_agency(world, cycle)
     findings = accepted_findings()
     backfill_inference(world, cycle)
     judged = {item.get("id") for item in load_records(CORROBORATIONS)}

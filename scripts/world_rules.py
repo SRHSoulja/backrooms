@@ -246,10 +246,13 @@ def finding_on_topic(finding):
     """A finding is on topic when its claim shares content words with the query
     that produced it. A finding with no recorded topic is not held to this."""
     anchors = list(finding.get("anchors") or [])
-    if anchors and not finding.get("verifies_claim"):
+    entailed = bool(finding.get("verifies_claim")) and finding.get("claim_origin") == "entailed-quote"
+    if anchors and not entailed:
         # A finding made on a research line must be about that line's subject:
         # it names an anchor (a rare term of the root question) in its claim or
-        # quote. Sharing a generic word like "github" is not being on topic.
+        # quote. Sharing a generic word like "github" is not being on topic. Only
+        # a quote the judge found to state a colleague's claim is exempt; the
+        # model's own extraction on a verification turn is not.
         try:
             from scripts.research_lines import shares_anchor
         except ImportError:

@@ -75,6 +75,8 @@ def same_document(first, second):
     key_a, key_b = document_key(first), document_key(second)
     if key_a and key_a == key_b:
         return True
+    if first.get("agency") and first.get("agency") == second.get("agency"):
+        return True  # two sites carrying one wire agency's report
     if first.get("content_hash") and first.get("content_hash") == second.get("content_hash"):
         return True
     quote_a, quote_b = claim_stems(first.get("quote", "")), claim_stems(second.get("quote", ""))
@@ -303,6 +305,8 @@ def founding_pair_stands(record, first, second):
         return False, "a founding finding was rejected or retracted"
     if domain_of(first) == domain_of(second):
         return False, "founding findings share a domain"
+    if first.get("agency") and first.get("agency") == second.get("agency"):
+        return False, "founding findings carry the same wire agency's report on two sites"
     if same_document(first, second):
         return False, "founding findings are the same document on two addresses"
     if definition_source(first) or definition_source(second):

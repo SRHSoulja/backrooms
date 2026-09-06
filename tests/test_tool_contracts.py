@@ -361,3 +361,14 @@ class ToolContractTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class WireCreditTests(unittest.TestCase):
+    def test_a_pages_wire_credit_is_read_and_a_photo_credit_is_not(self):
+        from scripts.tool_broker import wire_credit
+        self.assertEqual(wire_credit("Read more International News via Reuters: France on Friday announced more than \u20ac1 billion in aid."), "reuters")
+        self.assertEqual(wire_credit("Per saperne di pi\u00f9 PARIS, Sept 4 (Reuters) - France on Friday announced aid."), "reuters")
+        self.assertEqual(wire_credit("Photo by Loic VENANCE / AFP Follow us QNA Paris: France has announced the allocation of more than EUR 1 billion."), "qna")
+        self.assertEqual(wire_credit("Photo by AFP. The minister spoke to reporters in Paris on Friday about the plan."), "")
+        self.assertEqual(wire_credit("Source: Agence France-Presse. The plan was announced on Friday."), "afp")
+        self.assertEqual(wire_credit("The council met on Friday and adopted the plan without amendment."), "")

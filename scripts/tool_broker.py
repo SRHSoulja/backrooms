@@ -618,6 +618,28 @@ def candidate_sentences(text, focus, limit=MAX_CANDIDATE_SENTENCES):
     return out
 
 
+WIRE_AGENCIES = {"reuters": "reuters", "afp": "afp", "agence france-presse": "afp", "ap": "ap", "associated press": "ap",
+                 "xinhua": "xinhua", "dpa": "dpa", "efe": "efe", "ansa": "ansa", "qna": "qna", "pti": "pti", "ani": "ani",
+                 "kyodo": "kyodo", "yonhap": "yonhap", "tass": "tass", "pa media": "pa", "anadolu": "anadolu", "wam": "wam"}
+_AGENCY = r"(Reuters|AFP|Agence France-Presse|Associated Press|AP|Xinhua|dpa|EFE|ANSA|QNA|PTI|ANI|Kyodo|Yonhap|TASS|PA Media|Anadolu|WAM)"
+WIRE_CREDIT = re.compile(r"\(" + _AGENCY + r"\)"                                                    # PARIS (Reuters) -
+                         r"|(?<!Photo )(?<!Image )(?<!Picture )(?<!Photograph )(?<!Graphic )\b(?:via|from|Source:?|source:?)\s+" + _AGENCY + r"\b(?!\s*/)"  # via Reuters:
+                         r"|\b" + _AGENCY + r"\s+[A-Z][a-z]+\s*:"                                    # QNA Paris:
+                         r"|\b" + _AGENCY + r"\s+contributed\b")
+
+
+def wire_credit(text):
+    """The wire agency a page credits for its text, normalised, or "": a dateline
+    such as "PARIS (Reuters) -", a "via Reuters" or "Source: AFP" line, or an
+    agency dateline like "QNA Paris:". A photo credit ("Photo by X / AFP") is
+    not a text credit. Two pages crediting the same agency carry one report."""
+    match = WIRE_CREDIT.search(str(text or ""))
+    if not match:
+        return ""
+    name = next((group for group in match.groups() if group), "")
+    return WIRE_AGENCIES.get(name.lower(), name.lower())
+
+
 def public_text(url, focus=""):
     raw = SCRIPT_STYLE.sub(" ", fetch(url, RESEARCH_MAX_BYTES))
     text = clean_excerpt(re.sub(r"<[^>]+>", " ", html.unescape(raw)))
@@ -626,7 +648,7 @@ def public_text(url, focus=""):
     text = BLOCKED.sub("[withheld]", text)
     excerpt = focused_passage(text, focus) if focus else text[:2400]
     result = {"tool": "public-text", "url": url, "excerpt": excerpt[:2400], "status": "completed",
-              "contract": TOOL_CONTRACTS["public-text"]}
+              "contract": TOOL_CONTRACTS["public-text"], "wire_credit": wire_credit(text)}
     if focus:
         result["sentences"] = candidate_sentences(text, focus)
     return result
