@@ -117,6 +117,20 @@ class TransientRetryTests(unittest.TestCase):
         self.assertEqual(choose_preferred_model(listed, preferred, "x", failed=["openai/gpt-oss-120b"]), "openai/gpt-oss-20b")
         self.assertEqual(choose_preferred_model(["whisper-large-v3"], preferred, "fallback"), "fallback")
 
+    def test_a_provider_is_not_retired_when_its_prefixed_model_is_listed(self):
+        import io, json as json_module
+        from scripts.model_client import resolve_model
+        class Response(io.BytesIO):
+            def __enter__(self): return self
+            def __exit__(self, *_a): return False
+        listed = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3-32b"]
+        opener = lambda request, timeout=0: Response(json_module.dumps({"data": [{"id": name} for name in listed]}).encode())
+        provider = {"name": "groq", "model": "openai/gpt-oss-120b", "resolve_model": "preferred", "api_key": "k", "base_url": "https://example.invalid",
+                    "preferred_models": (r"^openai/gpt-oss-120b$",)}
+        usage = {"providers": {}, "models": {}}
+        self.assertEqual(resolve_model(provider, usage, opener)["model"], "openai/gpt-oss-120b")
+        self.assertFalse(usage["providers"].get("groq", {}).get("disabled"))
+
     def test_thinking_setting_follows_the_docs(self):
         from scripts.model_client import thinking_setting
         self.assertEqual(thinking_setting("gemini-3.8-flash"), "low")

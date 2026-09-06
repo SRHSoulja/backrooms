@@ -92,6 +92,14 @@ jobs:
           git -C state config user.name 'Backrooms Steward'
           git -C state config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           python3 scripts/local_daemon.py --publish --interval 1800 --max-cycles 3
+      - name: Start the next run unless the world is paused (GitHub's cron is not reliable enough to keep the cadence)
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          paused=$(python3 -c "import json,datetime; h=json.load(open('docs/health.json')); until=h.get('paused_until'); print('yes' if h.get('autonomy')=='paused' and until and datetime.datetime.fromisoformat(until.replace('Z','+00:00'))>datetime.datetime.now(datetime.timezone.utc) else 'no')" 2>/dev/null || echo no)
+          if [ "$paused" = "yes" ]; then echo "paused; the next run waits for the heartbeat after the allowances reset"; exit 0; fi
+          gh workflow run cycle.yml --repo "$GITHUB_REPOSITORY" && echo "next run queued"
       - name: Save the private runtime state
         if: always()
         run: |

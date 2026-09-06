@@ -184,7 +184,10 @@ def _record(usage, name, **fields):
 def _available(provider, usage, now):
     entry = usage["providers"].get(provider["name"], {})
     if entry.get("disabled"):
-        return False, "disabled"
+        if provider.get("resolve_model") and str(entry.get("last_error", "")).startswith("every usable model") and entry.get("calls"):
+            entry["disabled"] = False  # it answered today; let the live listing decide again
+        else:
+            return False, "disabled"
     if entry.get("cooldown_until", 0) > now:
         return False, "cooldown"
     if provider["rpd"] and entry.get("calls", 0) >= provider["rpd"]:
@@ -347,7 +350,8 @@ def resolve_model(provider, usage, opener=None):
         chosen = choose_gemini_model(listed, provider["model"], failed)
     else:
         chosen = choose_preferred_model(listed, provider.get("preferred_models") or (), provider["model"], failed)
-    listed_names = {str(raw or "").split("/")[-1].strip() for raw in listed}
+    listed_names = {str(raw or "").strip() for raw in listed} | {str(raw or "").split("models/")[-1].strip() for raw in listed} \
+        | {str(raw or "").split("/")[-1].strip() for raw in listed}
     if listed_names and (chosen in failed or chosen not in listed_names):
         # Nothing usable is listed today (every model's quota is spent): the fallback
         # name would only earn 404s, so the provider rests until tomorrow.
