@@ -28,6 +28,7 @@ def clean(text):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("provider")
+    parser.add_argument("--model", default="", help="try this model id instead of the router's choice")
     args = parser.parse_args()
     provider = next((item for item in model_client.providers() if item["name"] == args.provider), None)
     if provider is None:
@@ -46,6 +47,8 @@ def main():
     except Exception as error:  # noqa: BLE001
         report["listing_error"] = {"type": type(error).__name__, "detail": clean(error)}
         report["chosen"] = provider["model"]
+    if args.model:
+        report["chosen"] = args.model
     trial = {**provider, "model": report["chosen"]}
     try:
         content, prompt_tokens, completion_tokens, limits = model_client._request(

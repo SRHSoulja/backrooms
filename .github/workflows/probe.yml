@@ -7,6 +7,10 @@ on:
         description: Provider name from the router (gemini, mistral, groq, cerebras, openrouter)
         required: true
         default: gemini
+      model:
+        description: Optional model id to try instead of the router's choice
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -37,4 +41,4 @@ jobs:
       - name: Probe the provider (model list, chosen model, one tiny call)
         env:
           BACKROOMS_PROVIDER_ORDER: ${{ inputs.provider }}
-        run: python3 scripts/provider_probe.py "${{ inputs.provider }}"
+        run: python3 scripts/provider_probe.py "${{ inputs.provider }}" ${{ inputs.model && format('--model "{0}"', inputs.model) || '' }}
