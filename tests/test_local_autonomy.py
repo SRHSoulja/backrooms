@@ -821,7 +821,8 @@ class LocalAutonomyTests(unittest.TestCase):
             def available(self):
                 return True
             def nli(self, premise, hypothesis):
-                if "120 people" in premise and "Houthis" in hypothesis:
+                if "120 people" in premise and "Houthis" in hypothesis and "including" not in hypothesis:
+                    # like the real judge, a sentence does not entail a claim padded with particulars it never states
                     return {"entailment": 0.93, "contradiction": 0.01, "neutral": 0.06}
                 return {"entailment": 0.02, "contradiction": 0.01, "neutral": 0.97}
         original_judge, original_line, original_findings = local_autonomy.inference_judge, dict(local_autonomy.CURRENT_LINE), local_autonomy.FINDINGS
@@ -854,10 +855,41 @@ class LocalAutonomyTests(unittest.TestCase):
                 self.assertEqual(len(local_autonomy.FINDINGS.read_text().splitlines()), 1)
                 nothing = local_autonomy.file_seed_finding(world, 348, {"claim": "A claim the page never states in any sentence at all.", "url": "https://www.france24.com/en/y"}, fetch=fetch)
                 self.assertIsNone(nothing)
+                self.assertEqual(world["events"][-1]["kind"], "seed-unverified")  # the miss is public, with what was fetched
+                self.assertEqual(world["events"][-1]["fetched"], 1)
+                # The record's editor folded particulars into one sentence; the page states the event itself.
+                long_claim = ("Over 120 people were killed in clashes between the Houthis and the Yemeni Armed Forces, including "
+                              "fighters on both sides, civilians caught in crossfire, and medics who reached the front lines.")
+                seeded = local_autonomy.file_seed_finding(world, 349, {"claim": long_claim, "url": "https://www.france24.com/en/z"}, fetch=fetch)
+                self.assertEqual(seeded["claim"], "Over 120 people were killed in clashes between the Houthis and the Yemeni Armed Forces.")
+                self.assertEqual(seeded["claim_origin"], "seed-record")
+                self.assertIn("Over 120 people were killed", seeded["quote"])
             finally:
                 local_autonomy.inference_judge = original_judge
                 local_autonomy.CURRENT_LINE.clear(); local_autonomy.CURRENT_LINE.update(original_line)
                 local_autonomy.FINDINGS = original_findings
+
+    def test_a_claim_is_tried_whole_and_then_by_its_leading_clause(self):
+        claim = ("France allocates more than \u20ac1 billion to support farms affected by drought and heatwaves, including "
+                 "compensation for crop losses, liquidity assistance, tax relief, and support for fertilizer costs.")
+        self.assertEqual(local_autonomy.core_clauses(claim),
+                         [claim, "France allocates more than \u20ac1 billion to support farms affected by drought and heatwaves."])
+        self.assertEqual(local_autonomy.core_clauses("Short claim, which is short."), ["Short claim, which is short."])
+        self.assertEqual(local_autonomy.core_clauses(""), [])
+
+    def test_a_quote_starts_at_the_statement_not_at_the_site_chrome(self):
+        junk = ("Photo by Loic VENANCE / AFP Follow us news Copy A+ A- QNA Paris: France has announced the allocation of more "
+                "than EUR 1 billion to support the agricultural sector.")
+        self.assertEqual(local_autonomy.strip_dateline(junk),
+                         "France has announced the allocation of more than EUR 1 billion to support the agricultural sector.")
+        plain = "The minister said: the plan is a massive effort given the budgetary context of the year."
+        self.assertEqual(local_autonomy.strip_dateline(plain), plain)  # a lowercase continuation is not a dateline
+        self.assertEqual(local_autonomy.strip_dateline("Reuters: Short."), "Reuters: Short.")  # too little would remain
+
+    def test_a_null_byte_in_resident_code_does_not_abort_the_cycle(self):
+        result = local_autonomy.run_analysis("print('x')\x00", "data\x00")
+        self.assertIsInstance(result, dict)
+        self.assertIn("status", result)
 
     def test_a_line_from_the_public_record_reads_the_web_and_the_encyclopedia_not_papers(self):
         original = dict(local_autonomy.CURRENT_LINE)

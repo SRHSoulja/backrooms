@@ -370,6 +370,36 @@ def fetch_public_text(url, focus="", base_url=None):
         return {"status": "failed", "reason": "invalid-broker-response"}
 
 
+CLAUSE_BREAK = re.compile(r",\s+(?:including|which|with|as well as|among them|along with)\b|;\s+|\s+[\u2013\u2014]\s+")
+DATELINE = re.compile(r"^(?P<junk>.{0,160}?\b[A-Z][A-Za-z.'-]*(?: [A-Z][A-Za-z.'-]*){0,3}:\s+)(?=[A-Z\"\u201c'])")
+
+
+def core_clauses(claim):
+    """The statements a page can be asked to entail, most complete first: the
+    claim as the record wrote it, then its leading clause without the list of
+    particulars that follows a comma. A cited page states the event; it rarely
+    states every particular the record's editor folded into one sentence."""
+    claim = re.sub(r"\s+", " ", str(claim or "")).strip()
+    out = [claim] if claim else []
+    match = CLAUSE_BREAK.search(claim)
+    if match and match.start() >= 40:
+        clause = claim[:match.start()].rstrip(",; ") + "."
+        if clause not in out:
+            out.append(clause)
+    return out
+
+
+def strip_dateline(sentence):
+    """A page's first sentence often carries the site's chrome and a dateline
+    before the statement ("Photo by ... QNA Paris: France has ..."); the quote
+    starts at the statement, which is still verbatim on the page."""
+    text = re.sub(r"\s+", " ", str(sentence or "")).strip()
+    match = DATELINE.match(text)
+    if match and len(text) - len(match.group("junk")) >= 40:
+        return text[len(match.group("junk")):]
+    return text
+
+
 def file_seed_finding(world, cycle, seed, topic="", fetch=fetch_public_text):
     """A line from the public record starts with the source the record cited:
     the world re-fetches that page and, if the judge finds a sentence stating
@@ -380,20 +410,36 @@ def file_seed_finding(world, cycle, seed, topic="", fetch=fetch_public_text):
     if not claim or not urls:
         return None
     finding = None
+    outcome = {"fetched": 0, "best": 0.0}
     for url in urls[:3]:
         fetched = fetch(url, claim)
         if not isinstance(fetched, dict) or fetched.get("status") != "completed":
             if isinstance(fetched, dict) and fetched.get("http_status") == 403:
                 note_blocked_host(url)
             continue  # unreachable or refused: the event's next citation may state it
+        outcome["fetched"] += 1
         excerpt = str(fetched.get("excerpt", ""))
         probe = {"source": url, "excerpt": excerpt, "query": topic or claim, "sentences": fetched.get("sentences") or [],
                  "source_hash": hashlib.sha256(excerpt.encode()).hexdigest()}
-        finding = entailed_finding({"id": "council", "room": "relay"}, cycle, probe, {"id": None, "claim": claim}, topic_override=topic or claim)
-        if finding and finding.get("status") != "rejected":
+        for statement in core_clauses(claim):
+            report = {}
+            finding = entailed_finding({"id": "council", "room": "relay"}, cycle, probe, {"id": None, "claim": statement},
+                                       topic_override=topic or claim, report=report)
+            outcome["best"] = max(outcome["best"], float(report.get("best") or 0.0))
+            if finding and finding.get("status") != "rejected":
+                # The record's statement is the claim; the judge found the quoted sentence to entail it.
+                finding["claim"] = statement
+                finding["claim_origin"] = "seed-record"
+                break
+            finding = None
+        if finding:
             break
-        finding = None
     if not finding:
+        emit_event(world, cycle, "seed-unverified", "council",
+                   ("The day's record cited a source for this event, but no cited page could be fetched; the line searches without a seed."
+                    if not outcome["fetched"] else
+                    "The day's record cited a source for this event; the world re-fetched it, but the judge found no sentence that states the event, so the line searches without a seed."),
+                   fetched=outcome["fetched"], best_entailment=round(outcome["best"], 4))
         return None
     finding["origin"] = "seed-source"
     finding.pop("verifies", None)
@@ -410,7 +456,7 @@ def split_sentences(text):
     return [item.strip() for item in re.split(r"(?<=[.!?])\s+", re.sub(r"\s+", " ", str(text or "")).strip()) if 40 <= len(item.strip()) <= 400]
 
 
-def entailed_finding(agent, cycle, tool, target_claim, dissent=False, topic_override=None):
+def entailed_finding(agent, cycle, tool, target_claim, dissent=False, topic_override=None, report=None):
     """A verification finding chosen by the reproducible judge, not by a paraphrase:
     the sentence on the fetched page that entails the colleague's claim (or, on a
     dissent turn, contradicts it) becomes both the quote and the claim, word for
@@ -421,7 +467,8 @@ def entailed_finding(agent, cycle, tool, target_claim, dissent=False, topic_over
     source = str(tool.get("source", ""))
     if not source.startswith("https://") or not tool.get("source_hash"):
         return None
-    pool = [str(item) for item in (tool.get("sentences") or [])] or split_sentences(tool.get("excerpt", ""))
+    pool = [strip_dateline(item) for item in ([str(item) for item in (tool.get("sentences") or [])] or split_sentences(tool.get("excerpt", "")))
+            if " | " not in str(item)]  # a title bar is site chrome, not a sentence
     best = None
     for sentence in pool[:40]:
         try:
@@ -431,6 +478,8 @@ def entailed_finding(agent, cycle, tool, target_claim, dissent=False, topic_over
         key = scores["contradiction"] if dissent else scores["entailment"]
         if best is None or key > best[0]:
             best = (key, sentence, scores)
+    if report is not None and best is not None:
+        report.update({"best": round(float(best[0]), 4), "sentence": best[1][:200]})
     bar = inference_judge.CONTRADICTION_MIN if dissent else inference_judge.SUPPORT_MIN
     if best is None or best[0] < bar:
         return None
@@ -786,6 +835,8 @@ def record_analysis(agent, cycle, code, analysis):
 def run_analysis(code, data=""):
     """Run one bounded analysis without allowing task failure to abort the cycle.
     Approved resident tools are defined first, in the same restricted namespace."""
+    code = str(code or "").replace("\x00", "")  # a null byte in a resident's code would abort the whole cycle
+    data = str(data or "").replace("\x00", "")
     prelude_file = ROOT / "state" / "tool-prelude.py"
     try:
         prelude_file.parent.mkdir(parents=True, exist_ok=True)
@@ -2298,6 +2349,8 @@ def main():
         file_seed_finding(world, args.cycle, seed, topic=shared_research or "")
     verification_target = target_claim_for(shared_research)
     verify_families_used = set()
+    verify_turns = 0
+    assigned_turns = 0
     if verification_target:
         shared_avoid = set(shared_avoid) | {urllib.parse.urlparse(str(verification_target.get("url", ""))).netloc.lower()}
     regrounded = []
@@ -2324,14 +2377,24 @@ def main():
         verifying = verification_target if (research_assignment and verification_target) else None
         # Verification turns alternate: one looks for a second source that agrees,
         # the next for a source that gives a different figure for the same fact.
-        dissenting = bool(verifying) and (len(verify_families_used) % 2 == 1)
+        dissenting = bool(verifying) and (verify_turns % 2 == 1)
         if verifying:
+            verify_turns += 1
             research_assignment = (dissent_query if dissenting else verification_query)(verifying.get("claim", ""), shared_research) or research_assignment
         rotation = families_for_topic(shared_research) if shared_research else list(SOURCE_FAMILIES)
         turn_family = rotation[(turn_index // 2) % len(rotation)]
         if research_assignment and shared_family:
-            turn_family = shared_family
-        if verifying:
+            # The first assigned resident takes the family the question calls for; the
+            # next fan out across the others, so one cycle reads different kinds of source.
+            turn_family = shared_family if assigned_turns == 0 else rotation[assigned_turns % len(rotation)]
+        if research_assignment:
+            assigned_turns += 1
+        if verifying and str(CURRENT_LINE.get("origin") or "").startswith("stream:"):
+            # A dated event is confirmed by other outlets, all of them in the web
+            # family; independence here is a different domain, kept by shared_avoid.
+            turn_family = "web"
+            verify_families_used.add("web")
+        elif verifying:
             # Two verifiers of one claim in one cycle take different source
             # families, and never the family the claim itself came from.
             target_family = family_of_domain(urllib.parse.urlparse(str(verifying.get("url", ""))).netloc)
@@ -2699,6 +2762,9 @@ def main():
                     decision = post_decision
                     agent["post_tool_decision"] = {"cycle": args.cycle, "action": decision["action"],
                                                     "reason": decision.get("reason", "")[:220]}
+                if research_assignment and source:
+                    # A page one resident read this cycle is not worth a colleague's turn.
+                    shared_avoid = set(shared_avoid) | {urllib.parse.urlparse(str(source)).netloc.lower()}
                 if source and excerpt:
                     # Only a turn that actually took the verification assignment files a
                     # verification finding; a workbench holder that chose its own target did not.
@@ -2717,9 +2783,13 @@ def main():
                                        entailment=finding.get("entailment", {}).get("entailment"), contradiction=finding.get("entailment", {}).get("contradiction"),
                                        verifies=finding.get("verifies"))
                     if finding is None:
+                        # The model's own extraction is a finding on the council's question, not a
+                        # verification: only a quote the judge picked counts as an attempt on the claim.
                         finding = extract_finding(args.base_url, agent, args.cycle, agent["last_tool"],
-                                                  target_claim=verifying if took_verify else None,
+                                                  target_claim=None,
                                                   topic_override=shared_research if took_verify else None)
+                        if finding and took_verify:
+                            finding["origin"] = "council-question"
                     if record_finding(finding) and is_accepted(finding):
                         if finding.get("line_id"):
                             house_in_subject_room(world, agent, args.cycle)
