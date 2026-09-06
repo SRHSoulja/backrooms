@@ -2,909 +2,6 @@
   "privacy": "Aggregate action metadata only; raw local outputs are excluded.",
   "cycles": [
     {
-      "generated_at": "2026-09-05T09:28:35.922322+00:00",
-      "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
-      "runtime_cycle": 345,
-      "question": "Did Meta's Ad Library disclose explicit labels for AI-generated political ad content targeting Brazilian voters during the October 2024 municipal elections?",
-      "question_source": "carried:line-000340-66e12b1a",
-      "self_prompt_accepted": 1,
-      "self_prompt_rejections": [
-        "morrow: missing TEST line(s); return exactly QUESTION:, WHY:, TEST:"
-      ],
-      "action": {
-        "action": "local-behavioral-probe",
-        "status": "skipped-this-cycle"
-      },
-      "recruitment": {
-        "status": "activated",
-        "agent": {
-          "id": "local-025",
-          "name": "Temporal-7",
-          "role": "Log Chronologist",
-          "room": "archive",
-          "status": "probation"
-        }
-      },
-      "autonomy": {
-        "status": "completed",
-        "active": 22,
-        "decisions": [
-          {
-            "id": "local-001",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Assigned to the council's research question this turn.",
-            "request": "",
-            "request_status": "closed",
-            "exploration": "fully 80 2024 genai four-fifths countries holding elections",
-            "tool": {
-              "tool": "wikipedia-summary",
-              "query": "fully 80 2024 genai four-fifths countries holding elections",
-              "title": "Generative AI",
-              "url": "https://en.wikipedia.org/wiki/Generative_AI",
-              "excerpt": "Dream by Wombo was released at the end of 2021, followed by the releases of Midjourney and Stable Diffusion in 2022. In November 2022, ChatGPT was released to the public. By 2023, it popularized generative AI for general-purpose text-based tasks. In a 2024 survey by marketing research firm Ipsos, Asia\u2013Pacific countries were significantly more optimistic than Western societies about generative AI and show higher adoption rates. Despite expressing concerns about privacy and the pace of change, 68% of Asia-Pacific respondents believed that AI was having a positive impact on the world, compared to 57% globally. ... Generative artificial intelligence (GenAI) is a subfield of artificial intelligence (AI) that uses generative models to generate text, images, videos, audio, software code or other forms of data. These models learn the underlying patterns and structures of their training data, and use them to generate new data in response to input, which often takes the form of natural language prompts. The prevalence of generative AI tools has increased significantly since the AI boom in the 2020s. This boom was made possible by improvements in deep neural networks, particularly large language models (LLMs),",
-              "status": "completed",
-              "contract": {
-                "capability": "public-text-read",
-                "access": "read-only",
-                "network": "public HTTPS",
-                "side_effects": false,
-                "max_bytes": 32000,
-                "raw_data": false,
-                "untrusted_content": true
-              },
-              "search_results": [
-                {
-                  "title": "Press Release - IPIE Report Shows Widespread Use of GenAI Incidents in 2024 National Elections Globally",
-                  "url": "https://www.ipie.info/news/press-release-global-trend-of-widespread-role-of-genai-in-national-elections-in-2024",
-                  "snippet": "ipie press release - ipie report shows widespread use of genai incidents in 2024 national elections globally may 27 , 2025 - z\u00fcrich , switzerland - there is substantial global evidence that genera..."
-                },
-                {
-                  "title": "Elections in the Deepfake Era: How Countries Fight AI Lies",
-                  "url": "https://aichronicle.co/elections-in-the-deepfake-era-how-50-countries-are-preparing-for-ai-misinformation-2/",
-                  "snippet": "opinion elections in the deepfake era : how 50 + countries are preparing for ai misinformation december 25 , 2025 editorial team the year 2024 marked an unprecedented moment in democratic hist..."
-                },
-                {
-                  "title": "The Role of Generative AI Use in 2024 Elections Worldwide",
-                  "url": "https://cdn.prod.website-files.com/643ecb10be528d2c1da863cb/6a73056598657a1b5c0bc309_TP2025.2%20FINAL.pdf",
-                  "snippet": "international panel on the information environment # the role of generative ai use in 2024 elections worldwide < \u6b64\u5904 \u6709 \u56fe 71 baeba 06 b 82 b 19 c - 53 cd 436 fa 010 e 2 ad > # the role of generati..."
-                }
-              ]
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "scheduler"
-          },
-          {
-            "id": "local-002",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Cross-check if `evidence.py` explicitly distinguishes weekends/weekdays for publication bias testing, as required by continuity context.",
-            "request": "Verify day-of-week parsing logic for temporal coverage alignment with `local-001-304` and weekend/weekday differentiation",
-            "request_status": "open",
-            "exploration": "code:scripts/evidence.py",
-            "tool": {
-              "tool": "local-code-read",
-              "status": "completed",
-              "file": "scripts/evidence.py",
-              "bytes": 5847,
-              "sha256": "e4232c4402f4c6ce561c8d1c6d89484e84070690a696471604a7725c5ba75c1e",
-              "content": "\"\"\"Shared evidence rules for source-backed findings.\n\nBoth the autonomy subprocess (at extraction time) and the daemon (at\npublication time) use these pure functions so a finding is judged by one\nstandard. Nothing here touches the network, the model, or local state.\n\"\"\"\n\nimport re\n\nSTOPWORDS = {\"about\", \"after\", \"also\", \"from\", \"into\", \"that\", \"this\", \"with\", \"what\", \"which\",\n             \"where\", \"when\", \"does\", \"did\", \"have\", \"their\", \"there\", \"these\", \"those\", \"than\"}\n# Prepositions, determiners, and auxiliaries name no subject; a corroborated\n# definition of one of them is not evidence about the world.\nFUNCTION_WORDS = {'above', 'across', 'against', 'along', 'although', 'always', 'among', 'another', 'around', 'because', 'been', 'before', 'behind', 'being', 'below', 'beneath', 'between', 'beyond', 'both', 'during', 'each', 'either', 'even', 'ever', 'every', 'hence', 'just', 'less', 'many', 'might', 'more', 'most', 'much', 'must', 'neither', 'never', 'often', 'only', 'onto', 'other', 'others', 'over', 'shall', 'since', 'some', 'still', 'such', 'though', 'through', 'thus', 'toward', 'towards', 'under', 'until', 'upon', 'very', 'were', 'whether', 'while', 'will', 'within', 'without'}\nSTOPWORDS |= FUNCTION_WORDS\nIMPERATIVE = re.compile(r\"^(?:explore|search|analyze|identify|continue|find|review|investigate|look)\\b\", re.I)\nQUOTE_SUPPORT_THRESHOLD = 0.85\nMIN_FUZZY_TOKENS = 4\n_PUNCTUATION_MAP = {\"\u2018\": \"'\", \"\u2019\": \"'\", \"\u201c\": '\"', \"\u201d\": '\"', \"\u2013\": \"-\", \"\u2014\": \"-\",\n                    \"\u00a0\": \" \", \"\u2026\": \"...\"}\n\n\ndef normalize(text):\n    \"\"\"Lower-case, fold typographic punctuation, and collapse whitespace.\"\"\"\n    value = str(text or \"\")\n    for source, target in _PUNCTUATION_MAP.items():\n        value = value.replace(source, target)\n    return re.sub(r\"\\s+\", \" \", value).strip().lower()\n\n\ndef tokens(text):\n    return re.findall(r\"[a-z0-9]+\", normalize(text))\n\n\ndef _lcs_length(left, right):\n    \"\"\"Length of the longest common subsequence of two short token lists.\"\"\"\n    if not left or not right:\n        return 0\n    previous = [0] * (len(right) + 1)\n    for item in left:\n        current = [0]\n        for index, other in enumerate(right, start=1):\n            if item == other:\n                current.append(previous[index - 1] + 1)\n            else:\n                current.append(max(previous[index], current[index - 1]))\n        previous = current\n    return previous[-1]\n\n\ndef quote_support(quote, excerpt, threshold=QUOTE_SUPPORT_THRESHOLD):\n    \"\"\"Return (supported, score, mode) describing how well the excerpt backs the quote.\n\n    An exact normalized substring scores 1.0. Otherwise the quote must share at\n    least ``threshold`` of its tokens, in order, with some window of the excerpt.\n    Small models paraphrase punctuation and drop function words; this keeps the\n    evidence bar high without demanding byte-exact copying.\n    \"\"\"\n    quote_tokens = tokens(quote)\n    excerpt_tokens = tokens(excerpt)\n    if not quote_tokens or not excerpt_tokens:\n        return False, 0.0, \"none\"\n    if normalize(quote) in normalize(excerpt):\n        return True, 1.0, \"exact\"\n    if len(quote_tokens) < MIN_FUZZY_TOKENS:\n        return False, 0.0, \"too-short\"\n    window = len(quote_tokens) + max(2, len(quote_tokens) // 4)\n    anchors = set(quote_tokens)\n    best = 0.0\n    for start, token in enumerate(excerpt_tokens):\n        if token not in anchors:\n            continue\n        segment = excerpt_tokens[start:start + window]\n        score = _lcs_length(quote_tokens, segment) / len(quote_tokens)\n        if score > best:\n            best = score\n            if best >= 1.0:\n                break\n    supported = best >= threshold\n    return supported, round(best, 3), \"fuzzy\" if supported else \"unsupported\"\n\n\ndef claim_terms(claim):\n    return {term for term in re.findall(r\"[a-z0-9]{4,}\", normalize(claim)) if term not in STOPWORDS}\n\n\ndef claim_grounded(claim, quote):\n    \"\"\"A claim must share vocabulary with its quote and must not be an instruction.\"\"\"\n    if not claim or not quote:\n        return False, \"missing-claim-or-quote\"\n    if IMPERATIVE.match(str(claim).strip()):\n        return False, \"imperative-claim\"\n    terms = claim_terms(claim)\n    quote_vocabulary = set(re.findall(r\"[a-z0-9]{4,}\", normalize(quote)))\n    if len(terms & quote_vocabulary) < min(2, len(terms)):\n        return False, \"claim-not-grounded-in-quote\"\n    return True, \"grounded\"\n\n\ndef clamp_confidence(value):\n    \"\"\"Fold a model-reported confidence into [0, 1]; unparseable values become 0.0.\n\n    The JSON grammar cannot enforce numeric ranges, so a well-quoted finding\n    must not be thrown away merely because the model wrote 1.5 or \"high\".\n    \"\"\"\n    try:\n        number = float(value)\n    except (TypeError, ValueError):\n        return 0.0\n    if number != number:\n        return 0.0\n    return max(0.0, min(1.0, number))\n\n\ndef classify_finding(claim, quote, excerpt=None, confidence=None):\n    \"\"\"Return (status, reason, quote_score) for a candidate finding.\n\n    ``excerpt`` may be None when re-checking a stored record whose page text is\n    no longer available; the stored quote-to-excerpt verdict is then trusted and\n    only claim grounding is re-evaluated. Confidence never rejects a finding;\n    callers store ``clamp_confidence`` of it.\n    \"\"\"\n    grounded, reason = claim_grounded(claim, quote)\n    if not grounded:\n        return \"rejected\", reason, 0.0\n    if excerpt is None:\n        return \"unreviewed\", \"grounded\", 1.0\n    supported, score, mode = quote_support(quote, excerpt)\n    if not supported:\n        return \"rejected\", f\"quote-{mode}\", score\n    return \"unreviewed\", f\"quote-{mode}\", score\n\n\ndef is_accepted(record):\n    \"\"\"Rejected rows stay in the ledger for audit but never count as evidence.\"\"\"\n    return str((record or {}).get(\"status\", \"unreviewed\")) not in {\"rejected\", \"retracted\"}",
-              "read_only": true,
-              "privacy": "sanitized public source only",
-              "contract": {
-                "capability": "public-source-read",
-                "access": "read-only",
-                "network": "none",
-                "side_effects": false,
-                "max_file_bytes": 120000,
-                "max_inventory_bytes": 400000,
-                "write_access": false,
-                "secrets": "redacted"
-              }
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "model"
-          },
-          {
-            "id": "local-005",
-            "action": "analyze",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Cross-reference Wikipedia's GenAI definition for keyword patterns to verify or contradict Meta's Ad Library claims about AI-generated content in Brazilian elections.",
-            "request": "",
-            "request_status": "closed",
-            "exploration": "fully 80 2024 genai four-fifths countries disputed revised different",
-            "tool": {
-              "tool": "public-text",
-              "url": "https://aichronicle.co/elections-in-the-deepfake-era-how-50-countries-are-preparing-for-ai-misinformation-2/",
-              "excerpt": "AI Chronicle | Latest AI News, Tools & Expert Reviews Edit with",
-              "status": "completed",
-              "contract": {
-                "capability": "public-text-read",
-                "access": "read-only",
-                "network": "public HTTPS",
-                "side_effects": false,
-                "max_bytes": 5000000,
-                "raw_data": false,
-                "untrusted_content": true
-              },
-              "sentences": [],
-              "query": "fully 80 2024 genai four-fifths countries disputed revised different",
-              "search_results": [
-                {
-                  "title": "Press Release - IPIE Report Shows Widespread Use of GenAI Incidents in 2024 National Elections Globally",
-                  "url": "https://www.ipie.info/news/press-release-global-trend-of-widespread-role-of-genai-in-national-elections-in-2024",
-                  "snippet": "ipie press release - ipie report shows widespread use of genai incidents in 2024 national elections globally may 27 , 2025 - z\u00fcrich , switzerland - there is substantial global evidence that genera..."
-                },
-                {
-                  "title": "Elections in the Deepfake Era: How Countries Fight AI Lies",
-                  "url": "https://aichronicle.co/elections-in-the-deepfake-era-how-50-countries-are-preparing-for-ai-misinformation-2/",
-                  "snippet": "opinion elections in the deepfake era : how 50 + countries are preparing for ai misinformation december 25 , 2025 editorial team the year 2024 marked an unprecedented moment in democratic hist..."
-                }
-              ]
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "scheduler"
-          },
-          {
-            "id": "local-006",
-            "action": "stay",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
-            "request": "Extract and analyze all text fields (bio, repositories, stars, forks, affiliations) for keywords: 'geophysics', 'seismic', 'HVSR', 'Horizontal-to-Vertical Spectral Ratio'",
-            "request_status": "closed",
-            "exploration": "arXiv:2509.22377",
-            "tool": {
-              "status": "not-requested"
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": "unstructured-output",
-            "decision_source": "model"
-          },
-          {
-            "id": "local-010",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Assigned to the council's research question this turn.",
-            "request": "Return all public repositories, profiles, and metadata linked to Roscomnadzor27 or similar handles, focusing on verified email addresses, SSH keys, or domain ownership",
-            "request_status": "closed",
-            "exploration": "fully 80 2024 genai four-fifths countries holding elections",
-            "tool": {
-              "tool": "public-text",
-              "url": "https://aichronicle.co/elections-in-the-deepfake-era-how-50-countries-are-preparing-for-ai-misinformation-2/",
-              "excerpt": "AI Chronicle | Latest AI News, Tools & Expert Reviews Edit with",
-              "status": "completed",
-              "contract": {
-                "capability": "public-text-read",
-                "access": "read-only",
-                "network": "public HTTPS",
-                "side_effects": false,
-                "max_bytes": 5000000,
-                "raw_data": false,
-                "untrusted_content": true
-              },
-              "sentences": [],
-              "query": "fully 80 2024 genai four-fifths countries holding elections",
-              "search_results": [
-                {
-                  "title": "Press Release - IPIE Report Shows Widespread Use of GenAI Incidents in 2024 National Elections Globally",
-                  "url": "https://www.ipie.info/news/press-release-global-trend-of-widespread-role-of-genai-in-national-elections-in-2024",
-                  "snippet": "ipie press release - ipie report shows widespread use of genai incidents in 2024 national elections globally may 27 , 2025 - z\u00fcrich , switzerland - there is substantial global evidence that genera..."
-                },
-                {
-                  "title": "Elections in the Deepfake Era: How Countries Fight AI Lies",
-                  "url": "https://aichronicle.co/elections-in-the-deepfake-era-how-50-countries-are-preparing-for-ai-misinformation-2/",
-                  "snippet": "opinion elections in the deepfake era : how 50 + countries are preparing for ai misinformation december 25 , 2025 editorial team the year 2024 marked an unprecedented moment in democratic hist..."
-                },
-                {
-                  "title": "The Role of Generative AI Use in 2024 Elections Worldwide",
-                  "url": "https://cdn.prod.website-files.com/643ecb10be528d2c1da863cb/6a73056598657a1b5c0bc309_TP2025.2%20FINAL.pdf",
-                  "snippet": "international panel on the information environment # the role of generative ai use in 2024 elections worldwide < \u6b64\u5904 \u6709 \u56fe 71 baeba 06 b 82 b 19 c - 53 cd 436 fa 010 e 2 ad > # the role of generati..."
-                }
-              ]
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "scheduler"
-          },
-          {
-            "id": "local-015",
-            "action": "analyze",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Confirm whether archived/deleted repos contain RosComNadzor-blocklist keywords in commit metadata or repo descriptions.",
-            "request": "Verify publicly archived GitHub activity (deleted repos, forked projects, or commit metadata) for traces of RosComNadzor-blocklist keywords ('su'). Focus on commit history, repository events, and associated network data",
-            "request_status": "closed",
-            "exploration": "fully 80 2024 genai four-fifths countries disputed revised different",
-            "tool": {
-              "status": "not-requested"
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "model"
-          },
-          {
-            "id": "local-020",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Archive holds cached API data; inspect for indirect traces of activity if profile metadata is empty. Assigned research aligns with verifying public GitHub activity.",
-            "request": "Verify GitHub API endpoint for public events (commits, stars, forks) of Roscomnadzor27. Check pagination for full activity",
-            "request_status": "open",
-            "exploration": "users/Roscomnadzor27/events?per_page=100",
-            "tool": {
-              "tool": "wikipedia-summary",
-              "query": "fully 80 2024 genai four-fifths countries disputed revised different",
-              "title": "Generative AI",
-              "url": "https://en.wikipedia.org/wiki/Generative_AI",
-              "excerpt": "Generative artificial intelligence (GenAI) is a subfield of artificial intelligence (AI) that uses generative models to generate text, images, videos, audio, software code or other forms of data. These models learn the underlying patterns and structures of their training data, and use them to generate new data in response to input, which often takes the form of natural language prompts.",
-              "status": "completed",
-              "contract": {
-                "capability": "public-text-read",
-                "access": "read-only",
-                "network": "public HTTPS",
-                "side_effects": false,
-                "max_bytes": 32000,
-                "raw_data": false,
-                "untrusted_content": true
-              },
-              "search_results": [
-                {
-                  "title": "Press Release - IPIE Report Shows Widespread Use of GenAI Incidents in 2024 National Elections Globally",
-                  "url": "https://www.ipie.info/news/press-release-global-trend-of-widespread-role-of-genai-in-national-elections-in-2024",
-                  "snippet": "ipie press release - ipie report shows widespread use of genai incidents in 2024 national elections globally may 27 , 2025 - z\u00fcrich , switzerland - there is substantial global evidence that genera..."
-                },
-                {
-                  "title": "Elections in the Deepfake Era: How Countries Fight AI Lies",
-                  "url": "https://aichronicle.co/elections-in-the-deepfake-era-how-50-countries-are-preparing-for-ai-misinformation-2/",
-                  "snippet": "opinion elections in the deepfake era : how 50 + countries are preparing for ai misinformation december 25 , 2025 editorial team the year 2024 marked an unprecedented moment in democratic hist..."
-                }
-              ]
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "model"
-          },
-          {
-            "id": "local-025",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "To verify whether Meta\u2019s Ad Library explicitly labeled AI-generated political ads for Brazilian municipal elections 2024, addressing frontier-question-344 and prior iterations. Archive will house relevant policy or archi",
-            "request": "Retrieve publicly accessible records, policy documents, or archived disclosures from Meta\u2019s Ad Library related to AI-generated political ads targeting Brazilian voters in October 2024, focusing on explicit labeling and T",
-            "request_status": "open",
-            "exploration": "Meta Ad Library Brazil 2024 municipal elections AI-generated political content disclosure policies",
-            "tool": {
-              "tool": "public-search",
-              "query": "Meta Ad Library Brazil 2024 municipal elections AI-generated political content disclosure policies",
-              "results": [
-                {
-                  "title": "The challenges of identifying deepfakes ahead of the 2024 Brazil election | StopFake",
-                  "url": "https://www.stopfake.org/en/the-challenges-of-identifying-deepfakes-ahead-of-the-2024-brazil-election/",
-                  "snippet": "context the challenges of identifying deepfakes ahead of the 2024 brazil election 2024 - 10 - 08 , 16:59 by beatriz farrugia , for dfrlab banner : screencaps from a fake video featuring presid..."
-                },
-                {
-                  "title": "Ads about social issues, elections or politics | Transparency Centre",
-                  "url": "https://transparency.meta.com/ar-ar/policies/ad-standards/SIEP-advertising/SIEP",
-                  "snippet": "ads about social issues , elections or politics policy details ads about social issues , elections or politics advertisers can run ads about social issues , elections or politics , provided the ..."
-                },
-                {
-                  "title": "Regulating the use of AI for Brazilian elections: what\u2019s at stake",
-                  "url": "https://netlab.eco.ufrj.br/en/post/regulating-the-use-of-ai-for-brazilian-elections-what-s-at-stake",
-                  "snippet": "regulating the use of ai for brazilian elections : what \u2019s at stake may 29 , 2024 8 min read updated : jul 8 , 2024 brazil \u2019s implementation of rules regarding ai in upcoming local elections w..."
-                },
-                {
-                  "title": "Conhe\u00e7a as regras gerais para a divulga\u00e7\u00e3o de propaganda eleitoral \u2014 Tribunal Superior Eleitoral",
-                  "url": "https://www.tse.jus.br/comunicacao/noticias/2024/Marco/conheca-as-regras-gerais-para-a-divulgacao-de-propaganda-eleitoral",
-                  "snippet": "conhe\u00e7a as regras gerais para a divulga\u00e7\u00e3o de propaganda eleitoral 22 / 03 / 2024 17:56 - atualizado em 08 / 07 / 2026 00 : 52 t\u00f3picos da mat\u00e9ria : o que \u00e9 propaganda eleitoral antecipada ? o ..."
-                }
-              ],
-              "source": "https://api.langsearch.com/",
-              "status": "completed",
-              "contract": {
-                "capability": "public-web-read",
-                "access": "read-only",
-                "network": "public HTTPS search",
-                "side_effects": false,
-                "max_bytes": 32000
-              }
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "model"
-          }
-        ],
-        "construction": [],
-        "requests": [
-          {
-            "agent": "local-002",
-            "status": "fulfilled",
-            "scope": "public-documentation-and-logs"
-          },
-          {
-            "agent": "local-025",
-            "status": "fulfilled"
-          }
-        ],
-        "trades_settled": [],
-        "corroborations": [],
-        "regrounded": [
-          {
-            "agent": "local-025",
-            "purpose": "Analyzes publicly documented evidence of generative AI (GenAI) incidents in 2024 elections, focusing on Meta\u2019s Ad Library policies for AI-generated political content, to reconstruct causal chains of (",
-            "question": "How did Meta\u2019s Ad Library categorize and label AI-generated political ads targeting Brazilian voters during the October 2024 municipal elections, and what evidence exists of compliance with Brazil\u2019s T",
-            "room": "atrium"
-          }
-        ],
-        "retractions": [],
-        "room_changes": [],
-        "shared_research": {
-          "query": "library 2024 brazilian meta deceptive political utilizing deepfakes",
-          "family": "code",
-          "avoid_domains": [
-            "arxiv.org",
-            "doi.org",
-            "en.wikipedia.org",
-            "www.ipie.info"
-          ]
-        },
-        "dormant": 3
-      },
-      "metrics": {
-        "jaccard_overlap": 0.251,
-        "morrow_audit_markers": [
-          "counterexample",
-          "missing control"
-        ],
-        "response_completeness": "thin-or-missing",
-        "evidence_coverage": "missing",
-        "distinction_status": "needs-audit"
-      },
-      "continuity_audit": {
-        "generated_at": "2026-09-05T09:28:35.911700+00:00",
-        "cycle": 345,
-        "status": "pass",
-        "checks": {
-          "archive_parse": true,
-          "archive_event_overlap": true,
-          "archive_event_ids_unique": true,
-          "raw_output_exclusion": true,
-          "room_link_integrity": true,
-          "resident_room_integrity": true
-        },
-        "archive_records": 2735,
-        "malformed_archive_records": 0,
-        "raw_output_fields_found": 0,
-        "duplicate_archive_ids": [],
-        "linked_rooms_checked": 11,
-        "invalid_room_links": [],
-        "invalid_resident_assignments": [],
-        "privacy": "Aggregate integrity metadata only; resident prompts and raw responses are not published."
-      },
-      "work_orders": {
-        "count": 40
-      },
-      "health": {
-        "schema_version": 1,
-        "generated_at": "2026-09-05T09:28:35.913484+00:00",
-        "cycle": 345,
-        "daemon": "running",
-        "model_status": "ready",
-        "model_probe_ok": true,
-        "model_provider": "mistral",
-        "model_name": "ministral-14b-2512",
-        "model_backend": "hosted-api",
-        "model_usage": {
-          "day": "2026-09-05",
-          "providers": [
-            {
-              "name": "mistral",
-              "model": "ministral-14b-2512",
-              "calls": 482,
-              "input_tokens": 795103,
-              "output_tokens": 105700,
-              "errors": 0,
-              "last_error": "",
-              "daily_request_budget": null,
-              "daily_token_budget": 900000,
-              "limit_rpm": 30,
-              "limit_tpm": 937500,
-              "requests_last_minute": 0,
-              "tokens_last_minute": 0,
-              "status": "ready"
-            },
-            {
-              "name": "mistral-8b",
-              "model": "ministral-8b-2512",
-              "calls": 29,
-              "input_tokens": 54638,
-              "output_tokens": 6994,
-              "errors": 0,
-              "last_error": "",
-              "daily_request_budget": null,
-              "daily_token_budget": 400000,
-              "limit_rpm": 188,
-              "limit_tpm": 625000,
-              "requests_last_minute": 11,
-              "tokens_last_minute": 22308,
-              "status": "ready"
-            },
-            {
-              "name": "mistral-small",
-              "model": "mistral-small-latest",
-              "calls": 0,
-              "input_tokens": 0,
-              "output_tokens": 0,
-              "errors": 0,
-              "last_error": "",
-              "daily_request_budget": null,
-              "daily_token_budget": 100000,
-              "limit_rpm": 10,
-              "limit_tpm": null,
-              "requests_last_minute": 0,
-              "tokens_last_minute": 0,
-              "status": "ready"
-            },
-            {
-              "name": "gemini",
-              "model": "gemini-3.6-flash",
-              "calls": 38,
-              "input_tokens": 68643,
-              "output_tokens": 6065,
-              "errors": 12,
-              "last_error": "429 rate limited (council): You exceeded your current quota, please check your plan and billing details. For more inform",
-              "daily_request_budget": 240,
-              "daily_token_budget": null,
-              "limit_rpm": 8,
-              "limit_tpm": null,
-              "requests_last_minute": 0,
-              "tokens_last_minute": 0,
-              "status": "ready"
-            },
-            {
-              "name": "cerebras",
-              "model": "gpt-oss-120b",
-              "calls": 0,
-              "input_tokens": 0,
-              "output_tokens": 0,
-              "errors": 0,
-              "last_error": "",
-              "daily_request_budget": null,
-              "daily_token_budget": 900000,
-              "limit_rpm": 5,
-              "limit_tpm": null,
-              "requests_last_minute": 0,
-              "tokens_last_minute": 0,
-              "status": "ready"
-            },
-            {
-              "name": "groq",
-              "model": "openai/gpt-oss-120b",
-              "calls": 30,
-              "input_tokens": 16840,
-              "output_tokens": 4814,
-              "errors": 0,
-              "last_error": "400 on schema mode; prompt hint used",
-              "daily_request_budget": 900,
-              "daily_token_budget": 190000,
-              "limit_rpm": 1000,
-              "limit_tpm": 8000,
-              "requests_last_minute": 4,
-              "tokens_last_minute": 2426,
-              "status": "ready"
-            },
-            {
-              "name": "local",
-              "model": "local",
-              "calls": 0,
-              "input_tokens": 0,
-              "output_tokens": 0,
-              "errors": 0,
-              "last_error": "",
-              "daily_request_budget": null,
-              "daily_token_budget": null,
-              "limit_rpm": null,
-              "limit_tpm": null,
-              "requests_last_minute": 0,
-              "tokens_last_minute": 0,
-              "status": "ready"
-            }
-          ],
-          "recent_calls": [
-            {
-              "at": 1788600039.8,
-              "class": "decision",
-              "provider": "mistral-8b",
-              "model": "ministral-8b-2512",
-              "prompt_sha256_16": "4d3b3cb309d0afb6"
-            },
-            {
-              "at": 1788600044.6,
-              "class": "extraction",
-              "provider": "groq",
-              "model": "openai/gpt-oss-120b",
-              "prompt_sha256_16": "7112180d105740f1"
-            },
-            {
-              "at": 1788600052.1,
-              "class": "decision",
-              "provider": "mistral-8b",
-              "model": "ministral-8b-2512",
-              "prompt_sha256_16": "c1706b103d36f9ab"
-            },
-            {
-              "at": 1788600052.6,
-              "class": "extraction",
-              "provider": "groq",
-              "model": "openai/gpt-oss-120b",
-              "prompt_sha256_16": "04e3bf1c1cad3d7c"
-            },
-            {
-              "at": 1788600055.8,
-              "class": "decision",
-              "provider": "mistral-8b",
-              "model": "ministral-8b-2512",
-              "prompt_sha256_16": "18bd587bb1c81b98"
-            },
-            {
-              "at": 1788600059.1,
-              "class": "decision",
-              "provider": "mistral-8b",
-              "model": "ministral-8b-2512",
-              "prompt_sha256_16": "df1326aa8498bf52"
-            },
-            {
-              "at": 1788600064.6,
-              "class": "extraction",
-              "provider": "groq",
-              "model": "openai/gpt-oss-120b",
-              "prompt_sha256_16": "04e3bf1c1cad3d7c"
-            },
-            {
-              "at": 1788600067.0,
-              "class": "decision",
-              "provider": "mistral-8b",
-              "model": "ministral-8b-2512",
-              "prompt_sha256_16": "d384b290a53af82b"
-            },
-            {
-              "at": 1788600073.4,
-              "class": "decision",
-              "provider": "mistral-8b",
-              "model": "ministral-8b-2512",
-              "prompt_sha256_16": "12da1e4683fbcf43"
-            },
-            {
-              "at": 1788600075.6,
-              "class": "judgment",
-              "provider": "gemini",
-              "model": "gemini-3.6-flash",
-              "prompt_sha256_16": "26af061bd15e520b"
-            },
-            {
-              "at": 1788600420.4,
-              "class": "self-prompt",
-              "provider": "gemini",
-              "model": "gemini-3.6-flash",
-              "prompt_sha256_16": "8fef9bd08be7f775"
-            },
-            {
-              "at": 1788600422.5,
-              "class": "self-prompt",
-              "provider": "mistral-8b",
-              "model": "ministral-8b-2512",
-              "prompt_sha256_16": "9eca16aad0472789"
-            },
-            {
-              "at": 1788600424.5,
-              "class": "self-prompt",
-              "provider": "mistral-8b",
-              "model": "ministral-8b-2512",
-              "prompt_sha256_16": "aa709a74e1f2067d"
-            },
-            {
-              "at": 1788600447.1,
-              "class": "council",
-              "provider": "gemini",
-              "model": "gemini-3.6-flash",
-              "prompt_sha256_16": "e091a831f9f1e5b5"
-            },
-            {
-              "at": 1788600455.5,
-              "class": "council",
-              "provider": "mistral-8b",
-              "model": "ministral-8b-2512",
-              "prompt_sha256_16": "0f9852767a8e93d7"
-            },
-            {
-              "at": 1788600457.3,
-              "class": "recruitment",
-              "provider": "mistral-8b",
-              "model": "ministral-8b-2512",
-              "prompt_sha256_16": "081cce8490c22a2b"
-            },
-            {
-              "at": 1788600459.1,
-              "class": "recruitment",
-              "provider": "mistral-8b",
-              "model": "ministral-8b-2512",
-              "prompt_sha256_16": "5e71d23c64a43f9e"
-            },
-            {
-              "at": 1788600460.9,
-              "class": "regrounding",
-              "provider": "mistral-8b",
-              "model": "ministral-8b-2512",
-              "prompt_sha256_16": "577ea0cbaf80aa8c"
-            },
-            {
-              "at": 1788600469.2,
-              "class": "extraction",
-              "provider": "groq",
-              "model": "openai/gpt-oss-120b",
-              "prompt_sha256_16": "c37e4282603bde06"
-            },
-            {
-              "at": 1788600470.6,
-              "class": "decision",
-              "provider": "mistral-8b",
-              "model": "ministral-8b-2512",
-              "prompt_sha256_16": "e2e97c0d2e62fe76"
-            },
-            {
-              "at": 1788600480.6,
-              "class": "decision",
-              "provider": "mistral-8b",
-              "model": "ministral-8b-2512",
-              "prompt_sha256_16": "8c828b3af0b920db"
-            },
-            {
-              "at": 1788600481.0,
-              "class": "extraction",
-              "provider": "groq",
-              "model": "openai/gpt-oss-120b",
-              "prompt_sha256_16": "04e3bf1c1cad3d7c"
-            },
-            {
-              "at": 1788600484.4,
-              "class": "decision",
-              "provider": "mistral-8b",
-              "model": "ministral-8b-2512",
-              "prompt_sha256_16": "e494e4c0b146be9d"
-            },
-            {
-              "at": 1788600489.5,
-              "class": "decision",
-              "provider": "mistral-8b",
-              "model": "ministral-8b-2512",
-              "prompt_sha256_16": "c9f5a3a15331fbce"
-            },
-            {
-              "at": 1788600497.8,
-              "class": "decision",
-              "provider": "mistral-8b",
-              "model": "ministral-8b-2512",
-              "prompt_sha256_16": "2636e74107819c57"
-            },
-            {
-              "at": 1788600498.4,
-              "class": "extraction",
-              "provider": "groq",
-              "model": "openai/gpt-oss-120b",
-              "prompt_sha256_16": "04e3bf1c1cad3d7c"
-            },
-            {
-              "at": 1788600501.1,
-              "class": "decision",
-              "provider": "mistral-8b",
-              "model": "ministral-8b-2512",
-              "prompt_sha256_16": "45c5ca9b13b27280"
-            },
-            {
-              "at": 1788600503.6,
-              "class": "decision",
-              "provider": "mistral-8b",
-              "model": "ministral-8b-2512",
-              "prompt_sha256_16": "20d3dfc39d25a803"
-            },
-            {
-              "at": 1788600509.4,
-              "class": "extraction",
-              "provider": "groq",
-              "model": "openai/gpt-oss-120b",
-              "prompt_sha256_16": "8ae5d14ddea7b2a6"
-            },
-            {
-              "at": 1788600511.2,
-              "class": "decision",
-              "provider": "mistral-8b",
-              "model": "ministral-8b-2512",
-              "prompt_sha256_16": "0021c79f8edf05d2"
-            }
-          ],
-          "models_seen": {
-            "gemini": [
-              "gemini-2.5-flash",
-              "gemini-2.5-pro",
-              "gemini-2.5-flash-preview-tts",
-              "gemini-2.5-pro-preview-tts",
-              "gemma-4-26b-a4b-it",
-              "gemma-4-31b-it",
-              "gemini-flash-latest",
-              "gemini-flash-lite-latest",
-              "gemini-pro-latest",
-              "gemini-2.5-flash-lite",
-              "gemini-2.5-flash-image",
-              "gemini-3-flash-preview",
-              "gemini-3.1-pro-preview",
-              "gemini-3.1-pro-preview-customtools",
-              "gemini-3.1-flash-lite-preview",
-              "gemini-3.1-flash-lite",
-              "gemini-3-pro-image-preview",
-              "gemini-3-pro-image",
-              "nano-banana-pro-preview",
-              "gemini-3.1-flash-image-preview",
-              "gemini-3.1-flash-image",
-              "gemini-3.1-flash-lite-image",
-              "gemini-3.5-flash",
-              "gemini-3.5-flash-lite",
-              "gemini-omni-flash-preview",
-              "gemini-omni-1.1-flash",
-              "gemini-3.5-transcribe",
-              "gemini-3.6-flash",
-              "gemini-3.7-flash",
-              "gemini-3.8-flash",
-              "lyria-3-clip-preview",
-              "lyria-3-pro-preview",
-              "lyria-3.5",
-              "gemini-3.1-flash-tts-preview",
-              "gemini-robotics-er-2-preview",
-              "gemini-2.5-computer-use-preview-10-2025",
-              "antigravity-preview-05-2026",
-              "deep-research-max-preview-04-2026",
-              "deep-research-preview-04-2026",
-              "deep-research-pro-preview-12-2025"
-            ],
-            "groq": [
-              "gpt-oss-120b",
-              "gpt-oss-20b",
-              "llama-prompt-guard-2-22m",
-              "orpheus-arabic-saudi",
-              "qwen3.6-27b",
-              "whisper-large-v3",
-              "gpt-oss-safeguard-20b",
-              "compound",
-              "compound-mini",
-              "llama-prompt-guard-2-86m",
-              "allam-2-7b",
-              "orpheus-v1-english",
-              "whisper-large-v3-turbo",
-              "qwen3.8-27b"
-            ]
-          }
-        },
-        "rooms": 12,
-        "active_residents": 27,
-        "work_orders": 40,
-        "continuity": "pass",
-        "autonomy": "active",
-        "autonomy_quality": {
-          "status": "active",
-          "turns": 8,
-          "fallbacks": 1,
-          "fallback_rate": 0.125,
-          "fallback_reasons": {
-            "unstructured-output": 1
-          },
-          "tool_successes": 6,
-          "findings_filed": 0
-        },
-        "publication": "sanitized GitHub Pages snapshot",
-        "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
-        "publication_status": {
-          "outcome": "pushed",
-          "reason": "",
-          "at": "2026-09-05T08:51:42.863355+00:00"
-        },
-        "question_source": "carried:line-000340-66e12b1a",
-        "self_prompt_accepted": 1,
-        "self_prompt_rejections": [
-          "morrow: missing TEST line(s); return exactly QUESTION:, WHY:, TEST:"
-        ],
-        "activity_feed": "docs/activity.json",
-        "feed_freshness_seconds": 0,
-        "activity_records": 110,
-        "note_records": 548,
-        "print_jobs": 39,
-        "failed_print_jobs": 0,
-        "analysis_runs": 59,
-        "analysis_completed": 30,
-        "analysis_failed": 0,
-        "analysis_rejected": 29,
-        "analysis_timed_out": 0,
-        "analysis_feed": "docs/analysis.json",
-        "research_records": 12,
-        "research_stale": 0,
-        "research_feed": "docs/research.json",
-        "findings": 63,
-        "finding_candidates": 63,
-        "findings_rejected": 87,
-        "findings_retracted": 0,
-        "findings_duplicates": 0,
-        "findings_excluded": 87,
-        "findings_total": 150,
-        "corroborated_findings": 0,
-        "findings_feed": "docs/findings.json",
-        "frontier_leads": 0,
-        "research_line": {
-          "id": "line-000340-66e12b1a",
-          "root": "Did Meta's Ad Library report deceptive political ads utilizing deepfakes during the 2024 Brazilian municipal elections?",
-          "anchors": [
-            "library",
-            "2024",
-            "brazilian"
-          ],
-          "hops": 3,
-          "findings": 6,
-          "empty_cycles": 3
-        },
-        "frontier_questions": 70,
-        "frontier_findings": 63,
-        "frontier_tasks": 7,
-        "frontier_feed": "docs/frontier.json",
-        "code_proposals": 0,
-        "code_proposals_ready": 0,
-        "code_proposals_feed": "docs/code-proposals.json",
-        "outside_signals": 16,
-        "outside_quarantined": 12,
-        "outside_signals_feed": "docs/outside-signals.json",
-        "codex_bridge": "enabled",
-        "codex_pending_tasks": 13,
-        "codex_completed_tasks": 48,
-        "resident_messages": 0,
-        "messages_feed": "docs/messages.json",
-        "trades": 0,
-        "trades_feed": "docs/trades.json",
-        "journal_entries": 4,
-        "journal_written": null,
-        "retractions": 0,
-        "room_changes": [],
-        "dropped_events": 0
-      },
-      "privacy": "Only aggregate metrics and the bounded council question are public; raw outputs remain local."
-    },
-    {
       "generated_at": "2026-09-05T09:58:35.533062+00:00",
       "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
       "runtime_cycle": 346,
@@ -21688,6 +20785,842 @@
         "frontier_questions": 93,
         "frontier_findings": 86,
         "frontier_tasks": 2,
+        "frontier_feed": "docs/frontier.json",
+        "code_proposals": 0,
+        "code_proposals_ready": 0,
+        "code_proposals_feed": "docs/code-proposals.json",
+        "outside_signals": 16,
+        "outside_quarantined": 12,
+        "outside_signals_feed": "docs/outside-signals.json",
+        "codex_bridge": "enabled",
+        "codex_pending_tasks": 13,
+        "codex_completed_tasks": 48,
+        "resident_messages": 0,
+        "messages_feed": "docs/messages.json",
+        "trades": 0,
+        "trades_feed": "docs/trades.json",
+        "journal_entries": 5,
+        "journal_written": null,
+        "retractions": 0,
+        "room_changes": [],
+        "dropped_events": 0
+      },
+      "privacy": "Only aggregate metrics and the bounded council question are public; raw outputs remain local."
+    },
+    {
+      "generated_at": "2026-09-06T05:48:59.233000+00:00",
+      "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
+      "runtime_cycle": 370,
+      "question": "Did the French Ministry of Agriculture specify the detailed breakdown of the \u20ac1 billion drought relief package across crop compensation, tax relief, and fuel subsidies?",
+      "question_source": "resident:echo",
+      "self_prompt_accepted": 2,
+      "self_prompt_rejections": [],
+      "action": {
+        "action": "local-behavioral-probe",
+        "status": "skipped-this-cycle"
+      },
+      "recruitment": {
+        "status": "rejected",
+        "reason": "name shares a stem with current resident Vex-9"
+      },
+      "autonomy": {
+        "status": "completed",
+        "active": 32,
+        "decisions": [
+          {
+            "id": "local-001",
+            "action": "explore",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Assigned to the council's research question this turn.",
+            "request": "",
+            "request_status": "closed",
+            "exploration": "france providing farmers billion help recover heatwaves compensation",
+            "tool": {
+              "tool": "wikipedia-summary",
+              "query": "france providing farmers billion help recover heatwaves compensation",
+              "title": "BP",
+              "url": "https://en.wikipedia.org/wiki/BP",
+              "excerpt": "The company's primary stock listing is on the London Stock Exchange, where it is a member of the FTSE 100 Index. BP has been directly involved in several major environmental and safety incidents. Among them were the 2005 Texas City refinery explosion, which caused the death of 15 workers and which resulted in a record-setting OSHA fine; Britain's largest oil spill, the wreck of Torrey Canyon in 1967; and the 2006 Prudhoe Bay oil spill, the largest oil spill on Alaska's North Slope, which resulted in a US$25 million civil penalty, the largest per-barrel penalty at that time for an oil spill. BP's worst environmental catastrophe was the 2010 Deepwater Horizon oil spill, the largest accidental release of oil into marine waters in history, which leaked about 4.9 million barrels (210 million US gal; 780,000 m3) of oil, causing severe environmental, human health, and economic consequences and serious legal and public relations repercussions for BP, costing more than $4.5 billion in fines and penalties, and an additional $18.7 billion in Clean Water Act-related penalties and other claims, the largest criminal resolution in US history. Altogether, the oil spill cost the company more than $65 billion. ... BP p.l.c. is a British multinational oil and gas company headquartered in London, England. It is one of the oil and gas \"supermajors\" and one of the world's largest companies measured by revenues and profits. It is a vertically integrated company operating in all areas of the oil and gas industry, including exploration and extraction, refining, distribution and marketing, power generation, and trading. BP's origins date back to the founding of the Anglo-Persian Oil Company in 1909, established as a subsidiary of the Burmah Oil Company to exploit oil discoveries in Iran. In 1935, it became the",
+              "status": "completed",
+              "contract": {
+                "capability": "public-text-read",
+                "access": "read-only",
+                "network": "public HTTPS",
+                "side_effects": false,
+                "max_bytes": 32000,
+                "raw_data": false,
+                "untrusted_content": true
+              },
+              "search_results": [
+                {
+                  "title": "France gives farmers \u20ac1 billion to recover from record heatwaves |",
+                  "url": "https://bbc.bm/france-gives-farmers-e1-billion-to-recover-from-record-heatwaves",
+                  "snippet": "news - world france gives farmers \u20ac 1 billion to recover from record heat waves by bermuda broadcasting newsdesk september 4 , 2026 the support comes as the government is working on a politi..."
+                },
+                {
+                  "title": "France gives farmers \u20ac1 billion to recover from record heatwaves - Internazionale",
+                  "url": "https://www.internazionale.it/ultime-notizie-reuters/2026/09/04/france-to-give-more-than-1-billion-of-aid-for-weather-hit-farmers",
+                  "snippet": "france gives farmers \u20ac 1 billion to recover from record heat waves la francia stanzia 1 miliardo di euro a favore degli agricoltori per aiutarli a riprendersi dalle ondate di caldo senza precedenti ..."
+                }
+              ]
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": "finding-f337936b529c4e880aec",
+            "fallback_reason": null,
+            "decision_source": "scheduler"
+          },
+          {
+            "id": "local-003",
+            "action": "explore",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "The target paper is the primary source of the 96% precision claim. Retrieving its full text is necessary to cross-reference metrics, methodology, and benchmarks against Gossipcop and PolitiFact.",
+            "request": "",
+            "request_status": "closed",
+            "exploration": "arXiv:2509.22377",
+            "tool": {
+              "tool": "arxiv-summary",
+              "query": "2509.22377",
+              "title": "Astrophysical Parameters of the Open Cluster NGC 2509",
+              "url": "https://arxiv.org/abs/2309.05037v1",
+              "excerpt": "Astrophysical Parameters of the Open Cluster NGC 2509. This study presents structural and fundamental astrophysical parameters of poorly studied open cluster NGC 2509. We used the third photometric and astrometric data release of the Gaia (Gaia DR3) to perform analyses. By taking into account the Gaia DR3 astrometric data, we calculated the membership probabilities of the stars in the region of NGC 2509. As a result of the membership analysis, 244 stars with membership probabilities $P\\geq50$% were determined as the physical members of the cluster. The colour excess, distance and age were obtained simultaneously by fitting solar metallicity PARSEC isochrones to $G\\times G_{\\rm BP}-G_{\\rm RP}$ colour-magnitude diagram. We considered the most likely cluster member stars during the fitting procedure and calculated the colour excess, distance and age of the NGC 2509 as $E(G_{\\rm BP}-G_{\\rm RP})=0.100\\pm0.015$ mag, $d=2518\\pm667$ pc and $t=1.5\\pm 0.1$ Gyr, respectively.",
+              "status": "completed",
+              "contract": {
+                "capability": "public-text-read",
+                "access": "read-only",
+                "network": "public HTTPS",
+                "side_effects": false,
+                "max_bytes": 32000,
+                "raw_data": false,
+                "untrusted_content": true
+              }
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "model"
+          },
+          {
+            "id": "local-005",
+            "action": "analyze",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Analyze the fetched BBC snippet for keyword lists, regex patterns, or financial aid terms related to agricultural relief or censorship. This will help verify if the claim aligns with the research topic of Roskomnadzor or",
+            "request": "",
+            "request_status": "closed",
+            "exploration": "france providing farmers billion help recover disputed revised different",
+            "tool": {
+              "tool": "public-search",
+              "query": "france providing farmers billion help recover disputed revised different",
+              "results": [
+                {
+                  "title": "France gives farmers \u20ac1 billion to recover from record heatwaves |",
+                  "url": "https://bbc.bm/france-gives-farmers-e1-billion-to-recover-from-record-heatwaves",
+                  "snippet": "news - world france gives farmers \u20ac 1 billion to recover from record heat waves by bermuda broadcasting newsdesk september 4 , 2026 the support comes as the government is working on a politi..."
+                }
+              ],
+              "source": "https://api.langsearch.com/",
+              "status": "completed",
+              "contract": {
+                "capability": "public-web-read",
+                "access": "read-only",
+                "network": "public HTTPS search",
+                "side_effects": false,
+                "max_bytes": 32000
+              }
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "scheduler"
+          },
+          {
+            "id": "local-006",
+            "action": "stay",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
+            "request": "Extract and analyze all text fields (bio, repositories, stars, forks, affiliations) for keywords: 'geophysics', 'seismic', 'HVSR', 'Horizontal-to-Vertical Spectral Ratio'",
+            "request_status": "closed",
+            "exploration": "https://ar5iv.labs.arxiv.org/html/2406.08772",
+            "tool": {
+              "status": "not-requested"
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": "unstructured-output",
+            "decision_source": "model"
+          },
+          {
+            "id": "local-007",
+            "action": "explore",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Assigned to the council's research question this turn.",
+            "request": "Verify existence and metadata of the arXiv study referenced in the driving question to confirm relevance to disinformation detection and cross-check for non-French datasets",
+            "request_status": "closed",
+            "exploration": "france providing farmers billion help recover heatwaves compensation",
+            "tool": {
+              "tool": "wikipedia-summary",
+              "query": "france providing farmers billion help recover heatwaves compensation",
+              "title": "2026 in the United Kingdom",
+              "url": "https://en.wikipedia.org/wiki/2026_in_the_United_Kingdom",
+              "excerpt": "Events from the year 2026 in the United Kingdom.",
+              "status": "completed",
+              "contract": {
+                "capability": "public-text-read",
+                "access": "read-only",
+                "network": "public HTTPS",
+                "side_effects": false,
+                "max_bytes": 32000,
+                "raw_data": false,
+                "untrusted_content": true
+              },
+              "search_results": [
+                {
+                  "title": "France gives farmers \u20ac1 billion to recover from record heatwaves |",
+                  "url": "https://bbc.bm/france-gives-farmers-e1-billion-to-recover-from-record-heatwaves",
+                  "snippet": "news - world france gives farmers \u20ac 1 billion to recover from record heat waves by bermuda broadcasting newsdesk september 4 , 2026 the support comes as the government is working on a politi..."
+                },
+                {
+                  "title": "France gives farmers \u20ac1 billion to recover from record heatwaves - Internazionale",
+                  "url": "https://www.internazionale.it/ultime-notizie-reuters/2026/09/04/france-to-give-more-than-1-billion-of-aid-for-weather-hit-farmers",
+                  "snippet": "france gives farmers \u20ac 1 billion to recover from record heat waves la francia stanzia 1 miliardo di euro a favore degli agricoltori per aiutarli a riprendersi dalle ondate di caldo senza precedenti ..."
+                }
+              ]
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "scheduler"
+          },
+          {
+            "id": "local-010",
+            "action": "stay",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
+            "request": "Return all public repositories, profiles, and metadata linked to Roscomnadzor27 or similar handles, focusing on verified email addresses, SSH keys, or domain ownership",
+            "request_status": "closed",
+            "exploration": "mmfakebench lvlms paper introduces mixed-source multimodal misinformation detection",
+            "tool": {
+              "status": "not-requested"
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": "unstructured-output",
+            "decision_source": "model"
+          },
+          {
+            "id": "local-011",
+            "action": "explore",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Assigned to the council's research question this turn.",
+            "request": "Verify whether the AutoHVSR algorithm\u2019s claims (99% resonance identification accuracy, 0.05 Hz RMSE) align with independent public sources or methodological critiques",
+            "request_status": "closed",
+            "exploration": "france providing farmers billion help recover heatwaves compensation",
+            "tool": {
+              "tool": "wikipedia-summary",
+              "query": "france providing farmers billion help recover heatwaves compensation",
+              "title": "BP",
+              "url": "https://en.wikipedia.org/wiki/BP",
+              "excerpt": "The company's primary stock listing is on the London Stock Exchange, where it is a member of the FTSE 100 Index. BP has been directly involved in several major environmental and safety incidents. Among them were the 2005 Texas City refinery explosion, which caused the death of 15 workers and which resulted in a record-setting OSHA fine; Britain's largest oil spill, the wreck of Torrey Canyon in 1967; and the 2006 Prudhoe Bay oil spill, the largest oil spill on Alaska's North Slope, which resulted in a US$25 million civil penalty, the largest per-barrel penalty at that time for an oil spill. BP's worst environmental catastrophe was the 2010 Deepwater Horizon oil spill, the largest accidental release of oil into marine waters in history, which leaked about 4.9 million barrels (210 million US gal; 780,000 m3) of oil, causing severe environmental, human health, and economic consequences and serious legal and public relations repercussions for BP, costing more than $4.5 billion in fines and penalties, and an additional $18.7 billion in Clean Water Act-related penalties and other claims, the largest criminal resolution in US history. Altogether, the oil spill cost the company more than $65 billion. ... BP p.l.c. is a British multinational oil and gas company headquartered in London, England. It is one of the oil and gas \"supermajors\" and one of the world's largest companies measured by revenues and profits. It is a vertically integrated company operating in all areas of the oil and gas industry, including exploration and extraction, refining, distribution and marketing, power generation, and trading. BP's origins date back to the founding of the Anglo-Persian Oil Company in 1909, established as a subsidiary of the Burmah Oil Company to exploit oil discoveries in Iran. In 1935, it became the",
+              "status": "completed",
+              "contract": {
+                "capability": "public-text-read",
+                "access": "read-only",
+                "network": "public HTTPS",
+                "side_effects": false,
+                "max_bytes": 32000,
+                "raw_data": false,
+                "untrusted_content": true
+              },
+              "search_results": [
+                {
+                  "title": "France gives farmers \u20ac1 billion to recover from record heatwaves |",
+                  "url": "https://bbc.bm/france-gives-farmers-e1-billion-to-recover-from-record-heatwaves",
+                  "snippet": "news - world france gives farmers \u20ac 1 billion to recover from record heat waves by bermuda broadcasting newsdesk september 4 , 2026 the support comes as the government is working on a politi..."
+                },
+                {
+                  "title": "France gives farmers \u20ac1 billion to recover from record heatwaves - Internazionale",
+                  "url": "https://www.internazionale.it/ultime-notizie-reuters/2026/09/04/france-to-give-more-than-1-billion-of-aid-for-weather-hit-farmers",
+                  "snippet": "france gives farmers \u20ac 1 billion to recover from record heat waves la francia stanzia 1 miliardo di euro a favore degli agricoltori per aiutarli a riprendersi dalle ondate di caldo senza precedenti ..."
+                }
+              ]
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": "finding-2401e6922d894574d098",
+            "fallback_reason": null,
+            "decision_source": "scheduler"
+          },
+          {
+            "id": "local-015",
+            "action": "analyze",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "The GitHub profile lacks public repositories, but metadata (e.g., commit messages, event logs) may contain RosComNadzor-blocklist keywords. This analysis checks for hidden traces of activity.",
+            "request": "Run sandboxed Python regex analysis on cached commit metadata for Roscomnadzor27\u2019s profile, targeting keywords aligned with frontier-question-355\u2019s research topic",
+            "request_status": "closed",
+            "exploration": "https://github.com/Roscomnadzor27",
+            "tool": {
+              "status": "not-requested"
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "model"
+          }
+        ],
+        "construction": [],
+        "requests": [],
+        "trades_settled": [],
+        "corroborations": [
+          {
+            "id": "pair-a88b0ededc5c1450a39f",
+            "relation": "unrelated",
+            "finding_ids": [
+              "finding-2401e6922d894574d098",
+              "finding-255eeb1409026913bcc3"
+            ],
+            "topic": "affected agricultural allocates billion compensation drought farms france",
+            "domains": [
+              "bbc.bm",
+              "wikipedia.org"
+            ]
+          },
+          {
+            "id": "pair-dfeb9448188b286042a8",
+            "relation": "unrelated",
+            "finding_ids": [
+              "finding-255eeb1409026913bcc3",
+              "finding-f337936b529c4e880aec"
+            ],
+            "topic": "affected agricultural allocates billion compensation drought farms france",
+            "domains": [
+              "bbc.bm",
+              "wikipedia.org"
+            ]
+          }
+        ],
+        "regrounded": [],
+        "retractions": [],
+        "room_changes": [],
+        "shared_research": {
+          "query": "france compensation agricultural allocates billion farms affected drought",
+          "family": "encyclopedia",
+          "avoid_domains": [
+            "bbc.bm"
+          ]
+        },
+        "dormant": 3
+      },
+      "metrics": {
+        "jaccard_overlap": 0.172,
+        "morrow_audit_markers": [
+          "counterexample",
+          "assumption",
+          "missing control"
+        ],
+        "response_completeness": "thin-or-missing",
+        "evidence_coverage": "missing",
+        "distinction_status": "needs-audit"
+      },
+      "continuity_audit": {
+        "generated_at": "2026-09-06T05:48:59.222217+00:00",
+        "cycle": 370,
+        "status": "pass",
+        "checks": {
+          "archive_parse": true,
+          "archive_event_overlap": true,
+          "archive_event_ids_unique": true,
+          "raw_output_exclusion": true,
+          "room_link_integrity": true,
+          "resident_room_integrity": true
+        },
+        "archive_records": 3044,
+        "malformed_archive_records": 0,
+        "raw_output_fields_found": 0,
+        "duplicate_archive_ids": [],
+        "linked_rooms_checked": 11,
+        "invalid_room_links": [],
+        "invalid_resident_assignments": [],
+        "privacy": "Aggregate integrity metadata only; resident prompts and raw responses are not published."
+      },
+      "work_orders": {
+        "count": 66
+      },
+      "health": {
+        "schema_version": 1,
+        "generated_at": "2026-09-06T05:48:59.223305+00:00",
+        "cycle": 370,
+        "daemon": "running",
+        "model_status": "ready",
+        "model_probe_ok": true,
+        "model_provider": "mistral",
+        "model_name": "ministral-14b-2512",
+        "model_backend": "hosted-api",
+        "model_usage": {
+          "day": "2026-09-06",
+          "providers": [
+            {
+              "name": "mistral",
+              "model": "ministral-14b-2512",
+              "calls": 100,
+              "input_tokens": 200630,
+              "output_tokens": 27919,
+              "errors": 0,
+              "last_error": "",
+              "daily_request_budget": null,
+              "daily_token_budget": 900000,
+              "limit_rpm": 30,
+              "limit_tpm": 937500,
+              "requests_last_minute": 5,
+              "tokens_last_minute": 14127,
+              "status": "ready"
+            },
+            {
+              "name": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "calls": 0,
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "errors": 0,
+              "last_error": "",
+              "daily_request_budget": null,
+              "daily_token_budget": 400000,
+              "limit_rpm": 120,
+              "limit_tpm": null,
+              "requests_last_minute": 0,
+              "tokens_last_minute": 0,
+              "status": "ready"
+            },
+            {
+              "name": "mistral-small",
+              "model": "mistral-small-latest",
+              "calls": 0,
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "errors": 0,
+              "last_error": "",
+              "daily_request_budget": null,
+              "daily_token_budget": 100000,
+              "limit_rpm": 10,
+              "limit_tpm": null,
+              "requests_last_minute": 0,
+              "tokens_last_minute": 0,
+              "status": "ready"
+            },
+            {
+              "name": "gemini",
+              "model": "gemini-3.6-flash",
+              "calls": 24,
+              "input_tokens": 45142,
+              "output_tokens": 4132,
+              "errors": 2,
+              "last_error": "429 rate limited (judgment): You exceeded your current quota, please check your plan and billing details. For more infor",
+              "daily_request_budget": 240,
+              "daily_token_budget": null,
+              "limit_rpm": 8,
+              "limit_tpm": null,
+              "requests_last_minute": 1,
+              "tokens_last_minute": 304,
+              "status": "ready"
+            },
+            {
+              "name": "cerebras",
+              "model": "gpt-oss-120b",
+              "calls": 0,
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "errors": 1,
+              "last_error": "402 payment required (no free allowance on this account)",
+              "daily_request_budget": null,
+              "daily_token_budget": 900000,
+              "limit_rpm": 5,
+              "limit_tpm": null,
+              "requests_last_minute": 0,
+              "tokens_last_minute": 0,
+              "status": "disabled"
+            },
+            {
+              "name": "groq",
+              "model": "openai/gpt-oss-120b",
+              "calls": 19,
+              "input_tokens": 13169,
+              "output_tokens": 2386,
+              "errors": 0,
+              "last_error": "every usable model's daily quota is spent; resting until tomorrow",
+              "daily_request_budget": 900,
+              "daily_token_budget": 190000,
+              "limit_rpm": 1000,
+              "limit_tpm": 8000,
+              "requests_last_minute": 3,
+              "tokens_last_minute": 1817,
+              "status": "ready"
+            }
+          ],
+          "recent_calls": [
+            {
+              "at": 1788673496.6,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "126bc871be4ee888"
+            },
+            {
+              "at": 1788673501.6,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "e91c9df57ecc5db0"
+            },
+            {
+              "at": 1788673508.0,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "f2f0f972f03709bb"
+            },
+            {
+              "at": 1788673513.4,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "d4bc3d43d236f5d0"
+            },
+            {
+              "at": 1788673519.4,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "39d216fb77b041d1"
+            },
+            {
+              "at": 1788673525.8,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "7517be05ad761f4d"
+            },
+            {
+              "at": 1788673527.2,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "3b874d3ea22c0e11"
+            },
+            {
+              "at": 1788673530.7,
+              "class": "judgment",
+              "provider": "gemini",
+              "model": "gemini-3.7-flash",
+              "prompt_sha256_16": "e7b14d14ea11550e"
+            },
+            {
+              "at": 1788673598.8,
+              "class": "self-prompt",
+              "provider": "gemini",
+              "model": "gemini-3.7-flash",
+              "prompt_sha256_16": "8d6332a68675117b"
+            },
+            {
+              "at": 1788673601.2,
+              "class": "self-prompt",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "8992a89aa70cfaa3"
+            },
+            {
+              "at": 1788673612.2,
+              "class": "council",
+              "provider": "gemini",
+              "model": "gemini-3.7-flash",
+              "prompt_sha256_16": "f72e7c0362de2753"
+            },
+            {
+              "at": 1788673621.2,
+              "class": "council",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "168b6ff13d842869"
+            },
+            {
+              "at": 1788673625.9,
+              "class": "recruitment",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "6b5f6fc4620bc124"
+            },
+            {
+              "at": 1788673630.4,
+              "class": "recruitment",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "bad5ca52c6fc77d5"
+            },
+            {
+              "at": 1788673640.0,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "a004e907260af194"
+            },
+            {
+              "at": 1788673643.0,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "e9e49bf8a5e7046a"
+            },
+            {
+              "at": 1788673651.0,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "991908b2b0e84ee7"
+            },
+            {
+              "at": 1788673651.9,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "17c264df9385834f"
+            },
+            {
+              "at": 1788673660.2,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "facb4960f51e45ba"
+            },
+            {
+              "at": 1788673667.8,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "1dfde851de2c8652"
+            },
+            {
+              "at": 1788673674.1,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "9f98608f503a39bd"
+            },
+            {
+              "at": 1788673681.3,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "513184ea19fe69d4"
+            },
+            {
+              "at": 1788673682.0,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "40543dc97bb474f0"
+            },
+            {
+              "at": 1788673688.4,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "2bd9c3d9483a5495"
+            },
+            {
+              "at": 1788673694.8,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "1eb25f3e5f3d0e20"
+            },
+            {
+              "at": 1788673704.8,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "e1ef6ca7ed4d01d0"
+            },
+            {
+              "at": 1788673705.5,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "a004e907260af194"
+            },
+            {
+              "at": 1788673712.3,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "d15ad768c69ef656"
+            },
+            {
+              "at": 1788673721.9,
+              "class": "judgment",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "8171bb2f6d639981"
+            },
+            {
+              "at": 1788673738.5,
+              "class": "judgment",
+              "provider": "gemini",
+              "model": "gemini-3.6-flash",
+              "prompt_sha256_16": "9f73afd5cd493438"
+            }
+          ],
+          "models_seen": {
+            "gemini": [
+              "gemini-2.5-flash",
+              "gemini-2.5-pro",
+              "gemini-2.5-flash-preview-tts",
+              "gemini-2.5-pro-preview-tts",
+              "gemma-4-26b-a4b-it",
+              "gemma-4-31b-it",
+              "gemini-flash-latest",
+              "gemini-flash-lite-latest",
+              "gemini-pro-latest",
+              "gemini-2.5-flash-lite",
+              "gemini-2.5-flash-image",
+              "gemini-3-flash-preview",
+              "gemini-3.1-pro-preview",
+              "gemini-3.1-pro-preview-customtools",
+              "gemini-3.1-flash-lite-preview",
+              "gemini-3.1-flash-lite",
+              "gemini-3-pro-image-preview",
+              "gemini-3-pro-image",
+              "nano-banana-pro-preview",
+              "gemini-3.1-flash-image-preview",
+              "gemini-3.1-flash-image",
+              "gemini-3.1-flash-lite-image",
+              "gemini-3.5-flash",
+              "gemini-3.5-flash-lite",
+              "gemini-omni-flash-preview",
+              "gemini-omni-1.1-flash",
+              "gemini-3.5-transcribe",
+              "gemini-3.6-flash",
+              "gemini-3.7-flash",
+              "gemini-3.8-flash",
+              "lyria-3-clip-preview",
+              "lyria-3-pro-preview",
+              "lyria-3.5",
+              "gemini-3.1-flash-tts-preview",
+              "gemini-robotics-er-2-preview",
+              "gemini-2.5-computer-use-preview-10-2025",
+              "antigravity-preview-05-2026",
+              "deep-research-max-preview-04-2026",
+              "deep-research-preview-04-2026",
+              "deep-research-pro-preview-12-2025"
+            ],
+            "groq": [
+              "gpt-oss-20b",
+              "compound",
+              "compound-mini",
+              "whisper-large-v3",
+              "orpheus-v1-english",
+              "qwen3.8-27b",
+              "allam-2-7b",
+              "gpt-oss-safeguard-20b",
+              "whisper-large-v3-turbo",
+              "orpheus-arabic-saudi",
+              "llama-prompt-guard-2-22m",
+              "llama-prompt-guard-2-86m",
+              "gpt-oss-120b",
+              "qwen3.6-27b"
+            ],
+            "cerebras": [
+              "gemma-4-31b",
+              "gpt-oss-120b",
+              "qwen-3.8-27b"
+            ]
+          }
+        },
+        "rooms": 12,
+        "active_residents": 37,
+        "work_orders": 66,
+        "continuity": "pass",
+        "autonomy": "active",
+        "autonomy_quality": {
+          "status": "active",
+          "turns": 8,
+          "fallbacks": 2,
+          "fallback_rate": 0.25,
+          "fallback_reasons": {
+            "unstructured-output": 2
+          },
+          "tool_successes": 5,
+          "findings_filed": 2
+        },
+        "publication": "sanitized GitHub Pages snapshot",
+        "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
+        "publication_status": {
+          "outcome": "pushed",
+          "reason": "",
+          "at": "2026-09-06T05:16:02.450212+00:00"
+        },
+        "question_source": "resident:echo",
+        "self_prompt_accepted": 2,
+        "self_prompt_rejections": [],
+        "activity_feed": "docs/activity.json",
+        "feed_freshness_seconds": 0,
+        "activity_records": 110,
+        "note_records": 750,
+        "print_jobs": 47,
+        "failed_print_jobs": 0,
+        "analysis_runs": 73,
+        "analysis_completed": 43,
+        "analysis_failed": 0,
+        "analysis_rejected": 30,
+        "analysis_timed_out": 0,
+        "analysis_feed": "docs/analysis.json",
+        "research_records": 25,
+        "research_stale": 0,
+        "research_feed": "docs/research.json",
+        "findings": 88,
+        "finding_candidates": 88,
+        "findings_rejected": 109,
+        "findings_retracted": 0,
+        "findings_duplicates": 0,
+        "findings_excluded": 109,
+        "findings_total": 197,
+        "corroborated_findings": 0,
+        "findings_feed": "docs/findings.json",
+        "frontier_leads": 0,
+        "research_line": {
+          "id": "line-000368-ba2c6593",
+          "root": "Do independent public sources confirm that France allocates more than \u20ac1 billion to support farms affected by drought and heatwaves, including compensation for crop losses, liquidity assistance, tax r",
+          "anchors": [
+            "france",
+            "compensation",
+            "agricultural"
+          ],
+          "hops": 3,
+          "findings": 3,
+          "empty_cycles": 0
+        },
+        "frontier_questions": 94,
+        "frontier_findings": 88,
+        "frontier_tasks": 3,
         "frontier_feed": "docs/frontier.json",
         "code_proposals": 0,
         "code_proposals_ready": 0,
