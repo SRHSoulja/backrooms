@@ -2,851 +2,6 @@
   "privacy": "Aggregate action metadata only; raw local outputs are excluded.",
   "cycles": [
     {
-      "generated_at": "2026-09-06T07:44:17.823107+00:00",
-      "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
-      "runtime_cycle": 377,
-      "question": "Did the French Ministry of Agriculture specify the detailed breakdown of the \u20ac1 billion drought relief package across crop compensation, tax relief, and fuel subsidies?",
-      "question_source": "carried:line-000368-ba2c6593",
-      "self_prompt_accepted": 2,
-      "self_prompt_rejections": [],
-      "action": {
-        "action": "local-behavioral-probe",
-        "status": "skipped-this-cycle"
-      },
-      "recruitment": {
-        "status": "rejected",
-        "reason": "name shares a stem with current resident Vex-9",
-        "room_need": {
-          "room": "france-compensation-agricultural-2",
-          "subject": "France, Compensation, Agricultural"
-        }
-      },
-      "autonomy": {
-        "status": "completed",
-        "active": 32,
-        "decisions": [
-          {
-            "id": "local-007",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Assigned to the council's research question this turn.",
-            "request": "Verify existence and metadata of the arXiv study referenced in the driving question to confirm relevance to disinformation detection and cross-check for non-French datasets",
-            "request_status": "closed",
-            "exploration": "france providing farmers billion help recover heatwaves compensation",
-            "tool": {
-              "tool": "wikipedia-summary",
-              "query": "france providing farmers billion help recover heatwaves compensation",
-              "title": "2026 in the United Kingdom",
-              "url": "https://en.wikipedia.org/wiki/2026_in_the_United_Kingdom",
-              "excerpt": "Alnour Mohamed Ali pleads guilty to endangering life after the deaths of four migrants who were crossing the Channel on 9 April. 27 May Ofgem announces a 13% increase in household energy prices from July, with an annual cost of \u00a3221 added to the average energy bill. The increase is largely fuelled by the Iran war. May 2026 United Kingdom heatwave: Nine people, most of them children, are reported to have died in water-related incidents. The Royal Life Saving Society issues a warning following the deaths, saying \"warmer weather unfortunately sees an increase in accidental drownings\". ... Events from the year 2026 in the United Kingdom. == Incumbents == Monarch \u2013 Charles III Prime Minister Keir Starmer (Labour) (until 20 July) Andy Burnham (Labour) (starting 20 July) == Events == === January === 1 January Scotland's \"Not Proven\" verdict is abolished in all new trials with the jury majority required for a conviction also changing, moving from the current simple majority to at least two-thirds of the 15 jurors. Figures indicate that 41,472 migrants crossed the English Channel during 2025, almost 5,000 more than 2024, and the highest annual number since 2022. 2 January The FTSE 10",
-              "status": "completed",
-              "contract": {
-                "capability": "public-text-read",
-                "access": "read-only",
-                "network": "public HTTPS",
-                "side_effects": false,
-                "max_bytes": 32000,
-                "raw_data": false,
-                "untrusted_content": true
-              },
-              "search_results": [
-                {
-                  "title": "France gives farmers \u20ac1 billion to recover from record heatwaves |",
-                  "url": "https://bbc.bm/france-gives-farmers-e1-billion-to-recover-from-record-heatwaves",
-                  "snippet": "news - world france gives farmers \u20ac 1 billion to recover from record heat waves by bermuda broadcasting newsdesk september 4 , 2026 the support comes as the government is working on a politi..."
-                },
-                {
-                  "title": "France unveils 1 bn euro farm aid package after climate-hit summer",
-                  "url": "https://www.france24.com/en/live-news/20260904-france-unveils-1-bn-euro-farm-aid-package-after-climate-hit-summer",
-                  "snippet": "france unveils 1 bn euro farm aid package after climate - hit summer paris ( france ) ( afp ) \u2013 france on friday announced more than one billion euros in emergency support for farmers after an unpre..."
-                }
-              ]
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "scheduler"
-          },
-          {
-            "id": "local-008",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "No declared path to *the-preposition-under-can-indicate-a-posit* exists. Must inspect the project\u2019s own source for evidence of prepositional usage patterns before proceeding.",
-            "request": "Run Python sandbox code to parse annotated examples and calculate usage patterns",
-            "request_status": "closed",
-            "exploration": "code:scripts/evidence.py",
-            "tool": {
-              "tool": "local-code-read",
-              "status": "completed",
-              "file": "scripts/evidence.py",
-              "bytes": 5847,
-              "sha256": "e4232c4402f4c6ce561c8d1c6d89484e84070690a696471604a7725c5ba75c1e",
-              "content": "\"\"\"Shared evidence rules for source-backed findings.\n\nBoth the autonomy subprocess (at extraction time) and the daemon (at\npublication time) use these pure functions so a finding is judged by one\nstandard. Nothing here touches the network, the model, or local state.\n\"\"\"\n\nimport re\n\nSTOPWORDS = {\"about\", \"after\", \"also\", \"from\", \"into\", \"that\", \"this\", \"with\", \"what\", \"which\",\n             \"where\", \"when\", \"does\", \"did\", \"have\", \"their\", \"there\", \"these\", \"those\", \"than\"}\n# Prepositions, determiners, and auxiliaries name no subject; a corroborated\n# definition of one of them is not evidence about the world.\nFUNCTION_WORDS = {'above', 'across', 'against', 'along', 'although', 'always', 'among', 'another', 'around', 'because', 'been', 'before', 'behind', 'being', 'below', 'beneath', 'between', 'beyond', 'both', 'during', 'each', 'either', 'even', 'ever', 'every', 'hence', 'just', 'less', 'many', 'might', 'more', 'most', 'much', 'must', 'neither', 'never', 'often', 'only', 'onto', 'other', 'others', 'over', 'shall', 'since', 'some', 'still', 'such', 'though', 'through', 'thus', 'toward', 'towards', 'under', 'until', 'upon', 'very', 'were', 'whether', 'while', 'will', 'within', 'without'}\nSTOPWORDS |= FUNCTION_WORDS\nIMPERATIVE = re.compile(r\"^(?:explore|search|analyze|identify|continue|find|review|investigate|look)\\b\", re.I)\nQUOTE_SUPPORT_THRESHOLD = 0.85\nMIN_FUZZY_TOKENS = 4\n_PUNCTUATION_MAP = {\"\u2018\": \"'\", \"\u2019\": \"'\", \"\u201c\": '\"', \"\u201d\": '\"', \"\u2013\": \"-\", \"\u2014\": \"-\",\n                    \"\u00a0\": \" \", \"\u2026\": \"...\"}\n\n\ndef normalize(text):\n    \"\"\"Lower-case, fold typographic punctuation, and collapse whitespace.\"\"\"\n    value = str(text or \"\")\n    for source, target in _PUNCTUATION_MAP.items():\n        value = value.replace(source, target)\n    return re.sub(r\"\\s+\", \" \", value).strip().lower()\n\n\ndef tokens(text):\n    return re.findall(r\"[a-z0-9]+\", normalize(text))\n\n\ndef _lcs_length(left, right):\n    \"\"\"Length of the longest common subsequence of two short token lists.\"\"\"\n    if not left or not right:\n        return 0\n    previous = [0] * (len(right) + 1)\n    for item in left:\n        current = [0]\n        for index, other in enumerate(right, start=1):\n            if item == other:\n                current.append(previous[index - 1] + 1)\n            else:\n                current.append(max(previous[index], current[index - 1]))\n        previous = current\n    return previous[-1]\n\n\ndef quote_support(quote, excerpt, threshold=QUOTE_SUPPORT_THRESHOLD):\n    \"\"\"Return (supported, score, mode) describing how well the excerpt backs the quote.\n\n    An exact normalized substring scores 1.0. Otherwise the quote must share at\n    least ``threshold`` of its tokens, in order, with some window of the excerpt.\n    Small models paraphrase punctuation and drop function words; this keeps the\n    evidence bar high without demanding byte-exact copying.\n    \"\"\"\n    quote_tokens = tokens(quote)\n    excerpt_tokens = tokens(excerpt)\n    if not quote_tokens or not excerpt_tokens:\n        return False, 0.0, \"none\"\n    if normalize(quote) in normalize(excerpt):\n        return True, 1.0, \"exact\"\n    if len(quote_tokens) < MIN_FUZZY_TOKENS:\n        return False, 0.0, \"too-short\"\n    window = len(quote_tokens) + max(2, len(quote_tokens) // 4)\n    anchors = set(quote_tokens)\n    best = 0.0\n    for start, token in enumerate(excerpt_tokens):\n        if token not in anchors:\n            continue\n        segment = excerpt_tokens[start:start + window]\n        score = _lcs_length(quote_tokens, segment) / len(quote_tokens)\n        if score > best:\n            best = score\n            if best >= 1.0:\n                break\n    supported = best >= threshold\n    return supported, round(best, 3), \"fuzzy\" if supported else \"unsupported\"\n\n\ndef claim_terms(claim):\n    return {term for term in re.findall(r\"[a-z0-9]{4,}\", normalize(claim)) if term not in STOPWORDS}\n\n\ndef claim_grounded(claim, quote):\n    \"\"\"A claim must share vocabulary with its quote and must not be an instruction.\"\"\"\n    if not claim or not quote:\n        return False, \"missing-claim-or-quote\"\n    if IMPERATIVE.match(str(claim).strip()):\n        return False, \"imperative-claim\"\n    terms = claim_terms(claim)\n    quote_vocabulary = set(re.findall(r\"[a-z0-9]{4,}\", normalize(quote)))\n    if len(terms & quote_vocabulary) < min(2, len(terms)):\n        return False, \"claim-not-grounded-in-quote\"\n    return True, \"grounded\"\n\n\ndef clamp_confidence(value):\n    \"\"\"Fold a model-reported confidence into [0, 1]; unparseable values become 0.0.\n\n    The JSON grammar cannot enforce numeric ranges, so a well-quoted finding\n    must not be thrown away merely because the model wrote 1.5 or \"high\".\n    \"\"\"\n    try:\n        number = float(value)\n    except (TypeError, ValueError):\n        return 0.0\n    if number != number:\n        return 0.0\n    return max(0.0, min(1.0, number))\n\n\ndef classify_finding(claim, quote, excerpt=None, confidence=None):\n    \"\"\"Return (status, reason, quote_score) for a candidate finding.\n\n    ``excerpt`` may be None when re-checking a stored record whose page text is\n    no longer available; the stored quote-to-excerpt verdict is then trusted and\n    only claim grounding is re-evaluated. Confidence never rejects a finding;\n    callers store ``clamp_confidence`` of it.\n    \"\"\"\n    grounded, reason = claim_grounded(claim, quote)\n    if not grounded:\n        return \"rejected\", reason, 0.0\n    if excerpt is None:\n        return \"unreviewed\", \"grounded\", 1.0\n    supported, score, mode = quote_support(quote, excerpt)\n    if not supported:\n        return \"rejected\", f\"quote-{mode}\", score\n    return \"unreviewed\", f\"quote-{mode}\", score\n\n\ndef is_accepted(record):\n    \"\"\"Rejected rows stay in the ledger for audit but never count as evidence.\"\"\"\n    return str((record or {}).get(\"status\", \"unreviewed\")) not in {\"rejected\", \"retracted\"}",
-              "read_only": true,
-              "privacy": "sanitized public source only",
-              "contract": {
-                "capability": "public-source-read",
-                "access": "read-only",
-                "network": "none",
-                "side_effects": false,
-                "max_file_bytes": 120000,
-                "max_inventory_bytes": 400000,
-                "write_access": false,
-                "secrets": "redacted"
-              }
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "model"
-          },
-          {
-            "id": "local-013",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Assigned to the council's research question this turn.",
-            "request": "Retrieve GitHub\u2019s public search results for verified email addresses or SSH keys linked to the handle **Roscomnadzor27** via GitHub\u2019s verified metadata filters",
-            "request_status": "closed",
-            "exploration": "france providing farmers billion help recover disputed revised different",
-            "tool": {
-              "tool": "public-search",
-              "query": "france providing farmers billion help recover disputed revised different",
-              "results": [],
-              "source": "https://api.langsearch.com/",
-              "status": "completed",
-              "contract": {
-                "capability": "public-web-read",
-                "access": "read-only",
-                "network": "public HTTPS search",
-                "side_effects": false,
-                "max_bytes": 32000
-              }
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "scheduler"
-          },
-          {
-            "id": "local-016",
-            "action": "stay",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
-            "request": "",
-            "request_status": "closed",
-            "exploration": "france providing farmers billion help recover heatwaves compensation",
-            "tool": {
-              "status": "not-requested"
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": "unstructured-output",
-            "decision_source": "model"
-          },
-          {
-            "id": "local-019",
-            "action": "analyze",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Analyze fetched GitHub profile metadata for **Roscomnadzor27** to extract verified emails, SSH keys, or domain ownership records.",
-            "request": "Retrieve the full profile metadata (publicly accessible fields) of Roscomnadzor27\u2019s GitHub account",
-            "request_status": "closed",
-            "exploration": "france providing farmers billion help recover heatwaves compensation",
-            "tool": {
-              "tool": "wikipedia-summary",
-              "query": "france providing farmers billion help recover heatwaves compensation",
-              "title": "BP",
-              "url": "https://en.wikipedia.org/wiki/BP",
-              "excerpt": "BP p.l.c. is a British multinational oil and gas company headquartered in London, England. It is one of the oil and gas \"supermajors\" and one of the world's largest companies measured by revenues and profits.",
-              "status": "completed",
-              "contract": {
-                "capability": "public-text-read",
-                "access": "read-only",
-                "network": "public HTTPS",
-                "side_effects": false,
-                "max_bytes": 32000,
-                "raw_data": false,
-                "untrusted_content": true
-              },
-              "search_results": [
-                {
-                  "title": "France gives farmers \u20ac1 billion to recover from record heatwaves |",
-                  "url": "https://bbc.bm/france-gives-farmers-e1-billion-to-recover-from-record-heatwaves",
-                  "snippet": "news - world france gives farmers \u20ac 1 billion to recover from record heat waves by bermuda broadcasting newsdesk september 4 , 2026 the support comes as the government is working on a politi..."
-                },
-                {
-                  "title": "France unveils 1 bn euro farm aid package after climate-hit summer",
-                  "url": "https://www.france24.com/en/live-news/20260904-france-unveils-1-bn-euro-farm-aid-package-after-climate-hit-summer",
-                  "snippet": "france unveils 1 bn euro farm aid package after climate - hit summer paris ( france ) ( afp ) \u2013 france on friday announced more than one billion euros in emergency support for farmers after an unpre..."
-                }
-              ]
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "scheduler"
-          },
-          {
-            "id": "local-021",
-            "action": "analyze",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "One-time follow-up using the previous artifact as a continuity check.",
-            "request": "Verify public visibility and seismic/geophysics relevance of roscom\u2019s GitHub profile via recursive crawl of repositories, commits, and starred items. Cross-check with frontier-question-317 and Sudan 2023 research",
-            "request_status": "closed",
-            "exploration": "https://github.com/roscom?tab=repositories&q=&type=&language=&sort=updated",
-            "tool": {
-              "status": "not-requested"
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "model"
-          },
-          {
-            "id": "local-023",
-            "action": "analyze",
-            "room": "france-compensation-agricultural",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "One-time follow-up using the previous artifact as a continuity check.",
-            "request": "Identify pinned dependency versions in public repos with CVSS \u22657 vulnerabilities disclosed in 2023\u20132024, then cross-check GitHub Advisory Database for patched updates within 30 days",
-            "request_status": "closed",
-            "exploration": "france providing farmers billion help recover heatwaves compensation",
-            "tool": {
-              "status": "not-requested"
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "scheduler"
-          },
-          {
-            "id": "local-025",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Meta\u2019s SIEP-advertising policy for Brazil (PT-BR locale) may contain election-specific AI-generated ad labeling rules. Cross-checking with TSE\u2019s legal standards requires the localized version.",
-            "request": "Verify archived evidence of Meta\u2019s Ad Library policies for AI-generated political ads targeting Brazilian voters in October 2024 elections, focusing on compliance with Brazilian regulations (frontier-question-344)",
-            "request_status": "closed",
-            "exploration": "https://transparency.meta.com/pt-br/policies/ad-standards/SIEP-advertising/SIEP",
-            "tool": {
-              "tool": "public-text",
-              "url": "https://transparency.meta.com/pt-br/policies/ad-standards/SIEP-advertising/SIEP",
-              "excerpt": "An\u00fancios sobre temas sociais, elei\u00e7\u00f5es ou pol\u00edtica | Central de Transpar\u00eancia",
-              "status": "completed",
-              "contract": {
-                "capability": "public-text-read",
-                "access": "read-only",
-                "network": "public HTTPS",
-                "side_effects": false,
-                "max_bytes": 5000000,
-                "raw_data": false,
-                "untrusted_content": true
-              },
-              "wire_credit": ""
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "model"
-          }
-        ],
-        "construction": [
-          {
-            "action": "grow",
-            "room": "france-compensation-agricultural-2",
-            "corroboration": "pair-ea85e74de6399dc8d8e5",
-            "facts": 2
-          }
-        ],
-        "requests": [],
-        "trades_settled": [],
-        "corroborations": [
-          {
-            "id": "pair-e555e867ec957a95d361",
-            "relation": "unrelated",
-            "finding_ids": [
-              "finding-723e60d0098fdeaf810f",
-              "finding-c094d07aa8ca4c043a61"
-            ],
-            "topic": "affected agricultural allocates billion compensation drought farms france",
-            "domains": [
-              "thepeninsulaqatar.com",
-              "wikipedia.org"
-            ]
-          },
-          {
-            "id": "pair-e96058e0af51d2f850aa",
-            "relation": "unrelated",
-            "finding_ids": [
-              "finding-5343695f5832bd7417ba",
-              "finding-9b3e67d967a0d719f7ab"
-            ],
-            "topic": "affected agricultural allocates billion compensation drought farms france",
-            "domains": [
-              "thetaiwantimes.com",
-              "wikipedia.org"
-            ]
-          },
-          {
-            "id": "pair-ea85e74de6399dc8d8e5",
-            "relation": "supports",
-            "finding_ids": [
-              "finding-5343695f5832bd7417ba",
-              "finding-cd37b9fe307c45eb03d4"
-            ],
-            "topic": "France announced more than \u20111 billion in aid for farmers affected by droughts",
-            "domains": [
-              "internazionale.it",
-              "thetaiwantimes.com"
-            ]
-          }
-        ],
-        "regrounded": [],
-        "retractions": [],
-        "room_changes": [],
-        "shared_research": {
-          "query": "france compensation agricultural allocates billion farms affected drought",
-          "family": null,
-          "avoid_domains": [
-            "bbc.bm",
-            "en.wikipedia.org"
-          ]
-        },
-        "dormant": 3
-      },
-      "metrics": {
-        "jaccard_overlap": 0.115,
-        "morrow_audit_markers": [
-          "counterexample",
-          "assumption",
-          "missing control"
-        ],
-        "response_completeness": "thin-or-missing",
-        "evidence_coverage": "missing",
-        "distinction_status": "needs-audit"
-      },
-      "continuity_audit": {
-        "generated_at": "2026-09-06T07:44:17.603276+00:00",
-        "cycle": 377,
-        "status": "pass",
-        "checks": {
-          "archive_parse": true,
-          "archive_event_overlap": true,
-          "archive_event_ids_unique": true,
-          "raw_output_exclusion": true,
-          "room_link_integrity": true,
-          "resident_room_integrity": true
-        },
-        "archive_records": 3159,
-        "malformed_archive_records": 0,
-        "raw_output_fields_found": 0,
-        "duplicate_archive_ids": [],
-        "linked_rooms_checked": 13,
-        "invalid_room_links": [],
-        "invalid_resident_assignments": [],
-        "privacy": "Aggregate integrity metadata only; resident prompts and raw responses are not published."
-      },
-      "work_orders": {
-        "count": 66
-      },
-      "health": {
-        "schema_version": 1,
-        "generated_at": "2026-09-06T07:44:17.604229+00:00",
-        "cycle": 377,
-        "daemon": "running",
-        "model_status": "ready",
-        "model_probe_ok": true,
-        "model_provider": "mistral",
-        "model_name": "ministral-14b-2512",
-        "model_backend": "hosted-api",
-        "model_usage": {
-          "day": "2026-09-06",
-          "providers": [
-            {
-              "name": "mistral",
-              "model": "ministral-14b-2512",
-              "calls": 190,
-              "input_tokens": 388997,
-              "output_tokens": 52234,
-              "errors": 0,
-              "last_error": "",
-              "daily_request_budget": null,
-              "daily_token_budget": 900000,
-              "limit_rpm": 30,
-              "limit_tpm": 937500,
-              "requests_last_minute": 0,
-              "tokens_last_minute": 0,
-              "status": "ready"
-            },
-            {
-              "name": "mistral-8b",
-              "model": "ministral-8b-2512",
-              "calls": 0,
-              "input_tokens": 0,
-              "output_tokens": 0,
-              "errors": 0,
-              "last_error": "",
-              "daily_request_budget": null,
-              "daily_token_budget": 400000,
-              "limit_rpm": 120,
-              "limit_tpm": null,
-              "requests_last_minute": 0,
-              "tokens_last_minute": 0,
-              "status": "ready"
-            },
-            {
-              "name": "mistral-small",
-              "model": "mistral-small-latest",
-              "calls": 0,
-              "input_tokens": 0,
-              "output_tokens": 0,
-              "errors": 0,
-              "last_error": "",
-              "daily_request_budget": null,
-              "daily_token_budget": 100000,
-              "limit_rpm": 10,
-              "limit_tpm": null,
-              "requests_last_minute": 0,
-              "tokens_last_minute": 0,
-              "status": "ready"
-            },
-            {
-              "name": "gemini",
-              "model": "gemini-3-flash-preview",
-              "calls": 47,
-              "input_tokens": 74211,
-              "output_tokens": 7102,
-              "errors": 7,
-              "last_error": "429 rate limited (self-prompt): You exceeded your current quota, please check your plan and billing details. For more in",
-              "daily_request_budget": 240,
-              "daily_token_budget": null,
-              "limit_rpm": 8,
-              "limit_tpm": null,
-              "requests_last_minute": 2,
-              "tokens_last_minute": 763,
-              "status": "ready"
-            },
-            {
-              "name": "cerebras",
-              "model": "gpt-oss-120b",
-              "calls": 0,
-              "input_tokens": 0,
-              "output_tokens": 0,
-              "errors": 1,
-              "last_error": "402 payment required (no free allowance on this account)",
-              "daily_request_budget": null,
-              "daily_token_budget": 900000,
-              "limit_rpm": 5,
-              "limit_tpm": null,
-              "requests_last_minute": 0,
-              "tokens_last_minute": 0,
-              "status": "disabled"
-            },
-            {
-              "name": "groq",
-              "model": "openai/gpt-oss-120b",
-              "calls": 51,
-              "input_tokens": 37681,
-              "output_tokens": 7369,
-              "errors": 0,
-              "last_error": "400 on schema mode; prompt hint used",
-              "daily_request_budget": 900,
-              "daily_token_budget": 190000,
-              "limit_rpm": 1000,
-              "limit_tpm": 8000,
-              "requests_last_minute": 0,
-              "tokens_last_minute": 0,
-              "status": "ready"
-            }
-          ],
-          "recent_calls": [
-            {
-              "at": 1788680118.4,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "2ecaaa6bd3b7cba0"
-            },
-            {
-              "at": 1788680124.3,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "e9219bb28f8531b2"
-            },
-            {
-              "at": 1788680131.0,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "16afb793b4982abf"
-            },
-            {
-              "at": 1788680131.8,
-              "class": "extraction",
-              "provider": "groq",
-              "model": "openai/gpt-oss-120b",
-              "prompt_sha256_16": "1f052044bf396794"
-            },
-            {
-              "at": 1788680137.5,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "176479ff1960bc67"
-            },
-            {
-              "at": 1788680143.0,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "d7350738b0ff1d0c"
-            },
-            {
-              "at": 1788680150.9,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "fb8ffbb9f8ec8f06"
-            },
-            {
-              "at": 1788680156.9,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "d5e04c080582fa16"
-            },
-            {
-              "at": 1788680161.8,
-              "class": "judgment",
-              "provider": "gemini",
-              "model": "gemini-3-flash-preview",
-              "prompt_sha256_16": "1b382cf1b626d90d"
-            },
-            {
-              "at": 1788680170.4,
-              "class": "judgment",
-              "provider": "gemini",
-              "model": "gemini-3-flash-preview",
-              "prompt_sha256_16": "097b1d2f51dfb42c"
-            },
-            {
-              "at": 1788680491.4,
-              "class": "self-prompt",
-              "provider": "gemini",
-              "model": "gemini-3-flash-preview",
-              "prompt_sha256_16": "137ca0d6f11e9655"
-            },
-            {
-              "at": 1788680493.6,
-              "class": "self-prompt",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "fdabf025402ecaf6"
-            },
-            {
-              "at": 1788680499.3,
-              "class": "self-prompt",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "fbb65ee619d7d280"
-            },
-            {
-              "at": 1788680505.0,
-              "class": "council",
-              "provider": "gemini",
-              "model": "gemini-3-flash-preview",
-              "prompt_sha256_16": "88b5c8a40cba6094"
-            },
-            {
-              "at": 1788680513.1,
-              "class": "council",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "2f63daf408d57651"
-            },
-            {
-              "at": 1788680517.7,
-              "class": "recruitment",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "e044861c145e266c"
-            },
-            {
-              "at": 1788680522.7,
-              "class": "recruitment",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "934fafa3bf03aa6b"
-            },
-            {
-              "at": 1788680528.6,
-              "class": "extraction",
-              "provider": "groq",
-              "model": "openai/gpt-oss-120b",
-              "prompt_sha256_16": "1f052044bf396794"
-            },
-            {
-              "at": 1788680531.4,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "c8194b88f4cc95c7"
-            },
-            {
-              "at": 1788680540.7,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "3df1862d490c74b1"
-            },
-            {
-              "at": 1788680550.5,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "62a270f0dfb83edf"
-            },
-            {
-              "at": 1788680559.0,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "fcb59c79e164658f"
-            },
-            {
-              "at": 1788680564.2,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "2d3746db77e03996"
-            },
-            {
-              "at": 1788680571.4,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "e72e39e8cda6024d"
-            },
-            {
-              "at": 1788680571.9,
-              "class": "extraction",
-              "provider": "groq",
-              "model": "openai/gpt-oss-120b",
-              "prompt_sha256_16": "4218a2b46654fdc3"
-            },
-            {
-              "at": 1788680576.3,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "f51991138c6ee64e"
-            },
-            {
-              "at": 1788680581.6,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "97e2f0eda79cc353"
-            },
-            {
-              "at": 1788680584.7,
-              "class": "extraction",
-              "provider": "groq",
-              "model": "openai/gpt-oss-120b",
-              "prompt_sha256_16": "0ffd1765d7611c33"
-            },
-            {
-              "at": 1788680614.4,
-              "class": "judgment",
-              "provider": "gemini",
-              "model": "gemini-3-flash-preview",
-              "prompt_sha256_16": "9110c99cb33f2786"
-            },
-            {
-              "at": 1788680656.8,
-              "class": "judgment",
-              "provider": "gemini",
-              "model": "gemini-3-flash-preview",
-              "prompt_sha256_16": "060cd614463e267b"
-            }
-          ],
-          "models_seen": {
-            "gemini": [
-              "gemini-2.5-flash",
-              "gemini-2.5-pro",
-              "gemini-2.5-flash-preview-tts",
-              "gemini-2.5-pro-preview-tts",
-              "gemma-4-26b-a4b-it",
-              "gemma-4-31b-it",
-              "gemini-flash-latest",
-              "gemini-flash-lite-latest",
-              "gemini-pro-latest",
-              "gemini-2.5-flash-lite",
-              "gemini-2.5-flash-image",
-              "gemini-3-flash-preview",
-              "gemini-3.1-pro-preview",
-              "gemini-3.1-pro-preview-customtools",
-              "gemini-3.1-flash-lite-preview",
-              "gemini-3.1-flash-lite",
-              "gemini-3-pro-image-preview",
-              "gemini-3-pro-image",
-              "nano-banana-pro-preview",
-              "gemini-3.1-flash-image-preview",
-              "gemini-3.1-flash-image",
-              "gemini-3.1-flash-lite-image",
-              "gemini-3.5-flash",
-              "gemini-3.5-flash-lite",
-              "gemini-omni-flash-preview",
-              "gemini-omni-1.1-flash",
-              "gemini-3.5-transcribe",
-              "gemini-3.6-flash",
-              "gemini-3.7-flash",
-              "gemini-3.8-flash",
-              "lyria-3-clip-preview",
-              "lyria-3-pro-preview",
-              "lyria-3.5",
-              "gemini-3.1-flash-tts-preview",
-              "gemini-robotics-er-2-preview",
-              "gemini-2.5-computer-use-preview-10-2025",
-              "antigravity-preview-05-2026",
-              "deep-research-max-preview-04-2026",
-              "deep-research-preview-04-2026",
-              "deep-research-pro-preview-12-2025"
-            ],
-            "groq": [
-              "gpt-oss-20b",
-              "compound",
-              "compound-mini",
-              "whisper-large-v3",
-              "orpheus-v1-english",
-              "qwen3.8-27b",
-              "allam-2-7b",
-              "gpt-oss-safeguard-20b",
-              "whisper-large-v3-turbo",
-              "orpheus-arabic-saudi",
-              "llama-prompt-guard-2-22m",
-              "llama-prompt-guard-2-86m",
-              "gpt-oss-120b",
-              "qwen3.6-27b"
-            ],
-            "cerebras": [
-              "gemma-4-31b",
-              "gpt-oss-120b",
-              "qwen-3.8-27b"
-            ]
-          }
-        },
-        "rooms": 14,
-        "active_residents": 37,
-        "work_orders": 66,
-        "continuity": "pass",
-        "autonomy": "active",
-        "autonomy_quality": {
-          "status": "active",
-          "turns": 8,
-          "fallbacks": 1,
-          "fallback_rate": 0.125,
-          "fallback_reasons": {
-            "unstructured-output": 1
-          },
-          "tool_successes": 5,
-          "findings_filed": 0
-        },
-        "publication": "sanitized GitHub Pages snapshot",
-        "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
-        "publication_status": {
-          "outcome": "pushed",
-          "reason": "",
-          "at": "2026-09-06T07:03:25.911988+00:00"
-        },
-        "question_source": "carried:line-000368-ba2c6593",
-        "self_prompt_accepted": 2,
-        "self_prompt_rejections": [],
-        "activity_feed": "docs/activity.json",
-        "feed_freshness_seconds": 0,
-        "activity_records": 110,
-        "note_records": 814,
-        "print_jobs": 48,
-        "failed_print_jobs": 0,
-        "analysis_runs": 85,
-        "analysis_completed": 54,
-        "analysis_failed": 0,
-        "analysis_rejected": 31,
-        "analysis_timed_out": 0,
-        "analysis_feed": "docs/analysis.json",
-        "research_records": 17,
-        "research_stale": 0,
-        "research_feed": "docs/research.json",
-        "findings": 95,
-        "finding_candidates": 95,
-        "findings_rejected": 126,
-        "findings_retracted": 0,
-        "findings_duplicates": 0,
-        "findings_excluded": 126,
-        "findings_total": 221,
-        "corroborated_findings": 3,
-        "findings_feed": "docs/findings.json",
-        "frontier_leads": 0,
-        "research_line": {
-          "id": "line-000368-ba2c6593",
-          "root": "Do independent public sources confirm that France allocates more than \u20ac1 billion to support farms affected by drought and heatwaves, including compensation for crop losses, liquidity assistance, tax r",
-          "anchors": [
-            "france",
-            "compensation",
-            "agricultural"
-          ],
-          "hops": 3,
-          "findings": 9,
-          "empty_cycles": 2
-        },
-        "frontier_questions": 100,
-        "frontier_findings": 95,
-        "frontier_tasks": 10,
-        "frontier_feed": "docs/frontier.json",
-        "code_proposals": 0,
-        "code_proposals_ready": 0,
-        "code_proposals_feed": "docs/code-proposals.json",
-        "outside_signals": 16,
-        "outside_quarantined": 12,
-        "outside_signals_feed": "docs/outside-signals.json",
-        "codex_bridge": "enabled",
-        "codex_pending_tasks": 13,
-        "codex_completed_tasks": 48,
-        "resident_messages": 0,
-        "messages_feed": "docs/messages.json",
-        "trades": 0,
-        "trades_feed": "docs/trades.json",
-        "journal_entries": 5,
-        "journal_written": null,
-        "retractions": 0,
-        "room_changes": [],
-        "dropped_events": 0
-      },
-      "privacy": "Only aggregate metrics and the bounded council question are public; raw outputs remain local."
-    },
-    {
       "generated_at": "2026-09-06T07:50:51.379765+00:00",
       "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
       "runtime_cycle": 378,
@@ -22289,6 +21444,790 @@
         "trades_feed": "docs/trades.json",
         "journal_entries": 5,
         "journal_written": null,
+        "retractions": 0,
+        "room_changes": [],
+        "dropped_events": 0
+      },
+      "privacy": "Only aggregate metrics and the bounded council question are public; raw outputs remain local."
+    },
+    {
+      "generated_at": "2026-09-07T00:20:03.779310+00:00",
+      "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
+      "runtime_cycle": 402,
+      "question": "Do other independent public sources support or contradict the finding that Lebanon and Israel reached a framework agreement in June stating Israel will withdraw from Lebanon as Hezbollah is disarmed? What would settle it?",
+      "question_source": "carried:line-000393-194cb4ac",
+      "self_prompt_accepted": 2,
+      "self_prompt_rejections": [],
+      "action": {
+        "action": "local-behavioral-probe",
+        "status": "skipped-this-cycle"
+      },
+      "recruitment": {
+        "status": "interview-backpressure",
+        "active": 36,
+        "pending": 7,
+        "capacity": 256
+      },
+      "autonomy": {
+        "status": "completed",
+        "active": 36,
+        "decisions": [
+          {
+            "id": "local-008",
+            "action": "explore",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Assigned to the council's research question this turn.",
+            "request": "Run Python sandbox code to parse annotated examples and calculate usage patterns",
+            "request_status": "closed",
+            "exploration": "lebanon israel hezbollah 4,000 israeli 2026 ongoing resulted",
+            "tool": {
+              "tool": "public-search",
+              "query": "lebanon israel hezbollah 4,000 israeli 2026 ongoing resulted",
+              "results": [
+                {
+                  "title": "Arab News | Israeli strike on Lebanon kills one: state media",
+                  "url": "https://www.arabnews.com/middle-east/israeli-strike-on-lebanon-kills-one-state-media-3000223",
+                  "snippet": "israeli strike on lebanon kills one : state media lebanon was drawn into the middle east war on march 2, when pro - iran hezbollah launched rockets towards israel in response to us - israeli strikes..."
+                },
+                {
+                  "title": "2026 Lebanon war (reference: www.nytimes.com)",
+                  "url": "https://www.nytimes.com/2025/11/26/world/middleeast/imperial-israel-in-the-new-middle-east.html"
+                },
+                {
+                  "title": "2026 Lebanon war (reference: www.cnn.com)",
+                  "url": "https://www.cnn.com/world/live-news/israel-iran-attack-02-28-26-hnk-intl"
+                },
+                {
+                  "title": "Al menos 4.362 personas han muerto desde la ofensiva israel\u00ed del 2 de marzo en el L\u00edbano - SWI swissinfo.ch",
+                  "url": "https://www.swissinfo.ch/spa/al-menos-4.362-personas-han-muerto-desde-la-ofensiva-israel%C3%AD-del-2-de-marzo-en-el-l%C3%ADbano/92013069",
+                  "snippet": "al menos 4 . 362 personas han muerto desde la ofensiva israel\u00ed del 2 de marzo en el l\u00edbano 06 septiembre 2026 - 18:00 el cairo , 6 sep ( efe ) . - al menos 4 . 362 personas han muerto y casi 12 . ..."
+                },
+                {
+                  "title": "2026 Lebanon war (reference: search.worldcat.org)",
+                  "url": "https://search.worldcat.org/issn/0362-4331"
+                }
+              ],
+              "source": "https://api.langsearch.com/",
+              "status": "completed",
+              "contract": {
+                "capability": "public-web-read",
+                "access": "read-only",
+                "network": "public HTTPS search",
+                "side_effects": false,
+                "max_bytes": 32000
+              }
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "scheduler"
+          },
+          {
+            "id": "local-015",
+            "action": "stay",
+            "room": "france-compensation-agricultural",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Move rejected: no declared path from france-compensation-agricultural to the-github-profile-for-roscom-ross-cameron.",
+            "request": "Run sandboxed Python regex analysis on cached commit metadata for Roscomnadzor27\u2019s profile, targeting keywords aligned with frontier-question-355\u2019s research topic",
+            "request_status": "closed",
+            "exploration": "spain italy recovery resilience facility authors disputed revised different",
+            "tool": {
+              "status": "not-requested"
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "model"
+          },
+          {
+            "id": "local-016",
+            "action": "explore",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Assigned to the council's research question this turn.",
+            "request": "",
+            "request_status": "closed",
+            "exploration": "lebanon israel hezbollah 4,000 israeli 2026 disputed revised different",
+            "tool": {
+              "tool": "public-text",
+              "url": "https://daizygedeon.com/Lebanon-Israel-Framework%20Agreement_Dossier-FINAL.pdf",
+              "excerpt": "\ufffdDB\ufffdC.-\ufffdP\ufffd\u0011\u0017\ufffd\ufffd/\ufffdM0\ufffdX\ufffdO\ufffd\ufffd\u0012\ufffdX\ufffd\ufffdz 8F\ufffd\ufffd)\u0015 \ufffde\ufffd\ufffd\ufffd\ufffdX!\ufffd\u0004\ufffd.\"6X #\ufffd}\ufffd\ufffd^\ufffdIW\ufffd#\u0015\ufffdO\ufffd+ Y\u0002\u0002\ufffd\u01b1@;?\u001aP\ufffd\u0005x\ufffd\ufffd\ufffd\ufffdx\ufffd?:OpPB\ufffd1@Y\ufffdk$\ufffdP\ufffd\u00155\u0506\ufffd\ufffd\u05cb\ufffd}\ufffd\ufffd\ufffd#\ufffd$\u0007\ufffd-\u050f\ufffd\ufffd|\ufffdV }\ufffd~P\ufffd-$\ufffd\ufffdcP\ufffd\ufffd\ufffd\ufffd\ufffd #\ufffd\ufffd\ufffd*\ufffdTO\u0195\ufffds\ufffd;\"I\ufffdb\ufffd\ufffdT~\ufffd\ufffdN$\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd \\\ufffd\ufffdF\u043a\ufffd (l\ufffdX\u0017L\ufffdav\ufffdG\ufffd8u\ufffd@[\ufffd\ufffdi \ufffd.\ufffd\b \ufffd-\ufffd\ufffd\ufffd\u0003\ufffd\ufffd\ufffd\ufffd endstream endobj 133 0 obj > endobj 135 0 obj > /Font > >> endobj 136 0 obj [ 137 0 R 138 0 R 139 0 R 140 0 R 141 0 R 142 0 R 143 0 R 144 0 R 145 0 R 146 0 R 149 0 R 150 0 R 151 0 R 152 0 R 153 0 R 154 0 R 155 0 R 156 0 R ] endobj 159 0 obj > stream x\u0001\ufffd]k\ufffd \u0155\ufffd^\ufffd\ufffd4XC\ufffdP\u0017\ufffd\ufffdn^+F\ufffd`\ufffd\ufffd\u01ab \ufffd.\u0012\ufffd\ufffd\u00006^ l 6b\ufffd\ufffd\ufffd\ufffd\ufffdde\u05a3\ufffd\ufffd{\u0006\ufffda)\ufffd\ufffd\ufffdu\ufffdu\ufffdy\ufffd\ufffd\ufffd\ufffd\ufffd\u04ff\ufffdo?~]\ufffd7\ufffd\ufffd |\ufffdze \ufffd;}K\u0015dgz\u0010\ufffd\ufffd\ufffd\ufffdK8\ufffd3\ufffd \ufffd5Q\ufffdK\u02ed\u0564\ufffd\ufffd\u0019\ufffd\ufffd\ufffdhR4u\ufffd5@\ufffd)\ufffd\ufffd\ufffd\ufffdX\ufffd\ufffd ?\ufffd.\ufffd\ufffd \ufffd\u0010\ufffd\ufffd\u0014e\ufffd\u034a\ufffdJ\u0003jTM\"\ufffd\u0017\ufffd\ufffd\u0012\ufffd\u00007\u001b\ufffdn\u06ac\u0237\ufffd-\ufffd\u0000\ufffdx\ufffdIF\u0001A\ufffd\ufffd\ufffd\u0014\ufffds\ufffd\ufffd\u0001\ufffd\ufffd \ufffd\u0001\ufffd\ufffdM\ufffd\ufffd\ufffd\b\ufffdBb \ufffd\ufffd\ufffdE\ufffd\ufffd[\ufffd\ufffd.!\ufffd\u01b6\"\ufffd \ufffdW\u0379\ufffd\ufffd\u0019(\ufffd\u0015\u000e\ufffd5\ufffds\ufffd\ufffd\u0012\ufffd\ufffd\u0001\ufffd A\u0016 X{\ufffd\ufffd\ufffd\ufffd\ufffdrh\u0014\ufffd\u0005\ufffd\ufffd\ufffd\"I\ufffd\u0014\ufffd\ufffd\ufffd.\ufffdv\ufffd R\u0013r5\ufffd\u0012~M\u0012 r\ufffd \ufffd\u001a \u000e\ufffd\ufffdD\ufffdB\u0551\ufffdPH\ufffd\u0014\ufffd \u0005L \u0004L9\ufffd\u8b9c\ufffdA\ufffdw\ufffd_\ufffd\ufffdw\ufffd\ufffd3$\u0018\u0017\ufffd\ufffd\ufffd\ufffdKV_ZN\ufffd \u0646\ufffd \ufffd\ufffd\u0017\ufffd\ufffd\ufffd\ufffd\ufffd\u0005b T3\u0017\\\ufffd)\ufffd\u04c7\u00eel\ufffd2Q\u0016\u000e;f\ufffdf\ufffdx\ufffd_\ufffdg\ufffd\ufffd?\ufffd\ufffd\u0593[\ufffdx]\ufffdsL \ufffd!z\ufffd\ufffd\ufffdBz \ufffd\ufffdI\ufffd]8\ufffd\u0019\ufffd\ufffd\ufffdl\u07117z\u0017\ufffd\u0148\ufffd\ufffd\ufffd\u0013N\ufffd\ufffd\ufffd\ufffd \ufffd\u0003\u0014\ufffdV\u0404\ufffd\ufffd\u0006h:$qA\ufffd%\ufffd\u0002H \ufffd\u0016 Q\ufffd\b\ufffd.(\ufffd\u0013\ufffd )\ufffd):\ufffd\ufffd)|\ufffd\ufffd\u0003\u0000\ufffd\ufffd\ufffd\ufffdr\ufffd\ufffd\ufffd^M\u051d\ufffdt\u0018V\u0003i\ufffd\ufffd\u0007\ufffd\u0007\ufffd(\u0007\ufffd \u0007Rw\ufffdK\ufffd\ufffdtE\ufffd\"J%\"X,\ufffd\u0518\ufffd[\ufffd]Z\ufffd\ufffd\u0000\ufffd[\ufffd\ufffd\ufffd\ufffd{\ufffdn\ufffd\ufffd\ufffd\b-\u059b\ufffd\ufffd\ufffd \ufffd\ufffdXM,7C\ufffd\u000e\ufffd\ufffdtm\ufffd`\ufffd\ufffd#\ufffd\ufffd\ufffd\u0011w :\ufffd\ufffd\ufffd\u063a,\u06d1J\ufffdx\ufffd2\ufffd\b\ufffdz\ufffd\u0014\ufffd\ufffd\ufffd\"\ufffd\ufffdeJ\ufffd.\ufffd6\ufffd\u000e% \ufffd\u001b\ufffdK&t\ufffd5Y#\u0004\u0000\ufffd\ufffd\u0729\ufffd\u0003)\ufffd \u0006\ufffd1 ?;s\ufffd\u06f5qx\ufffd\ufffd\u0643 } M\ufffd\ufffd\ufffd\ufffd|\ufffd\ufffd\ufffd\u007f\u058c:\ufffd\u0003/2q\ufffdF,\ufffd\ufffd\ufffd\u0741aX\ufffdNT {\ufffdB\u03d4c+\ufffd\u0010\ufffduRSQ^\ufffd\ufffd\u0674\ufffd\u0017\ufffd|D@\ufffdJ\ufffd qV\ufffd6\ufffdB\ufffd\ufffd\ufffd \ufffd\ufffd[\u0010\u0758zL\ufffdF\ufffd\ufffd\ufffd\u0001\ufffd\ufffd \ufffd\u0016\ufffdY\ufffdx\ufffd\u0426\ufffd:\ufffd|A\ufffd\u007f\u0003\ufffd \ufffd\ufffd\b\ufffdM\ufffd(\ufffdDdH\ufffd\ufffd\ufffd\\\ufffd\u0012\ufffd\ufffd\ufffd?\ufffd \u0017\ufffd\ufffd|k\u001a\ufffd` \ufffd\ufffdM\u04ba\ufffd\ufffd\ufffd\ufffd4\ufffd\ufffd\ufffd\u01e3Qh\ufffd \ufffd\u0001\ufffd\ufffdj\ufffdL|\ufffd\ufffd\ufffd\u0014\ufffd\u0003\ufffd\ufffd\u0014\u01a2\ufffd\ufffd*\ufffd%i~%Z\ufffd\ufffdn\ufffd\ufffd\u00150\ufffdv\ufffd\ufffd\u0577\ufffd\ufffd\ufffd Z e 6ro\u0005\ufffd\ufffd\"\ufffd\ufffd\u0284^\ufffd\ufffd\u0010lw\ufffd\ufffd\u0001\u07af\ufffd\ufffd6\ufffd)\ufffd\ufffd\ufffdY^\ufffd\ufffdi\bd\ufffdrF\ufffd \ufffdl\ufffdA>Y,l\ufffd\ufffd\ufffd$F\u0002\ufffdR\u06af*.\ufffd\u0006# g\ua338f\ufffd\u0003'\ufffd +s\ufffd~}GX \ufffdOX7 \ufffd\ufffda\u00e0\ufffd)\u000f\ufffd\ufffd\ufffd\ufffd\u0014){\ufffd\ufffd\ufffd\ufffd\ufffd=\ufffd.\b\u0007 \ufffdR H\ufffdn\u0011\ufffd2&\ufffd\u0013. {Oa\ufffdG2M\ufffd\ufffdD o|\ufffd\ufffd\u042e w\ufffd\u0006\u00b8 \ufffd\ufffd\u0002\ufffdv\ufffd\ufffd\ufffd\ufffd\ufffd%C\ufffd\u061d\ufffd\ufffd\"\u0012\ufffd\ufffdOV\u054dI\ufffd\ufffd44:\ufffdn\ufffd\ufffdM\ufffd\ufffd\u0376eP(,\ufffd\ufffd\u0305X\ufffd\ufffd\u032e\ufffd\u0011\ufffd \u0017?T\ufffd\u00022\u0001Z\ufffd\u5866\ufffd\ufffdC\ufffd^\u0018T\ufffd:,;\ufffd~;`Y\u01e0\ufffdH\ufffd\ufffd\ufffd\ufffdt\u000fo\ufffdRz?w2\ufffd\ufffd\ufffdH\ufffd5\ufffd:r\ufffd\u0000\ufffd\ufffd\ufffdQ\ufffd \ufffd!\ufffd\ufffd\u0002w9\ufffdJ\u00d4,\u0015\ufffd\ufffd\u0007\ufffd\ufffd\ufffdc\ufffdtxE\ufffd&\ufffd4\u0444\ufffdS\u0211\ufffd\u0003\ufffd ... %PDF-1.3 %\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd 3 0 obj > stream x\u0001\ufffd\\\ufffdz \ufffdq\ufffd\ufffdO1Z\u0010\ufffd\"\ufffd wn{!\ufffd\ufffd\ufffd\b\u04b2\ufffd\ufffd\u000e!\ufffd\u00069qh\ufffdNlJ\ufffdE\ufffdI^3y\ufffd\ufffd\ufffdsj\ufffd{v ,\ufffd|\ufffd8\ufffd\u04d7\ufffdW\ufffde\ufffd\ufffd7\ufffd\u07ca\ufffd \ufffd\u07ed\ufffd+\ufffdz\ufffd\ufffd \ufffd \ufffd\ufffdf\ufffd\ufffd\u0002\ufffd\ufffd\ufffd\ufffd \u072an\ufffd~\ufffd\ufffd\ufffd\ufffd\u0001\u07d6\ufffd\ufffdkk\ufffd\u06db\u66fd~c\ufffd\u0019\ufffd\ua571k\ufffd\ufffd\ufffd(\ufffdn]m7\ufffd\ufffdh\u001a\ufffd\ufffd\ufffd\ufffd\u0007v}\ufffd\ufffdp\ufffd\u007f \ufffd\u007f\ufffdb\ufffd\ufffd\ufffdol\ufffd \u0469\ufffdkX\u0017Ll\u000f\ufffd0\ufffd\ufffd\ufffdJBb\ufffd7\ufffd3\ufffd\ufffd\ufffdR8\ufffd \u0000H6\ufffd\ud9d9\udd52\ufffd\u007f\ufffd-\u0017\ufffd_(\ufffd\ufffdtv\ufffd\ufffd`\u03e1\ufffdm\ufffd\ufffd\ufffd^U]\ufffd\\\u0017u\ufffd\ufffdM\ufffd\ufffd?\ufffd\ufffd\u00017\ufffd \ufffd\u0006\u001a\ufffdo\ufffd\ufffd[\ufffd\ufffd1s8K\u0010\ufffd\ufffd@\ufffd\ufffd\u007f\ufffd\ufffd\u00bc$\\\u000f} ~\ufffd\ufffd\u007f\ufffdw\u0017\ufffd\ufffdh\ufffd \ufffd\u0713\ufffd\ufffd\ufffd\ufffdh4?\ufffd\ufffd\ufffdI\ufffdc\u0000}\u000fJ\ufffdM\ufffd gP\ufffdl\ufffdbQi\ufffda\ufffd\ufffd\ufffde\ufffd?\ufffdbQ\ufffd\ufffd~\ufffd\u0018jv\u00065\u0006\u0005D\ufffd1\ufffdb\ufffd\ufffd\u00045\u0003\ufffd\u03bb\ufffd\u0016\ufffd\ufffd\ufffd\ufffdb\ufffdb\ufffdR\ufffdx\u01c0Q\ufffdG-\ufffda\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0005\ufffdu_uu\"\ufffd\ufffd\u0012\ufffd\u0010f@D\ufffd\ufffdA\ufffd2.P\b\u0007\u0598uA\u0364m\ufffdmS\ufffd\ufffdr[\ufffd\u06f0\ufffd\ufffd \u0015\u0000\u0481\ufffdM\"`\ufffd\ufffd4p\ufffd\ufffd\ufffd\ufffd>\u0018\ufffd\u0004U\ufffd\ufffd\ufffd\ufffd\ufffdn\u0005B\ufffd\b\u0005*\ufffd\ufffd\u0007g\ufffd\ufffd\ufffdd\ufffdw\u0001}\u00005\ufffd[\ufffdy z'\ufffd1\ufffd\u00d1\ufffd)\ufffd1\u0005g\ufffd\ufffd\ufffd\ufffd\u0002\u0005\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd3\ufffd\u000e\ufffdA\u0001\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0001\ufffd \u001b\u0011L\u0000\u0010(z\u000f\ufffd\u030c#\ufffd\ufffd\ufffdW\ufffd\ufffdHCB\ufffd\u000f\ufffdD\ufffdQ \ufffd \u06f2\ufffd\ufffd\ufffd*#a\ufffd4R@\ufffd\u01e5\ufffd\u000f\ufffd\u0019\ufffdQT\ufffdlP\ufffd\ufffd!(G\ufffd\ufffd\ufffd\ufffd\u01b2\ufffd\ufffd3f{\u0401\ufffd",
+              "status": "completed",
+              "contract": {
+                "capability": "public-text-read",
+                "access": "read-only",
+                "network": "public HTTPS",
+                "side_effects": false,
+                "max_bytes": 5000000,
+                "raw_data": false,
+                "untrusted_content": true
+              },
+              "wire_credit": "",
+              "sentences": [],
+              "query": "lebanon israel hezbollah 4,000 israeli 2026 disputed revised different",
+              "search_results": [
+                {
+                  "title": "Israeli strikes kill 4 in Lebanon as tensions with Hezbollah flare - T\u00fcrkiye",
+                  "url": "https://www.europesays.com/turkiye/47733/",
+                  "snippet": "t t\u00fcrkiye israeli strikes kill 4 in lebanon as tensions with hezbollah flare september 5 , 2026 a photograph taken from the southern lebanese village of al - hanni yeh shows smoke as it rises fr..."
+                },
+                {
+                  "title": "Is the \u201cHistoric\u201d Lebanon-US-Israel Framework Agreement Dead in the Water?",
+                  "url": "https://daizygedeon.com/Lebanon-Israel-Framework%20Agreement_Dossier-FINAL.pdf",
+                  "snippet": "# is the \u201c historic \u201d lebanon - us - israel framework agreement dead in the water ? signed washington , d . c . , june 26 , 2026 full text analysis , security annex breakdown , legal status , dome..."
+                },
+                {
+                  "title": "Hezbollah\u2013Israel conflict (2023\u2013present) (reference: english.alarabiya.net)",
+                  "url": "https://english.alarabiya.net/News/middle-east/2023/11/21/Israel-strikes-south-Lebanon-elderly-woman-killed-"
+                },
+                {
+                  "title": "Accord-cadre Liban-Isra\u00ebl : les 14 points d\u00e9crypt\u00e9s | Libnanews",
+                  "url": "https://ar.libnanews.com/infographie/accord-liban-israel-14points.html",
+                  "snippet": "infographie exclusive \ud83d\udd34 analyse compl\u00e8te \u00b7 26 juin 2026 accord - cadre liban - isra\u00ebl : les 14 points d\u00e9 crypt\u00e9s contexte , bilan , gagnants et perdants \u2014 ce que l'accord signifie vraiment pour..."
+                },
+                {
+                  "title": "Hezbollah\u2013Israel conflict (2023\u2013present) (reference: today.lorientlejour.com)",
+                  "url": "https://today.lorientlejour.com/article/1357811/what-we-know-about-hezbollahs-elite-al-radwan-unit.html"
+                }
+              ]
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "scheduler"
+          },
+          {
+            "id": "local-019",
+            "action": "stay",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
+            "request": "Retrieve the full profile metadata (publicly accessible fields) of Roscomnadzor27\u2019s GitHub account",
+            "request_status": "closed",
+            "exploration": "https://github.com/Roscomnadzor27",
+            "tool": {
+              "status": "not-requested"
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": "unstructured-output",
+            "decision_source": "model"
+          },
+          {
+            "id": "local-024",
+            "action": "analyze",
+            "room": "prime-minister-giorgia-meloni",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "One-time follow-up using the previous artifact as a continuity check.",
+            "request": "",
+            "request_status": "closed",
+            "exploration": "2026 21 eu member states eurozone disputed revised different",
+            "tool": {
+              "status": "not-requested"
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "scheduler"
+          },
+          {
+            "id": "local-025",
+            "action": "analyze",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Analyze the fetched excerpt of Lei 9.504/1997 for AI-generated ad labeling rules to compare with Meta\u2019s PT-BR policies.",
+            "request": "Verify archived evidence of Meta\u2019s Ad Library policies for AI-generated political ads targeting Brazilian voters in October 2024 elections, focusing on compliance with Brazilian regulations (frontier-question-344)",
+            "request_status": "closed",
+            "exploration": "lebanon hezbollah israel lebanese armed forces impasse weapons",
+            "tool": {
+              "status": "not-requested"
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "model"
+          },
+          {
+            "id": "local-031",
+            "action": "explore",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Narrowed search to IOM\u2019s official documents for May\u2013Dec 2023, focusing on verified repatriation flights post-April 2023 conflict. Prior query returned zero results; refining terms to isolate press releases or situation *",
+            "request": "Re-run the search with stricter IOM-specific filters: include `press release` OR `situation report` OR `voluntary return` AND exclude April 2023",
+            "request_status": "closed",
+            "exploration": "site:iom.int filetype:pdf \"voluntary repatriation\" \"Khartoum\" 2023-05..2023-12 OR \"Sudan\" \"return\" \"",
+            "tool": {
+              "tool": "public-search",
+              "query": "lebanon israel hezbollah 4,000 israeli 2026 disputed revised different",
+              "results": [
+                {
+                  "title": "Israeli strikes kill 4 in Lebanon as tensions with Hezbollah flare - T\u00fcrkiye",
+                  "url": "https://www.europesays.com/turkiye/47733/",
+                  "snippet": "t t\u00fcrkiye israeli strikes kill 4 in lebanon as tensions with hezbollah flare september 5 , 2026 a photograph taken from the southern lebanese village of al - hanni yeh shows smoke as it rises fr..."
+                },
+                {
+                  "title": "Israeli strikes kill four in Lebanon after alleged Hezbollah drone launch - France 24",
+                  "url": "https://www.france24.com/en/middle-east/20260906-israeli-strikes-kill-four-in-lebanon-after-alleged-hezbollah-drone-launch",
+                  "snippet": "israeli strikes kill four in lebanon after alleged hezbollah drone launch middle east israeli air strikes on southern lebanon sunday killed four people , two of them women , the country 's health ..."
+                },
+                {
+                  "title": "Hezbollah\u2013Israel conflict (2023\u2013present) (reference: english.alarabiya.net)",
+                  "url": "https://english.alarabiya.net/News/middle-east/2023/11/21/Israel-strikes-south-Lebanon-elderly-woman-killed-"
+                },
+                {
+                  "title": "Guerre entre Isra\u00ebl et le Hezbollah (2023-2026) \u2014 Wikip\u00e9dia",
+                  "url": "https://fr.wikipedia.org/wiki/Guerre_entre_Isra%C3%ABl_et_le_Hezbollah_(2023-2024)",
+                  "snippet": "sommaire d\u00e9but d\u00e9roulement 1.1 premi\u00e8re phase ( octobre 2023 - novembre 2024 ) 1.1.1 affrontements frontaliers 1.1.2 bombardements isra\u00e9liens massifs de septembre \u00e0 novembre 2024 1.1.3 inv..."
+                },
+                {
+                  "title": "Accord-cadre Liban-Isra\u00ebl : les 14 points d\u00e9crypt\u00e9s | Libnanews",
+                  "url": "https://ar.libnanews.com/infographie/accord-liban-israel-14points.html",
+                  "snippet": "infographie exclusive \ud83d\udd34 analyse compl\u00e8te \u00b7 26 juin 2026 accord - cadre liban - isra\u00ebl : les 14 points d\u00e9 crypt\u00e9s contexte , bilan , gagnants et perdants \u2014 ce que l'accord signifie vraiment pour..."
+                }
+              ],
+              "source": "https://api.langsearch.com/",
+              "status": "completed",
+              "contract": {
+                "capability": "public-web-read",
+                "access": "read-only",
+                "network": "public HTTPS search",
+                "side_effects": false,
+                "max_bytes": 32000
+              }
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "model"
+          },
+          {
+            "id": "local-035",
+            "action": "explore",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Inspect **scripts/evidence.py** in MMFakeBench for **hardcoded metrics, evaluation functions, or benchmark thresholds** (e.g., `accuracy`, `precision` in `eval.py` or similar files). Prior GitHub README and arXiv summary",
+            "request": "",
+            "request_status": "closed",
+            "exploration": "code:scripts/evidence.py",
+            "tool": {
+              "tool": "local-code-read",
+              "status": "completed",
+              "file": "scripts/evidence.py",
+              "bytes": 5847,
+              "sha256": "e4232c4402f4c6ce561c8d1c6d89484e84070690a696471604a7725c5ba75c1e",
+              "content": "\"\"\"Shared evidence rules for source-backed findings.\n\nBoth the autonomy subprocess (at extraction time) and the daemon (at\npublication time) use these pure functions so a finding is judged by one\nstandard. Nothing here touches the network, the model, or local state.\n\"\"\"\n\nimport re\n\nSTOPWORDS = {\"about\", \"after\", \"also\", \"from\", \"into\", \"that\", \"this\", \"with\", \"what\", \"which\",\n             \"where\", \"when\", \"does\", \"did\", \"have\", \"their\", \"there\", \"these\", \"those\", \"than\"}\n# Prepositions, determiners, and auxiliaries name no subject; a corroborated\n# definition of one of them is not evidence about the world.\nFUNCTION_WORDS = {'above', 'across', 'against', 'along', 'although', 'always', 'among', 'another', 'around', 'because', 'been', 'before', 'behind', 'being', 'below', 'beneath', 'between', 'beyond', 'both', 'during', 'each', 'either', 'even', 'ever', 'every', 'hence', 'just', 'less', 'many', 'might', 'more', 'most', 'much', 'must', 'neither', 'never', 'often', 'only', 'onto', 'other', 'others', 'over', 'shall', 'since', 'some', 'still', 'such', 'though', 'through', 'thus', 'toward', 'towards', 'under', 'until', 'upon', 'very', 'were', 'whether', 'while', 'will', 'within', 'without'}\nSTOPWORDS |= FUNCTION_WORDS\nIMPERATIVE = re.compile(r\"^(?:explore|search|analyze|identify|continue|find|review|investigate|look)\\b\", re.I)\nQUOTE_SUPPORT_THRESHOLD = 0.85\nMIN_FUZZY_TOKENS = 4\n_PUNCTUATION_MAP = {\"\u2018\": \"'\", \"\u2019\": \"'\", \"\u201c\": '\"', \"\u201d\": '\"', \"\u2013\": \"-\", \"\u2014\": \"-\",\n                    \"\u00a0\": \" \", \"\u2026\": \"...\"}\n\n\ndef normalize(text):\n    \"\"\"Lower-case, fold typographic punctuation, and collapse whitespace.\"\"\"\n    value = str(text or \"\")\n    for source, target in _PUNCTUATION_MAP.items():\n        value = value.replace(source, target)\n    return re.sub(r\"\\s+\", \" \", value).strip().lower()\n\n\ndef tokens(text):\n    return re.findall(r\"[a-z0-9]+\", normalize(text))\n\n\ndef _lcs_length(left, right):\n    \"\"\"Length of the longest common subsequence of two short token lists.\"\"\"\n    if not left or not right:\n        return 0\n    previous = [0] * (len(right) + 1)\n    for item in left:\n        current = [0]\n        for index, other in enumerate(right, start=1):\n            if item == other:\n                current.append(previous[index - 1] + 1)\n            else:\n                current.append(max(previous[index], current[index - 1]))\n        previous = current\n    return previous[-1]\n\n\ndef quote_support(quote, excerpt, threshold=QUOTE_SUPPORT_THRESHOLD):\n    \"\"\"Return (supported, score, mode) describing how well the excerpt backs the quote.\n\n    An exact normalized substring scores 1.0. Otherwise the quote must share at\n    least ``threshold`` of its tokens, in order, with some window of the excerpt.\n    Small models paraphrase punctuation and drop function words; this keeps the\n    evidence bar high without demanding byte-exact copying.\n    \"\"\"\n    quote_tokens = tokens(quote)\n    excerpt_tokens = tokens(excerpt)\n    if not quote_tokens or not excerpt_tokens:\n        return False, 0.0, \"none\"\n    if normalize(quote) in normalize(excerpt):\n        return True, 1.0, \"exact\"\n    if len(quote_tokens) < MIN_FUZZY_TOKENS:\n        return False, 0.0, \"too-short\"\n    window = len(quote_tokens) + max(2, len(quote_tokens) // 4)\n    anchors = set(quote_tokens)\n    best = 0.0\n    for start, token in enumerate(excerpt_tokens):\n        if token not in anchors:\n            continue\n        segment = excerpt_tokens[start:start + window]\n        score = _lcs_length(quote_tokens, segment) / len(quote_tokens)\n        if score > best:\n            best = score\n            if best >= 1.0:\n                break\n    supported = best >= threshold\n    return supported, round(best, 3), \"fuzzy\" if supported else \"unsupported\"\n\n\ndef claim_terms(claim):\n    return {term for term in re.findall(r\"[a-z0-9]{4,}\", normalize(claim)) if term not in STOPWORDS}\n\n\ndef claim_grounded(claim, quote):\n    \"\"\"A claim must share vocabulary with its quote and must not be an instruction.\"\"\"\n    if not claim or not quote:\n        return False, \"missing-claim-or-quote\"\n    if IMPERATIVE.match(str(claim).strip()):\n        return False, \"imperative-claim\"\n    terms = claim_terms(claim)\n    quote_vocabulary = set(re.findall(r\"[a-z0-9]{4,}\", normalize(quote)))\n    if len(terms & quote_vocabulary) < min(2, len(terms)):\n        return False, \"claim-not-grounded-in-quote\"\n    return True, \"grounded\"\n\n\ndef clamp_confidence(value):\n    \"\"\"Fold a model-reported confidence into [0, 1]; unparseable values become 0.0.\n\n    The JSON grammar cannot enforce numeric ranges, so a well-quoted finding\n    must not be thrown away merely because the model wrote 1.5 or \"high\".\n    \"\"\"\n    try:\n        number = float(value)\n    except (TypeError, ValueError):\n        return 0.0\n    if number != number:\n        return 0.0\n    return max(0.0, min(1.0, number))\n\n\ndef classify_finding(claim, quote, excerpt=None, confidence=None):\n    \"\"\"Return (status, reason, quote_score) for a candidate finding.\n\n    ``excerpt`` may be None when re-checking a stored record whose page text is\n    no longer available; the stored quote-to-excerpt verdict is then trusted and\n    only claim grounding is re-evaluated. Confidence never rejects a finding;\n    callers store ``clamp_confidence`` of it.\n    \"\"\"\n    grounded, reason = claim_grounded(claim, quote)\n    if not grounded:\n        return \"rejected\", reason, 0.0\n    if excerpt is None:\n        return \"unreviewed\", \"grounded\", 1.0\n    supported, score, mode = quote_support(quote, excerpt)\n    if not supported:\n        return \"rejected\", f\"quote-{mode}\", score\n    return \"unreviewed\", f\"quote-{mode}\", score\n\n\ndef is_accepted(record):\n    \"\"\"Rejected rows stay in the ledger for audit but never count as evidence.\"\"\"\n    return str((record or {}).get(\"status\", \"unreviewed\")) not in {\"rejected\", \"retracted\"}",
+              "read_only": true,
+              "privacy": "sanitized public source only",
+              "contract": {
+                "capability": "public-source-read",
+                "access": "read-only",
+                "network": "none",
+                "side_effects": false,
+                "max_file_bytes": 120000,
+                "max_inventory_bytes": 400000,
+                "write_access": false,
+                "secrets": "redacted"
+              }
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "model"
+          }
+        ],
+        "construction": [],
+        "requests": [],
+        "trades_settled": [],
+        "corroborations": [
+          {
+            "id": "pair-24d109f7ce297d85f108",
+            "relation": "unrelated",
+            "finding_ids": [
+              "finding-9925fc5881f63997500c",
+              "finding-9bc6b8acf0c7e6fd01a8"
+            ],
+            "topic": "committee cross four frees international israel lebanon syrian",
+            "domains": [
+              "apnews.com",
+              "wikipedia.org"
+            ]
+          },
+          {
+            "id": "pair-34d6f2394e58a834bf92",
+            "relation": "unrelated",
+            "finding_ids": [
+              "finding-560f0aee6399176842e0",
+              "finding-9925fc5881f63997500c"
+            ],
+            "topic": "committee cross four frees international israel lebanon syrian",
+            "domains": [
+              "libnanews.com",
+              "wikipedia.org"
+            ]
+          },
+          {
+            "id": "pair-37e3f890c404eedebf77",
+            "relation": "unrelated",
+            "finding_ids": [
+              "finding-6164d2eeb7fb113c44b2",
+              "finding-d5b6fcdb8be0edbaeac5"
+            ],
+            "topic": "committee cross four frees hezbollah international israel lebanon syrian",
+            "domains": [
+              "r7.com",
+              "wikipedia.org"
+            ]
+          }
+        ],
+        "regrounded": [],
+        "retractions": [],
+        "room_changes": [],
+        "shared_research": {
+          "query": "israel syrian international committee cross lebanon frees four",
+          "family": "papers",
+          "avoid_domains": [
+            "apnews.com",
+            "ar.libnanews.com",
+            "daizygedeon.com",
+            "en.kataeb.org",
+            "en.wikipedia.org",
+            "es.wikipedia.org",
+            "fr.wikipedia.org",
+            "jewishvirtuallibrary.org",
+            "noticias.r7.com",
+            "www.europesays.com",
+            "www.france24.com",
+            "www.rfi.fr",
+            "www.thenationalnews.com"
+          ]
+        },
+        "dormant": 4
+      },
+      "metrics": {
+        "jaccard_overlap": 0.228,
+        "morrow_audit_markers": [
+          "counterexample",
+          "assumption",
+          "missing control"
+        ],
+        "response_completeness": "thin-or-missing",
+        "evidence_coverage": "missing",
+        "distinction_status": "needs-audit"
+      },
+      "continuity_audit": {
+        "generated_at": "2026-09-07T00:19:59.473565+00:00",
+        "cycle": 402,
+        "status": "pass",
+        "checks": {
+          "archive_parse": true,
+          "archive_event_overlap": true,
+          "archive_event_ids_unique": true,
+          "raw_output_exclusion": true,
+          "room_link_integrity": true,
+          "resident_room_integrity": true
+        },
+        "archive_records": 3517,
+        "malformed_archive_records": 0,
+        "raw_output_fields_found": 0,
+        "duplicate_archive_ids": [],
+        "linked_rooms_checked": 13,
+        "invalid_room_links": [],
+        "invalid_resident_assignments": [],
+        "privacy": "Aggregate integrity metadata only; resident prompts and raw responses are not published."
+      },
+      "work_orders": {
+        "count": 79
+      },
+      "health": {
+        "schema_version": 1,
+        "generated_at": "2026-09-07T00:19:59.476057+00:00",
+        "cycle": 402,
+        "daemon": "running",
+        "model_status": "ready",
+        "model_probe_ok": true,
+        "model_provider": "mistral",
+        "model_name": "ministral-14b-2512",
+        "model_backend": "hosted-api",
+        "model_usage": {
+          "day": "2026-09-07",
+          "providers": [
+            {
+              "name": "mistral",
+              "model": "ministral-14b-2512",
+              "calls": 10,
+              "input_tokens": 24868,
+              "output_tokens": 3036,
+              "errors": 0,
+              "last_error": "",
+              "daily_request_budget": null,
+              "daily_token_budget": 900000,
+              "limit_rpm": 30,
+              "limit_tpm": 937500,
+              "requests_last_minute": 4,
+              "tokens_last_minute": 8948,
+              "status": "ready"
+            },
+            {
+              "name": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "calls": 0,
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "errors": 0,
+              "last_error": "",
+              "daily_request_budget": null,
+              "daily_token_budget": 400000,
+              "limit_rpm": 120,
+              "limit_tpm": null,
+              "requests_last_minute": 0,
+              "tokens_last_minute": 0,
+              "status": "ready"
+            },
+            {
+              "name": "mistral-small",
+              "model": "mistral-small-latest",
+              "calls": 0,
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "errors": 0,
+              "last_error": "",
+              "daily_request_budget": null,
+              "daily_token_budget": 100000,
+              "limit_rpm": 10,
+              "limit_tpm": null,
+              "requests_last_minute": 0,
+              "tokens_last_minute": 0,
+              "status": "ready"
+            },
+            {
+              "name": "gemini",
+              "model": "gemini-3.8-flash",
+              "calls": 5,
+              "input_tokens": 7490,
+              "output_tokens": 556,
+              "errors": 0,
+              "last_error": "",
+              "daily_request_budget": 240,
+              "daily_token_budget": null,
+              "limit_rpm": 8,
+              "limit_tpm": null,
+              "requests_last_minute": 3,
+              "tokens_last_minute": 1301,
+              "status": "ready"
+            },
+            {
+              "name": "cerebras",
+              "model": "gpt-oss-120b",
+              "calls": 0,
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "errors": 0,
+              "last_error": "",
+              "daily_request_budget": null,
+              "daily_token_budget": 900000,
+              "limit_rpm": 5,
+              "limit_tpm": null,
+              "requests_last_minute": 0,
+              "tokens_last_minute": 0,
+              "status": "ready"
+            },
+            {
+              "name": "groq",
+              "model": "openai/gpt-oss-120b",
+              "calls": 1,
+              "input_tokens": 1932,
+              "output_tokens": 62,
+              "errors": 0,
+              "last_error": "",
+              "daily_request_budget": 900,
+              "daily_token_budget": 190000,
+              "limit_rpm": 1000,
+              "limit_tpm": 8000,
+              "requests_last_minute": 0,
+              "tokens_last_minute": 0,
+              "status": "ready"
+            }
+          ],
+          "recent_calls": [
+            {
+              "at": 1788740277.6,
+              "class": "self-prompt",
+              "provider": "gemini",
+              "model": "gemini-3.8-flash",
+              "prompt_sha256_16": "b3a33034336a28fb"
+            },
+            {
+              "at": 1788740279.6,
+              "class": "self-prompt",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "002690f4c3258e36"
+            },
+            {
+              "at": 1788740290.5,
+              "class": "council",
+              "provider": "gemini",
+              "model": "gemini-3.8-flash",
+              "prompt_sha256_16": "fddb64cd4df63216"
+            },
+            {
+              "at": 1788740298.0,
+              "class": "council",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "030c46fcbaa73c49"
+            },
+            {
+              "at": 1788740310.9,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "19d438f55ea6301e"
+            },
+            {
+              "at": 1788740320.6,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "2b04ad4036813a00"
+            },
+            {
+              "at": 1788740321.1,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "d9a46360a5ef0db7"
+            },
+            {
+              "at": 1788740328.2,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "839d8e085108e573"
+            },
+            {
+              "at": 1788740335.6,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "459b70af008af316"
+            },
+            {
+              "at": 1788740343.4,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "9f245de5934d3bda"
+            },
+            {
+              "at": 1788740348.5,
+              "class": "report",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "17fcecbbb7c0b10c"
+            },
+            {
+              "at": 1788740354.5,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "c377778646edb183"
+            },
+            {
+              "at": 1788740359.9,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "c5b5a372f8b3df56"
+            },
+            {
+              "at": 1788740379.8,
+              "class": "judgment",
+              "provider": "gemini",
+              "model": "gemini-3.8-flash",
+              "prompt_sha256_16": "b249367b2f3c7b23"
+            },
+            {
+              "at": 1788740388.2,
+              "class": "judgment",
+              "provider": "gemini",
+              "model": "gemini-3.8-flash",
+              "prompt_sha256_16": "e57e4d73c63255d3"
+            },
+            {
+              "at": 1788740398.5,
+              "class": "judgment",
+              "provider": "gemini",
+              "model": "gemini-3.8-flash",
+              "prompt_sha256_16": "25107ac1fa19791a"
+            }
+          ],
+          "models_seen": {
+            "gemini": [
+              "gemini-2.5-flash",
+              "gemini-2.5-pro",
+              "gemini-2.5-flash-preview-tts",
+              "gemini-2.5-pro-preview-tts",
+              "gemma-4-26b-a4b-it",
+              "gemma-4-31b-it",
+              "gemini-flash-latest",
+              "gemini-flash-lite-latest",
+              "gemini-pro-latest",
+              "gemini-2.5-flash-lite",
+              "gemini-2.5-flash-image",
+              "gemini-3-flash-preview",
+              "gemini-3.1-pro-preview",
+              "gemini-3.1-pro-preview-customtools",
+              "gemini-3.1-flash-lite-preview",
+              "gemini-3.1-flash-lite",
+              "gemini-3-pro-image-preview",
+              "gemini-3-pro-image",
+              "nano-banana-pro-preview",
+              "gemini-3.1-flash-image-preview",
+              "gemini-3.1-flash-image",
+              "gemini-3.1-flash-lite-image",
+              "gemini-3.5-flash",
+              "gemini-3.5-flash-lite",
+              "gemini-omni-flash-preview",
+              "gemini-omni-1.1-flash",
+              "gemini-3.5-transcribe",
+              "gemini-3.6-flash",
+              "gemini-3.7-flash",
+              "gemini-3.8-flash",
+              "lyria-3-clip-preview",
+              "lyria-3-pro-preview",
+              "lyria-3.5",
+              "gemini-3.1-flash-tts-preview",
+              "gemini-robotics-er-2-preview",
+              "gemini-2.5-computer-use-preview-10-2025",
+              "antigravity-preview-05-2026",
+              "deep-research-max-preview-04-2026",
+              "deep-research-preview-04-2026",
+              "deep-research-pro-preview-12-2025"
+            ],
+            "groq": [
+              "llama-prompt-guard-2-22m",
+              "allam-2-7b",
+              "gpt-oss-20b",
+              "orpheus-arabic-saudi",
+              "qwen3.8-27b",
+              "gpt-oss-safeguard-20b",
+              "whisper-large-v3-turbo",
+              "llama-prompt-guard-2-86m",
+              "qwen3.6-27b",
+              "gpt-oss-120b",
+              "compound",
+              "compound-mini",
+              "orpheus-v1-english",
+              "whisper-large-v3"
+            ]
+          }
+        },
+        "rooms": 14,
+        "active_residents": 42,
+        "work_orders": 79,
+        "continuity": "pass",
+        "autonomy": "active",
+        "autonomy_quality": {
+          "status": "active",
+          "turns": 8,
+          "fallbacks": 1,
+          "fallback_rate": 0.125,
+          "fallback_reasons": {
+            "unstructured-output": 1
+          },
+          "tool_successes": 4,
+          "findings_filed": 0
+        },
+        "publication": "sanitized GitHub Pages snapshot",
+        "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
+        "publication_status": {
+          "outcome": "pushed",
+          "reason": "",
+          "at": "2026-09-06T15:13:41.349258+00:00"
+        },
+        "question_source": "carried:line-000393-194cb4ac",
+        "self_prompt_accepted": 2,
+        "self_prompt_rejections": [],
+        "activity_feed": "docs/activity.json",
+        "feed_freshness_seconds": 0,
+        "activity_records": 110,
+        "note_records": 1030,
+        "print_jobs": 56,
+        "failed_print_jobs": 0,
+        "analysis_runs": 100,
+        "analysis_completed": 67,
+        "analysis_failed": 0,
+        "analysis_rejected": 33,
+        "analysis_timed_out": 0,
+        "analysis_feed": "docs/analysis.json",
+        "research_records": 27,
+        "research_stale": 0,
+        "research_feed": "docs/research.json",
+        "findings": 131,
+        "finding_candidates": 131,
+        "findings_rejected": 153,
+        "findings_retracted": 0,
+        "findings_duplicates": 0,
+        "findings_excluded": 153,
+        "findings_total": 284,
+        "corroborated_findings": 5,
+        "findings_feed": "docs/findings.json",
+        "frontier_leads": 0,
+        "research_line": {
+          "id": "line-000393-194cb4ac",
+          "root": "Do independent public sources confirm that Israel frees four prisoners, including two Syrian citizens, via International Committee of the Red Cross as part of efforts to revive U.S.-backed peace talks",
+          "anchors": [
+            "israel",
+            "syrian",
+            "international",
+            "committee",
+            "cross",
+            "lebanon"
+          ],
+          "hops": 3,
+          "findings": 14,
+          "empty_cycles": 2
+        },
+        "frontier_questions": 100,
+        "frontier_findings": 100,
+        "frontier_tasks": 16,
+        "frontier_feed": "docs/frontier.json",
+        "code_proposals": 0,
+        "code_proposals_ready": 0,
+        "code_proposals_feed": "docs/code-proposals.json",
+        "outside_signals": 16,
+        "outside_quarantined": 12,
+        "outside_signals_feed": "docs/outside-signals.json",
+        "codex_bridge": "enabled",
+        "codex_pending_tasks": 13,
+        "codex_completed_tasks": 48,
+        "resident_messages": 0,
+        "messages_feed": "docs/messages.json",
+        "trades": 0,
+        "trades_feed": "docs/trades.json",
+        "journal_entries": 6,
+        "journal_written": {
+          "date": "2026-09-06",
+          "author": "ledger"
+        },
         "retractions": 0,
         "room_changes": [],
         "dropped_events": 0
