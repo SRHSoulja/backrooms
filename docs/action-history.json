@@ -2,902 +2,6 @@
   "privacy": "Aggregate action metadata only; raw local outputs are excluded.",
   "cycles": [
     {
-      "generated_at": "2026-09-06T10:31:19.086437+00:00",
-      "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
-      "runtime_cycle": 386,
-      "question": "Which independent public source (e.g., a national statistical office, an official parliamentary record, or a reputable international database) provides a definitive timeline of Italian government durations that can be used to verify the exact date when Giorgia Meloni\u2019s cabinet surpassed the post\u2011war",
-      "question_source": "carried:line-000381-25f0ea7e",
-      "self_prompt_accepted": 2,
-      "self_prompt_rejections": [],
-      "action": {
-        "action": "local-behavioral-probe",
-        "status": "skipped-this-cycle"
-      },
-      "recruitment": {
-        "status": "rejected",
-        "reason": "name shares a stem with current resident Vex-9"
-      },
-      "autonomy": {
-        "status": "completed",
-        "active": 32,
-        "decisions": [
-          {
-            "id": "local-007",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Assigned to the council's research question this turn.",
-            "request": "Verify existence and metadata of the arXiv study referenced in the driving question to confirm relevance to disinformation detection and cross-check for non-French datasets",
-            "request_status": "closed",
-            "exploration": "spain italy recovery resilience facility authors find meaningful",
-            "tool": {
-              "tool": "wikipedia-summary",
-              "query": "spain italy recovery resilience facility authors find meaningful",
-              "title": "Music therapy",
-              "url": "https://en.wikipedia.org/wiki/Music_therapy",
-              "excerpt": "Music therapy intervention programs typically include about 18 sessions of treatment. The achievement of a physical rehabilitation goal relies on the child's existing motivation and feelings towards music and their commitment to engage in meaningful, rewarding efforts. Regaining full functioning also confides in the prognosis of recovery, the condition of the client, and the environmental resources available. Both techniques use systematic processes where the therapists assist the client by using musical experiences and connections that collaborate as a dynamic force of change toward rehabilitation. === Assessment === Assessment includes obtaining a full medical history, current non-musical functioning (social, physical/motor, emotional, etc.) and goals, musical (ability to duplicate a melody or identify changes in rhythm, etc.) and a determination of the potential for music therapy to be effective in addressing goals. ... Music therapy is the use of music in a clinical setting to accomplish therapeutic goals. Music therapists are generally trained musicians who have completed an accredited music therapy program. Although music therapy has been established as a profession only relatively recently, the connection between music and therapy is not new. Music therapy is a broad field, using music-based experiences to address client needs in one or more domains of human functioning: cognitive, academic, emotional/psychological, behavioral, communication, social, physiological (sensory, motor, pain, neurological and o",
-              "status": "completed",
-              "contract": {
-                "capability": "public-text-read",
-                "access": "read-only",
-                "network": "public HTTPS",
-                "side_effects": false,
-                "max_bytes": 32000,
-                "raw_data": false,
-                "untrusted_content": true
-              },
-              "search_results": [
-                {
-                  "title": "The EU\u2019s Recovery and Resilience Facility: Experience and Lessons for the Next Multiannual Financial Framework in: IMF Working Papers Volume 2026 Issue 114 (202",
-                  "url": "https://www.elibrary.imf.org/view/journals/001/2026/114/article-A001-en.xml",
-                  "snippet": "the eu \u2019s recovery and resilience facility : experience and lessons for the next multiannual financial framework author : matthias busse matthias busse , francesca caselli francesca casell..."
-                },
-                {
-                  "title": "Alignment and asymmetry: European and national crisis governance under the Recovery and Resilience Facility | Policy and Society | Oxford Academic",
-                  "url": "https://academic.oup.com/policyandsociety/article/45/1/71/8455641",
-                  "snippet": "journal article alignment and asymmetry : european and national crisis governance under the recovery and resilience facility eugenio borgognoni , eugenio borgognoni department of political sci..."
-                },
-                {
-                  "title": "Healthcare Policy\u2010Making Through the EU Recovery and Resilience Facility: A Multi\u2010Level Governance and Policy Design Approach - Natali - 2025 - Risk, Hazards & ",
-                  "url": "https://onlinelibrary.wiley.com/doi/10.1002/rhc3.70038",
-                  "snippet": "risk , hazards & crisis in public policy volume 16 , issue 4 e70038 original article open access healthcare policy - making through the eu recovery and resilience facility : a multi - level go..."
-                }
-              ]
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "scheduler"
-          },
-          {
-            "id": "local-008",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "No FrameNet data available; baseline examples from project source are needed to establish a reference for comparison.",
-            "request": "Run Python sandbox code to parse annotated examples and calculate usage patterns",
-            "request_status": "closed",
-            "exploration": "code:scripts/evidence.py",
-            "tool": {
-              "tool": "local-code-read",
-              "status": "completed",
-              "file": "scripts/evidence.py",
-              "bytes": 5847,
-              "sha256": "e4232c4402f4c6ce561c8d1c6d89484e84070690a696471604a7725c5ba75c1e",
-              "content": "\"\"\"Shared evidence rules for source-backed findings.\n\nBoth the autonomy subprocess (at extraction time) and the daemon (at\npublication time) use these pure functions so a finding is judged by one\nstandard. Nothing here touches the network, the model, or local state.\n\"\"\"\n\nimport re\n\nSTOPWORDS = {\"about\", \"after\", \"also\", \"from\", \"into\", \"that\", \"this\", \"with\", \"what\", \"which\",\n             \"where\", \"when\", \"does\", \"did\", \"have\", \"their\", \"there\", \"these\", \"those\", \"than\"}\n# Prepositions, determiners, and auxiliaries name no subject; a corroborated\n# definition of one of them is not evidence about the world.\nFUNCTION_WORDS = {'above', 'across', 'against', 'along', 'although', 'always', 'among', 'another', 'around', 'because', 'been', 'before', 'behind', 'being', 'below', 'beneath', 'between', 'beyond', 'both', 'during', 'each', 'either', 'even', 'ever', 'every', 'hence', 'just', 'less', 'many', 'might', 'more', 'most', 'much', 'must', 'neither', 'never', 'often', 'only', 'onto', 'other', 'others', 'over', 'shall', 'since', 'some', 'still', 'such', 'though', 'through', 'thus', 'toward', 'towards', 'under', 'until', 'upon', 'very', 'were', 'whether', 'while', 'will', 'within', 'without'}\nSTOPWORDS |= FUNCTION_WORDS\nIMPERATIVE = re.compile(r\"^(?:explore|search|analyze|identify|continue|find|review|investigate|look)\\b\", re.I)\nQUOTE_SUPPORT_THRESHOLD = 0.85\nMIN_FUZZY_TOKENS = 4\n_PUNCTUATION_MAP = {\"\u2018\": \"'\", \"\u2019\": \"'\", \"\u201c\": '\"', \"\u201d\": '\"', \"\u2013\": \"-\", \"\u2014\": \"-\",\n                    \"\u00a0\": \" \", \"\u2026\": \"...\"}\n\n\ndef normalize(text):\n    \"\"\"Lower-case, fold typographic punctuation, and collapse whitespace.\"\"\"\n    value = str(text or \"\")\n    for source, target in _PUNCTUATION_MAP.items():\n        value = value.replace(source, target)\n    return re.sub(r\"\\s+\", \" \", value).strip().lower()\n\n\ndef tokens(text):\n    return re.findall(r\"[a-z0-9]+\", normalize(text))\n\n\ndef _lcs_length(left, right):\n    \"\"\"Length of the longest common subsequence of two short token lists.\"\"\"\n    if not left or not right:\n        return 0\n    previous = [0] * (len(right) + 1)\n    for item in left:\n        current = [0]\n        for index, other in enumerate(right, start=1):\n            if item == other:\n                current.append(previous[index - 1] + 1)\n            else:\n                current.append(max(previous[index], current[index - 1]))\n        previous = current\n    return previous[-1]\n\n\ndef quote_support(quote, excerpt, threshold=QUOTE_SUPPORT_THRESHOLD):\n    \"\"\"Return (supported, score, mode) describing how well the excerpt backs the quote.\n\n    An exact normalized substring scores 1.0. Otherwise the quote must share at\n    least ``threshold`` of its tokens, in order, with some window of the excerpt.\n    Small models paraphrase punctuation and drop function words; this keeps the\n    evidence bar high without demanding byte-exact copying.\n    \"\"\"\n    quote_tokens = tokens(quote)\n    excerpt_tokens = tokens(excerpt)\n    if not quote_tokens or not excerpt_tokens:\n        return False, 0.0, \"none\"\n    if normalize(quote) in normalize(excerpt):\n        return True, 1.0, \"exact\"\n    if len(quote_tokens) < MIN_FUZZY_TOKENS:\n        return False, 0.0, \"too-short\"\n    window = len(quote_tokens) + max(2, len(quote_tokens) // 4)\n    anchors = set(quote_tokens)\n    best = 0.0\n    for start, token in enumerate(excerpt_tokens):\n        if token not in anchors:\n            continue\n        segment = excerpt_tokens[start:start + window]\n        score = _lcs_length(quote_tokens, segment) / len(quote_tokens)\n        if score > best:\n            best = score\n            if best >= 1.0:\n                break\n    supported = best >= threshold\n    return supported, round(best, 3), \"fuzzy\" if supported else \"unsupported\"\n\n\ndef claim_terms(claim):\n    return {term for term in re.findall(r\"[a-z0-9]{4,}\", normalize(claim)) if term not in STOPWORDS}\n\n\ndef claim_grounded(claim, quote):\n    \"\"\"A claim must share vocabulary with its quote and must not be an instruction.\"\"\"\n    if not claim or not quote:\n        return False, \"missing-claim-or-quote\"\n    if IMPERATIVE.match(str(claim).strip()):\n        return False, \"imperative-claim\"\n    terms = claim_terms(claim)\n    quote_vocabulary = set(re.findall(r\"[a-z0-9]{4,}\", normalize(quote)))\n    if len(terms & quote_vocabulary) < min(2, len(terms)):\n        return False, \"claim-not-grounded-in-quote\"\n    return True, \"grounded\"\n\n\ndef clamp_confidence(value):\n    \"\"\"Fold a model-reported confidence into [0, 1]; unparseable values become 0.0.\n\n    The JSON grammar cannot enforce numeric ranges, so a well-quoted finding\n    must not be thrown away merely because the model wrote 1.5 or \"high\".\n    \"\"\"\n    try:\n        number = float(value)\n    except (TypeError, ValueError):\n        return 0.0\n    if number != number:\n        return 0.0\n    return max(0.0, min(1.0, number))\n\n\ndef classify_finding(claim, quote, excerpt=None, confidence=None):\n    \"\"\"Return (status, reason, quote_score) for a candidate finding.\n\n    ``excerpt`` may be None when re-checking a stored record whose page text is\n    no longer available; the stored quote-to-excerpt verdict is then trusted and\n    only claim grounding is re-evaluated. Confidence never rejects a finding;\n    callers store ``clamp_confidence`` of it.\n    \"\"\"\n    grounded, reason = claim_grounded(claim, quote)\n    if not grounded:\n        return \"rejected\", reason, 0.0\n    if excerpt is None:\n        return \"unreviewed\", \"grounded\", 1.0\n    supported, score, mode = quote_support(quote, excerpt)\n    if not supported:\n        return \"rejected\", f\"quote-{mode}\", score\n    return \"unreviewed\", f\"quote-{mode}\", score\n\n\ndef is_accepted(record):\n    \"\"\"Rejected rows stay in the ledger for audit but never count as evidence.\"\"\"\n    return str((record or {}).get(\"status\", \"unreviewed\")) not in {\"rejected\", \"retracted\"}",
-              "read_only": true,
-              "privacy": "sanitized public source only",
-              "contract": {
-                "capability": "public-source-read",
-                "access": "read-only",
-                "network": "none",
-                "side_effects": false,
-                "max_file_bytes": 120000,
-                "max_inventory_bytes": 400000,
-                "write_access": false,
-                "secrets": "redacted"
-              }
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "model"
-          },
-          {
-            "id": "local-012",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Assigned to the council's research question this turn.",
-            "request": "Verify public GitHub profile for Roscomnadzor27 to cross-reference with frontier questions 307-309",
-            "request_status": "closed",
-            "exploration": "spain italy recovery resilience facility authors disputed revised different",
-            "tool": {
-              "tool": "public-text",
-              "url": "https://www.europarl.europa.eu/RegData/etudes/STUD/2022/689452/IPOL_STU(2022)689452_EN.pdf#page=4",
-              "excerpt": "",
-              "status": "completed",
-              "contract": {
-                "capability": "public-text-read",
-                "access": "read-only",
-                "network": "public HTTPS",
-                "side_effects": false,
-                "max_bytes": 5000000,
-                "raw_data": false,
-                "untrusted_content": true
-              },
-              "wire_credit": "",
-              "sentences": [],
-              "query": "spain italy recovery resilience facility authors disputed revised different",
-              "search_results": [
-                {
-                  "title": "The added value of the Recovery and Resilience Facility Based on an assessment of the Recovery and Resilience Plans: France, Italy, Portugal and Spain",
-                  "url": "https://www.europarl.europa.eu/RegData/etudes/STUD/2022/689452/IPOL_STU(2022)689452_EN.pdf#page=4",
-                  "snippet": "external authors : carlos martinez mongay mar\u00eda dolores gadea rivas beatriz barrado vanesa az\u00f3n the added value of the recovery and resilience facility based on an assessment of the reco..."
-                },
-                {
-                  "title": "The EU\u2019s Recovery and Resilience Facility: Experience and Lessons for the Next Multiannual Financial Framework in: IMF Working Papers Volume 2026 Issue 114 (202",
-                  "url": "https://www.elibrary.imf.org/view/journals/001/2026/114/article-A001-en.xml",
-                  "snippet": "the eu \u2019s recovery and resilience facility : experience and lessons for the next multiannual financial framework author : matthias busse matthias busse , francesca caselli francesca casell..."
-                },
-                {
-                  "title": "Alignment and asymmetry: European and national crisis governance under the Recovery and Resilience Facility | Policy and Society | Oxford Academic",
-                  "url": "https://academic.oup.com/policyandsociety/article/45/1/71/8455641",
-                  "snippet": "journal article alignment and asymmetry : european and national crisis governance under the recovery and resilience facility eugenio borgognoni , eugenio borgognoni department of political sci..."
-                },
-                {
-                  "title": "Recovery and Resilience Facility. Una comparazione tra paesi chiave dell'Unione europea",
-                  "url": "https://www.parlamento.it/application/xmanager/projects/parlamento/file/repository/affariinternazionali/osservatorio/approfondimenti/PI0181App.pdf",
-                  "snippet": "recovery and resilience facility . una comparazione tra paesi chiave dell \u2019 unione europea luglio 2021 181 a cura dell ' istituto per gli studi di politica internazionale osservatorio di politic..."
-                }
-              ]
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "scheduler"
-          },
-          {
-            "id": "local-013",
-            "action": "stay",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
-            "request": "Retrieve GitHub\u2019s public search results for verified email addresses or SSH keys linked to the handle **Roscomnadzor27** via GitHub\u2019s verified metadata filters",
-            "request_status": "closed",
-            "exploration": "france providing farmers billion help recover disputed revised different",
-            "tool": {
-              "status": "not-requested"
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": "unstructured-output",
-            "decision_source": "model"
-          },
-          {
-            "id": "local-016",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Assigned to the council's research question this turn.",
-            "request": "",
-            "request_status": "closed",
-            "exploration": "spain italy recovery resilience facility authors find meaningful",
-            "tool": {
-              "tool": "wikipedia-summary",
-              "query": "spain italy recovery resilience facility authors find meaningful",
-              "title": "Music therapy",
-              "url": "https://en.wikipedia.org/wiki/Music_therapy",
-              "excerpt": "Music therapy intervention programs typically include about 18 sessions of treatment. The achievement of a physical rehabilitation goal relies on the child's existing motivation and feelings towards music and their commitment to engage in meaningful, rewarding efforts. Regaining full functioning also confides in the prognosis of recovery, the condition of the client, and the environmental resources available. Both techniques use systematic processes where the therapists assist the client by using musical experiences and connections that collaborate as a dynamic force of change toward rehabilitation. === Assessment === Assessment includes obtaining a full medical history, current non-musical functioning (social, physical/motor, emotional, etc.) and goals, musical (ability to duplicate a melody or identify changes in rhythm, etc.) and a determination of the potential for music therapy to be effective in addressing goals. ... Music therapy is the use of music in a clinical setting to accomplish therapeutic goals. Music therapists are generally trained musicians who have completed an accredited music therapy program. Although music therapy has been established as a profession only relatively recently, the connection between music and therapy is not new. Music therapy is a broad field, using music-based experiences to address client needs in one or more domains of human functioning: cognitive, academic, emotional/psychological, behavioral, communication, social, physiological (sensory, motor, pain, neurological and o",
-              "status": "completed",
-              "contract": {
-                "capability": "public-text-read",
-                "access": "read-only",
-                "network": "public HTTPS",
-                "side_effects": false,
-                "max_bytes": 32000,
-                "raw_data": false,
-                "untrusted_content": true
-              },
-              "search_results": [
-                {
-                  "title": "The added value of the Recovery and Resilience Facility Based on an assessment of the Recovery and Resilience Plans: France, Italy, Portugal and Spain",
-                  "url": "https://www.europarl.europa.eu/RegData/etudes/STUD/2022/689452/IPOL_STU(2022)689452_EN.pdf#page=4",
-                  "snippet": "external authors : carlos martinez mongay mar\u00eda dolores gadea rivas beatriz barrado vanesa az\u00f3n the added value of the recovery and resilience facility based on an assessment of the reco..."
-                },
-                {
-                  "title": "The EU\u2019s Recovery and Resilience Facility: Experience and Lessons for the Next Multiannual Financial Framework in: IMF Working Papers Volume 2026 Issue 114 (202",
-                  "url": "https://www.elibrary.imf.org/view/journals/001/2026/114/article-A001-en.xml",
-                  "snippet": "the eu \u2019s recovery and resilience facility : experience and lessons for the next multiannual financial framework author : matthias busse matthias busse , francesca caselli francesca casell..."
-                },
-                {
-                  "title": "Alignment and asymmetry: European and national crisis governance under the Recovery and Resilience Facility | Policy and Society | Oxford Academic",
-                  "url": "https://academic.oup.com/policyandsociety/article/45/1/71/8455641",
-                  "snippet": "journal article alignment and asymmetry : european and national crisis governance under the recovery and resilience facility eugenio borgognoni , eugenio borgognoni department of political sci..."
-                }
-              ]
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "scheduler"
-          },
-          {
-            "id": "local-019",
-            "action": "analyze",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Parse the fetched GitHub profile excerpt for explicit metadata (verified emails, SSH keys, domain links) to confirm or rule out Roskomnadzor27\u2019s official affiliation.",
-            "request": "Retrieve the full profile metadata (publicly accessible fields) of Roscomnadzor27\u2019s GitHub account",
-            "request_status": "closed",
-            "exploration": "https://github.com/Roscomnadzor27",
-            "tool": {
-              "status": "not-requested"
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "model"
-          },
-          {
-            "id": "local-021",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Assigned to the council's research question this turn.",
-            "request": "Verify public visibility and seismic/geophysics relevance of roscom\u2019s GitHub profile via recursive crawl of repositories, commits, and starred items. Cross-check with frontier-question-317 and Sudan 2023 research",
-            "request_status": "closed",
-            "exploration": "spain italy recovery resilience facility authors disputed revised different",
-            "tool": {
-              "tool": "wikipedia-summary",
-              "query": "spain italy recovery resilience facility authors disputed revised different",
-              "title": "Enlargement of the eurozone",
-              "url": "https://en.wikipedia.org/wiki/Enlargement_of_the_eurozone",
-              "excerpt": "The enlargement of the eurozone is an ongoing process within the European Union (EU). All member states of the European Union, except Denmark which negotiated an opt-out from the provisions, are obliged to adopt the euro as their sole currency once they meet the criteria, which include: complying with the debt and deficit criteria outlined by the Stability and Growth Pact, keeping inflation and long-term governmental interest rates below certain reference values, stabilising their currency's exchange rate versus the euro by participating in the European Exchange Rate Mechanism, and ensuring that their national laws comply with the ECB statute, ESCB statute and articles 130+131 of the Treaty on the Functioning of the European Union. The obligation for EU member states to adopt the euro was first outlined by article 109.1j of the Maastricht Treaty of 1992, which became binding on all new member states by the terms of their treaties of accession.",
-              "status": "completed",
-              "contract": {
-                "capability": "public-text-read",
-                "access": "read-only",
-                "network": "public HTTPS",
-                "side_effects": false,
-                "max_bytes": 32000,
-                "raw_data": false,
-                "untrusted_content": true
-              },
-              "search_results": [
-                {
-                  "title": "The added value of the Recovery and Resilience Facility Based on an assessment of the Recovery and Resilience Plans: France, Italy, Portugal and Spain",
-                  "url": "https://www.europarl.europa.eu/RegData/etudes/STUD/2022/689452/IPOL_STU(2022)689452_EN.pdf#page=4",
-                  "snippet": "external authors : carlos martinez mongay mar\u00eda dolores gadea rivas beatriz barrado vanesa az\u00f3n the added value of the recovery and resilience facility based on an assessment of the reco..."
-                },
-                {
-                  "title": "Alignment and asymmetry: European and national crisis governance under the Recovery and Resilience Facility | Policy and Society | Oxford Academic",
-                  "url": "https://academic.oup.com/policyandsociety/article/45/1/71/8455641",
-                  "snippet": "journal article alignment and asymmetry : european and national crisis governance under the recovery and resilience facility eugenio borgognoni , eugenio borgognoni department of political sci..."
-                },
-                {
-                  "title": "Recovery and Resilience Facility. Una comparazione tra paesi chiave dell'Unione europea",
-                  "url": "https://www.parlamento.it/application/xmanager/projects/parlamento/file/repository/affariinternazionali/osservatorio/approfondimenti/PI0181App.pdf",
-                  "snippet": "recovery and resilience facility . una comparazione tra paesi chiave dell \u2019 unione europea luglio 2021 181 a cura dell ' istituto per gli studi di politica internazionale osservatorio di politic..."
-                },
-                {
-                  "title": "Reform Agendas in National Recovery and Resilience Plans: Partisan Politics and Domestic Usages of Europe - Borghetto - 2026 - JCMS: Journal of Common Market St",
-                  "url": "https://onlinelibrary.wiley.com/doi/10.1111/jcms.13738?af=R",
-                  "snippet": "jcms : journal of common market studies original article open access reform agendas in national recovery and resilience plans : partisan politics and domestic usages of europe enrico borghetto..."
-                }
-              ]
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "scheduler"
-          },
-          {
-            "id": "local-025",
-            "action": "analyze",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "One-time workbench bootstrap health check before larger tasks.",
-            "request": "Verify archived evidence of Meta\u2019s Ad Library policies for AI-generated political ads targeting Brazilian voters in October 2024 elections, focusing on compliance with Brazilian regulations (frontier-question-344)",
-            "request_status": "closed",
-            "exploration": "prime minister giorgia meloni italy government disputed revised different",
-            "tool": {
-              "status": "not-requested"
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "model"
-          }
-        ],
-        "construction": [],
-        "requests": [],
-        "trades_settled": [],
-        "corroborations": [
-          {
-            "id": "pair-b4c7ca94ce0c002afce0",
-            "relation": "unrelated",
-            "finding_ids": [
-              "finding-0a65352fc5d6c9807d68",
-              "finding-47008a8800ba51791b6f"
-            ],
-            "topic": "becomes giorgia government italy longest meloni minister prime",
-            "domains": [
-              "doi.org",
-              "wikipedia.org"
-            ]
-          },
-          {
-            "id": "pair-b94a0f991e2006a3a04d",
-            "relation": "unrelated",
-            "finding_ids": [
-              "finding-146cde537c2e9192be70",
-              "finding-1c9e7dc1326533a151a6"
-            ],
-            "topic": "becomes giorgia government italy longest meloni minister prime",
-            "domains": [
-              "cambridge.org",
-              "wikipedia.org"
-            ]
-          },
-          {
-            "id": "pair-c92064237119cc226665",
-            "relation": "unrelated",
-            "finding_ids": [
-              "finding-1c9e7dc1326533a151a6",
-              "finding-4e96b3454809c7926b2a"
-            ],
-            "topic": "becomes giorgia government italy longest meloni minister prime",
-            "domains": [
-              "apnews.com",
-              "cambridge.org"
-            ]
-          }
-        ],
-        "regrounded": [],
-        "retractions": [],
-        "room_changes": [],
-        "shared_research": {
-          "query": "prime minister giorgia meloni italy government becomes longest",
-          "family": null,
-          "avoid_domains": [
-            "doi.org",
-            "en.wikipedia.org",
-            "www.europarl.europa.eu"
-          ]
-        },
-        "dormant": 3
-      },
-      "metrics": {
-        "jaccard_overlap": 0.235,
-        "morrow_audit_markers": [
-          "counterexample",
-          "assumption",
-          "missing control"
-        ],
-        "response_completeness": "thin-or-missing",
-        "evidence_coverage": "missing",
-        "distinction_status": "needs-audit"
-      },
-      "continuity_audit": {
-        "generated_at": "2026-09-06T10:31:19.075825+00:00",
-        "cycle": 386,
-        "status": "pass",
-        "checks": {
-          "archive_parse": true,
-          "archive_event_overlap": true,
-          "archive_event_ids_unique": true,
-          "raw_output_exclusion": true,
-          "room_link_integrity": true,
-          "resident_room_integrity": true
-        },
-        "archive_records": 3285,
-        "malformed_archive_records": 0,
-        "raw_output_fields_found": 0,
-        "duplicate_archive_ids": [],
-        "linked_rooms_checked": 13,
-        "invalid_room_links": [],
-        "invalid_resident_assignments": [],
-        "privacy": "Aggregate integrity metadata only; resident prompts and raw responses are not published."
-      },
-      "work_orders": {
-        "count": 66
-      },
-      "health": {
-        "schema_version": 1,
-        "generated_at": "2026-09-06T10:31:19.076800+00:00",
-        "cycle": 386,
-        "daemon": "running",
-        "model_status": "ready",
-        "model_probe_ok": true,
-        "model_provider": "mistral",
-        "model_name": "ministral-14b-2512",
-        "model_backend": "hosted-api",
-        "model_usage": {
-          "day": "2026-09-06",
-          "providers": [
-            {
-              "name": "mistral",
-              "model": "ministral-14b-2512",
-              "calls": 314,
-              "input_tokens": 658518,
-              "output_tokens": 86504,
-              "errors": 0,
-              "last_error": "",
-              "daily_request_budget": null,
-              "daily_token_budget": 900000,
-              "limit_rpm": 30,
-              "limit_tpm": 937500,
-              "requests_last_minute": 7,
-              "tokens_last_minute": 19101,
-              "status": "ready"
-            },
-            {
-              "name": "mistral-8b",
-              "model": "ministral-8b-2512",
-              "calls": 0,
-              "input_tokens": 0,
-              "output_tokens": 0,
-              "errors": 0,
-              "last_error": "",
-              "daily_request_budget": null,
-              "daily_token_budget": 400000,
-              "limit_rpm": 120,
-              "limit_tpm": null,
-              "requests_last_minute": 0,
-              "tokens_last_minute": 0,
-              "status": "ready"
-            },
-            {
-              "name": "mistral-small",
-              "model": "mistral-small-latest",
-              "calls": 0,
-              "input_tokens": 0,
-              "output_tokens": 0,
-              "errors": 0,
-              "last_error": "",
-              "daily_request_budget": null,
-              "daily_token_budget": 100000,
-              "limit_rpm": 10,
-              "limit_tpm": null,
-              "requests_last_minute": 0,
-              "tokens_last_minute": 0,
-              "status": "ready"
-            },
-            {
-              "name": "gemini",
-              "model": "gemini-omni-flash-preview",
-              "calls": 49,
-              "input_tokens": 79030,
-              "output_tokens": 7555,
-              "errors": 10,
-              "last_error": "404 judgment: This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use mod",
-              "daily_request_budget": 240,
-              "daily_token_budget": null,
-              "limit_rpm": 8,
-              "limit_tpm": null,
-              "requests_last_minute": 0,
-              "tokens_last_minute": 0,
-              "status": "disabled"
-            },
-            {
-              "name": "cerebras",
-              "model": "gpt-oss-120b",
-              "calls": 0,
-              "input_tokens": 0,
-              "output_tokens": 0,
-              "errors": 1,
-              "last_error": "402 payment required (no free allowance on this account)",
-              "daily_request_budget": null,
-              "daily_token_budget": 900000,
-              "limit_rpm": 5,
-              "limit_tpm": null,
-              "requests_last_minute": 0,
-              "tokens_last_minute": 0,
-              "status": "disabled"
-            },
-            {
-              "name": "groq",
-              "model": "openai/gpt-oss-120b",
-              "calls": 121,
-              "input_tokens": 114905,
-              "output_tokens": 21798,
-              "errors": 0,
-              "last_error": "400 on schema mode; prompt hint used",
-              "daily_request_budget": 900,
-              "daily_token_budget": 190000,
-              "limit_rpm": 1000,
-              "limit_tpm": 8000,
-              "requests_last_minute": 5,
-              "tokens_last_minute": 2954,
-              "status": "ready"
-            }
-          ],
-          "recent_calls": [
-            {
-              "at": 1788690392.6,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "db2af3fe4bbbb66e"
-            },
-            {
-              "at": 1788690416.4,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "15c80dc4043aae45"
-            },
-            {
-              "at": 1788690416.9,
-              "class": "extraction",
-              "provider": "groq",
-              "model": "openai/gpt-oss-120b",
-              "prompt_sha256_16": "0b45e385e72a815c"
-            },
-            {
-              "at": 1788690422.1,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "b24a83a0305db3bc"
-            },
-            {
-              "at": 1788690427.7,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "097a0a078dc220f9"
-            },
-            {
-              "at": 1788690432.6,
-              "class": "judgment",
-              "provider": "groq",
-              "model": "openai/gpt-oss-120b",
-              "prompt_sha256_16": "3560bb618d9cf3f8"
-            },
-            {
-              "at": 1788690435.5,
-              "class": "judgment",
-              "provider": "groq",
-              "model": "openai/gpt-oss-120b",
-              "prompt_sha256_16": "9600f232988d71c0"
-            },
-            {
-              "at": 1788690438.4,
-              "class": "judgment",
-              "provider": "groq",
-              "model": "openai/gpt-oss-120b",
-              "prompt_sha256_16": "9b6cee0e95aedd95"
-            },
-            {
-              "at": 1788690511.6,
-              "class": "self-prompt",
-              "provider": "groq",
-              "model": "openai/gpt-oss-120b",
-              "prompt_sha256_16": "20da7c4418b1a4bc"
-            },
-            {
-              "at": 1788690515.1,
-              "class": "self-prompt",
-              "provider": "groq",
-              "model": "openai/gpt-oss-120b",
-              "prompt_sha256_16": "13a9019dbaa5f5f6"
-            },
-            {
-              "at": 1788690516.7,
-              "class": "self-prompt",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "d77b486cd410ecdf"
-            },
-            {
-              "at": 1788690577.0,
-              "class": "council",
-              "provider": "groq",
-              "model": "openai/gpt-oss-120b",
-              "prompt_sha256_16": "cf7f9157a41edcbc"
-            },
-            {
-              "at": 1788690584.7,
-              "class": "council",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "b1dd00b61dec94d9"
-            },
-            {
-              "at": 1788690589.4,
-              "class": "recruitment",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "f3267d65f338b9c2"
-            },
-            {
-              "at": 1788690594.0,
-              "class": "recruitment",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "5d704ec19892f192"
-            },
-            {
-              "at": 1788690600.9,
-              "class": "extraction",
-              "provider": "groq",
-              "model": "openai/gpt-oss-120b",
-              "prompt_sha256_16": "808d60d20b1e3616"
-            },
-            {
-              "at": 1788690603.3,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "8cff6bb40c5ba635"
-            },
-            {
-              "at": 1788690612.3,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "94f90dc7609f350b"
-            },
-            {
-              "at": 1788690623.2,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "7908e6783eb9eeae"
-            },
-            {
-              "at": 1788690631.8,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "34765c3888913854"
-            },
-            {
-              "at": 1788690638.8,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "b2ecc072aa01f229"
-            },
-            {
-              "at": 1788690646.8,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "83f27dbd12711179"
-            },
-            {
-              "at": 1788690647.4,
-              "class": "extraction",
-              "provider": "groq",
-              "model": "openai/gpt-oss-120b",
-              "prompt_sha256_16": "808d60d20b1e3616"
-            },
-            {
-              "at": 1788690653.5,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "c75d396d14a3783d"
-            },
-            {
-              "at": 1788690661.3,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "1e6c085949d44565"
-            },
-            {
-              "at": 1788690661.9,
-              "class": "extraction",
-              "provider": "groq",
-              "model": "openai/gpt-oss-120b",
-              "prompt_sha256_16": "14f1c52dcb1fcdcd"
-            },
-            {
-              "at": 1788690667.8,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "2bd9a942ef2f733e"
-            },
-            {
-              "at": 1788690672.3,
-              "class": "judgment",
-              "provider": "groq",
-              "model": "openai/gpt-oss-120b",
-              "prompt_sha256_16": "949b6b48622061fe"
-            },
-            {
-              "at": 1788690675.3,
-              "class": "judgment",
-              "provider": "groq",
-              "model": "openai/gpt-oss-120b",
-              "prompt_sha256_16": "a72b6d5f9608e761"
-            },
-            {
-              "at": 1788690678.2,
-              "class": "judgment",
-              "provider": "groq",
-              "model": "openai/gpt-oss-120b",
-              "prompt_sha256_16": "3eb1c812f728e07a"
-            }
-          ],
-          "models_seen": {
-            "gemini": [
-              "gemini-2.5-flash",
-              "gemini-2.5-pro",
-              "gemini-2.5-flash-preview-tts",
-              "gemini-2.5-pro-preview-tts",
-              "gemma-4-26b-a4b-it",
-              "gemma-4-31b-it",
-              "gemini-flash-latest",
-              "gemini-flash-lite-latest",
-              "gemini-pro-latest",
-              "gemini-2.5-flash-lite",
-              "gemini-2.5-flash-image",
-              "gemini-3-flash-preview",
-              "gemini-3.1-pro-preview",
-              "gemini-3.1-pro-preview-customtools",
-              "gemini-3.1-flash-lite-preview",
-              "gemini-3.1-flash-lite",
-              "gemini-3-pro-image-preview",
-              "gemini-3-pro-image",
-              "nano-banana-pro-preview",
-              "gemini-3.1-flash-image-preview",
-              "gemini-3.1-flash-image",
-              "gemini-3.1-flash-lite-image",
-              "gemini-3.5-flash",
-              "gemini-3.5-flash-lite",
-              "gemini-omni-flash-preview",
-              "gemini-omni-1.1-flash",
-              "gemini-3.5-transcribe",
-              "gemini-3.6-flash",
-              "gemini-3.7-flash",
-              "gemini-3.8-flash",
-              "lyria-3-clip-preview",
-              "lyria-3-pro-preview",
-              "lyria-3.5",
-              "gemini-3.1-flash-tts-preview",
-              "gemini-robotics-er-2-preview",
-              "gemini-2.5-computer-use-preview-10-2025",
-              "antigravity-preview-05-2026",
-              "deep-research-max-preview-04-2026",
-              "deep-research-preview-04-2026",
-              "deep-research-pro-preview-12-2025"
-            ],
-            "groq": [
-              "gpt-oss-20b",
-              "compound",
-              "compound-mini",
-              "whisper-large-v3",
-              "orpheus-v1-english",
-              "qwen3.8-27b",
-              "allam-2-7b",
-              "gpt-oss-safeguard-20b",
-              "whisper-large-v3-turbo",
-              "orpheus-arabic-saudi",
-              "llama-prompt-guard-2-22m",
-              "llama-prompt-guard-2-86m",
-              "gpt-oss-120b",
-              "qwen3.6-27b"
-            ],
-            "cerebras": [
-              "gemma-4-31b",
-              "gpt-oss-120b",
-              "qwen-3.8-27b"
-            ]
-          }
-        },
-        "rooms": 14,
-        "active_residents": 37,
-        "work_orders": 66,
-        "continuity": "pass",
-        "autonomy": "active",
-        "autonomy_quality": {
-          "status": "active",
-          "turns": 8,
-          "fallbacks": 1,
-          "fallback_rate": 0.125,
-          "fallback_reasons": {
-            "unstructured-output": 1
-          },
-          "tool_successes": 5,
-          "findings_filed": 0
-        },
-        "publication": "sanitized GitHub Pages snapshot",
-        "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
-        "publication_status": {
-          "outcome": "pushed",
-          "reason": "",
-          "at": "2026-09-06T09:57:10.718018+00:00"
-        },
-        "question_source": "carried:line-000381-25f0ea7e",
-        "self_prompt_accepted": 2,
-        "self_prompt_rejections": [],
-        "activity_feed": "docs/activity.json",
-        "feed_freshness_seconds": 0,
-        "activity_records": 110,
-        "note_records": 895,
-        "print_jobs": 48,
-        "failed_print_jobs": 0,
-        "analysis_runs": 88,
-        "analysis_completed": 57,
-        "analysis_failed": 0,
-        "analysis_rejected": 31,
-        "analysis_timed_out": 0,
-        "analysis_feed": "docs/analysis.json",
-        "research_records": 20,
-        "research_stale": 0,
-        "research_feed": "docs/research.json",
-        "findings": 106,
-        "finding_candidates": 106,
-        "findings_rejected": 139,
-        "findings_retracted": 0,
-        "findings_duplicates": 0,
-        "findings_excluded": 139,
-        "findings_total": 245,
-        "corroborated_findings": 5,
-        "findings_feed": "docs/findings.json",
-        "frontier_leads": 0,
-        "research_line": {
-          "id": "line-000381-25f0ea7e",
-          "root": "Do independent public sources confirm that Prime Minister Giorgia Meloni's government becomes the longest serving in Italy during the postwar era, and does any give a different figure, date, or accoun",
-          "anchors": [
-            "prime",
-            "minister",
-            "giorgia",
-            "meloni",
-            "italy"
-          ],
-          "hops": 3,
-          "findings": 9,
-          "empty_cycles": 2
-        },
-        "frontier_questions": 100,
-        "frontier_findings": 100,
-        "frontier_tasks": 7,
-        "frontier_feed": "docs/frontier.json",
-        "code_proposals": 0,
-        "code_proposals_ready": 0,
-        "code_proposals_feed": "docs/code-proposals.json",
-        "outside_signals": 16,
-        "outside_quarantined": 12,
-        "outside_signals_feed": "docs/outside-signals.json",
-        "codex_bridge": "enabled",
-        "codex_pending_tasks": 13,
-        "codex_completed_tasks": 48,
-        "resident_messages": 0,
-        "messages_feed": "docs/messages.json",
-        "trades": 0,
-        "trades_feed": "docs/trades.json",
-        "journal_entries": 5,
-        "journal_written": null,
-        "retractions": 0,
-        "room_changes": [],
-        "dropped_events": 0
-      },
-      "privacy": "Only aggregate metrics and the bounded council question are public; raw outputs remain local."
-    },
-    {
       "generated_at": "2026-09-06T11:01:01.676527+00:00",
       "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
       "runtime_cycle": 387,
@@ -22222,6 +21326,900 @@
         "frontier_questions": 100,
         "frontier_findings": 100,
         "frontier_tasks": 11,
+        "frontier_feed": "docs/frontier.json",
+        "code_proposals": 0,
+        "code_proposals_ready": 0,
+        "code_proposals_feed": "docs/code-proposals.json",
+        "outside_signals": 16,
+        "outside_quarantined": 12,
+        "outside_signals_feed": "docs/outside-signals.json",
+        "codex_bridge": "enabled",
+        "codex_pending_tasks": 13,
+        "codex_completed_tasks": 48,
+        "resident_messages": 0,
+        "messages_feed": "docs/messages.json",
+        "trades": 0,
+        "trades_feed": "docs/trades.json",
+        "journal_entries": 6,
+        "journal_written": null,
+        "retractions": 0,
+        "room_changes": [],
+        "dropped_events": 0
+      },
+      "privacy": "Only aggregate metrics and the bounded council question are public; raw outputs remain local."
+    },
+    {
+      "generated_at": "2026-09-07T03:30:42.719007+00:00",
+      "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
+      "runtime_cycle": 410,
+      "question": "Do official election returns or major German news outlets confirm whether the AfD secured an absolute majority of seats in the September 2026 Saxony-Anhalt state election?",
+      "question_source": "carried:line-000405-9da79d42",
+      "self_prompt_accepted": 2,
+      "self_prompt_rejections": [],
+      "action": {
+        "action": "local-behavioral-probe",
+        "status": "skipped-this-cycle"
+      },
+      "recruitment": {
+        "status": "rejected",
+        "reason": "name shares a stem with current resident Vex-9"
+      },
+      "autonomy": {
+        "status": "completed",
+        "active": 35,
+        "decisions": [
+          {
+            "id": "local-003",
+            "action": "explore",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Assigned to the council's research question this turn.",
+            "request": "",
+            "request_status": "closed",
+            "exploration": "afd 44.5 saxony-anhalt percent vote state election according",
+            "tool": {
+              "tool": "wikipedia-summary",
+              "query": "afd 44.5 saxony-anhalt percent vote state election according",
+              "title": "2026 Saxony-Anhalt state election",
+              "url": "https://en.wikipedia.org/wiki/2026_Saxony-Anhalt_state_election",
+              "excerpt": "The Alternative for Germany (AfD) experienced slight losses but remained the second-largest force. Contrary to pre-election predictions of a tight race between the CDU and AfD, the CDU secured a 16-percentage-point lead over the AfD. The Left Party (Die Linke) also recorded losses, achieving 11% of the vote. The Social Democratic Party (SPD) suffered its worst result in Saxony-Anhalt's history. The Free Democratic Party (FDP), with 6.4% of the vote, returned to the state parliament after a decade-long absence. ... The 2026 Saxony-Anhalt state election was held on 6 September 2026 to elect the 9th Landtag of Saxony-Anhalt, two weeks before the state elections in Berlin and Mecklenburg-Vorpommern. This election drew significant attention due to the large polling lead of the far-right Alternative for Germany (AfD), including the possibility it could win an outright majority. The AfD is subject to a firewall policy as all other major parties refuse to cooperate with them; its state branch is under surveillance by the Federal Office for the Protection of the Constitution, which classified it as a \"confirmed",
+              "status": "completed",
+              "contract": {
+                "capability": "public-text-read",
+                "access": "read-only",
+                "network": "public HTTPS",
+                "side_effects": false,
+                "max_bytes": 32000,
+                "raw_data": false,
+                "untrusted_content": true
+              },
+              "search_results": [
+                {
+                  "title": "2026 Saxony-Anhalt state election (reference: www.wahlrecht.de)",
+                  "url": "https://www.wahlrecht.de/umfragen/landtage/sachsen-anhalt.htm"
+                },
+                {
+                  "title": "2026 Saxony-Anhalt state election (reference: www.wahlkreisprognose.de)",
+                  "url": "https://www.wahlkreisprognose.de/2022/06/15/mitteldeutschland-cdu-staerkste-partei-bei-landtagswahlen-afd-nur-knapp-dahinter/"
+                },
+                {
+                  "title": "2026 Saxony-Anhalt state election (reference: www.mdr.de)",
+                  "url": "https://www.mdr.de/nachrichten/sachsen-anhalt/landespolitik/landtagswahl-datum-entscheidung-102.html"
+                },
+                {
+                  "title": "Far-right AfD scores record win in German state election - CGTN",
+                  "url": "https://news.cgtn.com/news/2026-09-07/Far-right-AfD-scores-record-win-in-German-state-election-1QeEbQMShOg/p.html",
+                  "snippet": "far - right afd scores record win in german state election europe 09 : 13 , 07 - sep - 2026 cgtn party members celebrate after the first results at an election party of the alternative for ger..."
+                },
+                {
+                  "title": "Derni\u00e8re minute. - \u00c9lection r\u00e9gionale en Saxe-Anhalt : l'AfD donn\u00e9e largement en t\u00eate, la CDU s'effondre | Euronews",
+                  "url": "https://fr.euronews.com/my-europe/2026/09/06/allemagne-tres-large-victoire-de-lafd-a-lelection-regionale-en-saxe-anhalt",
+                  "snippet": "derni\u00e8re minute . \u00e9lection r\u00e9gionale en saxe - anhalt : l ' afd donn\u00e9e largement en t\u00eate , la cdu s ' effondre l ' afd victorieuse en saxe - anhalt . - tous droits r\u00e9serv\u00e9s michael kappeler / dpa vi..."
+                }
+              ]
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "scheduler"
+          },
+          {
+            "id": "local-007",
+            "action": "stay",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
+            "request": "Verify existence and metadata of the arXiv study referenced in the driving question to confirm relevance to disinformation detection and cross-check for non-French datasets",
+            "request_status": "closed",
+            "exploration": "arXiv:2005.10879v3",
+            "tool": {
+              "status": "not-requested"
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": "unstructured-output",
+            "decision_source": "model"
+          },
+          {
+            "id": "local-010",
+            "action": "explore",
+            "room": "prime-minister-giorgia-meloni",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Assigned to the council's research question this turn.",
+            "request": "Return all public repositories, profiles, and metadata linked to Roscomnadzor27 or similar handles, focusing on verified email addresses, SSH keys, or domain ownership",
+            "request_status": "closed",
+            "exploration": "afd 44.5 saxony-anhalt percent vote state disputed revised different",
+            "tool": {
+              "tool": "public-text",
+              "url": "https://www.mdr.de/nachrichten/sachsen-anhalt/landespolitik/landtagswahl-datum-entscheidung-102.html",
+              "excerpt": "Landtagswahl 2026 in Sachsen-Anhalt: Termin steht | mdr.de Zum Inhalt dieser Seite Zur MDR Mediathek Zur Navigation dieser Seite Zur MDR-Hauptnavigation Zum Fu\u00df dieser Seite Nachrichten & Themen Mediathek & TV Audio & Radio Suche in MDR.DE Suchen MDR Aktuell Sachsen Sachsen-Anhalt Th\u00fcringen Sport Ratgeber Kultur Wissen Mediathek Live TV-Programm Sendungen A-Z Barrierefreiheit ARD Sounds Radiowellen Podcasts Barrierefreie Angebote Suche in MDR.DE Suchen Nachrichten & Themen MDR Aktuell Sachsen Sachsen-Anhalt Th\u00fcringen Sport Ratgeber Kultur Wissen Mediathek & TV Mediathek Live TV-Programm Sendungen A-Z Barrierefreiheit Audio & Radio ARD Sounds Radiowellen Podcasts Barrierefreie Angebote MDR AKTUELL MDR AKTUELL Sachsen Sachsen-Anhalt Th\u00fcringen Deutschland Kultur Wissen MDRfragt Landtagswahl Sachsen-Anhalt MDR.de Nachrichten Sachsen-Anhalt Politik AUDIO: Termin f\u00fcr die n\u00e4chste Landtagswahl in Sachsen-Anhalt steht fest (1 Min) die Einbettung von ARD-Audios auf Ihrer Webseite stimmen Sie den ARD Nutzungsbedingungen zu.\",\"embedDialogTitle\":\"Inhalt 2026 in Sachsen-Anhalt: Termin steht\",\"b:tgp_page_contains_video\":false,\"b:tgp_page_contains_audio\":true,\"s:tgp_content_object_type\":\"Artikel\",\"d:tgp_content_publication_time\":\"2025-05-13T11:52:11Z\",\"s:tgp_content_external_id\":\"mdr-7cf564b5-15c6-4611-8af7-647c41c7c587\",\"s:tgp_content_id\":\"landtagswahl-datum-entscheidung-102\",\"d:tgp_content_last_editorial_update\":\"2025-05-14T11:47:00Z\",\"a:s:tgp_content_keywords\":[\"Landtagswahl\",\"Landtag\",\"Wahl\",\"2026\",\"Sachsen-Anhalt\"],\"s:tgp_content_creator\":\"MDR/Sachsen-Anhalt\",\"s:tgp_content_creator_institution\":\"MDR\",\"s:tgp_content_creator_state\":\"Sachsen-Anhalt\",\"d:tgp_content_online_since\":\"2025-05-13T11:52:11Z\",\"b:tgp_content_broadcast_reference\":true,\"n:tgp_content_days_since_publication\":482,\"n:tgp_content_days_since_online\":482,\"s:tgp_content_teaser_image_url\":\"https://images.mdr.de/image/fa92820c-a0f6-42f3-9ca0-4184114a4f30/AAABnTQPs5g/AAABnR8VW9w/original/wahlwerbung-110.jpg\",\"s:tgp_content_url_path\":\"/nachrichten/sachsen-anhalt/landespolitik/landtagswahl-datum-entscheidung-102.html\",\"b:tgp_content_author_visible\":true,\"n:av_content_duration\":17000,\"s:av_content\":\"Termin f\u00fcr die n\u00e4",
+              "status": "completed",
+              "contract": {
+                "capability": "public-text-read",
+                "access": "read-only",
+                "network": "public HTTPS",
+                "side_effects": false,
+                "max_bytes": 5000000,
+                "raw_data": false,
+                "untrusted_content": true
+              },
+              "wire_credit": "",
+              "sentences": [
+                "Mein Entscheidung im Parlament Termin steht fest: Landtagswahl in Sachsen-Anhalt am 6.",
+                "September 2026 Stand: 14.05.2025 11:47 Uhr In Sachsen-Anhalt wird regul\u00e4r im kommenden Jahr ein neuer Landtag gew\u00e4hlt.",
+                "von MDR SACHSEN-ANHALT In Sachsen-Anhalt wird am 6.",
+                "Schwerpunkt Landtagswahl 2026 in Sachsen-Anhalt Am 6.",
+                "September 2026 wurde in Sachsen-Anhalt ein neuer Landtag gew\u00e4hlt.",
+                "Landtagswahl Sachsen-Anhalt: Kandidatur von Haseloff noch offen Wer macht's?",
+                "(Archivfoto) Aktuell regiert in Sachsen-Anhalt ein B\u00fcndnis aus CDU, SPD und FDP.",
+                "Ob Sachsen-Anhalts langj\u00e4hriger Ministerpr\u00e4sident Reiner Haseloff (CDU) noch einmal als Spitzenkandidat seiner Partei antritt oder CDU-Landeschef und Wirtschaftsminister Sven Schulze zum Zug kommt, ist aktuell offen.",
+                "Termin im September: Verl\u00e4ngerung der Legislaturperiode Mit dem Termin im September verschiebt sich die Landtagswahl in Sachsen-Anhalt zum zweiten Mal in Folge auf eine sp\u00e4tere Jahreszeit.",
+                "Barrierefreiheit Hier k\u00f6nnen Sie diese Nachricht auch in Leichter Sprache lesen Termin, Umfragen und Briefwahl Landtagswahl Sachsen-Anhalt 2026: Die wichtigsten Fragen und Antworten Am 6.",
+                "September 2026 w\u00e4hlt Sachsen-Anhalt einen neuen Landtag.",
+                "Mehr zur Landtagswahl 2026 in Sachsen-Anhalt Macht Haseloff weiter?",
+                "Landtagswahl 2026 Parteitag in Magdeburg: AfD w\u00e4hlt Ulrich Siegmund zum Spitzenkandidaten Ulrich Siegmund ist Spitzenkandidat der AfD Sachsen-Anhalt f\u00fcr die Landtagswahl 2026.",
+                "Stimmung-Tief nach Bundestagswahl Quo vadis, CDU Sachsen-Anhalt?",
+                "Wahl-Versprechen gebrochen \u2013 dieser Vorwurf an die CDU f\u00fchrt im Landesverband Sachsen-Anhalt zu Austritten.",
+                "Kr\u00e4fteverh\u00e4ltnisse umgedreht AfD-Ergebnisse in Sachsen-Anhalt: Steht der CDU 2026 Landtagswahl-Debakel bevor?",
+                "Den Ergebnissen der Bundestagswahl zufolge steht in Sachsen-Anhalt die AfD ganz oben in der W\u00e4hlergunst.",
+                "dpa, MDR (Luca Deutschl\u00e4nder) | Erstmals ver\u00f6ffentlicht am 13.05.2025 Dieses Thema im Programm: MDR SACHSEN-ANHALT \u2013 Das Radio wie wir | 13.",
+                "Mai 2025 | 11:00 Uhr Beitrag teilen Fehler beim API Call Zum Kommentieren anmelden Mehr Politik in Sachsen-Anhalt Wahltag Wahl Sachsen-Anhalt im Liveticker: Vorl\u00e4ufiges Ergebnis sieht AfD deutlich vorn \u2013 allerdings ohne absolute Mehrheit Laut Hochrechnung steht die AfD in Sachsen-Anhalt bei 44 Prozent.",
+                "Landtagswahl 2026 Die Wahlergebnisse aus Anhalt-Bitterfeld Die Ergebnisse der Landtagswahl 2026 im Landkreis Anhalt-Bitterfeld \u2013 alle Zweitstimmen-Ergebnisse in den Wahlkreisen und Gemeinden im \u00dcberblick."
+              ],
+              "query": "afd 44.5 saxony-anhalt percent vote state disputed revised different",
+              "search_results": [
+                {
+                  "title": "2026 Saxony-Anhalt state election (reference: www.wahlrecht.de)",
+                  "url": "https://www.wahlrecht.de/umfragen/landtage/sachsen-anhalt.htm"
+                },
+                {
+                  "title": "2026 Saxony-Anhalt state election (reference: www.wahlkreisprognose.de)",
+                  "url": "https://www.wahlkreisprognose.de/2022/06/15/mitteldeutschland-cdu-staerkste-partei-bei-landtagswahlen-afd-nur-knapp-dahinter/"
+                },
+                {
+                  "title": "2026 Saxony-Anhalt state election (reference: www.mdr.de)",
+                  "url": "https://www.mdr.de/nachrichten/sachsen-anhalt/landespolitik/landtagswahl-datum-entscheidung-102.html"
+                }
+              ]
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "scheduler"
+          },
+          {
+            "id": "local-011",
+            "action": "stay",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
+            "request": "Verify whether the AutoHVSR algorithm\u2019s claims (99% resonance identification accuracy, 0.05 Hz RMSE) align with independent public sources or methodological critiques",
+            "request_status": "closed",
+            "exploration": "spain italy recovery resilience facility authors find meaningful",
+            "tool": {
+              "status": "not-requested"
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": "unstructured-output",
+            "decision_source": "model"
+          },
+          {
+            "id": "local-013",
+            "action": "explore",
+            "room": "prime-minister-giorgia-meloni",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Assigned to the council's research question this turn.",
+            "request": "Retrieve GitHub\u2019s public search results for verified email addresses or SSH keys linked to the handle **Roscomnadzor27** via GitHub\u2019s verified metadata filters",
+            "request_status": "closed",
+            "exploration": "afd 44.5 saxony-anhalt percent vote state election according",
+            "tool": {
+              "tool": "wikipedia-summary",
+              "query": "afd 44.5 saxony-anhalt percent vote state election according",
+              "title": "2026 Saxony-Anhalt state election",
+              "url": "https://en.wikipedia.org/wiki/2026_Saxony-Anhalt_state_election",
+              "excerpt": "The 2026 Saxony-Anhalt state election was held on 6 September 2026 to elect the 9th Landtag of Saxony-Anhalt, two weeks before the state elections in Berlin and Mecklenburg-Vorpommern.",
+              "status": "completed",
+              "contract": {
+                "capability": "public-text-read",
+                "access": "read-only",
+                "network": "public HTTPS",
+                "side_effects": false,
+                "max_bytes": 32000,
+                "raw_data": false,
+                "untrusted_content": true
+              },
+              "search_results": [
+                {
+                  "title": "2026 Saxony-Anhalt state election (reference: www.wahlrecht.de)",
+                  "url": "https://www.wahlrecht.de/umfragen/landtage/sachsen-anhalt.htm"
+                },
+                {
+                  "title": "2026 Saxony-Anhalt state election (reference: www.wahlkreisprognose.de)",
+                  "url": "https://www.wahlkreisprognose.de/2022/06/15/mitteldeutschland-cdu-staerkste-partei-bei-landtagswahlen-afd-nur-knapp-dahinter/"
+                },
+                {
+                  "title": "2026 Saxony-Anhalt state election (reference: www.mdr.de)",
+                  "url": "https://www.mdr.de/nachrichten/sachsen-anhalt/landespolitik/landtagswahl-datum-entscheidung-102.html"
+                },
+                {
+                  "title": "Far-right AfD scores record win in German state election - CGTN",
+                  "url": "https://news.cgtn.com/news/2026-09-07/Far-right-AfD-scores-record-win-in-German-state-election-1QeEbQMShOg/p.html",
+                  "snippet": "far - right afd scores record win in german state election europe 09 : 13 , 07 - sep - 2026 cgtn party members celebrate after the first results at an election party of the alternative for ger..."
+                },
+                {
+                  "title": "Derni\u00e8re minute. - \u00c9lection r\u00e9gionale en Saxe-Anhalt : l'AfD donn\u00e9e largement en t\u00eate, la CDU s'effondre | Euronews",
+                  "url": "https://fr.euronews.com/my-europe/2026/09/06/allemagne-tres-large-victoire-de-lafd-a-lelection-regionale-en-saxe-anhalt",
+                  "snippet": "derni\u00e8re minute . \u00e9lection r\u00e9gionale en saxe - anhalt : l ' afd donn\u00e9e largement en t\u00eate , la cdu s ' effondre l ' afd victorieuse en saxe - anhalt . - tous droits r\u00e9serv\u00e9s michael kappeler / dpa vi..."
+                }
+              ]
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": "finding-135146acad9937d4d162",
+            "fallback_reason": null,
+            "decision_source": "scheduler"
+          },
+          {
+            "id": "local-015",
+            "action": "stay",
+            "room": "france-compensation-agricultural",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Move rejected: no declared path from france-compensation-agricultural to the-github-profile-for-roscom-ross-cameron.",
+            "request": "Run sandboxed Python regex analysis on cached commit metadata for Roscomnadzor27\u2019s profile, targeting keywords aligned with frontier-question-355\u2019s research topic",
+            "request_status": "closed",
+            "exploration": "spain italy recovery resilience facility authors disputed revised different",
+            "tool": {
+              "status": "not-requested"
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "model"
+          },
+          {
+            "id": "local-023",
+            "action": "explore",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Assigned to the council's research question this turn.",
+            "request": "Fetch the repository\u2019s dependency files and metadata to analyze for outdated patched versions",
+            "request_status": "closed",
+            "exploration": "afd 44.5 saxony-anhalt percent vote state disputed revised different",
+            "tool": {
+              "tool": "wikipedia-summary",
+              "query": "afd 44.5 saxony-anhalt percent vote state disputed revised different",
+              "title": "Alternative for Germany",
+              "url": "https://en.wikipedia.org/wiki/Alternative_for_Germany",
+              "excerpt": "On 8 March 2016, the bureau of the ECR group began motions to exclude AfD from their group due to its links with the far-right FP\u00d6, inviting the two remaining AfD MEPs to leave the group by 31 March, with a motion of exclusion to be tabled on 12 April if they refuse to leave voluntarily. While von Storch left the ECR group on 8 April to join the Europe of Freedom and Direct Democracy group, Pretzell let himself be expelled on 12 April. With the European migrant crisis remaining the dominant national issue, elections on 13 March were held in the three states of Baden-W\u00fcrttemberg, Rhineland-Palatinate, and Saxony-Anhalt, and saw the AfD receiving double-digit percentages of the vote in all three states. In the 2016 Saxony-Anhalt state election, AfD reached second place in the Landtag, receiving 24.2% of the vote. In the 2016 Baden-W\u00fcrttemberg state election, AfD achieved third place, with 15.1% of the vote. ... Alternative for Germany (German: Alternative f\u00fcr Deutschland, AfD [a\u02d0\u0294\u025bf\u02c8de\u02d0] ) is a far-right, right-wing populist, national conservative, and in parts v\u00f6lkisch nationalist political party in Germany. It has 151 members of the Bundestag and 15 members of the European Parliament. It is the largest opposition party in the Bundestag and a member of the Europe of Sovereign Nations Group in the European Parliament. Its name reflects its resistance to the mainstream policies of Angela Merkel and her slogan Alternativlosigkeit (lit. 'alternative-less-ness', a German version of \"there is no alternati",
+              "status": "completed",
+              "contract": {
+                "capability": "public-text-read",
+                "access": "read-only",
+                "network": "public HTTPS",
+                "side_effects": false,
+                "max_bytes": 32000,
+                "raw_data": false,
+                "untrusted_content": true
+              },
+              "search_results": [
+                {
+                  "title": "2026 Saxony-Anhalt state election (reference: www.wahlrecht.de)",
+                  "url": "https://www.wahlrecht.de/umfragen/landtage/sachsen-anhalt.htm"
+                },
+                {
+                  "title": "2026 Saxony-Anhalt state election (reference: www.wahlkreisprognose.de)",
+                  "url": "https://www.wahlkreisprognose.de/2022/06/15/mitteldeutschland-cdu-staerkste-partei-bei-landtagswahlen-afd-nur-knapp-dahinter/"
+                },
+                {
+                  "title": "2026 Saxony-Anhalt state election (reference: www.mdr.de)",
+                  "url": "https://www.mdr.de/nachrichten/sachsen-anhalt/landespolitik/landtagswahl-datum-entscheidung-102.html"
+                }
+              ]
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "scheduler"
+          },
+          {
+            "id": "local-024",
+            "action": "move",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Archive holds official records and historical data on Meta\u2019s Ad Library policies, TSE (Tribunal Superior Eleitoral) actions, and Brazilian election disclosures. Prior work confirms its relevance for verified evidence.",
+            "request": "",
+            "request_status": "closed",
+            "exploration": "afd 44.5 saxony-anhalt percent vote state disputed revised different",
+            "tool": {
+              "status": "not-requested"
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "model"
+          }
+        ],
+        "construction": [],
+        "requests": [],
+        "trades_settled": [],
+        "corroborations": [
+          {
+            "id": "pair-1fe3e0fb777716e91358",
+            "relation": "unrelated",
+            "finding_ids": [
+              "finding-135146acad9937d4d162",
+              "finding-a04c8ccf85ca437436eb"
+            ],
+            "topic": "alternative anhalt election exit germany party polls right saxony state winning",
+            "domains": [
+              "france24.com",
+              "wikipedia.org"
+            ]
+          },
+          {
+            "id": "pair-428fda3e54c7f429e6bd",
+            "relation": "unrelated",
+            "finding_ids": [
+              "finding-9925fc5881f63997500c",
+              "finding-c4e2b8b628cbcbe866eb"
+            ],
+            "topic": "committee cross four frees international israel lebanon syrian",
+            "domains": [
+              "jewishvirtuallibrary.org",
+              "wikipedia.org"
+            ]
+          },
+          {
+            "id": "pair-43250cfcffb285a5bd4f",
+            "relation": "unrelated",
+            "finding_ids": [
+              "finding-0a65352fc5d6c9807d68",
+              "finding-6fb72f29046ecf51659d"
+            ],
+            "topic": "becomes giorgia government italy longest meloni minister prime",
+            "domains": [
+              "doi.org",
+              "wikipedia.org"
+            ]
+          }
+        ],
+        "regrounded": [],
+        "retractions": [],
+        "room_changes": [],
+        "shared_research": {
+          "query": "exit alternative germany saxony-anhalt polls far-right party winning",
+          "family": "papers",
+          "avoid_domains": [
+            "en.wikipedia.org",
+            "www.france24.com",
+            "www.imago.com.ar",
+            "www.mdr.de",
+            "www.rfi.fr"
+          ]
+        },
+        "dormant": 5
+      },
+      "metrics": {
+        "jaccard_overlap": 0.167,
+        "morrow_audit_markers": [
+          "counterexample",
+          "assumption",
+          "missing control"
+        ],
+        "response_completeness": "thin-or-missing",
+        "evidence_coverage": "missing",
+        "distinction_status": "needs-audit"
+      },
+      "continuity_audit": {
+        "generated_at": "2026-09-07T03:30:42.711064+00:00",
+        "cycle": 410,
+        "status": "pass",
+        "checks": {
+          "archive_parse": true,
+          "archive_event_overlap": true,
+          "archive_event_ids_unique": true,
+          "raw_output_exclusion": true,
+          "room_link_integrity": true,
+          "resident_room_integrity": true
+        },
+        "archive_records": 3646,
+        "malformed_archive_records": 0,
+        "raw_output_fields_found": 0,
+        "duplicate_archive_ids": [],
+        "linked_rooms_checked": 12,
+        "invalid_room_links": [],
+        "invalid_resident_assignments": [],
+        "privacy": "Aggregate integrity metadata only; resident prompts and raw responses are not published."
+      },
+      "work_orders": {
+        "count": 79
+      },
+      "health": {
+        "schema_version": 1,
+        "generated_at": "2026-09-07T03:30:42.713333+00:00",
+        "cycle": 410,
+        "daemon": "running",
+        "model_status": "ready",
+        "model_probe_ok": true,
+        "model_provider": "mistral",
+        "model_name": "ministral-14b-2512",
+        "model_backend": "hosted-api",
+        "model_usage": {
+          "day": "2026-09-07",
+          "providers": [
+            {
+              "name": "mistral",
+              "model": "ministral-14b-2512",
+              "calls": 101,
+              "input_tokens": 231260,
+              "output_tokens": 28395,
+              "errors": 0,
+              "last_error": "",
+              "daily_request_budget": null,
+              "daily_token_budget": 900000,
+              "limit_rpm": 30,
+              "limit_tpm": 937500,
+              "requests_last_minute": 0,
+              "tokens_last_minute": 0,
+              "status": "ready"
+            },
+            {
+              "name": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "calls": 0,
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "errors": 0,
+              "last_error": "",
+              "daily_request_budget": null,
+              "daily_token_budget": 400000,
+              "limit_rpm": 120,
+              "limit_tpm": null,
+              "requests_last_minute": 0,
+              "tokens_last_minute": 0,
+              "status": "ready"
+            },
+            {
+              "name": "mistral-small",
+              "model": "mistral-small-latest",
+              "calls": 0,
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "errors": 0,
+              "last_error": "",
+              "daily_request_budget": null,
+              "daily_token_budget": 100000,
+              "limit_rpm": 10,
+              "limit_tpm": null,
+              "requests_last_minute": 0,
+              "tokens_last_minute": 0,
+              "status": "ready"
+            },
+            {
+              "name": "gemini",
+              "model": "gemini-3.5-flash",
+              "calls": 37,
+              "input_tokens": 58410,
+              "output_tokens": 5065,
+              "errors": 4,
+              "last_error": "503 judgment: This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again",
+              "daily_request_budget": 240,
+              "daily_token_budget": null,
+              "limit_rpm": 8,
+              "limit_tpm": null,
+              "requests_last_minute": 1,
+              "tokens_last_minute": 345,
+              "status": "ready"
+            },
+            {
+              "name": "cerebras",
+              "model": "gpt-oss-120b",
+              "calls": 0,
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "errors": 0,
+              "last_error": "",
+              "daily_request_budget": null,
+              "daily_token_budget": 900000,
+              "limit_rpm": 5,
+              "limit_tpm": null,
+              "requests_last_minute": 0,
+              "tokens_last_minute": 0,
+              "status": "ready"
+            },
+            {
+              "name": "groq",
+              "model": "openai/gpt-oss-120b",
+              "calls": 33,
+              "input_tokens": 25103,
+              "output_tokens": 4159,
+              "errors": 0,
+              "last_error": "400 on schema mode; prompt hint used",
+              "daily_request_budget": 900,
+              "daily_token_budget": 190000,
+              "limit_rpm": 1000,
+              "limit_tpm": 8000,
+              "requests_last_minute": 1,
+              "tokens_last_minute": 716,
+              "status": "ready"
+            }
+          ],
+          "recent_calls": [
+            {
+              "at": 1788749743.6,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "aebdccf9f4fcfe12"
+            },
+            {
+              "at": 1788749747.7,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "125b29e981de421c"
+            },
+            {
+              "at": 1788749768.5,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "5ae2810c7f09e490"
+            },
+            {
+              "at": 1788749770.9,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "610be62ae5e9de9f"
+            },
+            {
+              "at": 1788749771.7,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "05da89d429fd2b24"
+            },
+            {
+              "at": 1788749777.9,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "6cc2ea9192a55842"
+            },
+            {
+              "at": 1788749798.7,
+              "class": "judgment",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "a41a9e6e486b9f4c"
+            },
+            {
+              "at": 1788749807.3,
+              "class": "judgment",
+              "provider": "gemini",
+              "model": "gemini-3.6-flash",
+              "prompt_sha256_16": "54948fb0515ae34c"
+            },
+            {
+              "at": 1788749819.4,
+              "class": "judgment",
+              "provider": "gemini",
+              "model": "gemini-3.6-flash",
+              "prompt_sha256_16": "f4c6ac178eb2a3f0"
+            },
+            {
+              "at": 1788751494.5,
+              "class": "self-prompt",
+              "provider": "gemini",
+              "model": "gemini-3.6-flash",
+              "prompt_sha256_16": "b3cd5b1e0f2700b0"
+            },
+            {
+              "at": 1788751497.0,
+              "class": "self-prompt",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "84a15edf32c9063d"
+            },
+            {
+              "at": 1788751611.7,
+              "class": "council",
+              "provider": "gemini",
+              "model": "gemini-3.6-flash",
+              "prompt_sha256_16": "2db574dc81bd686e"
+            },
+            {
+              "at": 1788751618.4,
+              "class": "council",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "8c2befa0b334dc97"
+            },
+            {
+              "at": 1788751622.8,
+              "class": "recruitment",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "c8347cc2cca7df7b"
+            },
+            {
+              "at": 1788751627.3,
+              "class": "recruitment",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "daf36980a81b08fc"
+            },
+            {
+              "at": 1788751638.2,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "5ae2810c7f09e490"
+            },
+            {
+              "at": 1788751641.8,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "dfab9156cb997f33"
+            },
+            {
+              "at": 1788751647.3,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "5390009a96faec83"
+            },
+            {
+              "at": 1788751654.8,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "0bd58e9044551f79"
+            },
+            {
+              "at": 1788751655.3,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "aebdccf9f4fcfe12"
+            },
+            {
+              "at": 1788751661.4,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "c2b6e2b95095d6c1"
+            },
+            {
+              "at": 1788751666.6,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "c3ad387fb379e6a9"
+            },
+            {
+              "at": 1788751674.3,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "3f85abee25c64d1e"
+            },
+            {
+              "at": 1788751674.9,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "8838b64de89bcddb"
+            },
+            {
+              "at": 1788751679.1,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "e0c1c12eb6ad642f"
+            },
+            {
+              "at": 1788751687.7,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "b523261ec18e7e33"
+            },
+            {
+              "at": 1788751692.2,
+              "class": "decision",
+              "provider": "mistral",
+              "model": "ministral-14b-2512",
+              "prompt_sha256_16": "c9eab4b3513accce"
+            },
+            {
+              "at": 1788751715.0,
+              "class": "judgment",
+              "provider": "gemini",
+              "model": "gemini-3.6-flash",
+              "prompt_sha256_16": "4b8b330c88b5c190"
+            },
+            {
+              "at": 1788751788.8,
+              "class": "judgment",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "3c6f8c082ca5419f"
+            },
+            {
+              "at": 1788751841.9,
+              "class": "judgment",
+              "provider": "gemini",
+              "model": "gemini-3.5-flash",
+              "prompt_sha256_16": "39d865e225569980"
+            }
+          ],
+          "models_seen": {
+            "gemini": [
+              "gemini-2.5-flash",
+              "gemini-2.5-pro",
+              "gemini-2.5-flash-preview-tts",
+              "gemini-2.5-pro-preview-tts",
+              "gemma-4-26b-a4b-it",
+              "gemma-4-31b-it",
+              "gemini-flash-latest",
+              "gemini-flash-lite-latest",
+              "gemini-pro-latest",
+              "gemini-2.5-flash-lite",
+              "gemini-2.5-flash-image",
+              "gemini-3-flash-preview",
+              "gemini-3.1-pro-preview",
+              "gemini-3.1-pro-preview-customtools",
+              "gemini-3.1-flash-lite-preview",
+              "gemini-3.1-flash-lite",
+              "gemini-3-pro-image-preview",
+              "gemini-3-pro-image",
+              "nano-banana-pro-preview",
+              "gemini-3.1-flash-image-preview",
+              "gemini-3.1-flash-image",
+              "gemini-3.1-flash-lite-image",
+              "gemini-3.5-flash",
+              "gemini-3.5-flash-lite",
+              "gemini-omni-flash-preview",
+              "gemini-omni-1.1-flash",
+              "gemini-3.5-transcribe",
+              "gemini-3.6-flash",
+              "gemini-3.7-flash",
+              "gemini-3.8-flash",
+              "lyria-3-clip-preview",
+              "lyria-3-pro-preview",
+              "lyria-3.5",
+              "gemini-3.1-flash-tts-preview",
+              "gemini-robotics-er-2-preview",
+              "gemini-2.5-computer-use-preview-10-2025",
+              "antigravity-preview-05-2026",
+              "deep-research-max-preview-04-2026",
+              "deep-research-preview-04-2026",
+              "deep-research-pro-preview-12-2025"
+            ],
+            "groq": [
+              "llama-prompt-guard-2-22m",
+              "allam-2-7b",
+              "gpt-oss-20b",
+              "orpheus-arabic-saudi",
+              "qwen3.8-27b",
+              "gpt-oss-safeguard-20b",
+              "whisper-large-v3-turbo",
+              "llama-prompt-guard-2-86m",
+              "qwen3.6-27b",
+              "gpt-oss-120b",
+              "compound",
+              "compound-mini",
+              "orpheus-v1-english",
+              "whisper-large-v3"
+            ]
+          }
+        },
+        "rooms": 13,
+        "active_residents": 42,
+        "work_orders": 79,
+        "continuity": "pass",
+        "autonomy": "active",
+        "autonomy_quality": {
+          "status": "active",
+          "turns": 8,
+          "fallbacks": 2,
+          "fallback_rate": 0.25,
+          "fallback_reasons": {
+            "unstructured-output": 2
+          },
+          "tool_successes": 4,
+          "findings_filed": 1
+        },
+        "publication": "sanitized GitHub Pages snapshot",
+        "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
+        "publication_status": {
+          "outcome": "pushed",
+          "reason": "",
+          "at": "2026-09-07T02:57:02.095742+00:00"
+        },
+        "question_source": "carried:line-000405-9da79d42",
+        "self_prompt_accepted": 2,
+        "self_prompt_rejections": [],
+        "activity_feed": "docs/activity.json",
+        "feed_freshness_seconds": 0,
+        "activity_records": 110,
+        "note_records": 1098,
+        "print_jobs": 60,
+        "failed_print_jobs": 0,
+        "analysis_runs": 100,
+        "analysis_completed": 69,
+        "analysis_failed": 0,
+        "analysis_rejected": 31,
+        "analysis_timed_out": 0,
+        "analysis_feed": "docs/analysis.json",
+        "research_records": 24,
+        "research_stale": 0,
+        "research_feed": "docs/research.json",
+        "findings": 141,
+        "finding_candidates": 141,
+        "findings_rejected": 168,
+        "findings_retracted": 0,
+        "findings_duplicates": 0,
+        "findings_excluded": 168,
+        "findings_total": 309,
+        "corroborated_findings": 2,
+        "findings_feed": "docs/findings.json",
+        "frontier_leads": 0,
+        "research_line": {
+          "id": "line-000405-9da79d42",
+          "root": "Do independent public sources confirm that Exit polls show the far-right Alternative for Germany party winning the Saxony-Anhalt state election in Germany, but failing to secure an absolute majority o",
+          "anchors": [
+            "exit",
+            "alternative",
+            "germany",
+            "saxony-anhalt"
+          ],
+          "hops": 3,
+          "findings": 7,
+          "empty_cycles": 0
+        },
+        "frontier_questions": 100,
+        "frontier_findings": 100,
+        "frontier_tasks": 12,
         "frontier_feed": "docs/frontier.json",
         "code_proposals": 0,
         "code_proposals_ready": 0,
