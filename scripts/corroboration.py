@@ -446,6 +446,18 @@ def growth_candidates(records, findings_by_id, attached=()):
     return candidates
 
 
+# A wire headline leads with its toll - "Eleven killed in ...", "Tens of thousands
+# rally in ..." - and those words are not what the story is about. They are kept
+# out of a subject's anchors so a room is named for its subject and joins other
+# rooms by subject, instead of by how many people a separate event killed.
+COUNT_WORDS = frozenset("""
+one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen
+sixteen seventeen eighteen nineteen twenty thirty forty fifty sixty seventy eighty ninety
+hundred hundreds thousand thousands million millions billion billions dozen dozens score
+scores tens several many few couple toll dead killed injured wounded
+""".split())
+
+
 def subject_for_pair(record, first, second, lines_by_id=None):
     """(title, anchors) of the subject a corroborated pair is about: the research
     line's anchors when both findings sit on one line, else the names and
@@ -457,20 +469,31 @@ def subject_for_pair(record, first, second, lines_by_id=None):
         anchors = sorted(subject_tokens(first) & subject_tokens(second))[:6]
     if not anchors:
         anchors = sorted(topic_terms(record.get("topic", "")))[:4]
+    # A toll is not a subject. Drop the count words unless counting is all the
+    # pair ever shared, in which case the old anchors are still better than none.
+    anchors = [item for item in anchors if str(item).lower() not in COUNT_WORDS] or anchors
     title = ", ".join(item if re.fullmatch(r"[\d.,%]+", item) else item.replace("-", " ").title() for item in anchors[:4]) or "an unnamed subject"
     return title, anchors
 
 
 def subject_room_for(rooms, anchors):
-    """The open subject room whose anchors share a stem with these, if any."""
+    """The open subject room these anchors belong to: the one sharing the most
+    of them. One shared anchor is not a shared subject - "israeli" alone filed a
+    strike on a Lebanese village into the Gaza room - so where both sides name
+    more than one thing, two of them have to agree."""
     wanted = {str(item).lower()[:8] for item in anchors if item}
+    if not wanted:
+        return None
+    best, shared_best = None, 0
     for room in rooms:
         if room.get("founded_via") != "evidence-ledger" or room.get("status") == "retracted" or not room.get("facts"):
             continue
         have = {str(item).lower()[:8] for item in room.get("anchors") or []}
-        if wanted & have:
-            return room
-    return None
+        shared = len(wanted & have)
+        needed = 2 if len(wanted) > 1 and len(have) > 1 else 1
+        if shared >= needed and shared > shared_best:
+            best, shared_best = room, shared
+    return best
 
 
 def make_fact(record, pair, cycle):

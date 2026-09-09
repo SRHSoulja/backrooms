@@ -25,13 +25,13 @@ except ImportError:
 try:
     from scripts.evidence import clamp_confidence, classify_finding, is_accepted, FUNCTION_WORDS
     from scripts.corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, claims_overlap, corroboration_index,
-                                       growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source, profile_subject, profile_url, SEARCH_PAGE, inference_stands, domain_of, subject_for_pair, subject_room_for, make_fact, subject_tokens)
+                                       growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source, profile_subject, profile_url, SEARCH_PAGE, inference_stands, domain_of, subject_for_pair, subject_room_for, make_fact, subject_tokens, topic_terms, COUNT_WORDS)
     from scripts import reports, resident_tools, inference_judge, ledger_chain, research_lines
     from scripts.world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes, retract_unfounded_rooms, collapse_withdrawn_rooms, finding_on_topic)
 except ImportError:
     from evidence import clamp_confidence, classify_finding, is_accepted, FUNCTION_WORDS
     from corroboration import (MAX_JUDGMENTS_PER_CYCLE, append_record, candidate_pairs, claims_overlap, corroboration_index,
-                               growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source, profile_subject, profile_url, SEARCH_PAGE, inference_stands, domain_of, subject_for_pair, subject_room_for, make_fact, subject_tokens)
+                               growth_candidates, judge_verdict, judgment_prompt, judgment_schema, load_records, make_record, founding_pair_stands, rewrite_records, definition_source, profile_subject, profile_url, SEARCH_PAGE, inference_stands, domain_of, subject_for_pair, subject_room_for, make_fact, subject_tokens, topic_terms, COUNT_WORDS)
     import reports, resident_tools, inference_judge, ledger_chain, research_lines
     from world_rules import (apply_retractions, compute_standing, room_lifecycle, sealed_room_ids, settle_disputes, retract_unfounded_rooms, collapse_withdrawn_rooms, finding_on_topic)
 ROOT = Path(__file__).resolve().parents[1]
@@ -283,12 +283,14 @@ def extract_finding(url, agent, cycle, tool, target_claim=None, topic_override=N
     if re.match(r"(?i)^(?:https?://|code:|source:)", exploration.strip()):
         exploration = ""
     origin = (agent.get("research_assignment") or {}).get("origin") if (agent.get("research_assignment") or {}).get("cycle") == cycle else None
+    topic = str(topic_override or query or agent.get("question") or exploration or "research frontier")[:160]
     record = {"id": finding_id, "agent": agent.get("id"), "cycle": cycle,
-              "topic": str(topic_override or query or agent.get("question") or exploration or "research frontier")[:160],
+              "topic": topic,
               "origin": origin or "resident-target",
               "claim": claim, "quote": quote, "url": source[:500], "content_hash": source_hash,
               "confidence": confidence, "quote_score": quote_score, "claim_origin": claim_origin,
-              "quote_match": reason, "relates_to": [agent.get("room") or "unassigned"], "status": status,
+              "quote_match": reason, "status": status,
+              "relates_to": [filing_room(CURRENT_LINE.get("anchors"), topic, agent.get("room") or "unassigned")],
               "recorded_at": datetime.now(timezone.utc).isoformat()}
     record["agency"] = str(tool.get("wire_credit") or "")
     if target_claim and target_claim.get("id"):
@@ -494,11 +496,13 @@ def entailed_finding(agent, cycle, tool, target_claim, dissent=False, topic_over
     source_hash = str(tool.get("source_hash"))
     lineage = f"{agent.get('id')}:{source}:{source_hash}"
     origin = "dissent-claim" if dissent else "verify-claim"
+    topic = str(topic_override or tool.get("query") or agent.get("question") or "research frontier")[:160]
     record = {"id": "finding-" + hashlib.sha256(lineage.encode()).hexdigest()[:20], "agent": agent.get("id"), "cycle": cycle,
-              "topic": str(topic_override or tool.get("query") or agent.get("question") or "research frontier")[:160],
+              "topic": topic,
               "origin": origin, "claim": sentence, "quote": sentence, "url": source[:500], "content_hash": source_hash,
               "confidence": round(float(best[0]), 4), "quote_score": 1.0, "claim_origin": "entailed-quote",
-              "quote_match": "entailed-sentence", "relates_to": [agent.get("room") or "unassigned"], "status": "unreviewed",
+              "quote_match": "entailed-sentence", "status": "unreviewed",
+              "relates_to": [filing_room(CURRENT_LINE.get("anchors"), topic, agent.get("room") or "unassigned")],
               "verifies": target_claim.get("id"), "verifies_claim": str(target_claim.get("claim", ""))[:300],
               "entailment": {"entailment": best[2]["entailment"], "contradiction": best[2]["contradiction"],
                              "model": inference_judge.NLI_REPO, "revision": inference_judge.NLI_REVISION},
@@ -1501,6 +1505,34 @@ VERIFY_ATTEMPTS = 3
 # The research line the council is working this cycle; findings made on its
 # behalf carry its id and anchors so they can be held to its subject.
 CURRENT_LINE = {"id": "", "anchors": [], "origin": "", "seed": None}
+# The world's subject rooms this run, so a finding can be filed by what it is
+# about. Empty means there is nothing to match and the author's room stands.
+CURRENT_ROOMS = []
+
+
+def filing_room(anchors, topic, fallback):
+    """The room a finding is filed under: the subject room its own anchors, or
+    failing that its topic words, match best.
+
+    Where a finding is filed is a property of what it is about. It used to be
+    the room its author happened to be standing in, which is why Yemeni evidence
+    sat in an Iranian room while the Yemen room stood open beside it.
+    """
+    terms = [str(item).lower() for item in (anchors or []) if item]
+    if not terms:
+        terms = sorted(topic_terms(str(topic or "")))
+    terms = [term for term in terms if term not in COUNT_WORDS]
+    wanted = {term[:8] for term in terms if term}
+    best, shared_best = None, 0
+    for room in CURRENT_ROOMS:
+        if room.get("founded_via") != "evidence-ledger" or room.get("status") == "retracted":
+            continue
+        have = {str(item).lower()[:8] for item in room.get("anchors") or []}
+        shared = len(wanted & have)
+        needed = 2 if len(wanted) > 1 and len(have) > 1 else 1
+        if shared >= needed and shared > shared_best:
+            best, shared_best = room.get("id"), shared
+    return best or fallback
 
 
 def target_claim_for(topic):
@@ -2444,6 +2476,7 @@ def main():
         for item in released_claims:
             emit_event(world, args.cycle, "task-claim-expired", "frontier",
                        "A claimed frontier task went uncompleted for too long and returned to the open pool.", **item)
+    CURRENT_ROOMS[:] = list(world.get("rooms") or [])
     CURRENT_LINE["id"] = str(args.line_id or "")[:60]
     CURRENT_LINE["anchors"] = [term.strip() for term in str(args.anchors or "").split(",") if term.strip()][:8]
     CURRENT_LINE["origin"] = str(args.line_origin or "")[:80]

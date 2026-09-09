@@ -1411,5 +1411,41 @@ class LocalAutonomyTests(unittest.TestCase):
         self.assertEqual(schema["properties"]["code"]["maxLength"], 1600)
 
 
+class FilingTests(unittest.TestCase):
+    """Where a finding is filed is a property of what it is about."""
+
+    def setUp(self):
+        local_autonomy.CURRENT_ROOMS[:] = [
+            {"id": "eleven-sanandaj-kurdistan-iran", "founded_via": "evidence-ledger",
+             "anchors": ["sanandaj", "kurdistan", "iran"]},
+            {"id": "yemen-houthi-yemeni-armed", "founded_via": "evidence-ledger",
+             "anchors": ["yemen", "houthi", "yemeni", "armed"]},
+        ]
+        self.addCleanup(lambda: local_autonomy.CURRENT_ROOMS.clear())
+
+    def test_a_finding_goes_to_its_subject_not_to_where_its_author_stood(self):
+        # The author is standing in the Iranian room and the evidence is Yemeni.
+        # This is the case that put a Houthi missile strike in a Kurdistan room
+        # while the Yemen room stood open beside it.
+        self.assertEqual(local_autonomy.filing_room(["yemen", "houthi"], "", "eleven-sanandaj-kurdistan-iran"),
+                         "yemen-houthi-yemeni-armed")
+
+    def test_the_topic_routes_a_finding_that_carries_no_anchors(self):
+        self.assertEqual(local_autonomy.filing_room([], "yemen houthi yemeni armed forces toll", "atrium"),
+                         "yemen-houthi-yemeni-armed")
+
+    def test_the_author_room_stands_when_nothing_matches(self):
+        self.assertEqual(local_autonomy.filing_room(["bread", "yeast"], "", "atrium"), "atrium")
+
+    def test_a_toll_never_routes_a_finding(self):
+        # "eleven" names a room only because a headline counted the dead.
+        self.assertEqual(local_autonomy.filing_room(["eleven"], "", "atrium"), "atrium")
+
+    def test_both_record_paths_file_by_subject(self):
+        source = Path("scripts/local_autonomy.py").read_text()
+        self.assertEqual(source.count('"relates_to": [filing_room('), 2)
+        self.assertNotIn('"relates_to": [agent.get("room")', source)
+
+
 if __name__ == "__main__":
     unittest.main()

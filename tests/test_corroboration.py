@@ -279,5 +279,40 @@ class CorroborationTests(unittest.TestCase):
         self.assertEqual(len(candidate_pairs([paper, other])), 1)
 
 
+class SubjectTests(unittest.TestCase):
+    def test_a_headline_toll_never_becomes_the_subject(self):
+        from scripts.corroboration import subject_for_pair
+        first = finding("f1", "https://a.example/one", "A fuel tanker exploded in western Iran.")
+        second = finding("f2", "https://b.example/two", "A fuel tanker explosion in Iran killed eleven people.")
+        support = make_record(first, second, "pair-1", "supports", "", 5)
+        title, anchors = subject_for_pair(support, {**first, "line_id": "l1"}, {**second, "line_id": "l1"},
+                                          {"l1": {"anchors": ["eleven", "sanandaj", "kurdistan", "iran"]}})
+        self.assertNotIn("eleven", anchors)
+        self.assertEqual(title, "Sanandaj, Kurdistan, Iran")
+
+    def test_anchors_stand_when_counting_is_all_the_pair_shared(self):
+        from scripts.corroboration import subject_for_pair
+        first = finding("f1", "https://a.example/one", "Tens of thousands rallied.")
+        second = finding("f2", "https://b.example/two", "Tens of thousands rallied.")
+        support = make_record(first, second, "pair-2", "supports", "", 5)
+        _title, anchors = subject_for_pair(support, {**first, "line_id": "l2"}, {**second, "line_id": "l2"},
+                                           {"l2": {"anchors": ["tens", "thousands"]}})
+        self.assertEqual(anchors, ["tens", "thousands"])
+
+    def test_one_shared_anchor_is_not_a_shared_subject(self):
+        from scripts.corroboration import subject_room_for
+        gaza = {"id": "gaza", "founded_via": "evidence-ledger", "facts": [{"status": "established"}],
+                "anchors": ["israeli", "nasr", "district", "gaza"]}
+        # A strike on a village in Lebanon shares only "israeli" with the Gaza
+        # room, and that is how it came to be filed there.
+        self.assertIsNone(subject_room_for([gaza], ["israeli", "kfar", "reman", "lebanon"]))
+        self.assertEqual(subject_room_for([gaza], ["israeli", "gaza", "city"])["id"], "gaza")
+
+    def test_a_room_naming_one_thing_is_still_matched_on_it(self):
+        from scripts.corroboration import subject_room_for
+        room = {"id": "a2a", "founded_via": "evidence-ledger", "facts": [{"status": "established"}], "anchors": ["a2a"]}
+        self.assertEqual(subject_room_for([room], ["a2a", "cards"])["id"], "a2a")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -23,6 +23,22 @@ class IdentityRuleTests(unittest.TestCase):
         self.assertIsNone(shares_stem("Lumen-7", []))
         self.assertIn("shares_stem(", open("scripts/local_recruiter.py").read())
 
+    def test_a_profile_never_keeps_the_prompt_length_limit_in_its_role(self):
+        # The recruiter runs its own argument parsing and a model call at import,
+        # so the rule is checked the way this file checks the rest of it: on the
+        # source, plus the pattern itself.
+        import re
+        source = open("scripts/local_recruiter.py").read()
+        self.assertIn("COUNT_NOTE", source)
+        self.assertIn("COUNT_NOTE.sub(", source)
+        pattern = re.search(r'COUNT_NOTE = re\.compile\(r"(.+?)", re\.I\)', source).group(1)
+        strip = re.compile(pattern, re.I)
+        self.assertEqual(strip.sub("", "Cross-Reference Auditor (59 chars)").strip(), "Cross-Reference Auditor")
+        self.assertEqual(strip.sub("", "Auditor (12 characters)").strip(), "Auditor")
+        # a parenthetical that is part of the role is left alone
+        self.assertEqual(strip.sub("", "Data Scrubber (Cycle 310)").strip(), "Data Scrubber (Cycle 310)")
+        self.assertEqual(strip.sub("", "Archive Sifter (Tens-Zagreb)").strip(), "Archive Sifter (Tens-Zagreb)")
+
 
 if __name__ == "__main__":
     unittest.main()

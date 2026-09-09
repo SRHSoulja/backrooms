@@ -16,6 +16,10 @@ ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "state/local-agents.json"
 REGISTRY_RETENTION = 256
 FORBIDDEN = re.compile(r"(api[_ -]?key|password|secret|private memory|credential|token|wallet|funds)", re.I)
+# The prompt asks for a role "under 60 characters" and small models answer with
+# the count attached - "Cross-Reference Auditor (59 chars)". That is the
+# instruction coming back, not part of the hireling.
+COUNT_NOTE = re.compile(r"\s*\(\s*\d+\s*(?:chars?|characters)\.?\s*\)\s*$", re.I)
 
 def ask(url, cycle, context):
     prompt = ("Design one local Backrooms hireling for a bounded research role. Return exactly four lines: "
@@ -34,6 +38,8 @@ def parse(text):
     matches = re.finditer(rf"(?is)\b({labels})\s*[:\-]\s*(.*?)(?=\b(?:{labels})\s*[:\-]|\Z)", text)
     for match in matches:
         fields[match.group(1).upper()] = re.sub(r"[`*_]", "", match.group(2)).strip()
+    for key, value in list(fields.items()):
+        fields[key] = COUNT_NOTE.sub("", value).strip()
     required = ("NAME", "ROLE", "PURPOSE", "QUESTION")
     limits = {"NAME": 80, "ROLE": 60, "PURPOSE": 240, "QUESTION": 240}
     if any(not fields.get(key) or len(fields[key]) > limit for key, limit in limits.items()) or FORBIDDEN.search(text):
