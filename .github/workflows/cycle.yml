@@ -124,7 +124,10 @@ jobs:
       id-token: write
     concurrency:
       group: pages
-      cancel-in-progress: true
+      # Never cancel-in-progress: the post-cycle hook dispatches pages.yml after every
+      # cycle, so a cancelling backstop kills the deploy the final cycle just started -
+      # one cancelled "Publish Backrooms Agent Card" per run, every run. Queue behind it.
+      cancel-in-progress: false
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

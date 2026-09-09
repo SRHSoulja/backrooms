@@ -24,7 +24,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 USAGE = ROOT / "state/provider-usage.json"
 DEFAULT_ENV_FILE = Path.home() / ".config/backrooms/env"
-DEFAULT_ORDER = ("mistral", "mistral-8b", "mistral-small", "gemini", "cerebras", "groq", "openrouter", "custom", "local")
+# cerebras is out of the default order: this account's key answers 402 (no free allowance), so
+# every run spent a call proving it again. Name it in BACKROOMS_PROVIDER_ORDER to put it back.
+DEFAULT_ORDER = ("mistral", "mistral-8b", "mistral-small", "gemini", "groq", "openrouter", "custom", "local")
 SECRET_NAME = re.compile(r"(?i)(key|token|secret|password|mnemonic|credential)")
 
 
@@ -73,8 +75,11 @@ BUILTIN = {
                    "rpm": 120, "rpd": None, "tpd": 400_000, "json_schema": True},
     "mistral-small": {"base_url": "https://api.mistral.ai", "key": "MISTRAL_API_KEY", "model": "mistral-small-latest",
                       "rpm": 10, "rpd": None, "tpd": 100_000, "json_schema": True},
+    # This name is only reached when the model listing itself fails, so it has to be one the
+    # account can still call: gemini-2.5-flash was retired and every fallback to it earned a
+    # 404, which disabled the provider for the rest of the day.
     "gemini": {"base_url": "https://generativelanguage.googleapis.com/v1beta/openai", "key": "GEMINI_API_KEY",
-               "model": "gemini-2.5-flash", "rpm": 8, "rpd": 240, "tpd": None, "json_schema": True,
+               "model": "gemini-omni-flash-preview", "rpm": 8, "rpd": 240, "tpd": None, "json_schema": True,
                "chat_path": "/chat/completions", "models_path": "/models", "resolve_model": "gemini-flash",
                # Gemini 3 models think before answering and the thinking counts as output:
                # ask for the lightest setting and never cap a call below this many tokens.

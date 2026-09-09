@@ -43,6 +43,13 @@ class CycleWorkflowTests(unittest.TestCase):
         self.assertIn("needs: cycle", self.text)
         self.assertIn("actions/deploy-pages", self.text)
 
+    def test_the_deploy_backstop_never_cancels_a_dispatched_page_build(self):
+        # The post-cycle hook dispatches pages.yml after every cycle. A backstop
+        # sharing the pages concurrency group and cancelling in progress kills the
+        # build the last cycle just asked for, once per run.
+        self.assertIn("group: pages", self.text)
+        self.assertNotIn("cancel-in-progress: true", self.text)
+
 
 class PublicRepositoryTests(unittest.TestCase):
     def test_state_directory_is_never_tracked_publicly(self):
