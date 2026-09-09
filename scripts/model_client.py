@@ -75,11 +75,13 @@ BUILTIN = {
                    "rpm": 120, "rpd": None, "tpd": 400_000, "json_schema": True},
     "mistral-small": {"base_url": "https://api.mistral.ai", "key": "MISTRAL_API_KEY", "model": "mistral-small-latest",
                       "rpm": 10, "rpd": None, "tpd": 100_000, "json_schema": True},
-    # This name is only reached when the model listing itself fails, so it has to be one the
-    # account can still call: gemini-2.5-flash was retired and every fallback to it earned a
-    # 404, which disabled the provider for the rest of the day.
+    # This name is only reached when the model listing itself fails, so it must be one that
+    # cannot go stale while nobody is looking: gemini-2.5-flash was pinned here, was retired,
+    # and every fallback to it earned a 404 until eleven of them disabled the provider for the
+    # day. The -latest alias moves with the account instead. Resolution still prefers a
+    # released, versioned Flash from the listing whenever the listing answers.
     "gemini": {"base_url": "https://generativelanguage.googleapis.com/v1beta/openai", "key": "GEMINI_API_KEY",
-               "model": "gemini-omni-flash-preview", "rpm": 8, "rpd": 240, "tpd": None, "json_schema": True,
+               "model": "gemini-flash-latest", "rpm": 8, "rpd": 240, "tpd": None, "json_schema": True,
                "chat_path": "/chat/completions", "models_path": "/models", "resolve_model": "gemini-flash",
                # Gemini 3 models think before answering and the thinking counts as output:
                # ask for the lightest setting and never cap a call below this many tokens.
