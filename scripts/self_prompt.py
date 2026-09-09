@@ -48,7 +48,7 @@ def ask(url, resident, context, retry_reason="", line=None):
 # Adversarial model pairs: each resident prefers a different provider family, so
 # the two voices come from different models whenever more than one key exists.
 RESIDENT_PROVIDERS = {"Echo": ("gemini", "groq", "cerebras", "openrouter", "mistral"),
-                      "Morrow": ("mistral", "mistral-8b", "mistral-small", "cerebras", "groq", "gemini")}
+                      "Morrow": ("mistral", "mistral-8b", "mistral-3b", "cerebras", "groq", "gemini")}
 LAST_PROVIDER = {}
 
 

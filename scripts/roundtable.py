@@ -76,7 +76,7 @@ def ask(base_url, resident, question):
 
 # Adversarial model pairs: Echo and Morrow prefer different provider families.
 RESIDENT_PROVIDERS = {"Echo": ("gemini", "groq", "cerebras", "openrouter", "mistral"),
-                      "Morrow": ("mistral", "mistral-8b", "mistral-small", "cerebras", "groq", "gemini")}
+                      "Morrow": ("mistral", "mistral-8b", "mistral-3b", "cerebras", "groq", "gemini")}
 
 
 def overlap(left, right):

@@ -26,7 +26,7 @@ USAGE = ROOT / "state/provider-usage.json"
 DEFAULT_ENV_FILE = Path.home() / ".config/backrooms/env"
 # cerebras is out of the default order: this account's key answers 402 (no free allowance), so
 # every run spent a call proving it again. Name it in BACKROOMS_PROVIDER_ORDER to put it back.
-DEFAULT_ORDER = ("mistral", "mistral-8b", "mistral-small", "gemini", "groq", "openrouter", "custom", "local")
+DEFAULT_ORDER = ("mistral", "mistral-8b", "mistral-3b", "gemini", "groq", "openrouter", "custom", "local")
 SECRET_NAME = re.compile(r"(?i)(key|token|secret|password|mnemonic|credential)")
 
 
@@ -62,10 +62,13 @@ def setting(name, default=None):
 
 
 BUILTIN = {
-    # Mistral limits are per model, not per account: on the free tier mistral-small
-    # allows 20k tokens a minute while the Ministral models allow 600k+ and many
-    # more requests. The family shares one key but each entry keeps its own
-    # window and cooldown, so a throttled model hands over to the next.
+    # Mistral limits are per model, not per account: the Ministral models allow 600k+
+    # tokens a minute and many requests, the 3B the most of the family (1.3M tokens and
+    # 750 requests a minute, measured on this key). The family shares one key but each
+    # entry keeps its own window and cooldown, so a throttled model hands over to the next.
+    # mistral-small is deliberately absent. The account lists mistral-small-latest, but
+    # calling it answers 429 (code 1300) even on a completely idle key, so the slot it
+    # used to hold never completed a single call and its whole allowance went unused.
     # Daily token budgets keep a month of cycles inside the free tier's monthly
     # credit (about ten dollars): 900k + 400k + 100k tokens a day is roughly
     # five dollars a month at these models' list prices.
@@ -73,8 +76,8 @@ BUILTIN = {
                 "rpm": 20, "rpd": None, "tpd": 900_000, "json_schema": True},
     "mistral-8b": {"base_url": "https://api.mistral.ai", "key": "MISTRAL_API_KEY", "model": "ministral-8b-2512",
                    "rpm": 120, "rpd": None, "tpd": 400_000, "json_schema": True},
-    "mistral-small": {"base_url": "https://api.mistral.ai", "key": "MISTRAL_API_KEY", "model": "mistral-small-latest",
-                      "rpm": 10, "rpd": None, "tpd": 100_000, "json_schema": True},
+    "mistral-3b": {"base_url": "https://api.mistral.ai", "key": "MISTRAL_API_KEY", "model": "ministral-3b-2512",
+                   "rpm": 400, "rpd": None, "tpd": 100_000, "json_schema": True},
     # This name is only reached when the model listing itself fails, so it must be one that
     # cannot go stale while nobody is looking: gemini-2.5-flash was pinned here, was retired,
     # and every fallback to it earned a 404 until eleven of them disabled the provider for the

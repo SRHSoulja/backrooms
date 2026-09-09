@@ -147,16 +147,16 @@ class ReadinessTests(unittest.TestCase):
         import os
         from scripts import model_client
         previous = {key: os.environ.get(key) for key in ("MISTRAL_API_KEY", "BACKROOMS_ENV_FILE", "BACKROOMS_PROVIDER_ORDER", "BACKROOMS_LOCAL_MODEL")}
-        os.environ.update({"MISTRAL_API_KEY": "k", "BACKROOMS_ENV_FILE": "", "BACKROOMS_PROVIDER_ORDER": "mistral-small", "BACKROOMS_LOCAL_MODEL": "never"})
+        os.environ.update({"MISTRAL_API_KEY": "k", "BACKROOMS_ENV_FILE": "", "BACKROOMS_PROVIDER_ORDER": "mistral-3b", "BACKROOMS_LOCAL_MODEL": "never"})
         try:
             usage = {"day": "x", "providers": {}}
-            entry = model_client._record(usage, "mistral-small", errors=1)
-            model_client._record(usage, "mistral-small", errors=1)
-            model_client._record(usage, "mistral-small", errors=1)
+            entry = model_client._record(usage, "mistral-3b", errors=1)
+            model_client._record(usage, "mistral-3b", errors=1)
+            model_client._record(usage, "mistral-3b", errors=1)
             self.assertEqual(entry["consecutive_errors"], 3)
-            provider = {"name": "mistral-small", "rpd": None, "tpd": None}
+            provider = {"name": "mistral-3b", "rpd": None, "tpd": None}
             self.assertFalse(model_client._answering(provider, usage))
-            model_client._record(usage, "mistral-small", calls=1)
+            model_client._record(usage, "mistral-3b", calls=1)
             self.assertTrue(model_client._answering(provider, usage))
         finally:
             for key, value in previous.items():
@@ -401,7 +401,7 @@ class ModelClientTests(unittest.TestCase):
         model_client.SECRETS.clear()
         model_client.SECRETS.update({"MISTRAL_API_KEY": "test-mistral"})
         names = [p["name"] for p in model_client.providers("http://127.0.0.1:9")]
-        self.assertEqual(names[:3], ["mistral", "mistral-8b", "mistral-small"])
+        self.assertEqual(names[:3], ["mistral", "mistral-8b", "mistral-3b"])
         self.assertTrue(all(p["api_key"] == "test-mistral" for p in model_client.providers("http://127.0.0.1:9") if p["name"].startswith("mistral")))
         seen = []
 
