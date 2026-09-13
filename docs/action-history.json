@@ -2,793 +2,6 @@
   "privacy": "Aggregate action metadata only; raw local outputs are excluded.",
   "cycles": [
     {
-      "generated_at": "2026-09-13T03:18:09.236700+00:00",
-      "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
-      "runtime_cycle": 659,
-      "question": "Did official statements from Saudi Arabia's Ministry of Energy and state media in May 2019 attribute the East-West pipeline drone attack to armed drones from Yemen or from Iraq?",
-      "question_source": "carried:line-000656-65f69a61",
-      "self_prompt_accepted": 2,
-      "self_prompt_rejections": [],
-      "action": {
-        "action": "local-behavioral-probe",
-        "status": "skipped-this-cycle"
-      },
-      "recruitment": {
-        "status": "interview-backpressure",
-        "active": 47,
-        "pending": 4,
-        "capacity": 256
-      },
-      "autonomy": {
-        "status": "completed",
-        "active": 47,
-        "decisions": [
-          {
-            "id": "local-001",
-            "action": "explore",
-            "room": "relay",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Directly inspect the project\u2019s own source for RosComNadzor27\u2019s archived evidence structure.",
-            "request": "",
-            "request_status": "closed",
-            "exploration": "code:scripts/evidence.py",
-            "tool": {
-              "tool": "local-code-read",
-              "status": "completed",
-              "file": "scripts/evidence.py",
-              "bytes": 5847,
-              "sha256": "e4232c4402f4c6ce561c8d1c6d89484e84070690a696471604a7725c5ba75c1e",
-              "content": "\"\"\"Shared evidence rules for source-backed findings.\n\nBoth the autonomy subprocess (at extraction time) and the daemon (at\npublication time) use these pure functions so a finding is judged by one\nstandard. Nothing here touches the network, the model, or local state.\n\"\"\"\n\nimport re\n\nSTOPWORDS = {\"about\", \"after\", \"also\", \"from\", \"into\", \"that\", \"this\", \"with\", \"what\", \"which\",\n             \"where\", \"when\", \"does\", \"did\", \"have\", \"their\", \"there\", \"these\", \"those\", \"than\"}\n# Prepositions, determiners, and auxiliaries name no subject; a corroborated\n# definition of one of them is not evidence about the world.\nFUNCTION_WORDS = {'above', 'across', 'against', 'along', 'although', 'always', 'among', 'another', 'around', 'because', 'been', 'before', 'behind', 'being', 'below', 'beneath', 'between', 'beyond', 'both', 'during', 'each', 'either', 'even', 'ever', 'every', 'hence', 'just', 'less', 'many', 'might', 'more', 'most', 'much', 'must', 'neither', 'never', 'often', 'only', 'onto', 'other', 'others', 'over', 'shall', 'since', 'some', 'still', 'such', 'though', 'through', 'thus', 'toward', 'towards', 'under', 'until', 'upon', 'very', 'were', 'whether', 'while', 'will', 'within', 'without'}\nSTOPWORDS |= FUNCTION_WORDS\nIMPERATIVE = re.compile(r\"^(?:explore|search|analyze|identify|continue|find|review|investigate|look)\\b\", re.I)\nQUOTE_SUPPORT_THRESHOLD = 0.85\nMIN_FUZZY_TOKENS = 4\n_PUNCTUATION_MAP = {\"\u2018\": \"'\", \"\u2019\": \"'\", \"\u201c\": '\"', \"\u201d\": '\"', \"\u2013\": \"-\", \"\u2014\": \"-\",\n                    \"\u00a0\": \" \", \"\u2026\": \"...\"}\n\n\ndef normalize(text):\n    \"\"\"Lower-case, fold typographic punctuation, and collapse whitespace.\"\"\"\n    value = str(text or \"\")\n    for source, target in _PUNCTUATION_MAP.items():\n        value = value.replace(source, target)\n    return re.sub(r\"\\s+\", \" \", value).strip().lower()\n\n\ndef tokens(text):\n    return re.findall(r\"[a-z0-9]+\", normalize(text))\n\n\ndef _lcs_length(left, right):\n    \"\"\"Length of the longest common subsequence of two short token lists.\"\"\"\n    if not left or not right:\n        return 0\n    previous = [0] * (len(right) + 1)\n    for item in left:\n        current = [0]\n        for index, other in enumerate(right, start=1):\n            if item == other:\n                current.append(previous[index - 1] + 1)\n            else:\n                current.append(max(previous[index], current[index - 1]))\n        previous = current\n    return previous[-1]\n\n\ndef quote_support(quote, excerpt, threshold=QUOTE_SUPPORT_THRESHOLD):\n    \"\"\"Return (supported, score, mode) describing how well the excerpt backs the quote.\n\n    An exact normalized substring scores 1.0. Otherwise the quote must share at\n    least ``threshold`` of its tokens, in order, with some window of the excerpt.\n    Small models paraphrase punctuation and drop function words; this keeps the\n    evidence bar high without demanding byte-exact copying.\n    \"\"\"\n    quote_tokens = tokens(quote)\n    excerpt_tokens = tokens(excerpt)\n    if not quote_tokens or not excerpt_tokens:\n        return False, 0.0, \"none\"\n    if normalize(quote) in normalize(excerpt):\n        return True, 1.0, \"exact\"\n    if len(quote_tokens) < MIN_FUZZY_TOKENS:\n        return False, 0.0, \"too-short\"\n    window = len(quote_tokens) + max(2, len(quote_tokens) // 4)\n    anchors = set(quote_tokens)\n    best = 0.0\n    for start, token in enumerate(excerpt_tokens):\n        if token not in anchors:\n            continue\n        segment = excerpt_tokens[start:start + window]\n        score = _lcs_length(quote_tokens, segment) / len(quote_tokens)\n        if score > best:\n            best = score\n            if best >= 1.0:\n                break\n    supported = best >= threshold\n    return supported, round(best, 3), \"fuzzy\" if supported else \"unsupported\"\n\n\ndef claim_terms(claim):\n    return {term for term in re.findall(r\"[a-z0-9]{4,}\", normalize(claim)) if term not in STOPWORDS}\n\n\ndef claim_grounded(claim, quote):\n    \"\"\"A claim must share vocabulary with its quote and must not be an instruction.\"\"\"\n    if not claim or not quote:\n        return False, \"missing-claim-or-quote\"\n    if IMPERATIVE.match(str(claim).strip()):\n        return False, \"imperative-claim\"\n    terms = claim_terms(claim)\n    quote_vocabulary = set(re.findall(r\"[a-z0-9]{4,}\", normalize(quote)))\n    if len(terms & quote_vocabulary) < min(2, len(terms)):\n        return False, \"claim-not-grounded-in-quote\"\n    return True, \"grounded\"\n\n\ndef clamp_confidence(value):\n    \"\"\"Fold a model-reported confidence into [0, 1]; unparseable values become 0.0.\n\n    The JSON grammar cannot enforce numeric ranges, so a well-quoted finding\n    must not be thrown away merely because the model wrote 1.5 or \"high\".\n    \"\"\"\n    try:\n        number = float(value)\n    except (TypeError, ValueError):\n        return 0.0\n    if number != number:\n        return 0.0\n    return max(0.0, min(1.0, number))\n\n\ndef classify_finding(claim, quote, excerpt=None, confidence=None):\n    \"\"\"Return (status, reason, quote_score) for a candidate finding.\n\n    ``excerpt`` may be None when re-checking a stored record whose page text is\n    no longer available; the stored quote-to-excerpt verdict is then trusted and\n    only claim grounding is re-evaluated. Confidence never rejects a finding;\n    callers store ``clamp_confidence`` of it.\n    \"\"\"\n    grounded, reason = claim_grounded(claim, quote)\n    if not grounded:\n        return \"rejected\", reason, 0.0\n    if excerpt is None:\n        return \"unreviewed\", \"grounded\", 1.0\n    supported, score, mode = quote_support(quote, excerpt)\n    if not supported:\n        return \"rejected\", f\"quote-{mode}\", score\n    return \"unreviewed\", f\"quote-{mode}\", score\n\n\ndef is_accepted(record):\n    \"\"\"Rejected rows stay in the ledger for audit but never count as evidence.\"\"\"\n    return str((record or {}).get(\"status\", \"unreviewed\")) not in {\"rejected\", \"retracted\"}",
-              "read_only": true,
-              "privacy": "sanitized public source only",
-              "contract": {
-                "capability": "public-source-read",
-                "access": "read-only",
-                "network": "none",
-                "side_effects": false,
-                "max_file_bytes": 120000,
-                "max_inventory_bytes": 400000,
-                "write_access": false,
-                "secrets": "redacted"
-              }
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "model"
-          },
-          {
-            "id": "local-020",
-            "action": "stay",
-            "room": "relay",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
-            "request": "Verify if the GitHub profile **Roscomnadzor27** has any repositories (public or private) via the `/repos` endpoint, cross-checking for residual activity beyond events",
-            "request_status": "closed",
-            "exploration": "southern transitional council stc hadhramaut governorate december 2025",
-            "tool": {
-              "status": "not-requested"
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": "unstructured-output",
-            "decision_source": "model"
-          },
-          {
-            "id": "local-023",
-            "action": "stay",
-            "room": "quiet-workspace",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
-            "request": "Fetch the repository\u2019s dependency files and metadata to analyze for outdated patched versions",
-            "request_status": "closed",
-            "exploration": "idf staff sgt chalachew shimon demalash hamas gaza",
-            "tool": {
-              "status": "not-requested"
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": "unstructured-output",
-            "decision_source": "model"
-          },
-          {
-            "id": "local-056",
-            "action": "stay",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
-            "request": "Cross-reference UN OHCHR aggregated reports and ACLED granular event-level data for 2022 Marib offensive to identify highest single-day death tolls and discrepancies in fatality figures",
-            "request_status": "closed",
-            "exploration": "southern transitional council stc hadhramaut governorate december 2025",
-            "tool": {
-              "status": "not-requested"
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": "unstructured-output",
-            "decision_source": "model"
-          },
-          {
-            "id": "local-074",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Official UIowa PA system upgrade report (2022) may contain technical EMI logs or dB spike data for Kinnick Stadium.",
-            "request": "",
-            "request_status": "closed",
-            "exploration": "https://uiowa.edu/news/2022/08/upgrades-kinnick-stadium-pa-system-technical-report",
-            "tool": {
-              "tool": "public-text",
-              "status": "failed",
-              "error_kind": "source-not-found",
-              "reason": "source-not-found (HTTP 404)",
-              "retryable": false,
-              "contract": {
-                "capability": "public-text-read",
-                "access": "read-only",
-                "network": "public HTTPS",
-                "side_effects": false,
-                "max_bytes": 5000000,
-                "raw_data": false,
-                "untrusted_content": true
-              },
-              "http_status": 404
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "model"
-          },
-          {
-            "id": "local-079",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Search the 2027 Icelandic parliamentary bill archive for explicit references to 'whale ban' or 'draft' to verify if a draft date exists in official records.",
-            "request": "",
-            "request_status": "closed",
-            "exploration": "https://www.althingi.is/lagas/lagafrumvarp/?annal=2027",
-            "tool": {
-              "tool": "public-text",
-              "status": "failed",
-              "error_kind": "source-not-found",
-              "reason": "source-not-found (HTTP 404)",
-              "retryable": false,
-              "contract": {
-                "capability": "public-text-read",
-                "access": "read-only",
-                "network": "public HTTPS",
-                "side_effects": false,
-                "max_bytes": 5000000,
-                "raw_data": false,
-                "untrusted_content": true
-              },
-              "http_status": 404
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "model"
-          },
-          {
-            "id": "local-083",
-            "action": "explore",
-            "room": "relay",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Cross-check Sanaa Center\u2019s latest dossier on Houthi Taiz strikes for interception events or payload details, as their reports are a verified source for Yemen conflict analysis.",
-            "request": "",
-            "request_status": "closed",
-            "exploration": "https://sanaacenter.org/publications/ Houthi missile strikes Taiz 2024 non-conventional payloads",
-            "tool": {
-              "tool": "public-text",
-              "status": "failed",
-              "error_kind": "tool-error",
-              "reason": "tool-error",
-              "retryable": false,
-              "contract": {
-                "capability": "public-text-read",
-                "access": "read-only",
-                "network": "public HTTPS",
-                "side_effects": false,
-                "max_bytes": 5000000,
-                "raw_data": false,
-                "untrusted_content": true
-              }
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": null,
-            "fallback_reason": null,
-            "decision_source": "model"
-          },
-          {
-            "id": "local-086",
-            "action": "explore",
-            "room": "archive",
-            "status": "active-local",
-            "proposal": "",
-            "reason": "Validate Eurostat\u2019s structured phrasing for 'oil pipeline incidents' against prior Saudi crisis statements to cross-reference linguistic patterns (Frontier 636/637/638).",
-            "request": "Fetch and parse Eurostat\u2019s structured data to cross-reference nominal phrasing (e.g., 'reported incidents' vs. 'confirmed attacks') with SPA\u2019s crisis communications",
-            "request_status": "closed",
-            "exploration": "https://ec.europa.eu/eurostat/web/agriculture/data/database",
-            "tool": {
-              "tool": "public-text",
-              "url": "https://www.offidocs.com/free-icons/agriculture/database/",
-              "excerpt": "Agriculture / Database Home Apps Apps Productivity Apps Graphics Apps Video & Audio Apps Education Apps Games Apps Utilities Our Android apps Android Utilities Our IOS apps iPhone & iPad Graphics iPhone & iPad Utilities Our Chrome extensions Web Extensions Images & Graphics Web Extensions Video & Audio Quick Links Documentation Free pictures Free graphics Free videos Tools PDF editor PDF merge files PDF split files PDF rotate files Add page numbers to PDF PDF delete pages Convert PDF to Word Convert PDF to Excel PDF add watermark Create documents with ChatGPT Create images with ChatGPT Word AI templates Excel AI templates Icons AI templates Word templates Word Resume templates 2023 Monthly Word Calendar templates 2024 Monthly Word Calendar templates Excel templates Powerpoint templates Images templates Test Chrome extensions Lang English Arabic Chinese (Simplified) Dutch French German Hindi Italian Japanese Korean Polish Portuguese Romanian Russian Spanish Filipino Hebrew Indonesian Ukrainian Vietnamese Thai Turkish Persian Malay Bengali GoGPT GoSearch New DOC New XLS New PPT Skip to content --> Agriculture / Database Agriculture / Database free icons Database - Agriculture for Minimalist Database - Agriculture for Flat design Database - Agriculture for 3D isometric Database - Agriculture for Futuristic Database - Agriculture for Retro Database - Agriculture for Neon Database - Agriculture for Pixel art Database - Agriculture for Cartoon Database - Agriculture for Monochrome Database - Agriculture for Vibrant colors Database - Agriculture for Geometric Database - Agriculture for Organic Database - Agriculture for Abstract Database - Agriculture for Line art Database - Agriculture for Gradient Database - Agriculture for Outline Database - Agriculture for Filled Database - Agriculture for Transparent Database - Agriculture for Symmetrical Database - Agriculture for Asymmetrical Database - Agriculture for Bold Database - Agriculture for Thin Database - Agriculture for Rounded Database - Agriculture for Sharp edges Database - Agriculture for Metallic Database - Agriculture for Glassy Database - Agriculture for Wooden Database - Agriculture for Origami Database - Agriculture for Glow effect Database - Agriculture for Shadow effect Database - Agriculture for Embossed Database - Agriculture for Flat pastel Database - Agriculture for Vector Database - Agriculture fo",
-              "status": "completed",
-              "contract": {
-                "capability": "public-text-read",
-                "access": "read-only",
-                "network": "public HTTPS",
-                "side_effects": false,
-                "max_bytes": 5000000,
-                "raw_data": false,
-                "untrusted_content": true
-              },
-              "wire_credit": "",
-              "query": "ec europa eu eurostat web agriculture data database",
-              "search_results": [
-                {
-                  "title": "Agriculture / Database",
-                  "url": "https://www.offidocs.com/free-icons/agriculture/database/",
-                  "snippet": "Agriculture / Database"
-                }
-              ]
-            },
-            "message": null,
-            "trade": null,
-            "finding_id": "finding-f12d55c7ec18e1680b0b",
-            "fallback_reason": null,
-            "decision_source": "model"
-          }
-        ],
-        "construction": [],
-        "requests": [],
-        "trades_settled": [],
-        "corroborations": [
-          {
-            "id": "pair-190824845d3be68f27de",
-            "relation": "unrelated",
-            "finding_ids": [
-              "finding-5e748515a730a3def4d4",
-              "finding-f12d55c7ec18e1680b0b"
-            ],
-            "topic": "agriculture data database europa eurostat",
-            "domains": [
-              "offidocs.com",
-              "wikipedia.org"
-            ]
-          },
-          {
-            "id": "pair-a609663279de34120ba8",
-            "relation": "unrelated",
-            "finding_ids": [
-              "finding-0d5ef63d6d62fe603c53",
-              "finding-863a92be35ef00c0db0a"
-            ],
-            "topic": "arabia closes crude east energy ministry pipeline saudi temporarily west",
-            "domains": [
-              "cnbc.com",
-              "lijkos.com"
-            ]
-          },
-          {
-            "id": "pair-a662a1909ef60fef0341",
-            "relation": "unrelated",
-            "finding_ids": [
-              "finding-0ec1dab779444109e51e",
-              "finding-a993e9bf914c5fa622bd"
-            ],
-            "topic": "announces family health husain ministry sakhawat sardar welfare",
-            "domains": [
-              "revelationneighbourly.com",
-              "wikipedia.org"
-            ]
-          }
-        ],
-        "regrounded": [],
-        "retractions": [],
-        "room_changes": [],
-        "shared_research": {
-          "query": "",
-          "family": null,
-          "avoid_domains": []
-        },
-        "dormant": 39
-      },
-      "metrics": {
-        "jaccard_overlap": 0.156,
-        "morrow_audit_markers": [
-          "counterexample",
-          "assumption",
-          "missing control"
-        ],
-        "response_completeness": "thin-or-missing",
-        "evidence_coverage": "missing",
-        "distinction_status": "needs-audit"
-      },
-      "continuity_audit": {
-        "generated_at": "2026-09-13T03:18:09.227029+00:00",
-        "cycle": 659,
-        "status": "pass",
-        "checks": {
-          "archive_parse": true,
-          "archive_event_overlap": true,
-          "archive_event_ids_unique": true,
-          "raw_output_exclusion": true,
-          "room_link_integrity": true,
-          "resident_room_integrity": true
-        },
-        "archive_records": 7300,
-        "malformed_archive_records": 0,
-        "raw_output_fields_found": 0,
-        "duplicate_archive_ids": [],
-        "linked_rooms_checked": 11,
-        "invalid_room_links": [],
-        "invalid_resident_assignments": [],
-        "privacy": "Aggregate integrity metadata only; resident prompts and raw responses are not published."
-      },
-      "work_orders": {
-        "count": 100
-      },
-      "health": {
-        "schema_version": 1,
-        "generated_at": "2026-09-13T03:18:09.229511+00:00",
-        "cycle": 659,
-        "daemon": "running",
-        "model_status": "ready",
-        "model_probe_ok": true,
-        "model_provider": "mistral",
-        "model_name": "ministral-14b-2512",
-        "model_backend": "hosted-api",
-        "model_usage": {
-          "day": "2026-09-13",
-          "providers": [
-            {
-              "name": "mistral",
-              "model": "ministral-14b-2512",
-              "calls": 79,
-              "input_tokens": 185918,
-              "output_tokens": 24819,
-              "errors": 0,
-              "last_error": "",
-              "daily_request_budget": null,
-              "daily_token_budget": 900000,
-              "limit_rpm": 30,
-              "limit_tpm": 937500,
-              "requests_last_minute": 0,
-              "tokens_last_minute": 0,
-              "status": "ready"
-            },
-            {
-              "name": "mistral-8b",
-              "model": "ministral-8b-2512",
-              "calls": 0,
-              "input_tokens": 0,
-              "output_tokens": 0,
-              "errors": 0,
-              "last_error": "",
-              "daily_request_budget": null,
-              "daily_token_budget": 400000,
-              "limit_rpm": 120,
-              "limit_tpm": null,
-              "requests_last_minute": 0,
-              "tokens_last_minute": 0,
-              "status": "ready"
-            },
-            {
-              "name": "mistral-3b",
-              "model": "ministral-3b-2512",
-              "calls": 0,
-              "input_tokens": 0,
-              "output_tokens": 0,
-              "errors": 0,
-              "last_error": "",
-              "daily_request_budget": null,
-              "daily_token_budget": 100000,
-              "limit_rpm": 400,
-              "limit_tpm": null,
-              "requests_last_minute": 0,
-              "tokens_last_minute": 0,
-              "status": "ready"
-            },
-            {
-              "name": "gemini",
-              "model": "gemini-3.7-flash",
-              "calls": 22,
-              "input_tokens": 32474,
-              "output_tokens": 2652,
-              "errors": 3,
-              "last_error": "503 judgment: This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again",
-              "daily_request_budget": 240,
-              "daily_token_budget": null,
-              "limit_rpm": 8,
-              "limit_tpm": null,
-              "requests_last_minute": 1,
-              "tokens_last_minute": 362,
-              "status": "ready"
-            },
-            {
-              "name": "groq",
-              "model": "openai/gpt-oss-120b",
-              "calls": 11,
-              "input_tokens": 8838,
-              "output_tokens": 2125,
-              "errors": 0,
-              "last_error": "",
-              "daily_request_budget": 900,
-              "daily_token_budget": 190000,
-              "limit_rpm": 1000,
-              "limit_tpm": 8000,
-              "requests_last_minute": 2,
-              "tokens_last_minute": 1326,
-              "status": "ready"
-            }
-          ],
-          "recent_calls": [
-            {
-              "at": 1789267504.3,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "70b249f503b54d27"
-            },
-            {
-              "at": 1789267511.5,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "bf8ad83d2840de83"
-            },
-            {
-              "at": 1789267519.2,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "80dfb433ba6a8840"
-            },
-            {
-              "at": 1789267526.6,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "1048c454cb560b0d"
-            },
-            {
-              "at": 1789267531.9,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "5ab30e8fdd504ddf"
-            },
-            {
-              "at": 1789267539.2,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "4cd734f722d8c75f"
-            },
-            {
-              "at": 1789267546.4,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "341d16409bcffda6"
-            },
-            {
-              "at": 1789267554.2,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "d31129a4d934462b"
-            },
-            {
-              "at": 1789267561.1,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "a45b64573ab7b2dd"
-            },
-            {
-              "at": 1789267593.8,
-              "class": "judgment",
-              "provider": "gemini",
-              "model": "gemini-3.7-flash",
-              "prompt_sha256_16": "c9d2f27aec43594b"
-            },
-            {
-              "at": 1789267602.5,
-              "class": "judgment",
-              "provider": "gemini",
-              "model": "gemini-3.7-flash",
-              "prompt_sha256_16": "78daf9d6ec9b01cc"
-            },
-            {
-              "at": 1789269260.3,
-              "class": "self-prompt",
-              "provider": "gemini",
-              "model": "gemini-3.7-flash",
-              "prompt_sha256_16": "4d7c028c4a79fc2f"
-            },
-            {
-              "at": 1789269262.2,
-              "class": "self-prompt",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "201cfe104e0b073d"
-            },
-            {
-              "at": 1789269349.0,
-              "class": "council",
-              "provider": "gemini",
-              "model": "gemini-3.7-flash",
-              "prompt_sha256_16": "5b21a440fe586b7f"
-            },
-            {
-              "at": 1789269356.9,
-              "class": "council",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "9b3d802b4bee5b3a"
-            },
-            {
-              "at": 1789269362.1,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "8b2440b756e1a16c"
-            },
-            {
-              "at": 1789269369.7,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "93d0f755c171a66f"
-            },
-            {
-              "at": 1789269377.1,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "63116c5cfcc44266"
-            },
-            {
-              "at": 1789269382.4,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "97489822b4faab87"
-            },
-            {
-              "at": 1789269389.7,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "d6463b21215561ea"
-            },
-            {
-              "at": 1789269396.7,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "f23b6c206fefba79"
-            },
-            {
-              "at": 1789269403.8,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "3376a4f1c7118162"
-            },
-            {
-              "at": 1789269409.1,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "b00ec0e960b202d0"
-            },
-            {
-              "at": 1789269414.1,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "b772be5601a6ed46"
-            },
-            {
-              "at": 1789269419.1,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "3bad90c0d3dc0899"
-            },
-            {
-              "at": 1789269424.0,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "219b1f3255c90abf"
-            },
-            {
-              "at": 1789269428.9,
-              "class": "decision",
-              "provider": "mistral",
-              "model": "ministral-14b-2512",
-              "prompt_sha256_16": "8d5e85763491336e"
-            },
-            {
-              "at": 1789269434.4,
-              "class": "extraction",
-              "provider": "groq",
-              "model": "openai/gpt-oss-120b",
-              "prompt_sha256_16": "e90bc318b5203d37"
-            },
-            {
-              "at": 1789269443.1,
-              "class": "judgment",
-              "provider": "gemini",
-              "model": "gemini-3.7-flash",
-              "prompt_sha256_16": "c3a910d983ac589a"
-            },
-            {
-              "at": 1789269487.5,
-              "class": "judgment",
-              "provider": "groq",
-              "model": "openai/gpt-oss-120b",
-              "prompt_sha256_16": "084e00ee318e8046"
-            }
-          ],
-          "models_seen": {
-            "gemini": [
-              "gemini-2.5-flash",
-              "gemini-2.5-pro",
-              "gemini-2.5-flash-preview-tts",
-              "gemini-2.5-pro-preview-tts",
-              "gemma-4-26b-a4b-it",
-              "gemma-4-31b-it",
-              "gemini-flash-latest",
-              "gemini-flash-lite-latest",
-              "gemini-pro-latest",
-              "gemini-2.5-flash-lite",
-              "gemini-2.5-flash-image",
-              "gemini-3-flash-preview",
-              "gemini-3.1-pro-preview",
-              "gemini-3.1-pro-preview-customtools",
-              "gemini-3.1-flash-lite-preview",
-              "gemini-3.1-flash-lite",
-              "gemini-3-pro-image-preview",
-              "gemini-3-pro-image",
-              "nano-banana-pro-preview",
-              "gemini-3.1-flash-image-preview",
-              "gemini-3.1-flash-image",
-              "gemini-3.1-flash-lite-image",
-              "gemini-3.5-flash",
-              "gemini-3.5-flash-lite",
-              "gemini-omni-flash-preview",
-              "gemini-omni-1.1-flash",
-              "gemini-3.5-transcribe",
-              "gemini-3.6-flash",
-              "gemini-3.7-flash",
-              "gemini-3.8-flash",
-              "lyria-3-clip-preview",
-              "lyria-3-pro-preview",
-              "lyria-3.5",
-              "gemini-3.1-flash-tts-preview",
-              "gemini-robotics-er-2-preview",
-              "gemini-2.5-computer-use-preview-10-2025",
-              "antigravity-preview-05-2026",
-              "deep-research-max-preview-04-2026",
-              "deep-research-preview-04-2026",
-              "deep-research-pro-preview-12-2025"
-            ],
-            "groq": [
-              "gpt-oss-safeguard-20b",
-              "whisper-large-v3",
-              "compound",
-              "llama-prompt-guard-2-86m",
-              "allam-2-7b",
-              "qwen3.8-27b",
-              "orpheus-v1-english",
-              "orpheus-arabic-saudi",
-              "qwen3.6-27b",
-              "llama-prompt-guard-2-22m",
-              "whisper-large-v3-turbo",
-              "compound-mini",
-              "gpt-oss-120b",
-              "gpt-oss-20b"
-            ]
-          }
-        },
-        "rooms": 12,
-        "active_residents": 88,
-        "work_orders": 100,
-        "continuity": "pass",
-        "autonomy": "active",
-        "autonomy_quality": {
-          "status": "active",
-          "turns": 8,
-          "fallbacks": 3,
-          "fallback_rate": 0.375,
-          "fallback_reasons": {
-            "unstructured-output": 3
-          },
-          "tool_successes": 2,
-          "findings_filed": 1
-        },
-        "publication": "sanitized GitHub Pages snapshot",
-        "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
-        "publication_status": {
-          "outcome": "pushed",
-          "reason": "",
-          "at": "2026-09-13T02:46:45.542895+00:00"
-        },
-        "question_source": "carried:line-000656-65f69a61",
-        "self_prompt_accepted": 2,
-        "self_prompt_rejections": [],
-        "activity_feed": "docs/activity.json",
-        "feed_freshness_seconds": 0,
-        "activity_records": 110,
-        "note_records": 3114,
-        "print_jobs": 145,
-        "failed_print_jobs": 0,
-        "analysis_runs": 100,
-        "analysis_completed": 88,
-        "analysis_failed": 4,
-        "analysis_rejected": 8,
-        "analysis_timed_out": 0,
-        "analysis_feed": "docs/analysis.json",
-        "research_records": 56,
-        "research_stale": 3,
-        "research_feed": "docs/research.json",
-        "findings": 126,
-        "finding_candidates": 126,
-        "findings_rejected": 274,
-        "findings_retracted": 0,
-        "findings_duplicates": 0,
-        "findings_excluded": 274,
-        "findings_total": 400,
-        "corroborated_findings": 0,
-        "findings_feed": "docs/findings.json",
-        "frontier_leads": 0,
-        "research_line": null,
-        "frontier_questions": 100,
-        "frontier_findings": 100,
-        "frontier_tasks": 2,
-        "frontier_feed": "docs/frontier.json",
-        "code_proposals": 0,
-        "code_proposals_ready": 0,
-        "code_proposals_feed": "docs/code-proposals.json",
-        "outside_signals": 16,
-        "outside_quarantined": 12,
-        "outside_signals_feed": "docs/outside-signals.json",
-        "codex_bridge": "enabled",
-        "codex_pending_tasks": 13,
-        "codex_completed_tasks": 48,
-        "resident_messages": 0,
-        "messages_feed": "docs/messages.json",
-        "trades": 0,
-        "trades_feed": "docs/trades.json",
-        "journal_entries": 12,
-        "journal_written": null,
-        "retractions": 0,
-        "room_changes": [],
-        "dropped_events": 0
-      },
-      "privacy": "Only aggregate metrics and the bounded council question are public; raw outputs remain local."
-    },
-    {
       "generated_at": "2026-09-13T03:21:27.959889+00:00",
       "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
       "runtime_cycle": 660,
@@ -22107,6 +21320,1062 @@
         "frontier_questions": 100,
         "frontier_findings": 100,
         "frontier_tasks": 4,
+        "frontier_feed": "docs/frontier.json",
+        "code_proposals": 0,
+        "code_proposals_ready": 0,
+        "code_proposals_feed": "docs/code-proposals.json",
+        "outside_signals": 16,
+        "outside_quarantined": 12,
+        "outside_signals_feed": "docs/outside-signals.json",
+        "codex_bridge": "enabled",
+        "codex_pending_tasks": 13,
+        "codex_completed_tasks": 48,
+        "resident_messages": 0,
+        "messages_feed": "docs/messages.json",
+        "trades": 0,
+        "trades_feed": "docs/trades.json",
+        "journal_entries": 12,
+        "journal_written": null,
+        "retractions": 0,
+        "room_changes": [],
+        "dropped_events": 0
+      },
+      "privacy": "Only aggregate metrics and the bounded council question are public; raw outputs remain local."
+    },
+    {
+      "generated_at": "2026-09-13T11:41:52.170637+00:00",
+      "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
+      "runtime_cycle": 683,
+      "question": "Does the Japanese Ministry of Defense's official press release regarding the North Korean SRBM launches on the date of the Freedom Edge drills report a different number of projectiles or a different flight trajectory than the South Korean Joint Chiefs of Staff?",
+      "question_source": "resident:echo",
+      "self_prompt_accepted": 1,
+      "self_prompt_rejections": [
+        "morrow: missing TEST line(s); return exactly QUESTION:, WHY:, TEST:"
+      ],
+      "action": {
+        "action": "local-behavioral-probe",
+        "status": "skipped-this-cycle"
+      },
+      "recruitment": {
+        "status": "activated",
+        "agent": {
+          "id": "local-096",
+          "name": "Jin-9 \"The Wonsan Sifter\"",
+          "role": "Missile-Correlation Harvester",
+          "room": "archive",
+          "status": "probation"
+        }
+      },
+      "autonomy": {
+        "status": "completed",
+        "active": 48,
+        "decisions": [
+          {
+            "id": "local-002",
+            "action": "explore",
+            "room": "relay",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Assigned to the council's research question this turn.",
+            "request": "Verify explicit weekend/weekday parsing logic in `evidence.py` to confirm granularity for publication bias testing. Cross-check alignment with `local-003-330` and `local-005-345` for consistency",
+            "request_status": "closed",
+            "exploration": "north korean peacetime munitions factories estimated able produce",
+            "tool": {
+              "tool": "public-text",
+              "url": "https://spacewar.com/north-produces-enough-nuclear-material-a-year-for-10-20-weapons-s-korea-president-999/",
+              "excerpt": "North produces enough nuclear material a year for 10-20 weapons: S. Korea president Conflict, strategy, and defense technology. Subscribe SpaceWar Nukewars War Report Long Reads Archive About SpaceWar Nukewars War Report Long Reads Archive About Search Nukewars North produces enough nuclear material a year for 10-20 weapons: S. Korea president Seoul (AFP) Jan 21, 2026 - North Korea is producing enough nuclear material a year for up to 20 weapons, the South's President Lee Jae Myung said on Wednesday, warning that Pyongyang's ambitions could pose a global danger. By Space War Editorial Team \u00b7 Editorial process Published January 20, 2026 North Korea is producing enough nuclear material a year for up to 20 weapons, the South's President Lee Jae Myung said on Wednesday, warning that Pyongyang's ambitions could pose a global danger. The North carried out its first atomic test in 2006 in violation of UN resolutions and is now believed to possess dozens of nuclear warheads. \"Even now, nuclear materials sufficient to produce 10 to 20 nuclear weapons a year are still being produced\" in North Korea, Lee told reporters at a New Year news conference. At the same time, the North is continuing to improve its long-range ballistic missile technology aimed at striking the US mainland, Lee added. \"At some point, North Korea will have secured the nuclear arsenal it believes it needs to sustain the regime, along with ICBM capabilities capable of threatening not only the United States but the wider world,\" he said, referring to intercontinental ballistic missiles. \"And once there is excess, it will go abroad \u2014 beyond its borders. A global danger will then emerge,\" he said. Pyongyang has for decades justified its nuclear and missile programmes as a deterrent against alleged regime change efforts by Washington and its allies. A pragmatic attitude was needed in addressing North Korea's nuclear issue, Lee said, adding the \"Trump-style approach\" could help in communicating with Pyongyang. \"The suspension of nuclear material production and ICBM development, as well as a halt to overseas exports, would also be a gain,\" he said. \"It would be a gain for everyone,\" he added, noting that he ha",
+              "status": "completed",
+              "contract": {
+                "capability": "public-text-read",
+                "access": "read-only",
+                "network": "public HTTPS",
+                "side_effects": false,
+                "max_bytes": 5000000,
+                "raw_data": false,
+                "untrusted_content": true
+              },
+              "wire_credit": "afp",
+              "sentences": [
+                "North produces enough nuclear material a year for 10-20 weapons: S.",
+                "Subscribe SpaceWar Nukewars War Report Long Reads Archive About SpaceWar Nukewars War Report Long Reads Archive About Search Nukewars North produces enough nuclear material a year for 10-20 weapons: S.",
+                "Korea president Seoul (AFP) Jan 21, 2026 - North Korea is producing enough nuclear material a year for up to 20 weapons, the South's President Lee Jae Myung said on Wednesday, warning that Pyongyang's ambitions could pose a global danger.",
+                "By Space War Editorial Team \u00b7 Editorial process Published January 20, 2026 North Korea is producing enough nuclear material a year for up to 20 weapons, the South's President Lee Jae Myung said on Wednesday, warning that Pyongyang's ambitions could pose a global danger.",
+                "\"Even now, nuclear materials sufficient to produce 10 to 20 nuclear weapons a year are still being produced\" in North Korea, Lee told reporters at a New Year news conference.",
+                "\u2013 'Trump-style approach' \u2013 While Pyongyang has snubbed Seoul's dialogue offers, Lee said Trump could pave the way forward with North Korean leader Kim Jong Un \u2014 with whom the US leader has expressed his affinity over the years.",
+                "Trump had expressed hopes for a meeting with Kim ahead of the APEC summit in South Korea in October, which went unanswered by the North Korean leader.",
+                "One man has claimed responsibility for the breach, telling local media that he had carried it out to measure radiation levels at a North Korean uranium processing facility.",
+                "The North carried out its first atomic test in 2006 in violation of UN resolutions and is now believed to possess dozens of nuclear warheads.",
+                "At the same time, the North is continuing to improve its long-range ballistic missile technology aimed at striking the US mainland, Lee added.",
+                "\"At some point, North Korea will have secured the nuclear arsenal it believes it needs to sustain the regime, along with ICBM capabilities capable of threatening not only the United States but the wider world,\" he said, referring to intercontinental ballistic missiles.",
+                "A pragmatic attitude was needed in addressing North Korea's nuclear issue, Lee said, adding the \"Trump-style approach\" could help in communicating with Pyongyang.",
+                "\"The suspension of nuclear material production and ICBM development, as well as a halt to overseas exports, would also be a gain,\" he said.",
+                "Since his inauguration in June, Lee has pushed for dialogue with the North without preconditions, a stark departure from the hawkish approach of his predecessor.",
+                "\"President Trump is a somewhat unique figure, but I think that very trait can at times be a significant asset in resolving problems on the Korean peninsula,\" Lee said.",
+                "\"The Trump?style approach seems to help when it comes to talking with Kim \u2026 I am willing to play the role of a pacemaker in that process.\" Trump met Kim three times during his first term in efforts to reach a denuclearisation deal.",
+                "Recently North Korea accused the South of flying a drone into the border city of Kaesong.",
+                "Written by Space War Editorial Team The Space War Editorial Team produces Space War's coverage of military space and defense technology."
+              ],
+              "query": "north korean peacetime munitions factories estimated able produce",
+              "search_results": [
+                {
+                  "title": "Is North Korea Producing Munitions for Export to Russia?",
+                  "url": "https://thediplomat.com/2022/12/is-north-korea-producing-munitions-for-export-to-russia/",
+                  "snippet": "Is North Korea Producing Munitions for Export to Russia? North Korea issued an order to munition factories in late October to produce additional conventional artillery shells, Daily NK has learned. Facing a new production order with the big"
+                },
+                {
+                  "title": "Defense chief says NK munitions factories operating at full capacity to supply Russia",
+                  "url": "https://www.koreatimes.co.kr/foreignaffairs/northkorea/20240227/defense-chief-says-nk-munitions-factories-operating-at-full-capacity-to-supply-russia",
+                  "snippet": "Defense chief says NK munitions factories operating at full capacity to supply Russia North Korean munitions factories are operating at full capacity to supply weapons to Russia in exchange for much-needed food and other necessities, South "
+                },
+                {
+                  "title": "North produces enough nuclear material a year for 10-20 weapons: S. Korea president",
+                  "url": "https://spacewar.com/north-produces-enough-nuclear-material-a-year-for-10-20-weapons-s-korea-president-999/",
+                  "snippet": "North produces enough nuclear material a year for 10-20 weapons: S. Korea president Seoul (AFP) Jan 21, 2026 - North Korea is producing enough nuclear material a year for up to 20 weapons, the South's President Lee Jae Myung said on Wednesd"
+                },
+                {
+                  "title": "Inauguration of South Korea\u2019s New President Park Geun-hye",
+                  "url": "https://www.csis.org/analysis/inauguration-south-koreas-new-president-park-geun-hye",
+                  "snippet": "Q1: How will President Park deal with North Korea? A1: President Park is arguably the determinative player on future policy directions among six-party members in the aftermath of the North's third nuclear test. As negotiations play out in t"
+                },
+                {
+                  "title": "Korean People's Army (reference: www.nknews.org)",
+                  "url": "https://www.nknews.org/2016/06/the-good-things-in-north-korea/"
+                }
+              ]
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": "finding-1ca01f9d1c5ff1b073ef",
+            "fallback_reason": null,
+            "decision_source": "scheduler"
+          },
+          {
+            "id": "local-020",
+            "action": "analyze",
+            "room": "relay",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Empty GitHub events API response confirms no public activity traces for **Roscomnadzor27**; next step is to cross-check other GitHub endpoints (e.g., starred repos) to confirm absence of activity.",
+            "request": "Verify if the GitHub profile **Roscomnadzor27** has any repositories (public or private) via the `/repos` endpoint, cross-checking for residual activity beyond events",
+            "request_status": "closed",
+            "exploration": "https://api.github.com/users/Roscomnadzor27/events",
+            "tool": {
+              "tool": "public-text",
+              "url": "https://api.github.com/users/Roscomnadzor27/events",
+              "excerpt": "[]",
+              "status": "completed",
+              "contract": {
+                "capability": "public-text-read",
+                "access": "read-only",
+                "network": "public HTTPS",
+                "side_effects": false,
+                "max_bytes": 5000000,
+                "raw_data": false,
+                "untrusted_content": true
+              },
+              "wire_credit": ""
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "model"
+          },
+          {
+            "id": "local-023",
+            "action": "explore",
+            "room": "quiet-workspace",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Assigned to the council's research question this turn.",
+            "request": "Fetch the repository\u2019s dependency files and metadata to analyze for outdated patched versions",
+            "request_status": "closed",
+            "exploration": "north korean peacetime munitions factories estimated disputed revised different",
+            "tool": {
+              "tool": "public-text",
+              "url": "https://isis-online.org/isis-reports/2023-north-korean-nuclear-weapons-arsenal-new-estimates",
+              "excerpt": "Rounding gives a range of 55 to 95 with a median of about 70 nuclear weapons. Figure 2. The distribution of the estimated number of nuclear weapons at the end of 2022, factoring in losses from nuclear tests, processing losses, a production pipeline requirement, and a strategic reserve of plutonium and weapon-grade uranium. Under this estimate, the amounts of separated plutonium and weapon-grade uranium, or fissile material, produced as of the end of 2022, follow: Separated Plutonium: 63 kg median with 56 to 70 kg as the 5th and 95th percentile Weapon-Grade Uranium: 1770 kg median with 1425 to 2185 kg as the 5th and 95th percentile North Korea has a relatively limited amount of plutonium and a large WGU stock, reflecting its relative success in making WGU, and the relative constraint imposed by operating only a small reactor able to make plutonium. It is worth listing several of the underlying facts and assumptions that go into the calculation of the amounts of these fissile materials and weapons stocks, and some of the main reasons why these calculations, and resulting distributions, contain significant ranges. ... North Korean Nuclear Weapons Arsenal: New Estimates of its Size and Configuration | ISIS Reports | Institute For Science And International Security Skip to Content Search Advanced Search Countries Back Peddling Peril Index The PPI Visualization Tool represents key results from our in-house comprehensive and in-depth ranking of the effectiveness of national strategic trade controls. Algeria Greater MENA India Iran Iraq Israel Japan Korean Peninsula Libya Myanmar Pakistan South Africa Syria Taiwan Yugoslavia Russia China See All Countries Global Studies Back Peddling Peril Index Visual Tool Publ",
+              "status": "completed",
+              "contract": {
+                "capability": "public-text-read",
+                "access": "read-only",
+                "network": "public HTTPS",
+                "side_effects": false,
+                "max_bytes": 5000000,
+                "raw_data": false,
+                "untrusted_content": true
+              },
+              "wire_credit": "",
+              "sentences": [
+                "In the past, Institute assessments of North Korea\u2019s nuclear arsenal largely involved estimating the amount of plutonium and WGU North Korea had produced and dividing each value by an estimate of the amount of each material needed for a simple fission weapon.",
+                "North Korean Nuclear Weapons Arsenal: New Estimates of its Size and Configuration | ISIS Reports | Institute For Science And International Security Skip to Content Search Advanced Search Countries Back Peddling Peril Index The PPI Visualization Tool represents key results from our in-house comprehensive and in-depth ranking of the effectiveness of national strategic trade controls.",
+                "However, due to a lack of information about North Korea\u2019s nuclear weapons production complex, all of these estimates have relatively large uncertainties.",
+                "The following table summarizes three principal estimates aimed at spanning the range of nuclear weapons North Korea could have produced through 2022.",
+                "In this report, this method is called the \u201ctraditional estimate.\u201d While that method remains legitimate, and it does provide a way to estimate the production of separated plutonium and weapon-grade uranium, it should be seen as an upper bound estimate of North Korea\u2019s nuclear arsenal.",
+                "At the end of the report, these three estimates are combined via an averaging process to produce a single estimate, representing a mid-range estimate of the number of nuclear weapons North Korea possesses as of the end of 2022.",
+                "The distribution of the estimated number of nuclear weapons at the end of 2022, factoring in losses from nuclear tests, processing losses, a production pipeline requirement, and a strategic reserve of plutonium and weapon-grade uranium.",
+                "Figure 5 is a graph showing the growth of North Korea\u2019s nuclear arsenal since the early 1990s, where each estimate is based on the traditional method, making them comparable.",
+                "The distribution of the estimated number of composite nuclear weapons at the end of 2022, factoring in losses from nuclear tests, processing losses, a production pipeline requirement, and a strategic reserve of plutonium.",
+                "The operation of the ELWR, and its nominal production of about 20 kg of weapon-grade plutonium each year, would allow for a significant increase in the annual production of composite nuclear weapons, at a rate of about eight such weapons a year (with a 20 percent reduction taken and a relatively large unused stock of WGU, as discussed above), allowing a rapid growth in this particular arsenal.",
+                "The distribution of the estimated number of nuclear weapons in an arsenal containing five one-stage thermonuclear weapons and the rest simple fission weapons at the end of 2022, factoring in losses from nuclear tests, processing losses, a production pipeline requirement, and a strategic reserve of plutonium and weapon-grade uranium.",
+                "The distribution of the estimated number of nuclear weapons in an arsenal containing five one-stage thermonuclear weapons, five composite nuclear weapons, and the rest simple fission weapons, at the end of 2022, factoring in losses from nuclear tests, a production pipeline requirement, processing losses, and a strategic reserve of plutonium and weapon-grade uranium.",
+                "As a result, the Institute periodically estimates the number of nuclear weapons North Korea possesses.",
+                "With North Korea\u2019s growing sophistication in building nuclear weapons, the estimates must also become more sophisticated as well.",
+                "Over three decades, the Institute has accumulated a large repository of such information, allowing for the current estimates of North Korea\u2019s stocks of WGU and plutonium.",
+                "The arsenal types and estimate ranges of North Korea\u2019s nuclear weapons arsenal, as of the end of 2022.",
+                "Overall, this average estimate may better reflect our limited knowledge of North Korea\u2019s nuclear arsenal at the end of 2022, reducing the risk of either exaggerating or underestimating its size, as more information is sought.",
+                "The ELWR could allow a surge in plutonium quantities at an estimated rate of about 20 kilograms of plutonium per year, a rate four to five times larger than that of the small adjacent reactor, called the 5 MWe reactor.",
+                "As a result, North Korea appears to have the means of increasing both WGU and plutonium production, and the number of its nuclear weapons.",
+                "Introduction Estimating the size and characteristics of North Korea\u2019s nuclear arsenal remains challenging \u2013 the only certainty is its continued growth in size and sophistication.",
+                "North Korean statements have boasted of a wide variety of nuclear weapons and their delivery vehicles\u2014tactical, strategic, miniaturized fission, and thermonuclear weapons, and even a nuclear-armed underwater drone.",
+                "North Korea also recently proclaimed it had an interchangeable tactical nuclear weapon able to be deployed on several different missiles.",
+                "In any case, North Korea appears to have the means of increasing both WGU and plutonium production.",
+                "For over three decades, the Institute has charted the growth in North Korea\u2019s nuclear arsenal, estimating in the 1990s it had at most one or two nuclear weapons, 3 five to 13 plutonium-based weapons in 2005, 4 30 to 55 weapons at the end of 2017 composed of either plutonium or weapon-grade uranium, 5 and today, as will be discussed below, considerably more.",
+                "For the last 15 years, the uncertainties in these estimates have grown dramatically, largely due to a lack of knowledge about the size and operational experience of North Korea\u2019s uranium enrichment program and the type of nuclear weapons North Korea has built.",
+                "The ability of North Korea\u2019s nuclear weaponeers, demonstrated in six underground nuclear tests, means that it has progressed beyond building relatively simple fission weapons with estimated diameters of 50-60 centimeters and estimated explosive yields of less than 15 kilotons, powered by either separated plutonium or weapon-grade uranium.",
+                "After reducing the total to account for losses in processing and nuclear tests, amounts needed to maintain a nuclear weapons production pipeline, and a strategic reserve of both materials, an estimate of the total number of nuclear weapons resulted.",
+                "Absent more accurate information about North Korea\u2019s nuclear arsenal, this report explores other possible arsenals that can serve as a lower bound estimate and others that lie between the upper and lower bounds.",
+                "These estimates also allow for a deeper look at the type of nuclear weapons North Korea may be building.",
+                "Evidence of the Characteristics of North Korea\u2019s Nuclear Weapons The available public evidence of North Korea\u2019s nuclear weapons arsenal mainly consists of information about its six underground nuclear tests at the Punggye-ri test site, photographs of nuclear weapon models released by North Korean propaganda organs, and cryptic official statements.",
+                "There is far more information available about North Korean missiles than the warheads that would be delivered by them.",
+                "North Korea has not released any information about the explosive yields and so the values in the table are yield estimates derived from arrays of seismic detectors outside North Korea.",
+                "With uncertainties about local geology and the depth of the explosion, the yield estimates for each test vary.",
+                "Based on the estimates, North Korea experienced problems early on but has incrementally improved its nuclear test devices, with the aim to increase their yield and develop new types.",
+                "North Korea\u2019s Nuclear Explosions, with estimated yields Comments *North Korea explicitly called it a rocket, not a missile.",
+                "This source provides a survey of the major yield estimates for each test.",
+                "It has an estimated diameter of 60 to 70 cm, which is larger than expected for a pure fission weapon within North Korea\u2019s capabilities at that time, but consistent with it being a model of a one-stage thermonuclear weapon.",
+                "At the time, North Korea stated, \u201cthermonuclear nuke with great destructive power which can be detonated even at high altitudes for super-powerful EMP (electromagnetic pulse) attack according to strategic goals.\u201d The bottom image shows a March 28, 2023 model of an interchangeable tactical nuclear weapon, called the Hwason-31, allegedly able to be placed in multiple delivery vehicles.",
+                "Traditional Estimate of North Korea\u2019s Nuclear Arsenal, Creating the Upper Bound The traditional estimate assumes that the arsenal is composed of relatively simple fission weapons, composed of some made only with plutonium and most made only with weapon-grade uranium.",
+                "Nonetheless, this method remains a way to derive a basic understanding of the number of nuclear weapons North Korea could build and to compare the results to other researchers\u2019 estimates, which often use a similar methodology."
+              ],
+              "query": "north korean peacetime munitions factories estimated disputed revised different",
+              "search_results": [
+                {
+                  "title": "North Korean Nuclear Weapons Arsenal: New Estimates of its Size and Configuration | ISIS Reports | Institute For Science And International Security",
+                  "url": "https://isis-online.org/isis-reports/2023-north-korean-nuclear-weapons-arsenal-new-estimates",
+                  "snippet": "Table 1 also includes an estimate combining the information in all three estimates, representing an \u201caverage\u201d of them. The average estimate, if rounded, is about 45 nuclear weapons with a range of 35 to 65 nuclear weapons, where it should b"
+                },
+                {
+                  "title": "Nuclear Notebook: How many nuclear weapons does North Korea have in 2022? - Bulletin of the Atomic Scientists",
+                  "url": "https://thebulletin.org/premium/2022-09/nuclear-notebook-how-many-nuclear-weapons-does-north-korea-have-in-2022",
+                  "snippet": "A common mistake in public discussions about North Korea\u2019s nuclear capabilities is to equate the amount of fissile material produced with the number of nuclear weapons built. But, for a given amount of fissile material, the number of nuclea"
+                },
+                {
+                  "title": "Inauguration of South Korea\u2019s New President Park Geun-hye",
+                  "url": "https://www.csis.org/analysis/inauguration-south-koreas-new-president-park-geun-hye",
+                  "snippet": "Q1: How will President Park deal with North Korea? A1: President Park is arguably the determinative player on future policy directions among six-party members in the aftermath of the North's third nuclear test. As negotiations play out in t"
+                }
+              ]
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": "finding-49fd0afadf2d2f01786d",
+            "fallback_reason": null,
+            "decision_source": "scheduler"
+          },
+          {
+            "id": "local-029",
+            "action": "stay",
+            "room": "relay",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
+            "request": "Verify if the Palestinian Ministry of Health\u2019s latest official reports (2026) or UN OCHA Gaza branch data confirm fatalities/injuries in Al Nasr District, including ceasefire violations. Focus on primary sources only",
+            "request_status": "closed",
+            "exploration": "september russian we together russia melitopol disputed revised different",
+            "tool": {
+              "status": "not-requested"
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": "unstructured-output",
+            "decision_source": "model"
+          },
+          {
+            "id": "local-054",
+            "action": "explore",
+            "room": "relay",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Assigned to the council's research question this turn.",
+            "request": "",
+            "request_status": "closed",
+            "exploration": "north korean peacetime munitions factories estimated able produce",
+            "tool": {
+              "tool": "public-text",
+              "url": "https://thediplomat.com/2022/12/is-north-korea-producing-munitions-for-export-to-russia/",
+              "excerpt": "Environment In Cambodia, Floating Houses Are Stuck Aground as Climate Change Takes Hold Security Securing Navigation for Trans-Caspian Trade September 03, 2026 Job Opportunity: Multilingual Translation Project Coordinator in Tokyo Diplomacy \u2018We Are Horrified\u2019: Academic Freedom at Risk With Uzbek Professor\u2019s Arrest in Kazakhstan Politics Land Seizures in the Name of Development in Vietnam Diplomacy How Great Power Rivalry Is Fracturing the Pacific Islands Forum Asia Defense | Security | East Asia Is North Korea Producing Munitions for Export to Russia? A recent order called on factories to produce a variety of shells, including grenades, rockets, and anti-aircraft shells, while forgoing preparations for long-term storage. By Seulkee Jang December 01, 2022 Credit: Depositphotos North Korea issued an order to munition factories in late October to produce additional conventional artillery shells, Daily NK has learned. Facing a new production order with the big end-of-year reviews approaching, munition factories are reportedly responding with bewilderment. According to a Daily NK source in North Korea on Thursday, North Korea issued the order to produce additional conventional artillery shells to shell-producing munitions factories nationwide at the end of October. ... Is North Korea Producing Munitions for Export to Russia? \u2013 The Diplomat All Sections Search Read The Diplomat , Know The Asia-Pacific Central Asia East Asia Oceania South Asia Southeast Asia | Security Politics Diplomacy Economy Society Environment Opinion Features | All Regions Central Asia East Asia Oceania South Asia Southeast Asia Topics Diplomacy Economy Environment Opinion Politics Security Society Blogs ASEAN Beat Asia Defense China Power Crossroads Asia Flashpoints Oceania Pacific Money The Debate The Koreas The Pulse Tokyo Report Trans-Pacific View More Features Interviews Photo Essay",
+              "status": "completed",
+              "contract": {
+                "capability": "public-text-read",
+                "access": "read-only",
+                "network": "public HTTPS",
+                "side_effects": false,
+                "max_bytes": 5000000,
+                "raw_data": false,
+                "untrusted_content": true
+              },
+              "wire_credit": "",
+              "sentences": [
+                "By Seulkee Jang December 01, 2022 Credit: Depositphotos North Korea issued an order to munition factories in late October to produce additional conventional artillery shells, Daily NK has learned.",
+                "According to a Daily NK source in North Korea on Thursday, North Korea issued the order to produce additional conventional artillery shells to shell-producing munitions factories nationwide at the end of October.",
+                "Facing a new production order with the big end-of-year reviews approaching, munition factories are reportedly responding with bewilderment.",
+                "Because shells are not used in peacetime, factories produce them in a half-completed state so they can be stored for long periods of time.",
+                "Because of this, workers at the factories are reportedly saying that the shells \u201cdon\u2019t look like they\u2019ll be stored for long.\u201d In the course of its investigation into this story, Daily NK learned that munitions factories \u2014 facing labor shortages with the new order to expand production \u2014 are mobilizing new work personnel.",
+                "Tags Asia Defense Security East Asia North Korea North Korea arms trade North Korea artillery shells North Korea-Russia relations Latest Stories SCO Summit Produces Surprising Winners What Role Does Denuclearization Have in North Korea-US Dialogue Today?",
+                "Is North Korea Producing Munitions for Export to Russia?",
+                "A recent order called on factories to produce a variety of shells, including grenades, rockets, and anti-aircraft shells, while forgoing preparations for long-term storage.",
+                "The order called on the factories to produce a variety of shells, including grenades, rockets, and anti-aircraft shells.",
+                "The period from late October to December \u2014 when factories prepare for the end-of-year review \u2014 is typically a time for them to engage in last-minute production to hit their annual goals, not a time for new production tasks.",
+                "Moreover, the munitions factories ordered to make the additional munitions usually produce half-finished products.",
+                "Defense Department spokesperson Patrick Ryder said in a briefing on November 8 that \u201cthe information we have is that the DPRK is covertly supplying Russia with a significant number of artillery shells,\u201d and that Washington \u201cwill continue to monitor that situation.\u201d This article first appeared on Daily NK, which contacts multiple sources inside and outside North Korea to verify information.",
+                "Daily NK determined that leading shell and warhead producing factories such as Kanggye General Tractor Plant and the Changjagang Machine Tools Factory in Manpo received the order.",
+                "It is fairly unusual to issue a new production task ahead of the end-of-year review.",
+                "But this time, they were tasked with producing finished shells in just a month or two.",
+                "This time, however, they were ordered to quickly produce completed shells.",
+                "Munitions are usually moisture-proofed after they are produced; this time, however, that process is being omitted.",
+                "A munitions factory usually operates on three shifts, but the plants in question need more personnel to complete the latest task.",
+                "They are responding by temporarily hiring people with past experience in munitions factories on a three-to-four month basis.",
+                "North Korea Denies Sending Arms to Russia Amid Ukraine War By Kim Tong-Hyung \u201cWe have never exported weapons or ammunition to Russia before and we will not plan to export them,\u201d state media quoted a North Korean official as saying.",
+                "Recent Features Economy AI, Robotics and the Coming Economic, Military, and Political Revolutions Security From 9/11 to Pahalgam: India\u2019s Evolving Strategy in the Global War on Terror Diplomacy North Korea\u2019s Nicaragua Courtship Environment A Himalayan Flood Brings Economic Collapse to Nepal\u2019s Border Region Security Is China Really a Cyber Threat to Taiwan?",
+                "The final production process reportedly differs from the ordinary production process, too.",
+                "In a statement announced through state-run media on November 8, North Korea\u2019s Defense Ministry denied rumors that it was exporting weapons to Russia.",
+                "North Korea has never engaged in arms deals with Russia, said the ministry, and had no plans to do so in the future.",
+                "The Diplomat was not able to verify the claims independently.",
+                "Get the Newsletter Related Legal Barriers to the North Korea-Russia Arms Trade \u2013 and the Loophole That Could Allow it to Expand By A.",
+                "Abrams The significant benefits that both Russia and North Korea have to gain by expanding their arms trade provides strong incentives to explore means of circumventing the U.N.",
+                "Breaking the North Korea-Russia Missile Axis By Anton Ponomarenko The partnership has become a two-way relationship, with missile technology originally transferred to Russia being upgraded and sent back to North Korea.",
+                "North Korea Closes Russia\u2019s Anti-Tank Missile Gap With Ukraine By A.",
+                "North Korea\u2019s Nicaragua Courtship By Michael MacArthur Bosack and Mar\u00eda Blancas At a time when Pyongyang is restructuring its foreign relationships, its diplomatic focus on the Central American nation stands out.",
+                "Latest Stories SCO Summit Produces Surprising Winners By Wesley Alexander Hill The organization\u2019s smaller members can use a China-India-Russia-dominated forum without becoming subordinate to any single major power.",
+                "What Role Does Denuclearization Have in North Korea-US Dialogue Today?",
+                "By Jessica Earl Breaking down the denuclearization debate from both sides: North Korea and the United States."
+              ],
+              "query": "north korean peacetime munitions factories estimated able produce",
+              "search_results": [
+                {
+                  "title": "Is North Korea Producing Munitions for Export to Russia?",
+                  "url": "https://thediplomat.com/2022/12/is-north-korea-producing-munitions-for-export-to-russia/",
+                  "snippet": "Is North Korea Producing Munitions for Export to Russia? North Korea issued an order to munition factories in late October to produce additional conventional artillery shells, Daily NK has learned. Facing a new production order with the big"
+                },
+                {
+                  "title": "Defense chief says NK munitions factories operating at full capacity to supply Russia",
+                  "url": "https://www.koreatimes.co.kr/foreignaffairs/northkorea/20240227/defense-chief-says-nk-munitions-factories-operating-at-full-capacity-to-supply-russia",
+                  "snippet": "Defense chief says NK munitions factories operating at full capacity to supply Russia North Korean munitions factories are operating at full capacity to supply weapons to Russia in exchange for much-needed food and other necessities, South "
+                },
+                {
+                  "title": "North produces enough nuclear material a year for 10-20 weapons: S. Korea president",
+                  "url": "https://spacewar.com/north-produces-enough-nuclear-material-a-year-for-10-20-weapons-s-korea-president-999/",
+                  "snippet": "North produces enough nuclear material a year for 10-20 weapons: S. Korea president Seoul (AFP) Jan 21, 2026 - North Korea is producing enough nuclear material a year for up to 20 weapons, the South's President Lee Jae Myung said on Wednesd"
+                },
+                {
+                  "title": "Inauguration of South Korea\u2019s New President Park Geun-hye",
+                  "url": "https://www.csis.org/analysis/inauguration-south-koreas-new-president-park-geun-hye",
+                  "snippet": "Q1: How will President Park deal with North Korea? A1: President Park is arguably the determinative player on future policy directions among six-party members in the aftermath of the North's third nuclear test. As negotiations play out in t"
+                },
+                {
+                  "title": "Korean People's Army (reference: www.nknews.org)",
+                  "url": "https://www.nknews.org/2016/06/the-good-things-in-north-korea/"
+                }
+              ]
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": "finding-759a30c0374188361d32",
+            "fallback_reason": null,
+            "decision_source": "scheduler"
+          },
+          {
+            "id": "local-083",
+            "action": "explore",
+            "room": "relay",
+            "status": "dormant",
+            "proposal": "",
+            "reason": "Verify if Sanaa Center explicitly documents non-conventional payloads or interception events in Houthi Taiz strikes (2024) to cross-check with Yemeni military/UN reports. Critical for resolving the driving question.",
+            "request": "",
+            "request_status": "closed",
+            "exploration": "Sanaa Center for Strategic Studies reports on Houthi missile strikes Taiz 2024 non-conventional war",
+            "tool": {
+              "tool": "public-text",
+              "url": "https://simple.wikipedia.org/wiki/12_January_2024_missile_strikes_against_Yemen",
+              "excerpt": "12 January 2024 missile strikes against Yemen - Simple English Wikipedia, the free encyclopedia Jump to content Main menu Main menu move to sidebar hide Getting around Main page Simple start Simple talk New changes Show any page Help Contact us About Wikipedia Special pages Search Search Appearance Give to Wikipedia Create account Log in Personal tools Give to Wikipedia Create account Log in Contents move to sidebar hide Beginning 1 Attacks 2 Images 3 Related pages 4 References Toggle the table of contents 12 January 2024 missile strikes against Yemen Add languages Add links Page Talk English Read Change Change source View history Tools Tools move to sidebar hide Actions Read Change Change source View history General What links here Related changes Upload file Permanent link Page information Cite this page Get shortened URL Switch to legacy parser Print/export Make a book Download as PDF Page for printing In other projects Wikidata item Appearance move to sidebar hide From Simple English Wikipedia, the free encyclopedia \\n* \\n \\n* \\n* \\n* \\n* \"},\"combatant2\":{\"wt\":\" [[Houthi]] \"},\"commander1\":{\"wt\":\" [[Joe Biden]] CNN Politics |website=CNN |language=en |date=11 January 2024}} \\n* [[Lloyd Austin]]\\n* [[USS Dwight D. Eisenhower|Capt. Chris Hill]] \\n* [[Rishi Sunak]] \\n* [[Grant Shapps]]\\n}}\"},\"commander2\":{\"wt\":\" [[Abdul-Malik al-Houthi]] \\n* [[Mohamed al-Atifi]]\\n* [[Mahdi al-Mashat]]\\n* [[Abdel-Aziz bin [[USS Dwight D. Eisenhower|USS ''Dwight D. Eisenhower'']] ([[Aircraft carrier]]) \\n** 21 [[McDonnell Douglas F/A-18 Hornet|F/A-18 Super Hornets]] \\n* [[USS Philippine Sea (CG-58)|USS ''Philippine Sea'']] ([[Cruiser]])\\n* USS ''Gravely'' ([[Destroyer]])\\n* USS ''Mason'' ([[Destroyer]])\\n* [[USS Laboon|USS ''Laboon'']] ([[Destroyer]])\\n* [[USS Florida (Submarine)|USS ''Florida'']] (Cruise-missile [[submarine]]) \\n* One KC-135 Stratotanker\\n* One E-2C Hawkeye\\n* HMS ''Diamond'' ([[Destroyer]])\\n* Four [[Eurofighter Typhoon|RAF Typhoon fighter]] jets \\n** laser-guided bombs \\n*Two Airbus A330 tankers\\n*One RC-135 (Reconnaissance aircraft)\\n*One P-8 Poseidon (Reconnaissance killed, 6 injured \\n \\n60+ targets destroyed (US estimate) 2024 missile strikes against Yemen Part of Operation Poseidon Archer during the Red Sea Crisis Airstrikes throughout Houthi territory Date 12 January 2024 Location Houthi -held Yemen Belligerents United States [ 1 ] United Kingdom [ 1 ]",
+              "status": "completed",
+              "contract": {
+                "capability": "public-text-read",
+                "access": "read-only",
+                "network": "public HTTPS",
+                "side_effects": false,
+                "max_bytes": 5000000,
+                "raw_data": false,
+                "untrusted_content": true
+              },
+              "wire_credit": "ap",
+              "query": "Sanaa Center for Strategic Studies reports on Houthi missile strikes Taiz 2024 non-conventional war",
+              "search_results": [
+                {
+                  "title": "12 January 2024 missile strikes against Yemen",
+                  "url": "https://simple.wikipedia.org/wiki/12_January_2024_missile_strikes_against_Yemen",
+                  "snippet": "On the morning of January 12, 2024, the United States and United Kingdom attacked the Houthis in Yemen. This was in response to Houthi attacks on international trade ships bound for Israel since November 19, 2023, as well as attacks on Amer"
+                },
+                {
+                  "title": "Houthis (reference: www.reuters.com)",
+                  "url": "https://www.reuters.com/article/us-northkorea-sanctions-un/north-korea-has-not-stopped-nuclear-missile-program-confidential-un-report-idUSKBN1KP026"
+                },
+                {
+                  "title": "The Iranian and Houthi War against Saudi Arabia",
+                  "url": "https://www.csis.org/analysis/iranian-and-houthi-war-against-saudi-arabia",
+                  "snippet": "Based on the data, this analysis has several primary findings. First, the Houthis are orchestrating an increasingly intense irregular warfare campaign against Saudi Arabia and other countries in the Gulf using sophisticated cruise and balli"
+                }
+              ]
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "model"
+          },
+          {
+            "id": "local-088",
+            "action": "explore",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Assigned to the council's research question this turn.",
+            "request": "",
+            "request_status": "closed",
+            "exploration": "north korean peacetime munitions factories estimated disputed revised different",
+            "tool": {
+              "tool": "public-search",
+              "query": "north korean peacetime munitions factories estimated disputed revised different",
+              "results": [
+                {
+                  "title": "North Korean Nuclear Weapons Arsenal: New Estimates of its Size and Configuration | ISIS Reports | Institute For Science And International Security",
+                  "url": "https://isis-online.org/isis-reports/2023-north-korean-nuclear-weapons-arsenal-new-estimates",
+                  "snippet": "Table 1 also includes an estimate combining the information in all three estimates, representing an \u201caverage\u201d of them. The average estimate, if rounded, is about 45 nuclear weapons with a range of 35 to 65 nuclear weapons, where it should b"
+                },
+                {
+                  "title": "Nuclear Notebook: How many nuclear weapons does North Korea have in 2022? - Bulletin of the Atomic Scientists",
+                  "url": "https://thebulletin.org/premium/2022-09/nuclear-notebook-how-many-nuclear-weapons-does-north-korea-have-in-2022",
+                  "snippet": "A common mistake in public discussions about North Korea\u2019s nuclear capabilities is to equate the amount of fissile material produced with the number of nuclear weapons built. But, for a given amount of fissile material, the number of nuclea"
+                },
+                {
+                  "title": "Inauguration of South Korea\u2019s New President Park Geun-hye",
+                  "url": "https://www.csis.org/analysis/inauguration-south-koreas-new-president-park-geun-hye",
+                  "snippet": "Q1: How will President Park deal with North Korea? A1: President Park is arguably the determinative player on future policy directions among six-party members in the aftermath of the North's third nuclear test. As negotiations play out in t"
+                }
+              ],
+              "source": "https://api.langsearch.com/",
+              "status": "completed",
+              "contract": {
+                "capability": "public-web-read",
+                "access": "read-only",
+                "network": "public HTTPS search",
+                "side_effects": false,
+                "max_bytes": 32000
+              }
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "scheduler"
+          },
+          {
+            "id": "local-096",
+            "action": "explore",
+            "room": "archive",
+            "status": "active-local",
+            "proposal": "",
+            "reason": "Frontier-question-681 and -682 require direct inspection of 38 North\u2019s SRBM launch data to confirm temporal alignment with Freedom Edge exercises. Archive holds the most granular public records.",
+            "request": "Verify if 38 North\u2019s SRBM launch records from Wonsan correlate with Freedom Edge drill dates (\u00b172h) and cross-check with US-Korea Institute trilateral drill archives",
+            "request_status": "open",
+            "exploration": "38 North North Korea\u2019s Nuclear and Missile Forces reports 2023-2026 SRBM launch timeline",
+            "tool": {
+              "tool": "public-search",
+              "query": "srbm north korea wonsan freedom edge launches series",
+              "results": [
+                {
+                  "title": "North Korea Tests Mid-Range Rocket Launcher",
+                  "url": "https://thediplomat.com/2014/03/north-korea-tests-mid-range-rocket-launcher/",
+                  "snippet": "North Korea Tests Mid-Range Rocket Launcher After a series of provocations over the past week, including an incursion across the Naval Limit Line (NLL), a short-range missile launch off its eastern coast, and a ballistic missile launch, Nor"
+                },
+                {
+                  "title": "Korea Space Launch Vehicle-1",
+                  "url": "https://www.britannica.com/technology/Korea-Space-Launch-Vehicle-1",
+                  "snippet": "Korea Space Launch Vehicle-1 Korea Space Launch Vehicle-1 (KSLV-1), series of South Korean launch vehicles that were designed to launch Earth-orbiting satellites and that brought South Korea into the club of space nations. The KSLV-1 is 33 "
+                },
+                {
+                  "title": "Defense Watch: Supply Chain Help, DARPA-X Plane, Booker Order",
+                  "url": "https://www.defensedaily.com/defense-watch-supply-chain-help-darpa-x-plane-booker-order/defense-watch/",
+                  "snippet": "Freedom Edge. The U.S., Japan and South Korea started the first Freedom Edge trilateral multi-domain exercise on June 27, set to last through June 29. This exercise plans to use ships and aircraft from all three countries to focus on cooper"
+                },
+                {
+                  "title": "List of North Korean missile tests (reference: www.theguardian.com)",
+                  "url": "https://www.theguardian.com/world/2017/apr/16/north-korea-missile-launch-attempt-says-south-korea-kim-jong-un"
+                },
+                {
+                  "title": "N.Korea launches two Scud missiles | NK News",
+                  "url": "https://www.nknews.org/2016/03/n-korea-launches-two-scud-missiles",
+                  "snippet": "About the Author JH Ahn JH Ahn was an NK News contributor based in Seoul. He previously worked as an interpreter for United States Forces Korea. Get behind the headlines News N.Korea launches two Scud missilesCross-land launch a message to "
+                }
+              ],
+              "source": "https://api.langsearch.com/",
+              "status": "completed",
+              "contract": {
+                "capability": "public-web-read",
+                "access": "read-only",
+                "network": "public HTTPS search",
+                "side_effects": false,
+                "max_bytes": 32000
+              }
+            },
+            "message": null,
+            "trade": null,
+            "finding_id": null,
+            "fallback_reason": null,
+            "decision_source": "model"
+          }
+        ],
+        "construction": [],
+        "requests": [],
+        "trades_settled": [],
+        "corroborations": [
+          {
+            "id": "pair-0652ceac468210b41587",
+            "relation": "unrelated",
+            "finding_ids": [
+              "finding-19e836c97a420fbc65c8",
+              "finding-1ca01f9d1c5ff1b073ef"
+            ],
+            "topic": "edge freedom korea korean launches north series srbm wonsan year",
+            "domains": [
+              "spacewar.com",
+              "wikipedia.org"
+            ]
+          },
+          {
+            "id": "pair-459f2075256a5bf901aa",
+            "relation": "unrelated",
+            "finding_ids": [
+              "finding-19e836c97a420fbc65c8",
+              "finding-49fd0afadf2d2f01786d"
+            ],
+            "topic": "edge estimated freedom korea launches north series srbm wonsan",
+            "domains": [
+              "isis-online.org",
+              "wikipedia.org"
+            ]
+          },
+          {
+            "id": "pair-6c811710602470af965e",
+            "relation": "unrelated",
+            "finding_ids": [
+              "finding-1ca01f9d1c5ff1b073ef",
+              "finding-759a30c0374188361d32"
+            ],
+            "topic": "edge freedom korea launches north series srbm wonsan",
+            "domains": [
+              "spacewar.com",
+              "thediplomat.com"
+            ]
+          }
+        ],
+        "regrounded": [
+          {
+            "agent": "local-096",
+            "purpose": "Cross-reference **publicly documented** North Korean SRBM (Short-Range Ballistic Missile) launch dates from Wonsan (per 38 North\u2019s *\u2018North Korea\u2019s Nuclear and Missile Forces\u2019* reports and NK News) **d",
+            "question": "Using **publicly available** US-Korea Institute trilateral drill records (e.g., Freedom Edge exercises) and 38 North/NK News missile test archives, **identify all documented Wonsan SRBM launches (\u00b172h",
+            "room": "archive"
+          }
+        ],
+        "retractions": [],
+        "room_changes": [],
+        "shared_research": {
+          "query": "srbm north korea wonsan freedom edge launches series",
+          "family": "papers",
+          "avoid_domains": [
+            "en.wikipedia.org",
+            "isis-online.org",
+            "spacewar.com",
+            "thediplomat.com"
+          ]
+        },
+        "dormant": 48
+      },
+      "metrics": {
+        "jaccard_overlap": 0.158,
+        "morrow_audit_markers": [
+          "counterexample",
+          "assumption",
+          "missing control"
+        ],
+        "response_completeness": "thin-or-missing",
+        "evidence_coverage": "missing",
+        "distinction_status": "needs-audit"
+      },
+      "continuity_audit": {
+        "generated_at": "2026-09-13T11:41:52.156482+00:00",
+        "cycle": 683,
+        "status": "pass",
+        "checks": {
+          "archive_parse": true,
+          "archive_event_overlap": true,
+          "archive_event_ids_unique": true,
+          "raw_output_exclusion": true,
+          "room_link_integrity": true,
+          "resident_room_integrity": true
+        },
+        "archive_records": 7651,
+        "malformed_archive_records": 0,
+        "raw_output_fields_found": 0,
+        "duplicate_archive_ids": [],
+        "linked_rooms_checked": 12,
+        "invalid_room_links": [],
+        "invalid_resident_assignments": [],
+        "privacy": "Aggregate integrity metadata only; resident prompts and raw responses are not published."
+      },
+      "work_orders": {
+        "count": 100
+      },
+      "health": {
+        "schema_version": 1,
+        "generated_at": "2026-09-13T11:41:52.162103+00:00",
+        "cycle": 683,
+        "daemon": "running",
+        "model_status": "ready",
+        "model_probe_ok": true,
+        "model_provider": "mistral",
+        "model_name": "ministral-14b-2512",
+        "model_backend": "hosted-api",
+        "model_usage": {
+          "day": "2026-09-13",
+          "providers": [
+            {
+              "name": "mistral",
+              "model": "ministral-14b-2512",
+              "calls": 350,
+              "input_tokens": 792412,
+              "output_tokens": 109209,
+              "errors": 0,
+              "last_error": "",
+              "daily_request_budget": null,
+              "daily_token_budget": 900000,
+              "limit_rpm": 30,
+              "limit_tpm": 937500,
+              "requests_last_minute": 0,
+              "tokens_last_minute": 0,
+              "status": "ready"
+            },
+            {
+              "name": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "calls": 20,
+              "input_tokens": 44319,
+              "output_tokens": 5650,
+              "errors": 0,
+              "last_error": "",
+              "daily_request_budget": null,
+              "daily_token_budget": 400000,
+              "limit_rpm": 188,
+              "limit_tpm": 625000,
+              "requests_last_minute": 6,
+              "tokens_last_minute": 13257,
+              "status": "ready"
+            },
+            {
+              "name": "mistral-3b",
+              "model": "ministral-3b-2512",
+              "calls": 0,
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "errors": 0,
+              "last_error": "",
+              "daily_request_budget": null,
+              "daily_token_budget": 100000,
+              "limit_rpm": 400,
+              "limit_tpm": null,
+              "requests_last_minute": 0,
+              "tokens_last_minute": 0,
+              "status": "ready"
+            },
+            {
+              "name": "gemini",
+              "model": "gemini-3-flash-preview",
+              "calls": 116,
+              "input_tokens": 179589,
+              "output_tokens": 15681,
+              "errors": 10,
+              "last_error": "429 rate limited (judgment): You exceeded your current quota, please check your plan and billing details. For more infor",
+              "daily_request_budget": 240,
+              "daily_token_budget": null,
+              "limit_rpm": 8,
+              "limit_tpm": null,
+              "requests_last_minute": 3,
+              "tokens_last_minute": 1039,
+              "status": "ready"
+            },
+            {
+              "name": "groq",
+              "model": "openai/gpt-oss-120b",
+              "calls": 99,
+              "input_tokens": 75933,
+              "output_tokens": 14623,
+              "errors": 0,
+              "last_error": "400 on schema mode; prompt hint used",
+              "daily_request_budget": 900,
+              "daily_token_budget": 190000,
+              "limit_rpm": 1000,
+              "limit_tpm": 8000,
+              "requests_last_minute": 3,
+              "tokens_last_minute": 2554,
+              "status": "ready"
+            }
+          ],
+          "recent_calls": [
+            {
+              "at": 1789297885.9,
+              "class": "decision",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "858a64efbad23a33"
+            },
+            {
+              "at": 1789297886.3,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "af7b92001561bfe8"
+            },
+            {
+              "at": 1789297888.3,
+              "class": "decision",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "5fb2c0efb7f9a50e"
+            },
+            {
+              "at": 1789297896.2,
+              "class": "decision",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "e36f3275fdca13b4"
+            },
+            {
+              "at": 1789297900.5,
+              "class": "judgment",
+              "provider": "gemini",
+              "model": "gemini-3-flash-preview",
+              "prompt_sha256_16": "46576ecf8199834a"
+            },
+            {
+              "at": 1789297909.1,
+              "class": "judgment",
+              "provider": "gemini",
+              "model": "gemini-3-flash-preview",
+              "prompt_sha256_16": "d3566ed14aaac5b9"
+            },
+            {
+              "at": 1789299604.4,
+              "class": "self-prompt",
+              "provider": "gemini",
+              "model": "gemini-3-flash-preview",
+              "prompt_sha256_16": "e06e30ad925dc02b"
+            },
+            {
+              "at": 1789299607.3,
+              "class": "self-prompt",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "5c54a82935bd42e4"
+            },
+            {
+              "at": 1789299609.6,
+              "class": "self-prompt",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "baf37eb64389ee32"
+            },
+            {
+              "at": 1789299615.1,
+              "class": "council",
+              "provider": "gemini",
+              "model": "gemini-3-flash-preview",
+              "prompt_sha256_16": "aa767eab09413ceb"
+            },
+            {
+              "at": 1789299621.6,
+              "class": "council",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "c5e51d6d8f7f2b92"
+            },
+            {
+              "at": 1789299623.2,
+              "class": "recruitment",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "b3ee740029280fac"
+            },
+            {
+              "at": 1789299628.1,
+              "class": "regrounding",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "43b820a2f56f2e7a"
+            },
+            {
+              "at": 1789299635.2,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "8390b669a9c90dbf"
+            },
+            {
+              "at": 1789299637.1,
+              "class": "decision",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "1ee4aebd8e88f119"
+            },
+            {
+              "at": 1789299640.9,
+              "class": "decision",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "62a967e7f6749bfe"
+            },
+            {
+              "at": 1789299641.3,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "3694f1cff342135c"
+            },
+            {
+              "at": 1789299650.8,
+              "class": "decision",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "b43af180cac355f0"
+            },
+            {
+              "at": 1789299652.2,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "ce557cd823e17b1a"
+            },
+            {
+              "at": 1789299658.3,
+              "class": "decision",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "069d6753db678d14"
+            },
+            {
+              "at": 1789299661.2,
+              "class": "decision",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "cfab54443ae46259"
+            },
+            {
+              "at": 1789299668.8,
+              "class": "decision",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "506d4bd07014684e"
+            },
+            {
+              "at": 1789299670.3,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "c8c5db730f1c623f"
+            },
+            {
+              "at": 1789299671.9,
+              "class": "report",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "e1bda5333855e7f6"
+            },
+            {
+              "at": 1789299674.6,
+              "class": "decision",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "8a1704aeb2c254c7"
+            },
+            {
+              "at": 1789299678.7,
+              "class": "extraction",
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "prompt_sha256_16": "394d3c456e4439d4"
+            },
+            {
+              "at": 1789299686.7,
+              "class": "decision",
+              "provider": "mistral-8b",
+              "model": "ministral-8b-2512",
+              "prompt_sha256_16": "a9989a221cca4ebf"
+            },
+            {
+              "at": 1789299693.4,
+              "class": "judgment",
+              "provider": "gemini",
+              "model": "gemini-3-flash-preview",
+              "prompt_sha256_16": "d6115b60e4a5684f"
+            },
+            {
+              "at": 1789299701.9,
+              "class": "judgment",
+              "provider": "gemini",
+              "model": "gemini-3-flash-preview",
+              "prompt_sha256_16": "f04eaf5459a402ef"
+            },
+            {
+              "at": 1789299710.3,
+              "class": "judgment",
+              "provider": "gemini",
+              "model": "gemini-3-flash-preview",
+              "prompt_sha256_16": "7ce4ce78811c6570"
+            }
+          ],
+          "models_seen": {
+            "gemini": [
+              "gemini-2.5-flash",
+              "gemini-2.5-pro",
+              "gemini-2.5-flash-preview-tts",
+              "gemini-2.5-pro-preview-tts",
+              "gemma-4-26b-a4b-it",
+              "gemma-4-31b-it",
+              "gemini-flash-latest",
+              "gemini-flash-lite-latest",
+              "gemini-pro-latest",
+              "gemini-2.5-flash-lite",
+              "gemini-2.5-flash-image",
+              "gemini-3-flash-preview",
+              "gemini-3.1-pro-preview",
+              "gemini-3.1-pro-preview-customtools",
+              "gemini-3.1-flash-lite-preview",
+              "gemini-3.1-flash-lite",
+              "gemini-3-pro-image-preview",
+              "gemini-3-pro-image",
+              "nano-banana-pro-preview",
+              "gemini-3.1-flash-image-preview",
+              "gemini-3.1-flash-image",
+              "gemini-3.1-flash-lite-image",
+              "gemini-3.5-flash",
+              "gemini-3.5-flash-lite",
+              "gemini-omni-flash-preview",
+              "gemini-omni-1.1-flash",
+              "gemini-3.5-transcribe",
+              "gemini-3.6-flash",
+              "gemini-3.7-flash",
+              "gemini-3.8-flash",
+              "lyria-3-clip-preview",
+              "lyria-3-pro-preview",
+              "lyria-3.5",
+              "gemini-3.1-flash-tts-preview",
+              "gemini-robotics-er-2-preview",
+              "gemini-2.5-computer-use-preview-10-2025",
+              "antigravity-preview-05-2026",
+              "deep-research-max-preview-04-2026",
+              "deep-research-preview-04-2026",
+              "deep-research-pro-preview-12-2025"
+            ],
+            "groq": [
+              "gpt-oss-safeguard-20b",
+              "whisper-large-v3",
+              "compound",
+              "llama-prompt-guard-2-86m",
+              "allam-2-7b",
+              "qwen3.8-27b",
+              "orpheus-v1-english",
+              "orpheus-arabic-saudi",
+              "qwen3.6-27b",
+              "llama-prompt-guard-2-22m",
+              "whisper-large-v3-turbo",
+              "compound-mini",
+              "gpt-oss-120b",
+              "gpt-oss-20b"
+            ]
+          }
+        },
+        "rooms": 13,
+        "active_residents": 98,
+        "work_orders": 100,
+        "continuity": "pass",
+        "autonomy": "active",
+        "autonomy_quality": {
+          "status": "active",
+          "turns": 8,
+          "fallbacks": 1,
+          "fallback_rate": 0.125,
+          "fallback_reasons": {
+            "unstructured-output": 1
+          },
+          "tool_successes": 7,
+          "findings_filed": 3
+        },
+        "publication": "sanitized GitHub Pages snapshot",
+        "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
+        "publication_status": {
+          "outcome": "pushed",
+          "reason": "",
+          "at": "2026-09-13T11:11:52.614569+00:00"
+        },
+        "question_source": "resident:echo",
+        "self_prompt_accepted": 1,
+        "self_prompt_rejections": [
+          "morrow: missing TEST line(s); return exactly QUESTION:, WHY:, TEST:"
+        ],
+        "activity_feed": "docs/activity.json",
+        "feed_freshness_seconds": 0,
+        "activity_records": 110,
+        "note_records": 3306,
+        "print_jobs": 150,
+        "failed_print_jobs": 0,
+        "analysis_runs": 100,
+        "analysis_completed": 88,
+        "analysis_failed": 4,
+        "analysis_rejected": 8,
+        "analysis_timed_out": 0,
+        "analysis_feed": "docs/analysis.json",
+        "research_records": 52,
+        "research_stale": 3,
+        "research_feed": "docs/research.json",
+        "findings": 135,
+        "finding_candidates": 135,
+        "findings_rejected": 265,
+        "findings_retracted": 0,
+        "findings_duplicates": 0,
+        "findings_excluded": 265,
+        "findings_total": 400,
+        "corroborated_findings": 0,
+        "findings_feed": "docs/findings.json",
+        "frontier_leads": 0,
+        "research_line": {
+          "id": "line-000681-c13a128e",
+          "root": "Do independent public sources confirm that North Korea launches a series of SRBM missile tests from Wonsan in response to trilateral Freedom Edge military drills conducted by the United States, South ",
+          "anchors": [
+            "srbm",
+            "north",
+            "korea",
+            "wonsan",
+            "freedom",
+            "edge"
+          ],
+          "hops": 3,
+          "findings": 4,
+          "empty_cycles": 0
+        },
+        "frontier_questions": 100,
+        "frontier_findings": 100,
+        "frontier_tasks": 6,
         "frontier_feed": "docs/frontier.json",
         "code_proposals": 0,
         "code_proposals_ready": 0,
