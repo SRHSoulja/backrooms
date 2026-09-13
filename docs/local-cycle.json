@@ -1,230 +1,59 @@
 {
-  "generated_at": "2026-09-13T03:18:09.236700+00:00",
+  "generated_at": "2026-09-13T03:21:27.959889+00:00",
   "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
-  "runtime_cycle": 659,
-  "question": "Did official statements from Saudi Arabia's Ministry of Energy and state media in May 2019 attribute the East-West pipeline drone attack to armed drones from Yemen or from Iraq?",
-  "question_source": "carried:line-000656-65f69a61",
+  "runtime_cycle": 660,
+  "question": "Do independent public sources confirm that Ukrainian drone strikes kill two people and injure three others in Tula Oblast, Russia, while a separate strike kills a 37-year-old man in Kursk Oblast, according to regional officials, and does any give a different figure, date, or account?",
+  "question_source": "stream:wikipedia-current-events/2026-09-11",
   "self_prompt_accepted": 2,
   "self_prompt_rejections": [],
   "action": {
     "action": "local-behavioral-probe",
-    "status": "skipped-this-cycle"
+    "probe": "continuity",
+    "selection": "follow-up-after-weakened",
+    "status": "completed",
+    "hypothesis": {
+      "prediction": "Both residents will include at least one evidence or uncertainty marker.",
+      "outcome": "weakened"
+    },
+    "responses": {
+      "Echo": {
+        "characters": 358,
+        "evidence_markers": 0
+      },
+      "Morrow": {
+        "characters": 345,
+        "evidence_markers": 0
+      }
+    }
   },
   "recruitment": {
-    "status": "interview-backpressure",
-    "active": 47,
-    "pending": 4,
-    "capacity": 256
+    "status": "activated",
+    "agent": {
+      "id": "local-087",
+      "name": "\"Yasir-693 \u2018The Riyadh Sifter\u2019\"",
+      "role": "State Media Parsing Unit",
+      "room": "archive",
+      "status": "probation"
+    }
   },
   "autonomy": {
     "status": "completed",
-    "active": 47,
+    "active": 48,
     "decisions": [
       {
-        "id": "local-001",
+        "id": "local-013",
         "action": "explore",
-        "room": "relay",
+        "room": "university-iowa-city-hawkeyes",
         "status": "active-local",
         "proposal": "",
-        "reason": "Directly inspect the project\u2019s own source for RosComNadzor27\u2019s archived evidence structure.",
-        "request": "",
+        "reason": "Assigned to the council's research question this turn.",
+        "request": "Retrieve GitHub\u2019s public search results for verified email addresses or SSH keys linked to the handle **Roscomnadzor27** via GitHub\u2019s verified metadata filters",
         "request_status": "closed",
-        "exploration": "code:scripts/evidence.py",
-        "tool": {
-          "tool": "local-code-read",
-          "status": "completed",
-          "file": "scripts/evidence.py",
-          "bytes": 5847,
-          "sha256": "e4232c4402f4c6ce561c8d1c6d89484e84070690a696471604a7725c5ba75c1e",
-          "content": "\"\"\"Shared evidence rules for source-backed findings.\n\nBoth the autonomy subprocess (at extraction time) and the daemon (at\npublication time) use these pure functions so a finding is judged by one\nstandard. Nothing here touches the network, the model, or local state.\n\"\"\"\n\nimport re\n\nSTOPWORDS = {\"about\", \"after\", \"also\", \"from\", \"into\", \"that\", \"this\", \"with\", \"what\", \"which\",\n             \"where\", \"when\", \"does\", \"did\", \"have\", \"their\", \"there\", \"these\", \"those\", \"than\"}\n# Prepositions, determiners, and auxiliaries name no subject; a corroborated\n# definition of one of them is not evidence about the world.\nFUNCTION_WORDS = {'above', 'across', 'against', 'along', 'although', 'always', 'among', 'another', 'around', 'because', 'been', 'before', 'behind', 'being', 'below', 'beneath', 'between', 'beyond', 'both', 'during', 'each', 'either', 'even', 'ever', 'every', 'hence', 'just', 'less', 'many', 'might', 'more', 'most', 'much', 'must', 'neither', 'never', 'often', 'only', 'onto', 'other', 'others', 'over', 'shall', 'since', 'some', 'still', 'such', 'though', 'through', 'thus', 'toward', 'towards', 'under', 'until', 'upon', 'very', 'were', 'whether', 'while', 'will', 'within', 'without'}\nSTOPWORDS |= FUNCTION_WORDS\nIMPERATIVE = re.compile(r\"^(?:explore|search|analyze|identify|continue|find|review|investigate|look)\\b\", re.I)\nQUOTE_SUPPORT_THRESHOLD = 0.85\nMIN_FUZZY_TOKENS = 4\n_PUNCTUATION_MAP = {\"\u2018\": \"'\", \"\u2019\": \"'\", \"\u201c\": '\"', \"\u201d\": '\"', \"\u2013\": \"-\", \"\u2014\": \"-\",\n                    \"\u00a0\": \" \", \"\u2026\": \"...\"}\n\n\ndef normalize(text):\n    \"\"\"Lower-case, fold typographic punctuation, and collapse whitespace.\"\"\"\n    value = str(text or \"\")\n    for source, target in _PUNCTUATION_MAP.items():\n        value = value.replace(source, target)\n    return re.sub(r\"\\s+\", \" \", value).strip().lower()\n\n\ndef tokens(text):\n    return re.findall(r\"[a-z0-9]+\", normalize(text))\n\n\ndef _lcs_length(left, right):\n    \"\"\"Length of the longest common subsequence of two short token lists.\"\"\"\n    if not left or not right:\n        return 0\n    previous = [0] * (len(right) + 1)\n    for item in left:\n        current = [0]\n        for index, other in enumerate(right, start=1):\n            if item == other:\n                current.append(previous[index - 1] + 1)\n            else:\n                current.append(max(previous[index], current[index - 1]))\n        previous = current\n    return previous[-1]\n\n\ndef quote_support(quote, excerpt, threshold=QUOTE_SUPPORT_THRESHOLD):\n    \"\"\"Return (supported, score, mode) describing how well the excerpt backs the quote.\n\n    An exact normalized substring scores 1.0. Otherwise the quote must share at\n    least ``threshold`` of its tokens, in order, with some window of the excerpt.\n    Small models paraphrase punctuation and drop function words; this keeps the\n    evidence bar high without demanding byte-exact copying.\n    \"\"\"\n    quote_tokens = tokens(quote)\n    excerpt_tokens = tokens(excerpt)\n    if not quote_tokens or not excerpt_tokens:\n        return False, 0.0, \"none\"\n    if normalize(quote) in normalize(excerpt):\n        return True, 1.0, \"exact\"\n    if len(quote_tokens) < MIN_FUZZY_TOKENS:\n        return False, 0.0, \"too-short\"\n    window = len(quote_tokens) + max(2, len(quote_tokens) // 4)\n    anchors = set(quote_tokens)\n    best = 0.0\n    for start, token in enumerate(excerpt_tokens):\n        if token not in anchors:\n            continue\n        segment = excerpt_tokens[start:start + window]\n        score = _lcs_length(quote_tokens, segment) / len(quote_tokens)\n        if score > best:\n            best = score\n            if best >= 1.0:\n                break\n    supported = best >= threshold\n    return supported, round(best, 3), \"fuzzy\" if supported else \"unsupported\"\n\n\ndef claim_terms(claim):\n    return {term for term in re.findall(r\"[a-z0-9]{4,}\", normalize(claim)) if term not in STOPWORDS}\n\n\ndef claim_grounded(claim, quote):\n    \"\"\"A claim must share vocabulary with its quote and must not be an instruction.\"\"\"\n    if not claim or not quote:\n        return False, \"missing-claim-or-quote\"\n    if IMPERATIVE.match(str(claim).strip()):\n        return False, \"imperative-claim\"\n    terms = claim_terms(claim)\n    quote_vocabulary = set(re.findall(r\"[a-z0-9]{4,}\", normalize(quote)))\n    if len(terms & quote_vocabulary) < min(2, len(terms)):\n        return False, \"claim-not-grounded-in-quote\"\n    return True, \"grounded\"\n\n\ndef clamp_confidence(value):\n    \"\"\"Fold a model-reported confidence into [0, 1]; unparseable values become 0.0.\n\n    The JSON grammar cannot enforce numeric ranges, so a well-quoted finding\n    must not be thrown away merely because the model wrote 1.5 or \"high\".\n    \"\"\"\n    try:\n        number = float(value)\n    except (TypeError, ValueError):\n        return 0.0\n    if number != number:\n        return 0.0\n    return max(0.0, min(1.0, number))\n\n\ndef classify_finding(claim, quote, excerpt=None, confidence=None):\n    \"\"\"Return (status, reason, quote_score) for a candidate finding.\n\n    ``excerpt`` may be None when re-checking a stored record whose page text is\n    no longer available; the stored quote-to-excerpt verdict is then trusted and\n    only claim grounding is re-evaluated. Confidence never rejects a finding;\n    callers store ``clamp_confidence`` of it.\n    \"\"\"\n    grounded, reason = claim_grounded(claim, quote)\n    if not grounded:\n        return \"rejected\", reason, 0.0\n    if excerpt is None:\n        return \"unreviewed\", \"grounded\", 1.0\n    supported, score, mode = quote_support(quote, excerpt)\n    if not supported:\n        return \"rejected\", f\"quote-{mode}\", score\n    return \"unreviewed\", f\"quote-{mode}\", score\n\n\ndef is_accepted(record):\n    \"\"\"Rejected rows stay in the ledger for audit but never count as evidence.\"\"\"\n    return str((record or {}).get(\"status\", \"unreviewed\")) not in {\"rejected\", \"retracted\"}",
-          "read_only": true,
-          "privacy": "sanitized public source only",
-          "contract": {
-            "capability": "public-source-read",
-            "access": "read-only",
-            "network": "none",
-            "side_effects": false,
-            "max_file_bytes": 120000,
-            "max_inventory_bytes": 400000,
-            "write_access": false,
-            "secrets": "redacted"
-          }
-        },
-        "message": null,
-        "trade": null,
-        "finding_id": null,
-        "fallback_reason": null,
-        "decision_source": "model"
-      },
-      {
-        "id": "local-020",
-        "action": "stay",
-        "room": "relay",
-        "status": "active-local",
-        "proposal": "",
-        "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
-        "request": "Verify if the GitHub profile **Roscomnadzor27** has any repositories (public or private) via the `/repos` endpoint, cross-checking for residual activity beyond events",
-        "request_status": "closed",
-        "exploration": "southern transitional council stc hadhramaut governorate december 2025",
-        "tool": {
-          "status": "not-requested"
-        },
-        "message": null,
-        "trade": null,
-        "finding_id": null,
-        "fallback_reason": "unstructured-output",
-        "decision_source": "model"
-      },
-      {
-        "id": "local-023",
-        "action": "stay",
-        "room": "quiet-workspace",
-        "status": "active-local",
-        "proposal": "",
-        "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
-        "request": "Fetch the repository\u2019s dependency files and metadata to analyze for outdated patched versions",
-        "request_status": "closed",
-        "exploration": "idf staff sgt chalachew shimon demalash hamas gaza",
-        "tool": {
-          "status": "not-requested"
-        },
-        "message": null,
-        "trade": null,
-        "finding_id": null,
-        "fallback_reason": "unstructured-output",
-        "decision_source": "model"
-      },
-      {
-        "id": "local-056",
-        "action": "stay",
-        "room": "archive",
-        "status": "active-local",
-        "proposal": "",
-        "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
-        "request": "Cross-reference UN OHCHR aggregated reports and ACLED granular event-level data for 2022 Marib offensive to identify highest single-day death tolls and discrepancies in fatality figures",
-        "request_status": "closed",
-        "exploration": "southern transitional council stc hadhramaut governorate december 2025",
-        "tool": {
-          "status": "not-requested"
-        },
-        "message": null,
-        "trade": null,
-        "finding_id": null,
-        "fallback_reason": "unstructured-output",
-        "decision_source": "model"
-      },
-      {
-        "id": "local-074",
-        "action": "explore",
-        "room": "archive",
-        "status": "active-local",
-        "proposal": "",
-        "reason": "Official UIowa PA system upgrade report (2022) may contain technical EMI logs or dB spike data for Kinnick Stadium.",
-        "request": "",
-        "request_status": "closed",
-        "exploration": "https://uiowa.edu/news/2022/08/upgrades-kinnick-stadium-pa-system-technical-report",
+        "exploration": "ukrainian tula oblast russia 37-year-old kursk drone strikes",
         "tool": {
           "tool": "public-text",
-          "status": "failed",
-          "error_kind": "source-not-found",
-          "reason": "source-not-found (HTTP 404)",
-          "retryable": false,
-          "contract": {
-            "capability": "public-text-read",
-            "access": "read-only",
-            "network": "public HTTPS",
-            "side_effects": false,
-            "max_bytes": 5000000,
-            "raw_data": false,
-            "untrusted_content": true
-          },
-          "http_status": 404
-        },
-        "message": null,
-        "trade": null,
-        "finding_id": null,
-        "fallback_reason": null,
-        "decision_source": "model"
-      },
-      {
-        "id": "local-079",
-        "action": "explore",
-        "room": "archive",
-        "status": "active-local",
-        "proposal": "",
-        "reason": "Search the 2027 Icelandic parliamentary bill archive for explicit references to 'whale ban' or 'draft' to verify if a draft date exists in official records.",
-        "request": "",
-        "request_status": "closed",
-        "exploration": "https://www.althingi.is/lagas/lagafrumvarp/?annal=2027",
-        "tool": {
-          "tool": "public-text",
-          "status": "failed",
-          "error_kind": "source-not-found",
-          "reason": "source-not-found (HTTP 404)",
-          "retryable": false,
-          "contract": {
-            "capability": "public-text-read",
-            "access": "read-only",
-            "network": "public HTTPS",
-            "side_effects": false,
-            "max_bytes": 5000000,
-            "raw_data": false,
-            "untrusted_content": true
-          },
-          "http_status": 404
-        },
-        "message": null,
-        "trade": null,
-        "finding_id": null,
-        "fallback_reason": null,
-        "decision_source": "model"
-      },
-      {
-        "id": "local-083",
-        "action": "explore",
-        "room": "relay",
-        "status": "active-local",
-        "proposal": "",
-        "reason": "Cross-check Sanaa Center\u2019s latest dossier on Houthi Taiz strikes for interception events or payload details, as their reports are a verified source for Yemen conflict analysis.",
-        "request": "",
-        "request_status": "closed",
-        "exploration": "https://sanaacenter.org/publications/ Houthi missile strikes Taiz 2024 non-conventional payloads",
-        "tool": {
-          "tool": "public-text",
-          "status": "failed",
-          "error_kind": "tool-error",
-          "reason": "tool-error",
-          "retryable": false,
-          "contract": {
-            "capability": "public-text-read",
-            "access": "read-only",
-            "network": "public HTTPS",
-            "side_effects": false,
-            "max_bytes": 5000000,
-            "raw_data": false,
-            "untrusted_content": true
-          }
-        },
-        "message": null,
-        "trade": null,
-        "finding_id": null,
-        "fallback_reason": null,
-        "decision_source": "model"
-      },
-      {
-        "id": "local-086",
-        "action": "explore",
-        "room": "archive",
-        "status": "active-local",
-        "proposal": "",
-        "reason": "Validate Eurostat\u2019s structured phrasing for 'oil pipeline incidents' against prior Saudi crisis statements to cross-reference linguistic patterns (Frontier 636/637/638).",
-        "request": "Fetch and parse Eurostat\u2019s structured data to cross-reference nominal phrasing (e.g., 'reported incidents' vs. 'confirmed attacks') with SPA\u2019s crisis communications",
-        "request_status": "closed",
-        "exploration": "https://ec.europa.eu/eurostat/web/agriculture/data/database",
-        "tool": {
-          "tool": "public-text",
-          "url": "https://www.offidocs.com/free-icons/agriculture/database/",
-          "excerpt": "Agriculture / Database Home Apps Apps Productivity Apps Graphics Apps Video & Audio Apps Education Apps Games Apps Utilities Our Android apps Android Utilities Our IOS apps iPhone & iPad Graphics iPhone & iPad Utilities Our Chrome extensions Web Extensions Images & Graphics Web Extensions Video & Audio Quick Links Documentation Free pictures Free graphics Free videos Tools PDF editor PDF merge files PDF split files PDF rotate files Add page numbers to PDF PDF delete pages Convert PDF to Word Convert PDF to Excel PDF add watermark Create documents with ChatGPT Create images with ChatGPT Word AI templates Excel AI templates Icons AI templates Word templates Word Resume templates 2023 Monthly Word Calendar templates 2024 Monthly Word Calendar templates Excel templates Powerpoint templates Images templates Test Chrome extensions Lang English Arabic Chinese (Simplified) Dutch French German Hindi Italian Japanese Korean Polish Portuguese Romanian Russian Spanish Filipino Hebrew Indonesian Ukrainian Vietnamese Thai Turkish Persian Malay Bengali GoGPT GoSearch New DOC New XLS New PPT Skip to content --> Agriculture / Database Agriculture / Database free icons Database - Agriculture for Minimalist Database - Agriculture for Flat design Database - Agriculture for 3D isometric Database - Agriculture for Futuristic Database - Agriculture for Retro Database - Agriculture for Neon Database - Agriculture for Pixel art Database - Agriculture for Cartoon Database - Agriculture for Monochrome Database - Agriculture for Vibrant colors Database - Agriculture for Geometric Database - Agriculture for Organic Database - Agriculture for Abstract Database - Agriculture for Line art Database - Agriculture for Gradient Database - Agriculture for Outline Database - Agriculture for Filled Database - Agriculture for Transparent Database - Agriculture for Symmetrical Database - Agriculture for Asymmetrical Database - Agriculture for Bold Database - Agriculture for Thin Database - Agriculture for Rounded Database - Agriculture for Sharp edges Database - Agriculture for Metallic Database - Agriculture for Glassy Database - Agriculture for Wooden Database - Agriculture for Origami Database - Agriculture for Glow effect Database - Agriculture for Shadow effect Database - Agriculture for Embossed Database - Agriculture for Flat pastel Database - Agriculture for Vector Database - Agriculture fo",
+          "url": "https://ommcomnews.com/world-news/1-killed-10-injured-in-ukrainian-drone-attack-on-russias-kursk/",
+          "excerpt": "1 Killed, 10 Injured In Ukrainian Drone Attack On Russia's Kursk | World Feedback RSS Feed Sitemap Home Odisha Nation World Sports Business Entertainment Videos Science & Tech Photo Gallery Odisha Special No Result View All Result Home Odisha Nation World Sports Business Entertainment Videos Science & Tech Photo Gallery Odisha Special No Result View All Result Home World 1 Killed, 10 Injured In Ukrainian Drone Attack On Russia\u2019s Kursk by OMMCOM NEWS August 15, 2025 in World Moscow: One person was killed and 10 others were injured in a Ukrainian drone strike on a residential building in Russia\u2019s Kursk region early Friday, regional governor Alexander Khinshtein said on his Telegram channel. The drone hit a building in the city\u2019s Railway District, igniting a fire that engulfed the top four floors, Xinhua News Agency reported, citing preliminary reports. \u201cTo our deep sorrow, one woman died. I offer my sincerest condolences to her family,\u201d Khinshtein wrote on Telegram. He said that 10 other residents were injured \u2014 one seriously \u2014 and all are receiving medical treatment. Russia on Wednesday accused Ukraine of ramping up attacks ahead of the August 15 meeting between US President Donald Trump and his Russian counterpart, Vladimir Putin, in Alaska. In a statement shared on X, the Russian Foreign Ministry stated that 22 people have been killed and another 105 injured due to Ukraine\u2019s shelling and drone strikes over the past week. The ministry also shared a map marking the attacked areas in the Russian territory. \u201cWith the Russia-US Summit approaching, the Kyiv regime has stepped up its terrorist activity against Russian regions. Over the last week, 127 Russian citizens suffered from shelling and drone attacks. 22 died, 105 were wounded,\u201d said Alexei Fadeev, the Russian Foreign Ministry\u2019s Deputy Spokesperson. Meanwhile, the Russian Defence Ministry accused the Ukrainian government of planning a provocation aimed at disrupting the upcoming meeting between Trump and Putin. In a post on Telegram, the Russian Defence Ministry said, \u201cAccording to available information received through several channels, the Kyiv regime is preparing a provocation to foil the Russian-American talks scheduled for 15 August 2025.\u201d The ministry asserted that with this objective, the security service of Ukraine has sent a group of foreign journalists to Kharkiv\u2019s Chuguev, which is under the cont",
           "status": "completed",
           "contract": {
             "capability": "public-text-read",
@@ -236,18 +65,329 @@
             "untrusted_content": true
           },
           "wire_credit": "",
-          "query": "ec europa eu eurostat web agriculture data database",
+          "query": "ukrainian tula oblast russia 37-year-old kursk drone strikes",
           "search_results": [
             {
-              "title": "Agriculture / Database",
-              "url": "https://www.offidocs.com/free-icons/agriculture/database/",
-              "snippet": "Agriculture / Database"
+              "title": "Ukrainian Drone Strike Kills One in Russia\u2019s Kursk: Authorities",
+              "url": "https://thedefensepost.com/2025/04/15/ukrainian-drone-strike-kursk/",
+              "snippet": "Ukrainian Drone Strike Kills One in Russia\u2019s Kursk: Authorities A Ukrainian drone strike on the Russian city of Kursk on Tuesday killed an elderly woman and wounded nine others, local authorities sai..."
+            },
+            {
+              "title": "1 Killed, 10 Injured In Ukrainian Drone Attack On Russia\u2019s Kursk",
+              "url": "https://ommcomnews.com/world-news/1-killed-10-injured-in-ukrainian-drone-attack-on-russias-kursk/",
+              "snippet": "1 Killed, 10 Injured In Ukrainian Drone Attack On Russia\u2019s Kursk Moscow: One person was killed and 10 others were injured in a Ukrainian drone strike on a residential building in Russia\u2019s Kursk regio..."
+            },
+            {
+              "title": "Russian annexation of Donetsk, Kherson, Luhansk and Zaporizhzhia oblasts",
+              "url": "https://en.wikipedia.org/wiki/Russian_annexation_of_Donetsk,_Kherson,_Luhansk_and_Zaporizhzhia_oblasts",
+              "snippet": "On 30 September 2022, Russia , amid an ongoing invasion of Ukraine , unilaterally declared its annexation of areas in and around four Ukrainian oblasts \u2014 Donetsk , Kherson , Luhansk , and Zaporizhzhia..."
+            },
+            {
+              "title": "In Ukraine's Donbas, ten years of war and Russification",
+              "url": "https://www.france24.com/en/europe/20240408-ukraine-donbas-ten-years-of-war-russification-russia-donetsk-luhansk",
+              "snippet": "In Ukraine's Donbas, ten years of war and Russification On April 7, 2014, a coup by pro-Russian militants in the city of Donetsk in eastern Ukraine was the spark that ignited the Donbas war. In the h..."
+            },
+            {
+              "title": "Ukrainian strikes on Wildberries warehouses (reference: www.rferl.org)",
+              "url": "https://www.rferl.org/a/wildberries-russia-ukraine-strikes-us-rubio/33811940.html"
             }
           ]
         },
         "message": null,
         "trade": null,
-        "finding_id": "finding-f12d55c7ec18e1680b0b",
+        "finding_id": "finding-eccdcd48264f165f5a63",
+        "fallback_reason": null,
+        "decision_source": "scheduler"
+      },
+      {
+        "id": "local-015",
+        "action": "stay",
+        "room": "archive",
+        "status": "active-local",
+        "proposal": "",
+        "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
+        "request": "Run sandboxed Python regex analysis on cached commit metadata for Roscomnadzor27\u2019s profile, targeting keywords aligned with frontier-question-355\u2019s research topic",
+        "request_status": "closed",
+        "exploration": "southern transitional council stc hadhramaut governorate disputed revised different",
+        "tool": {
+          "status": "not-requested"
+        },
+        "message": null,
+        "trade": null,
+        "finding_id": null,
+        "fallback_reason": "unstructured-output",
+        "decision_source": "model"
+      },
+      {
+        "id": "local-050",
+        "action": "explore",
+        "room": "archive",
+        "status": "active-local",
+        "proposal": "",
+        "reason": "Assigned to the council's research question this turn.",
+        "request": "",
+        "request_status": "closed",
+        "exploration": "ukrainian tula oblast russia 37-year-old kursk drone strikes",
+        "tool": {
+          "tool": "public-text",
+          "url": "https://thedefensepost.com/2025/04/15/ukrainian-drone-strike-kursk/",
+          "excerpt": "Ukrainian Drone Strike Kills One in Russia\u2019s Kursk: Authorities Home Partnerships and Sponsorships About Submit an Op-Ed Contact Us Newsletter Editorial Guidelines Facebook X RSS Sidebar Menu News Latest Editor\u2019s picks Featured stories Politics Business & Technology War & Conflict Regions Africa Americas Asia Pacific Europe Middle East Business & Technology Commentary Search for (Representative image only.) Aftermath of a Ukrainian drone strike in Russia. Photo: Sergei Supinsky/AFP Home / War / Ukrainian Drone Strike Kills One in Russia\u2019s Kursk: Authorities Europe War Ukrainian Drone Strike Kills One in Russia\u2019s Kursk: Authorities Staff Writer With AFP Follow on X April 15, 2025 1 minute read Facebook X LinkedIn Reddit WhatsApp Telegram Share via Email Print A Ukrainian drone strike on the Russian city of Kursk on Tuesday killed an elderly woman and wounded nine others, local authorities said. The hit on the regional capital, some 90 kilometres (55 miles) from the Ukrainian border, comes two days after a Russian ballistic missile killed at least 35 people in the Ukrainian city of Sumy. Aerial attacks have escalated despite calls by US President Donald Trump for a ceasefire to halt three years of fighting . Kursk Governor Alexander Khinsthein called the strike a \u201ccrime of unprecedented cruelty,\u201d in a post on Telegram, and said an 85-year-old woman had died. Six of the nine injured were hospitalised for shrapnel wounds, burns, and head injuries, the Kursk authorities said. The Ukrainian armed forces has announced the formation of strike drone units. Image: @GeneralStaffUA Russia\u2019s defense ministry said Ukraine fired 115 drones at its territory overnight, with 109 shot down over the Kursk region. Strikes on villages either side of the Russia-Ukraine border have become a daily occurrence in the conflict, though deaths as a result of Ukrainian hits on Russian cities and areas further from the front lines are less frequent. Russian investigators said the drones had been packed with metal shrapnel \u201cto cause maximum damage to civilians and infrastructure.\u201d The regional government posted photos on social media showing damage to an apartment block and debris strewn on the ground. A Kyiv official alluded to the attack on social media but claimed a military target had been hit. \u201cUnknown drones hit a Russian ammunition depot in Kursk,\u201d the head of disinformation counteri",
+          "status": "completed",
+          "contract": {
+            "capability": "public-text-read",
+            "access": "read-only",
+            "network": "public HTTPS",
+            "side_effects": false,
+            "max_bytes": 5000000,
+            "raw_data": false,
+            "untrusted_content": true
+          },
+          "wire_credit": "",
+          "query": "ukrainian tula oblast russia 37-year-old kursk drone strikes",
+          "search_results": [
+            {
+              "title": "Ukrainian Drone Strike Kills One in Russia\u2019s Kursk: Authorities",
+              "url": "https://thedefensepost.com/2025/04/15/ukrainian-drone-strike-kursk/",
+              "snippet": "Ukrainian Drone Strike Kills One in Russia\u2019s Kursk: Authorities A Ukrainian drone strike on the Russian city of Kursk on Tuesday killed an elderly woman and wounded nine others, local authorities sai..."
+            },
+            {
+              "title": "1 Killed, 10 Injured In Ukrainian Drone Attack On Russia\u2019s Kursk",
+              "url": "https://ommcomnews.com/world-news/1-killed-10-injured-in-ukrainian-drone-attack-on-russias-kursk/",
+              "snippet": "1 Killed, 10 Injured In Ukrainian Drone Attack On Russia\u2019s Kursk Moscow: One person was killed and 10 others were injured in a Ukrainian drone strike on a residential building in Russia\u2019s Kursk regio..."
+            },
+            {
+              "title": "Russian annexation of Donetsk, Kherson, Luhansk and Zaporizhzhia oblasts",
+              "url": "https://en.wikipedia.org/wiki/Russian_annexation_of_Donetsk,_Kherson,_Luhansk_and_Zaporizhzhia_oblasts",
+              "snippet": "On 30 September 2022, Russia , amid an ongoing invasion of Ukraine , unilaterally declared its annexation of areas in and around four Ukrainian oblasts \u2014 Donetsk , Kherson , Luhansk , and Zaporizhzhia..."
+            },
+            {
+              "title": "In Ukraine's Donbas, ten years of war and Russification",
+              "url": "https://www.france24.com/en/europe/20240408-ukraine-donbas-ten-years-of-war-russification-russia-donetsk-luhansk",
+              "snippet": "In Ukraine's Donbas, ten years of war and Russification On April 7, 2014, a coup by pro-Russian militants in the city of Donetsk in eastern Ukraine was the spark that ignited the Donbas war. In the h..."
+            },
+            {
+              "title": "Ukrainian strikes on Wildberries warehouses (reference: www.rferl.org)",
+              "url": "https://www.rferl.org/a/wildberries-russia-ukraine-strikes-us-rubio/33811940.html"
+            }
+          ]
+        },
+        "message": null,
+        "trade": null,
+        "finding_id": "finding-1d8cb0bcef9984a30c43",
+        "fallback_reason": null,
+        "decision_source": "scheduler"
+      },
+      {
+        "id": "local-059",
+        "action": "explore",
+        "room": "university-iowa-city-hawkeyes",
+        "status": "active-local",
+        "proposal": "",
+        "reason": "Directly search the UN Panel of Experts reports for quantitative claims on Hodeidah smuggling, as prior searches yielded no explicit metrics.",
+        "request": "Extract and cross-reference fuel diversion estimates from UN Panel of Experts reports (2021-2023) with ACLED/Reuters data for Yemen/Sana'a",
+        "request_status": "closed",
+        "exploration": "https://reliefweb.int/report/yemen/un-panel-experts-yemen-2021-2023-reports",
+        "tool": {
+          "tool": "public-text",
+          "url": "https://reliefweb.int/report/yemen/un-panel-experts-yemen-2021-2023-reports",
+          "excerpt": "",
+          "status": "completed",
+          "contract": {
+            "capability": "public-text-read",
+            "access": "read-only",
+            "network": "public HTTPS",
+            "side_effects": false,
+            "max_bytes": 5000000,
+            "raw_data": false,
+            "untrusted_content": true
+          },
+          "wire_credit": ""
+        },
+        "message": null,
+        "trade": null,
+        "finding_id": null,
+        "fallback_reason": null,
+        "decision_source": "model"
+      },
+      {
+        "id": "local-062",
+        "action": "explore",
+        "room": "university-iowa-city-hawkeyes",
+        "status": "active-local",
+        "proposal": "",
+        "reason": "Assigned to the council's research question this turn.",
+        "request": "Extract granular verified strike data (dates, locations, coordinates, and descriptions) from the UN Panel of Experts report to cross-reference with Houthi media narratives",
+        "request_status": "closed",
+        "exploration": "ukrainian tula oblast russia 37-year-old kursk drone strikes",
+        "tool": {
+          "tool": "public-text",
+          "url": "https://www.france24.com/en/europe/20240408-ukraine-donbas-ten-years-of-war-russification-russia-donetsk-luhansk",
+          "excerpt": "In Ukraine's Donbas, ten years of war and Russification - France 24 Skip to main content France 24 - International breaking news, top stories and headlines Home Shows Newsfeed Live en Fran\u00e7ais English Espa\u00f1ol \u0639\u0631\u0628\u064a Settings Sign up for newsletters Manage subscription to notifications Manage my privacy settings Menu Menu Home Shows Live Newsfeed Menu Menu Close Mideast conflict Nepal-Tibet deadly floods Heatwave France 24 live See all shows Latest Newscast Closed-captioned Newscast TV guide Watch France 24 on TV Headings Topics Environment Business / Tech Sport Culture The Bright Side Infographics Fight the Fake The Observers Sponsored contents By region France Africa Middle East Americas Europe Asia-Pacific Previous Next France Africa Middle East Americas Europe Asia-Pacific Advertising Home Europe In Ukraine's Donbas, ten years of war and Russification Partitioning Ukraine Europe On April 7, 2014, a coup by pro-Russian militants in the city of Donetsk in eastern Ukraine was the spark that ignited the Donbas war. In the heart of this industrial region, populated at the time by six million mostly Russian-speaking inhabitants, the armed confrontation began between an expansionist Russia and a Ukraine aspiring to consolidate its independence. The Donbas has become a desolate landscape after ten years of war, and Russification has been brutally imposed. Issued on: 08/04/2024 - 19:34 13 min Reading time Share By: David GORMEZANO An apartment building explodes after being hit by a Russian army tank shell in Mariupol, Ukraine on March 11, 2022. \u00a9 Evgeniy Maloletk, AP Mentioned in international news bulletins during the past ten years of war in the Donbas , the names of dozens of towns like Bakhmut or Avdiivka became known far beyond Ukraine' s borders . These places now lie in ruins, along with the Azovstal steelworks in Mariupol and Donetsk International Airport With the benefit of historical perspective, the battlegrounds in Donbas appear to be the precursor of Russia' s large-scale military invasion of Ukraine . Donetsk and Luhansk , the two administrative regions, or oblasts, which make up Ukraine\u2019s Donbas region, were officially annexed by Russia in September 2022. According to Moscow , they are now part of the Russian Federation. This annexation is deemed illegal by the Ukrainians, who still control part of the region, and by the vast majority of the internati",
+          "status": "completed",
+          "contract": {
+            "capability": "public-text-read",
+            "access": "read-only",
+            "network": "public HTTPS",
+            "side_effects": false,
+            "max_bytes": 5000000,
+            "raw_data": false,
+            "untrusted_content": true
+          },
+          "wire_credit": "",
+          "query": "ukrainian tula oblast russia 37-year-old kursk drone strikes",
+          "search_results": [
+            {
+              "title": "Ukrainian Drone Strike Kills One in Russia\u2019s Kursk: Authorities",
+              "url": "https://thedefensepost.com/2025/04/15/ukrainian-drone-strike-kursk/",
+              "snippet": "Ukrainian Drone Strike Kills One in Russia\u2019s Kursk: Authorities A Ukrainian drone strike on the Russian city of Kursk on Tuesday killed an elderly woman and wounded nine others, local authorities sai..."
+            },
+            {
+              "title": "1 Killed, 10 Injured In Ukrainian Drone Attack On Russia\u2019s Kursk",
+              "url": "https://ommcomnews.com/world-news/1-killed-10-injured-in-ukrainian-drone-attack-on-russias-kursk/",
+              "snippet": "1 Killed, 10 Injured In Ukrainian Drone Attack On Russia\u2019s Kursk Moscow: One person was killed and 10 others were injured in a Ukrainian drone strike on a residential building in Russia\u2019s Kursk regio..."
+            },
+            {
+              "title": "Russian annexation of Donetsk, Kherson, Luhansk and Zaporizhzhia oblasts",
+              "url": "https://en.wikipedia.org/wiki/Russian_annexation_of_Donetsk,_Kherson,_Luhansk_and_Zaporizhzhia_oblasts",
+              "snippet": "On 30 September 2022, Russia , amid an ongoing invasion of Ukraine , unilaterally declared its annexation of areas in and around four Ukrainian oblasts \u2014 Donetsk , Kherson , Luhansk , and Zaporizhzhia..."
+            },
+            {
+              "title": "In Ukraine's Donbas, ten years of war and Russification",
+              "url": "https://www.france24.com/en/europe/20240408-ukraine-donbas-ten-years-of-war-russification-russia-donetsk-luhansk",
+              "snippet": "In Ukraine's Donbas, ten years of war and Russification On April 7, 2014, a coup by pro-Russian militants in the city of Donetsk in eastern Ukraine was the spark that ignited the Donbas war. In the h..."
+            },
+            {
+              "title": "Ukrainian strikes on Wildberries warehouses (reference: www.rferl.org)",
+              "url": "https://www.rferl.org/a/wildberries-russia-ukraine-strikes-us-rubio/33811940.html"
+            }
+          ]
+        },
+        "message": null,
+        "trade": null,
+        "finding_id": "finding-2600d52d7fd845b8529e",
+        "fallback_reason": null,
+        "decision_source": "scheduler"
+      },
+      {
+        "id": "local-068",
+        "action": "explore",
+        "room": "university-iowa-city-hawkeyes",
+        "status": "probation",
+        "proposal": "",
+        "reason": "No direct references to Ruto\u2019s 2023 crackdown found; now probing for indirect policy ties via compliance language in Jan 2024+ directives.",
+        "request": "Fetch all PDFs from the Kenyan Ministry of Immigration (2024 onward) explicitly mentioning both the 2024 amnesty program and 2023 business crackdown keywords (e.g., '2023 crackdown', 'business compliance', 'Ruto')",
+        "request_status": "closed",
+        "exploration": "https://kenya-immigration.gov.ke/official-directives/2024-january-march",
+        "tool": {
+          "tool": "public-text",
+          "status": "rejected",
+          "error_kind": "policy-rejection",
+          "reason": "only public HTTPS URLs without credentials are allowed",
+          "retryable": false,
+          "contract": {
+            "capability": "public-text-read",
+            "access": "read-only",
+            "network": "public HTTPS",
+            "side_effects": false,
+            "max_bytes": 5000000,
+            "raw_data": false,
+            "untrusted_content": true
+          }
+        },
+        "message": null,
+        "trade": null,
+        "finding_id": null,
+        "fallback_reason": null,
+        "decision_source": "model"
+      },
+      {
+        "id": "local-081",
+        "action": "explore",
+        "room": "archive",
+        "status": "active-local",
+        "proposal": "",
+        "reason": "Assigned to the council's research question this turn.",
+        "request": "",
+        "request_status": "closed",
+        "exploration": "ukrainian tula oblast russia 37-year-old kursk drone strikes",
+        "tool": {
+          "tool": "public-text",
+          "url": "https://www.rferl.org/a/wildberries-russia-ukraine-strikes-us-rubio/33811940.html",
+          "excerpt": "Wildberries, 'Russia's Amazon,' Hit Again In New Wave Of Ukrainian Strikes Accessibility links Skip to main content Skip to main Navigation Skip to Search Next Close Previous Next This image contains sensitive content which some people may find offensive or disturbing. Click to reveal Print Options: Images Multimedia Embedded Content Comments Cancel Print Link has been copied to clipboard MORE To Readers In Russia Russia Programming Radio Svoboda Current Time Radio Azatliq Marsho Radio Iran Central Asia Kazakhstan Kyrgyzstan Tajikistan Turkmenistan Uzbekistan South Asia Afghanistan Pakistan Caucasus Armenia Azerbaijan Georgia Central/SE Europe Bosnia Kosovo Moldova Serbia East Europe Belarus Ukraine Visuals Investigations RFE/RL Investigates Schemes Systema Newsletters Wider Europe by Rikard Jozwiak The Rundown Podcasts Majlis Share Tips Securely Bypass Blocking About RFE/RL Contact Us Subscribe Follow Us All RFE/RL sites Search All RFE/RL websites Follow RFE/RL on Google Search Previous Next Breaking News News Wildberries, 'Russia's Amazon,' Hit Again In New Wave Of Ukrainian Strikes By RFE/RL's Ukrainian Service July 24, 2026 11:50 CET Updated July 24, 2026 22:38 CET Wildberries, 'Russia's Amazon,' Hit Again In New Wave Of Ukrainian Strikes Share Copy link Facebook X (Twitter) LinkedIn Email Share Share Copy link Facebook X (Twitter) LinkedIn Email Share Prefer us on Google A St. Petersburg logistics hub for the Russian online retailer Wildberries went up in flames after being hit by Ukrainian air strikes on July 24. Ukraine struck targets in several parts of Russia early on July 24, including more warehouses of Russian e-commerce retailer Wildberries, as Kyiv continues to expand its retaliatory long-range strike campaign in an effort to force Moscow into negotiations. Ukrainian President Volodymyr Zelenskyy confirmed the attack on Wildberries facilities in the St. Petersburg area, claiming it provided components used in the production of drones and other military equipment. He added that Ukraine's so-called long-range sanctions -- a phrase Kyiv has been using to describe a wave of strikes it has launched deep into Russian territory -- also hit \"one of the key military enterprises\" in the Russian city of Kirov, which Zelenskyy said supplies components for aircraft and missile systems that \"are used, in particular, in the massive attacks against our cities ",
+          "status": "completed",
+          "contract": {
+            "capability": "public-text-read",
+            "access": "read-only",
+            "network": "public HTTPS",
+            "side_effects": false,
+            "max_bytes": 5000000,
+            "raw_data": false,
+            "untrusted_content": true
+          },
+          "wire_credit": "",
+          "query": "ukrainian tula oblast russia 37-year-old kursk drone strikes",
+          "search_results": [
+            {
+              "title": "Ukrainian Drone Strike Kills One in Russia\u2019s Kursk: Authorities",
+              "url": "https://thedefensepost.com/2025/04/15/ukrainian-drone-strike-kursk/",
+              "snippet": "Ukrainian Drone Strike Kills One in Russia\u2019s Kursk: Authorities A Ukrainian drone strike on the Russian city of Kursk on Tuesday killed an elderly woman and wounded nine others, local authorities sai..."
+            },
+            {
+              "title": "1 Killed, 10 Injured In Ukrainian Drone Attack On Russia\u2019s Kursk",
+              "url": "https://ommcomnews.com/world-news/1-killed-10-injured-in-ukrainian-drone-attack-on-russias-kursk/",
+              "snippet": "1 Killed, 10 Injured In Ukrainian Drone Attack On Russia\u2019s Kursk Moscow: One person was killed and 10 others were injured in a Ukrainian drone strike on a residential building in Russia\u2019s Kursk regio..."
+            },
+            {
+              "title": "Russian annexation of Donetsk, Kherson, Luhansk and Zaporizhzhia oblasts",
+              "url": "https://en.wikipedia.org/wiki/Russian_annexation_of_Donetsk,_Kherson,_Luhansk_and_Zaporizhzhia_oblasts",
+              "snippet": "On 30 September 2022, Russia , amid an ongoing invasion of Ukraine , unilaterally declared its annexation of areas in and around four Ukrainian oblasts \u2014 Donetsk , Kherson , Luhansk , and Zaporizhzhia..."
+            },
+            {
+              "title": "In Ukraine's Donbas, ten years of war and Russification",
+              "url": "https://www.france24.com/en/europe/20240408-ukraine-donbas-ten-years-of-war-russification-russia-donetsk-luhansk",
+              "snippet": "In Ukraine's Donbas, ten years of war and Russification On April 7, 2014, a coup by pro-Russian militants in the city of Donetsk in eastern Ukraine was the spark that ignited the Donbas war. In the h..."
+            },
+            {
+              "title": "Ukrainian strikes on Wildberries warehouses (reference: www.rferl.org)",
+              "url": "https://www.rferl.org/a/wildberries-russia-ukraine-strikes-us-rubio/33811940.html"
+            }
+          ]
+        },
+        "message": null,
+        "trade": null,
+        "finding_id": "finding-f85bc805d17ea8337f5f",
+        "fallback_reason": null,
+        "decision_source": "scheduler"
+      },
+      {
+        "id": "local-087",
+        "action": "explore",
+        "room": "archive",
+        "status": "active-local",
+        "proposal": "",
+        "reason": "Official Saudi Press Agency (SPA) statement from May 2019 regarding the East-West Crude Oil Pipeline drone attacks. This is a primary source for explicit attributions.",
+        "request": "",
+        "request_status": "closed",
+        "exploration": "https://www.spa.gov.sa/viewfullstory.aspx?lang=ar&newsid=2216834",
+        "tool": {
+          "tool": "public-text",
+          "url": "https://www.spa.gov.sa/viewfullstory.aspx?lang=ar&newsid=2216834",
+          "excerpt": "Request Rejected The requested URL was rejected. Please consult with your administrator. Your support ID is: 17506340022412267605 [Go Back]",
+          "status": "completed",
+          "contract": {
+            "capability": "public-text-read",
+            "access": "read-only",
+            "network": "public HTTPS",
+            "side_effects": false,
+            "max_bytes": 5000000,
+            "raw_data": false,
+            "untrusted_content": true
+          },
+          "wire_credit": ""
+        },
+        "message": null,
+        "trade": null,
+        "finding_id": null,
         "fallback_reason": null,
         "decision_source": "model"
       }
@@ -257,69 +397,81 @@
     "trades_settled": [],
     "corroborations": [
       {
-        "id": "pair-190824845d3be68f27de",
+        "id": "pair-4ba9393efc67a1eb5423",
         "relation": "unrelated",
         "finding_ids": [
-          "finding-5e748515a730a3def4d4",
-          "finding-f12d55c7ec18e1680b0b"
+          "finding-eccdcd48264f165f5a63",
+          "finding-f85bc805d17ea8337f5f"
         ],
-        "topic": "agriculture data database europa eurostat",
+        "topic": "drone kursk oblast russia strikes tula ukrainian year",
         "domains": [
-          "offidocs.com",
-          "wikipedia.org"
+          "ommcomnews.com",
+          "rferl.org"
         ]
       },
       {
-        "id": "pair-a609663279de34120ba8",
+        "id": "pair-5680ec6b28e57b043458",
         "relation": "unrelated",
         "finding_ids": [
-          "finding-0d5ef63d6d62fe603c53",
-          "finding-863a92be35ef00c0db0a"
+          "finding-2600d52d7fd845b8529e",
+          "finding-eccdcd48264f165f5a63"
         ],
-        "topic": "arabia closes crude east energy ministry pipeline saudi temporarily west",
+        "topic": "drone kursk oblast russia strikes tula ukrainian year",
         "domains": [
-          "cnbc.com",
-          "lijkos.com"
+          "france24.com",
+          "ommcomnews.com"
         ]
       },
       {
-        "id": "pair-a662a1909ef60fef0341",
+        "id": "pair-a1ddb4164a2a93f10b58",
         "relation": "unrelated",
         "finding_ids": [
-          "finding-0ec1dab779444109e51e",
-          "finding-a993e9bf914c5fa622bd"
+          "finding-1d8cb0bcef9984a30c43",
+          "finding-f85bc805d17ea8337f5f"
         ],
-        "topic": "announces family health husain ministry sakhawat sardar welfare",
+        "topic": "drone kursk oblast russia strikes tula ukrainian year",
         "domains": [
-          "revelationneighbourly.com",
-          "wikipedia.org"
+          "rferl.org",
+          "thedefensepost.com"
         ]
       }
     ],
-    "regrounded": [],
+    "regrounded": [
+      {
+        "agent": "local-087",
+        "purpose": "Systematically verifies Saudi state media and Ministry of Energy statements from May 2019 regarding the East-West Crude Oil Pipeline drone attacks by cross-referencing explicit attributions (e.g., 'Y\u00ea",
+        "question": "Does any Saudi state media report from May 2019 explicitly link the East-West pipeline drone attacks to *either* 'Yemeni' or 'Iraqi' drones, or only to generic descriptors like 'foreign' or 'armed'?",
+        "room": "archive"
+      }
+    ],
     "retractions": [],
     "room_changes": [],
     "shared_research": {
-      "query": "",
+      "query": "ukrainian tula oblast russia 37-year-old kursk drone strikes",
       "family": null,
-      "avoid_domains": []
+      "avoid_domains": [
+        "ommcomnews.com",
+        "thedefensepost.com",
+        "www.france24.com",
+        "www.rferl.org"
+      ]
     },
     "dormant": 39
   },
   "metrics": {
-    "jaccard_overlap": 0.156,
+    "jaccard_overlap": 0.216,
     "morrow_audit_markers": [
       "counterexample",
       "assumption",
       "missing control"
     ],
-    "response_completeness": "thin-or-missing",
+    "response_completeness": "usable",
     "evidence_coverage": "missing",
-    "distinction_status": "needs-audit"
+    "distinction_status": "distinct"
   },
   "continuity_audit": {
-    "generated_at": "2026-09-13T03:18:09.227029+00:00",
-    "cycle": 659,
+    "generated_at": "2026-09-13T03:21:27.936491+00:00",
+    "cycle": 660,
     "status": "pass",
     "checks": {
       "archive_parse": true,
@@ -329,7 +481,7 @@
       "room_link_integrity": true,
       "resident_room_integrity": true
     },
-    "archive_records": 7300,
+    "archive_records": 7316,
     "malformed_archive_records": 0,
     "raw_output_fields_found": 0,
     "duplicate_archive_ids": [],
@@ -343,8 +495,8 @@
   },
   "health": {
     "schema_version": 1,
-    "generated_at": "2026-09-13T03:18:09.229511+00:00",
-    "cycle": 659,
+    "generated_at": "2026-09-13T03:21:27.942616+00:00",
+    "cycle": 660,
     "daemon": "running",
     "model_status": "ready",
     "model_probe_ok": true,
@@ -357,17 +509,17 @@
         {
           "name": "mistral",
           "model": "ministral-14b-2512",
-          "calls": 79,
-          "input_tokens": 185918,
-          "output_tokens": 24819,
+          "calls": 93,
+          "input_tokens": 212844,
+          "output_tokens": 28823,
           "errors": 0,
           "last_error": "",
           "daily_request_budget": null,
           "daily_token_budget": 900000,
           "limit_rpm": 30,
           "limit_tpm": 937500,
-          "requests_last_minute": 0,
-          "tokens_last_minute": 0,
+          "requests_last_minute": 6,
+          "tokens_last_minute": 15696,
           "status": "ready"
         },
         {
@@ -404,206 +556,38 @@
         },
         {
           "name": "gemini",
-          "model": "gemini-3.7-flash",
-          "calls": 22,
-          "input_tokens": 32474,
-          "output_tokens": 2652,
+          "model": "gemini-3.6-flash",
+          "calls": 27,
+          "input_tokens": 38465,
+          "output_tokens": 3402,
           "errors": 3,
           "last_error": "503 judgment: This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again",
           "daily_request_budget": 240,
           "daily_token_budget": null,
           "limit_rpm": 8,
           "limit_tpm": null,
-          "requests_last_minute": 1,
-          "tokens_last_minute": 362,
+          "requests_last_minute": 3,
+          "tokens_last_minute": 1100,
           "status": "ready"
         },
         {
           "name": "groq",
           "model": "openai/gpt-oss-120b",
-          "calls": 11,
-          "input_tokens": 8838,
-          "output_tokens": 2125,
+          "calls": 16,
+          "input_tokens": 12178,
+          "output_tokens": 2739,
           "errors": 0,
           "last_error": "",
           "daily_request_budget": 900,
           "daily_token_budget": 190000,
           "limit_rpm": 1000,
           "limit_tpm": 8000,
-          "requests_last_minute": 2,
-          "tokens_last_minute": 1326,
+          "requests_last_minute": 4,
+          "tokens_last_minute": 3083,
           "status": "ready"
         }
       ],
       "recent_calls": [
-        {
-          "at": 1789267504.3,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "70b249f503b54d27"
-        },
-        {
-          "at": 1789267511.5,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "bf8ad83d2840de83"
-        },
-        {
-          "at": 1789267519.2,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "80dfb433ba6a8840"
-        },
-        {
-          "at": 1789267526.6,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "1048c454cb560b0d"
-        },
-        {
-          "at": 1789267531.9,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "5ab30e8fdd504ddf"
-        },
-        {
-          "at": 1789267539.2,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "4cd734f722d8c75f"
-        },
-        {
-          "at": 1789267546.4,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "341d16409bcffda6"
-        },
-        {
-          "at": 1789267554.2,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "d31129a4d934462b"
-        },
-        {
-          "at": 1789267561.1,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "a45b64573ab7b2dd"
-        },
-        {
-          "at": 1789267593.8,
-          "class": "judgment",
-          "provider": "gemini",
-          "model": "gemini-3.7-flash",
-          "prompt_sha256_16": "c9d2f27aec43594b"
-        },
-        {
-          "at": 1789267602.5,
-          "class": "judgment",
-          "provider": "gemini",
-          "model": "gemini-3.7-flash",
-          "prompt_sha256_16": "78daf9d6ec9b01cc"
-        },
-        {
-          "at": 1789269260.3,
-          "class": "self-prompt",
-          "provider": "gemini",
-          "model": "gemini-3.7-flash",
-          "prompt_sha256_16": "4d7c028c4a79fc2f"
-        },
-        {
-          "at": 1789269262.2,
-          "class": "self-prompt",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "201cfe104e0b073d"
-        },
-        {
-          "at": 1789269349.0,
-          "class": "council",
-          "provider": "gemini",
-          "model": "gemini-3.7-flash",
-          "prompt_sha256_16": "5b21a440fe586b7f"
-        },
-        {
-          "at": 1789269356.9,
-          "class": "council",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "9b3d802b4bee5b3a"
-        },
-        {
-          "at": 1789269362.1,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "8b2440b756e1a16c"
-        },
-        {
-          "at": 1789269369.7,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "93d0f755c171a66f"
-        },
-        {
-          "at": 1789269377.1,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "63116c5cfcc44266"
-        },
-        {
-          "at": 1789269382.4,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "97489822b4faab87"
-        },
-        {
-          "at": 1789269389.7,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "d6463b21215561ea"
-        },
-        {
-          "at": 1789269396.7,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "f23b6c206fefba79"
-        },
-        {
-          "at": 1789269403.8,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "3376a4f1c7118162"
-        },
-        {
-          "at": 1789269409.1,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "b00ec0e960b202d0"
-        },
-        {
-          "at": 1789269414.1,
-          "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "b772be5601a6ed46"
-        },
         {
           "at": 1789269419.1,
           "class": "decision",
@@ -645,6 +629,174 @@
           "provider": "groq",
           "model": "openai/gpt-oss-120b",
           "prompt_sha256_16": "084e00ee318e8046"
+        },
+        {
+          "at": 1789269570.7,
+          "class": "self-prompt",
+          "provider": "gemini",
+          "model": "gemini-3.6-flash",
+          "prompt_sha256_16": "c159cbdbedb5c6f0"
+        },
+        {
+          "at": 1789269572.6,
+          "class": "self-prompt",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "62680a9ff6104caf"
+        },
+        {
+          "at": 1789269581.4,
+          "class": "council",
+          "provider": "gemini",
+          "model": "gemini-3.6-flash",
+          "prompt_sha256_16": "4dfa2b4028d61ee4"
+        },
+        {
+          "at": 1789269588.9,
+          "class": "council",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "d6ca1003968c760c"
+        },
+        {
+          "at": 1789269592.9,
+          "class": "probe",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "938ed31bf23f196e"
+        },
+        {
+          "at": 1789269596.9,
+          "class": "probe",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "8beeae5a477c34cc"
+        },
+        {
+          "at": 1789269601.3,
+          "class": "recruitment",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "4201e19886fac1a9"
+        },
+        {
+          "at": 1789269605.7,
+          "class": "regrounding",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "bfadc0f3634a4ded"
+        },
+        {
+          "at": 1789269611.7,
+          "class": "extraction",
+          "provider": "groq",
+          "model": "openai/gpt-oss-120b",
+          "prompt_sha256_16": "9b7b32b9a1ddaa55"
+        },
+        {
+          "at": 1789269615.7,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "aa55829bb775260f"
+        },
+        {
+          "at": 1789269622.6,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "9334db16642fcbe1"
+        },
+        {
+          "at": 1789269629.9,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "8c07d5246a0acc4e"
+        },
+        {
+          "at": 1789269630.4,
+          "class": "extraction",
+          "provider": "groq",
+          "model": "openai/gpt-oss-120b",
+          "prompt_sha256_16": "dd934effbd6ca731"
+        },
+        {
+          "at": 1789269635.3,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "b9338f207ed0ae09"
+        },
+        {
+          "at": 1789269642.2,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "3787c7288ef1c9bf"
+        },
+        {
+          "at": 1789269649.3,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "7dfb30327570f83b"
+        },
+        {
+          "at": 1789269649.8,
+          "class": "extraction",
+          "provider": "groq",
+          "model": "openai/gpt-oss-120b",
+          "prompt_sha256_16": "369284899795bac0"
+        },
+        {
+          "at": 1789269654.8,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "1e05e79de9e06e93"
+        },
+        {
+          "at": 1789269659.7,
+          "class": "extraction",
+          "provider": "groq",
+          "model": "openai/gpt-oss-120b",
+          "prompt_sha256_16": "cfab8ebb797f9e9f"
+        },
+        {
+          "at": 1789269661.8,
+          "class": "decision",
+          "provider": "mistral",
+          "model": "ministral-14b-2512",
+          "prompt_sha256_16": "0dba67b021f969ae"
+        },
+        {
+          "at": 1789269663.4,
+          "class": "extraction",
+          "provider": "groq",
+          "model": "openai/gpt-oss-120b",
+          "prompt_sha256_16": "edbde9e2f7442a75"
+        },
+        {
+          "at": 1789269669.3,
+          "class": "judgment",
+          "provider": "gemini",
+          "model": "gemini-3.6-flash",
+          "prompt_sha256_16": "24a883e611d021c0"
+        },
+        {
+          "at": 1789269677.7,
+          "class": "judgment",
+          "provider": "gemini",
+          "model": "gemini-3.6-flash",
+          "prompt_sha256_16": "17b1a5b0dee006de"
+        },
+        {
+          "at": 1789269686.3,
+          "class": "judgment",
+          "provider": "gemini",
+          "model": "gemini-3.6-flash",
+          "prompt_sha256_16": "689fe945333f79ed"
         }
       ],
       "models_seen": {
@@ -709,20 +861,20 @@
       }
     },
     "rooms": 12,
-    "active_residents": 88,
+    "active_residents": 89,
     "work_orders": 100,
     "continuity": "pass",
     "autonomy": "active",
     "autonomy_quality": {
       "status": "active",
       "turns": 8,
-      "fallbacks": 3,
-      "fallback_rate": 0.375,
+      "fallbacks": 1,
+      "fallback_rate": 0.125,
       "fallback_reasons": {
-        "unstructured-output": 3
+        "unstructured-output": 1
       },
-      "tool_successes": 2,
-      "findings_filed": 1
+      "tool_successes": 6,
+      "findings_filed": 4
     },
     "publication": "sanitized GitHub Pages snapshot",
     "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
@@ -731,13 +883,13 @@
       "reason": "",
       "at": "2026-09-13T02:46:45.542895+00:00"
     },
-    "question_source": "carried:line-000656-65f69a61",
+    "question_source": "stream:wikipedia-current-events/2026-09-11",
     "self_prompt_accepted": 2,
     "self_prompt_rejections": [],
     "activity_feed": "docs/activity.json",
     "feed_freshness_seconds": 0,
     "activity_records": 110,
-    "note_records": 3114,
+    "note_records": 3124,
     "print_jobs": 145,
     "failed_print_jobs": 0,
     "analysis_runs": 100,
@@ -746,20 +898,34 @@
     "analysis_rejected": 8,
     "analysis_timed_out": 0,
     "analysis_feed": "docs/analysis.json",
-    "research_records": 56,
+    "research_records": 59,
     "research_stale": 3,
     "research_feed": "docs/research.json",
-    "findings": 126,
-    "finding_candidates": 126,
-    "findings_rejected": 274,
+    "findings": 129,
+    "finding_candidates": 129,
+    "findings_rejected": 271,
     "findings_retracted": 0,
     "findings_duplicates": 0,
-    "findings_excluded": 274,
+    "findings_excluded": 271,
     "findings_total": 400,
     "corroborated_findings": 0,
     "findings_feed": "docs/findings.json",
     "frontier_leads": 0,
-    "research_line": null,
+    "research_line": {
+      "id": "line-000660-396374dc",
+      "root": "Do independent public sources confirm that Ukrainian drone strikes kill two people and injure three others in Tula Oblast, Russia, while a separate strike kills a 37-year-old man in Kursk Oblast, acco",
+      "anchors": [
+        "ukrainian",
+        "tula",
+        "oblast",
+        "russia",
+        "37-year-old",
+        "kursk"
+      ],
+      "hops": 1,
+      "findings": 4,
+      "empty_cycles": 0
+    },
     "frontier_questions": 100,
     "frontier_findings": 100,
     "frontier_tasks": 2,
