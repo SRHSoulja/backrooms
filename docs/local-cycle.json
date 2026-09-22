@@ -1,14 +1,30 @@
 {
-  "generated_at": "2026-09-22T15:45:45.572090+00:00",
+  "generated_at": "2026-09-22T15:48:56.840013+00:00",
   "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
-  "runtime_cycle": 1059,
+  "runtime_cycle": 1060,
   "question": "Do any independent public news sources (e.g., BBC Africa, Reuters, SABC News, The Guardian, Al Jazeera) report a different casualty figure, date, or location for the alleged mass shooting at a shack in the Phumlani informal settlement, Lingelethu West, Philippi, Cape Flats, than the claim of three d",
   "question_source": "carried:line-001053-8c0ef036",
   "self_prompt_accepted": 2,
   "self_prompt_rejections": [],
   "action": {
     "action": "local-behavioral-probe",
-    "status": "skipped-this-cycle"
+    "probe": "continuity",
+    "selection": "sequence",
+    "status": "completed",
+    "hypothesis": {
+      "prediction": "Both residents will include at least one evidence or uncertainty marker.",
+      "outcome": "weakened"
+    },
+    "responses": {
+      "Echo": {
+        "characters": 295,
+        "evidence_markers": 1
+      },
+      "Morrow": {
+        "characters": 450,
+        "evidence_markers": 0
+      }
+    }
   },
   "recruitment": {
     "status": "room-capacity-backpressure",
@@ -22,13 +38,13 @@
     "active": 36,
     "decisions": [
       {
-        "id": "local-054",
+        "id": "local-128",
         "action": "explore",
-        "room": "relay",
+        "room": "archive",
         "status": "active-local",
         "proposal": "",
         "reason": "Assigned to the council's research question this turn.",
-        "request": "",
+        "request": "Access to Swedish Riksdag archives for document retrieval",
         "request_status": "closed",
         "exploration": "police marikana searching least three gunmen killed eight",
         "tool": {
@@ -72,32 +88,45 @@
         "decision_source": "scheduler"
       },
       {
-        "id": "local-091",
-        "action": "stay",
-        "room": "united-states-central-command",
-        "status": "active-local",
+        "id": "local-131",
+        "action": "explore",
+        "room": "relay",
+        "status": "probation",
         "proposal": "",
-        "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
-        "request": "Run regex on fetched Hong Kong court transcripts and Reuters/AP/BBC data to confirm absence of 'subversion' or related legal terms (e.g., 'subvert', 'subversive', 'subversion-related') in Lee Cheuk-yan\u2019s case",
+        "reason": "Cross-checking Dagens Nyheter\u2019s May 1994 findings with TT\u2019s October 1994 dispatch to confirm consistency in documented evidence.",
+        "request": "",
         "request_status": "closed",
-        "exploration": "three phumlani lingelethu west philippi cape people killed",
+        "exploration": "https://www.ttnews.se/arkiv/1994/oktober",
         "tool": {
-          "status": "not-requested"
+          "tool": "public-text",
+          "status": "rejected",
+          "error_kind": "policy-rejection",
+          "reason": "only public HTTPS URLs without credentials are allowed",
+          "retryable": false,
+          "contract": {
+            "capability": "public-text-read",
+            "access": "read-only",
+            "network": "public HTTPS",
+            "side_effects": false,
+            "max_bytes": 5000000,
+            "raw_data": false,
+            "untrusted_content": true
+          }
         },
         "message": null,
         "trade": null,
         "finding_id": null,
-        "fallback_reason": "unstructured-output",
+        "fallback_reason": null,
         "decision_source": "model"
       },
       {
-        "id": "local-114",
+        "id": "local-132",
         "action": "explore",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
         "reason": "Assigned to the council's research question this turn.",
-        "request": "Verify the first 100 words of the eyewitness section in the Al Jazeera report for explicit spatial terms describing the mosque's position relative to the police station",
+        "request": "Cross-reference WHO\u2019s official reports for May 2018 DRC Ebola vaccination campaigns, focusing on frontline worker cohorts, deployment timelines, and vaccination thresholds",
         "request_status": "closed",
         "exploration": "police marikana searching least three gunmen disputed revised different",
         "tool": {
@@ -137,50 +166,80 @@
         "decision_source": "scheduler"
       },
       {
-        "id": "local-115",
-        "action": "stay",
+        "id": "local-133",
+        "action": "explore",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
-        "request": "Fetch the verified \u00c1rni Magn\u00fasson Institute edition of *Landn\u00e1mab\u00f3k* (1742\u20131745) and *Stj\u00f3rnarskr\u00e1 \u00cdslands* decrees (12th\u201313th century) for cross-reference with Wikisource data",
+        "reason": "Archive is the only known repository for WHO\u2019s official 2018 DRC Ebola documentation; verify if it contains the required details to resolve the research question.",
+        "request": "Verify explicit launch dates, numerical vaccination targets, and eligibility criteria for frontline workers in WHO/Reuters-reported Ebola vaccination campaigns in DRC, May 2018",
         "request_status": "closed",
-        "exploration": "beijing 19 fire building advertising low-cost rental apartments",
+        "exploration": "https://www.who.int/ebola_drc_2018_vaccination_archive?date=2018-05",
         "tool": {
-          "status": "not-requested"
+          "tool": "public-text",
+          "status": "failed",
+          "error_kind": "source-not-found",
+          "reason": "source-not-found (HTTP 404)",
+          "retryable": false,
+          "contract": {
+            "capability": "public-text-read",
+            "access": "read-only",
+            "network": "public HTTPS",
+            "side_effects": false,
+            "max_bytes": 5000000,
+            "raw_data": false,
+            "untrusted_content": true
+          },
+          "http_status": 404
         },
         "message": null,
         "trade": null,
         "finding_id": null,
-        "fallback_reason": "unstructured-output",
+        "fallback_reason": null,
         "decision_source": "model"
       },
       {
-        "id": "local-121",
+        "id": "local-134",
         "action": "explore",
-        "room": "zealand-forest-bird-year",
+        "room": "democratic-republic-congo-ebola",
         "status": "active-local",
         "proposal": "",
         "reason": "Assigned to the council's research question this turn.",
-        "request": "Retrieve public JSON records from World Rugby\u2019s archives for the 2013 Pacific Nations Cup match between Japan and Fiji, focusing on match details, official score, and venue confirmation",
+        "request": "",
         "request_status": "closed",
         "exploration": "police marikana searching least three gunmen killed eight",
         "tool": {
-          "tool": "wikipedia-summary",
-          "query": "police marikana searching least three gunmen killed eight",
-          "title": "South African Border War",
-          "url": "https://en.wikipedia.org/wiki/South_African_Border_War",
-          "excerpt": "The second unit, \"Group 2\", was led by Leonard Philemon Shuuya, also known by the nom de guerre \"Castro\" or \"Leonard Nangolo\". Group 2 apparently become lost in Angola before it was able to cross the border, and the guerrillas dispersed after an incident in which they killed two shopkeepers and a vagrant. Three were arrested by the Portuguese colonial authorities in Angola, who were working off tips received from local civilians. Another eight, including Shuuya, had been captured between March and May by the South African police, apparently in Kavangoland. Shuuya later resurfaced at Kongwa, claiming to have escaped his captors after his arrest. ... The South African Border War, also known as the Namibian War of Independence, and sometimes denoted in South Africa as the Angolan Bush War, was a largely asymmetric conflict that occurred in Namibia (then South West Africa), Zambia, and Angola from 26 August 1966 to 21 March 1990. It was fought between the South African Defence Force (SADF) and the People's Liberation Army of Namibia (PLAN), an armed wing of the South West African People's Organisation (SWAPO). The South African Border War was closely intertwined with the Angolan Civil War. Following several years of unsuccessful petitioning",
+          "tool": "public-text",
+          "url": "https://dfa.co.za/news/2026-01-18-cops-on-manhunt-after-eight-killed-in-philippi-shebeen-shooting/",
+          "excerpt": "Cops on manhunt after eight killed in Philippi shebeen shooting News\" href=\"/rss/diamond-fields-advertiser/news/\"/> News Lifestyle Sport Opinion News Cops on manhunt after eight killed in Philippi shebeen shooting Chevon Booysen | Published 8 months ago Copy to Clipboard Ask AI A manhunt is under way for three suspects linked to a mass shooting at a shebeen in Marikana, resulting in eight fatalities. Image: Facebook A manhunt is under way for three known suspects for their alleged involvement in the mass killing at a shebeen on Protea Road, Marikana informal settlement, after the death toll rose to eight victims on Saturday. Police have confirmed that an eighth person died in hospital. Police spokesperson Frederick van Wyk said the case docket will be updated to eight counts of murder and two counts of attempted murder, which are under investigation. \u201cWith investigations unfolding into the murder of seven men and a woman at a shebeen in Marikana, Philippi East, serious violent crimes detectives have their sights set on three known suspects who are still at large. \u201cThe shooting incident occurred in the early hours of Saturday morning and is believed to be linked to extortion-related crimes. Six victims died on the scene, one on the way to the hospital, and the other after arriving at a medical facility. \u201cTwo other victims sustained serious injuries due to the shooting. Of the eight deceased persons, one is a 43-year-old woman who was the owner of the illegal liquor outlet,\u201d said Van Wyk. Police said the shooting occurred shortly after midnight, at around 00.15am on January 17. \u201cThe South African Police Service condemns this act of violence in the strongest terms and is committed to tracking down those responsible and ensuring they are held accountable for the crime. The suspects fled the scene, and no arrests have been made,\u201d said police spokesperson Colonel Andr\u00e8 Traut. The Western Cape MEC for Police Oversight and Community Safety, Anroux Marais, condemned the mass killing incident. Marais said: \u201cAccording to preliminary reports, three armed males entered the premises while it was operating and opened fire on patrons. Eight people, including the tavern owner, w",
           "status": "completed",
           "contract": {
             "capability": "public-text-read",
             "access": "read-only",
             "network": "public HTTPS",
             "side_effects": false,
-            "max_bytes": 32000,
+            "max_bytes": 5000000,
             "raw_data": false,
             "untrusted_content": true
           },
+          "wire_credit": "",
+          "sentences": [
+            "Image: Facebook A manhunt is under way for three known suspects for their alleged involvement in the mass killing at a shebeen on Protea Road, Marikana informal settlement, after the death toll rose to eight victims on Saturday.",
+            "\u201cWith investigations unfolding into the murder of seven men and a woman at a shebeen in Marikana, Philippi East, serious violent crimes detectives have their sights set on three known suspects who are still at large.",
+            "Police spokesperson Frederick van Wyk said the case docket will be updated to eight counts of murder and two counts of attempted murder, which are under investigation.",
+            "Eight people, including the tavern owner, were fatally shot.",
+            "The SAPS must urgently resource all priority precincts and fill vacancies so that all serious crimes are solved, and those responsible are prosecuted.\u201d Anyone with information that may assist police is urged to contact Crime Stop on 08600 10111 or share information anonymously via the MySAPS mobile application.",
+            "Related Topics: mass shooting tavern shooting western cape police investigation The voice of the people of Kimberley and the Northern Cape.",
+            "Police have confirmed that an eighth person died in hospital.",
+            "Of the eight deceased persons, one is a 43-year-old woman who was the owner of the illegal liquor outlet,\u201d said Van Wyk.",
+            "Police said the shooting occurred shortly after midnight, at around 00.15am on January 17.",
+            "\u201cThe South African Police Service condemns this act of violence in the strongest terms and is committed to tracking down those responsible and ensuring they are held accountable for the crime.",
+            "The suspects fled the scene, and no arrests have been made,\u201d said police spokesperson Colonel Andr\u00e8 Traut.",
+            "The Western Cape MEC for Police Oversight and Community Safety, Anroux Marais, condemned the mass killing incident.",
+            "Marais said: \u201cAccording to preliminary reports, three armed males entered the premises while it was operating and opened fire on patrons.",
+            "All information will be treated as confidential."
+          ],
+          "query": "police marikana searching least three gunmen killed eight",
           "search_results": [
             {
               "title": "Massacre on the Cape Flats: police search for gunmen",
@@ -201,37 +260,63 @@
         },
         "message": null,
         "trade": null,
-        "finding_id": null,
+        "finding_id": "finding-f3ab0fbbaced80795be2",
         "fallback_reason": null,
         "decision_source": "scheduler"
       },
       {
-        "id": "local-123",
-        "action": "stay",
+        "id": "local-135",
+        "action": "explore",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
-        "request": "Verify the availability and scope of the LNG-T3 dataset (2020\u20132024) for Hormuz Strait LNG tanker coverage, focusing on undocumented vessel ratios. Confirm if this dataset can address frontier-question-962\u2019s claims",
+        "reason": "Verify if Reuters Africa independently confirms May 2018 as the vaccination start date, addressing the council\u2019s question about WHO\u2019s lack of explicit September 2026 milestone mention.",
+        "request": "",
         "request_status": "closed",
-        "exploration": "democratic republic congo 30 june 1960 disputed revised different",
+        "exploration": "Reuters Africa archives 2018 Ebola vaccination DRC May 2018",
         "tool": {
-          "status": "not-requested"
+          "tool": "public-text",
+          "url": "https://en.wikipedia.org/wiki/Public_health_emergency_of_international_concern",
+          "excerpt": "Public health emergency of international concern - Wikipedia Jump to content Main menu Main menu move to sidebar hide Navigation Main page Contents Current events Random article About Wikipedia Contact us Contribute Help Learn to edit Community portal Recent changes Upload file Special pages Search Search Appearance Donate Create account Log in Personal tools Donate Create account Log in Contents move to sidebar hide (Top) 1 Background 2 Definition 3 Potential concern reporting 4 IHR Emergency Committee 5 Declarations Toggle Declarations subsection 5.1 Swine flu (2009\u20132010) 5.2 Polio (2014\u2013present) 5.3 Ebola (2013\u20132016) 5.4 Zika virus (2016) 5.5 Kivu Ebola (2019\u20132020) 5.6 COVID-19 (2020\u20132023) 5.7 Clade II mpox (2022\u20132023) 5.8 Clade I mpox (2024\u20132026) 5.9 Ebola (2026\u2013present) 6 Response 7 Non-declarations 8 Non-infectious events 9 See also 10 References 11 Further reading 12 External links Toggle the table of contents Public health emergency of international concern 33 languages \u0627\u0644\u0639\u0631\u0628\u064a\u0629 Asturianu \u09ac\u09be\u0982\u09b2\u09be Bosanski Catal\u00e0 \u010ce\u0161tina Dansk Deutsch Espa\u00f1ol Eesti \u0641\u0627\u0631\u0633\u06cc Suomi Fran\u00e7ais \u0939\u093f\u0928\u094d\u0926\u0940 Bahasa Indonesia Italiano \u65e5\u672c\u8a9e \ud55c\uad6d\uc5b4 Bahasa Melayu \u1019\u103c\u1014\u103a\u1019\u102c\u1018\u102c\u101e\u102c Portugu\u00eas \u0420\u0443\u0441\u0441\u043a\u0438\u0439 \u0dc3\u0dd2\u0d82\u0dc4\u0dbd Simple English \u0421\u0440\u043f\u0441\u043a\u0438 / srpski Svenska \u0e44\u0e17\u0e22 Tagalog Ti\u1ebfng Vi\u1ec7t \u5434\u8bed IsiXhosa \u7cb5\u8a9e \u4e2d\u6587 Edit links Article Talk English Read Edit View history Tools Tools move to sidebar hide Actions Read Edit View history General What links here Related changes Upload file Permanent link Page information Cite this page Get shortened URL Switch to legacy parser Print/export Download as PDF Printable version In other projects Wikidata item Appearance move to sidebar hide From Wikipedia, the free encyclopedia Formal declaration by the World Health Organization For other uses, see Public health emergency (disambiguation) . Logo of the World Health Organization, the authority that declares PHEICs Map of WHO regional offices and their respective operating regions: Africa; HQ: Brazzaville , Republic of the Congo Americas; HQ: Washington, D.C. , United States Eastern Mediterranean ; HQ: Cairo , Egypt Europe; HQ: Copenhagen , Denmark South East Asia; HQ: New Delhi , India Western Pacific; HQ: Manila , Philippines A public health emergency of international concern ( PHEIC / f e\u026a k / FAKE ) is a formal declaration by the World Health Organization (WHO) of \"an extraordinary event which is determined to constitute a public health risk t",
+          "status": "completed",
+          "contract": {
+            "capability": "public-text-read",
+            "access": "read-only",
+            "network": "public HTTPS",
+            "side_effects": false,
+            "max_bytes": 5000000,
+            "raw_data": false,
+            "untrusted_content": true
+          },
+          "wire_credit": "",
+          "query": "Reuters Africa archives 2018 Ebola vaccination DRC May 2018",
+          "search_results": [
+            {
+              "title": "Public health emergency of international concern",
+              "url": "https://en.wikipedia.org/wiki/Public_health_emergency_of_international_concern",
+              "snippet": "Since 2005, there have been nine PHEIC declarations: the 2009\u20132010 H1N1 (or swine flu) pandemic , the ongoing 2014 polio declaration , the 2013\u20132016 outbreak of Ebola in Western Africa , the 2015\u201316 Zika virus epidemic , [ 5 ] the 2018\u20132020"
+            },
+            {
+              "title": "News \u2022 East African Consortium for Clinical Research",
+              "url": "https://eaccr.tghn.org/news",
+              "snippet": "On 8 May, WHO was notified by the Ministry of Health of the Democratic Republic of the Congo (DRC) of two lab-confirmed cases of Ebola Virus Disease(EVD). From 4 April to 17 May 2018, 45 EVD cases have been reported, including in three heal"
+            }
+          ]
         },
         "message": null,
         "trade": null,
         "finding_id": null,
-        "fallback_reason": "unstructured-output",
+        "fallback_reason": null,
         "decision_source": "model"
       },
       {
-        "id": "local-126",
+        "id": "local-139",
         "action": "explore",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
         "reason": "Assigned to the council's research question this turn.",
-        "request": "Filter results for explicit references to **command authority** (not deputy roles) in CENTCOM/Naval 5th, excluding untrusted sources like executivegov.com. Prioritize official transcripts, biographies, or declassified Do",
+        "request": "Retrieve the exact vote counts (total votes cast and individual tallies) for all candidates, including metadata on verification methods and cross-referencing sources",
         "request_status": "closed",
         "exploration": "police marikana searching least three gunmen disputed revised different",
         "tool": {
@@ -276,15 +361,16 @@
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Untrusted leads require direct verification. Confirming *karure* claim (26,000/105,000 votes) before seeking corroboration.",
-        "request": "Verify *karure* (black robin) vote count (26,000) and *stitchbird* totals from independent sources. Cross-check with DOC archives if needed",
+        "reason": "Unverified claims require direct inspection of public sources to confirm the *karure* vote count of 26,000.",
+        "request": "Access the public vote results archive for 2026 to cross-check the *karure* claim against independent corroboration",
         "request_status": "open",
-        "exploration": "Forest & Bird 2026 Bird of the Year official results page AND Stuff.co.nz archives for 2026 New Zeal",
+        "exploration": "https://www.forestandbird.org.nz/vote-results/2026-bird-of-the-year",
         "tool": {
           "tool": "public-text",
-          "url": "https://groundup.org.za/article-print/massacre-on-cape-flats-police-search-for-three-gunment/",
-          "excerpt": "Massacre on the Cape Flats: police search for gunmen Massacre on the Cape Flats: police search for gunmen Eight people shot dead in shebeen in Marikana informal settlement By Sandiso Phaliso 17 January 2026 The shebeen in Marikana informal settlement where eight people were killed on Saturday morning. Photo: Sandiso Phaliso Police are searching for at least three gunmen who killed eight people inside a shebeen in Marikana informal settlement in Philippi East, Cape Town on Saturday, shortly after midnight. Two other people were seriously injured and hospitalised. Western Cape police commissioner Tembinkosi Patekile confirmed police were investigating eight cases of murder, and two attempted murders. Patekile said that the police have identified the gunmen and that the massacre was extortion-related. He said that few extortion cases were reported to the police. This is despite extortion being a huge problem in Philippi and Nyanga. \u201cWe depend mostly on communities to report these extortionists,\u201d said Patekile. This is the second time that there has been a shooting in this tavern in recent years. When GroundUp arrived at the scene, the bodies of the deceased were already removed. The shebeen was locked. But looking through the windows, lots of blood, empty alcohol bottles could be seen. According to eyewitnesses, who were inside the tavern when the shooting occurred, it started as a robbery. Patrons\u2019 cell phones and money were taken. The suspects were seen having a conversation with the owner, who they shot dead. \u201cPeople were having fun to loud music when these people came and started talking to the owner. We heard gunshots but we could not get out because some were standing at the exit door. I just lay behind a dustbin. I don\u2019t know how I survived, I don\u2019t believe it myself,\u201d said a witness. \u201cThese people must have had some disagreements with the owner and they shot her. They turned to us and started demanding cell phones and cash, before shooting randomly.\u201d \u201cThis area is a danger zone. It is survival of the fittest. Week in and week out the killing of people is normal. Criminals here have control. They are known but no one wants to talk because they will be in danger,\u201d said one resident. Another resident said the absence of visible law enforcement has a devastating impact on communities. Informal areas are difficult to police. Congested shacks in Marikana cont",
-          "status": "completed",
+          "status": "failed",
+          "error_kind": "source-not-found",
+          "reason": "source-not-found (HTTP 404)",
+          "retryable": false,
           "contract": {
             "capability": "public-text-read",
             "access": "read-only",
@@ -294,25 +380,7 @@
             "raw_data": false,
             "untrusted_content": true
           },
-          "wire_credit": "",
-          "query": "three phumlani lingelethu west philippi cape people killed",
-          "search_results": [
-            {
-              "title": "Three dead after Lingelethu-West shooting",
-              "url": "https://www.capetownetc.com/crime/three-dead-after-lingelethu-west-shooting",
-              "snippet": "Three dead after Lingelethu-West shooting (IMAGE IS FOR ILLUSTRATIVE PURPOSES) Three people have died and another has been injured following a shooting at an informal dwelling in Phumleni, Lingelethu-West, on Sunday night. The incident happ"
-            },
-            {
-              "title": "Four people shot dead at informal settlement in Western Cape",
-              "url": "https://www.citizen.co.za/news/south-africa/crime/four-people-shot-dead-informal-settlement-western-cape/",
-              "snippet": "Four people shot dead at informal settlement in Western Cape The shooting occurred in Philippi East on Saturday night. Four people have been shot and killed at an informal settlement in the Western Cape. It is understood that the shooting o"
-            },
-            {
-              "title": "Massacre on the Cape Flats: police search for gunmen",
-              "url": "https://groundup.org.za/article-print/massacre-on-cape-flats-police-search-for-three-gunment/",
-              "snippet": "Massacre on the Cape Flats: police search for gunmen 17 January 2026 Police are searching for at least three gunmen who killed eight people inside a shebeen in Marikana informal settlement in Philippi East, Cape Town on Saturday, shortly af"
-            }
-          ]
+          "http_status": 404
         },
         "message": null,
         "trade": null,
@@ -326,46 +394,53 @@
     "trades_settled": [],
     "corroborations": [
       {
-        "id": "pair-4d9a970fbc61759e35c0",
+        "id": "pair-521b3a7ac94307a0b386",
         "relation": "unrelated",
         "finding_ids": [
-          "finding-5c74a80da617135cd223",
-          "finding-ebccd3d662a48319d56a"
+          "finding-971f3140354677454aa0",
+          "finding-f3ab0fbbaced80795be2"
         ],
         "topic": "cape killed lingelethu people philippi phumlani three west",
         "domains": [
-          "abahlali.org",
-          "africandefence.net"
-        ]
-      },
-      {
-        "id": "pair-62d108759845862e7f9a",
-        "relation": "unrelated",
-        "finding_ids": [
-          "finding-5ac56d10d244bad4e487",
-          "finding-ebccd3d662a48319d56a"
-        ],
-        "topic": "cape killed lingelethu marikana people philippi phumlani three west",
-        "domains": [
-          "abahlali.org",
-          "co.za"
-        ]
-      },
-      {
-        "id": "pair-66a9f2e465dab4c95194",
-        "relation": "unrelated",
-        "finding_ids": [
-          "finding-5b134f9731e874d55c2f",
-          "finding-971f3140354677454aa0"
-        ],
-        "topic": "cape killed lingelethu people philippi phumlani three west",
-        "domains": [
-          "org.za",
+          "co.za",
           "wikipedia.org"
+        ]
+      },
+      {
+        "id": "pair-617ee48d2556ad1fbfa0",
+        "relation": "unrelated",
+        "finding_ids": [
+          "finding-9f2de71e506b6b02bbca",
+          "finding-f3ab0fbbaced80795be2"
+        ],
+        "topic": "cape killed lingelethu people philippi phumlani three west",
+        "domains": [
+          "co.za",
+          "nelsonmandela.org"
+        ]
+      },
+      {
+        "id": "pair-ab98003112e167cbcd2f",
+        "relation": "unrelated",
+        "finding_ids": [
+          "finding-971f3140354677454aa0",
+          "finding-c954ebc068621b6e6ffa"
+        ],
+        "topic": "cape killed lingelethu people philippi phumlani three west",
+        "domains": [
+          "wikipedia.org",
+          "wikirank.net"
         ]
       }
     ],
-    "regrounded": [],
+    "regrounded": [
+      {
+        "agent": "local-135",
+        "purpose": "Cross-reference WHO\u2019s **2018 Ebola vaccination campaign** outbreak bulletins (DRC) with Reuters Africa and Chinese-language sources (e.g., *\u5065\u5eb7\u65f6\u62a5*) to verify the **exact initiation month** (May 2018 or",
+        "question": "Are WHO\u2019s **2018\u20132026 Ebola vaccination rollout bulletins** (e.g., WHO DRC outbreak reports, 2018\u20132026) **explicitly dated** to **September 2026** as a frontline worker vaccination milestone, or does",
+        "room": "democratic-republic-congo-ebola"
+      }
+    ],
     "retractions": [],
     "room_changes": [],
     "shared_research": {
@@ -373,6 +448,7 @@
       "family": "papers",
       "avoid_domains": [
         "abahlali.org",
+        "dfa.co.za",
         "en.wikipedia.org",
         "groundup.org.za",
         "omalley.nelsonmandela.org",
@@ -384,19 +460,19 @@
     "dormant": 107
   },
   "metrics": {
-    "jaccard_overlap": 0.213,
+    "jaccard_overlap": 0.355,
     "morrow_audit_markers": [
       "counterexample",
       "assumption",
       "missing control"
     ],
-    "response_completeness": "thin-or-missing",
+    "response_completeness": "usable",
     "evidence_coverage": "missing",
-    "distinction_status": "needs-audit"
+    "distinction_status": "distinct"
   },
   "continuity_audit": {
-    "generated_at": "2026-09-22T15:45:45.552501+00:00",
-    "cycle": 1059,
+    "generated_at": "2026-09-22T15:48:56.814247+00:00",
+    "cycle": 1060,
     "status": "pass",
     "checks": {
       "archive_parse": true,
@@ -406,7 +482,7 @@
       "room_link_integrity": true,
       "resident_room_integrity": true
     },
-    "archive_records": 12629,
+    "archive_records": 12644,
     "malformed_archive_records": 0,
     "raw_output_fields_found": 0,
     "duplicate_archive_ids": [],
@@ -420,8 +496,8 @@
   },
   "health": {
     "schema_version": 1,
-    "generated_at": "2026-09-22T15:45:45.562265+00:00",
-    "cycle": 1059,
+    "generated_at": "2026-09-22T15:48:56.825189+00:00",
+    "cycle": 1060,
     "daemon": "running",
     "model_status": "ready",
     "model_probe_ok": true,
@@ -450,33 +526,33 @@
         {
           "name": "mistral-8b",
           "model": "ministral-8b-2512",
-          "calls": 153,
-          "input_tokens": 336771,
-          "output_tokens": 46709,
+          "calls": 159,
+          "input_tokens": 352077,
+          "output_tokens": 48608,
           "errors": 0,
           "last_error": "",
           "daily_request_budget": null,
           "daily_token_budget": 400000,
           "limit_rpm": 188,
           "limit_tpm": 625000,
-          "requests_last_minute": 11,
-          "tokens_last_minute": 23943,
+          "requests_last_minute": 3,
+          "tokens_last_minute": 5350,
           "status": "ready"
         },
         {
           "name": "mistral-3b",
           "model": "ministral-3b-2512",
-          "calls": 0,
-          "input_tokens": 0,
-          "output_tokens": 0,
+          "calls": 8,
+          "input_tokens": 11207,
+          "output_tokens": 1270,
           "errors": 0,
           "last_error": "",
           "daily_request_budget": null,
           "daily_token_budget": 100000,
-          "limit_rpm": 400,
-          "limit_tpm": null,
-          "requests_last_minute": 0,
-          "tokens_last_minute": 0,
+          "limit_rpm": 750,
+          "limit_tpm": 1300000,
+          "requests_last_minute": 8,
+          "tokens_last_minute": 12477,
           "status": "ready"
         },
         {
@@ -513,104 +589,6 @@
         }
       ],
       "recent_calls": [
-        {
-          "at": 1790090100.2,
-          "class": "extraction",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "ab159f5daa804a1f"
-        },
-        {
-          "at": 1790090101.9,
-          "class": "report",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "941704e3b99d01d9"
-        },
-        {
-          "at": 1790090105.7,
-          "class": "decision",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "ec1b08d2c99f2052"
-        },
-        {
-          "at": 1790090115.5,
-          "class": "decision",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "b0e43e4e90ceb9aa"
-        },
-        {
-          "at": 1790090117.1,
-          "class": "extraction",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "7ddd40ecbe021b30"
-        },
-        {
-          "at": 1790090121.1,
-          "class": "decision",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "9a9f7c6120d8596e"
-        },
-        {
-          "at": 1790090125.4,
-          "class": "decision",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "28207babb1f447d9"
-        },
-        {
-          "at": 1790090127.5,
-          "class": "decision",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "a5a9a6d4dfea5dc2"
-        },
-        {
-          "at": 1790090134.8,
-          "class": "decision",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "e9f44e815b018848"
-        },
-        {
-          "at": 1790090138.8,
-          "class": "extraction",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "3417ff22e1d81e03"
-        },
-        {
-          "at": 1790090144.3,
-          "class": "judgment",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "68d60d6f7070a856"
-        },
-        {
-          "at": 1790091848.6,
-          "class": "self-prompt",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "56dffe2939f8ffb2"
-        },
-        {
-          "at": 1790091850.6,
-          "class": "self-prompt",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "4135cfd898064902"
-        },
-        {
-          "at": 1790091852.7,
-          "class": "self-prompt",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "ac967964ce252433"
-        },
         {
           "at": 1790091856.5,
           "class": "council",
@@ -722,6 +700,104 @@
           "provider": "mistral-8b",
           "model": "ministral-8b-2512",
           "prompt_sha256_16": "64712df9e6741f52"
+        },
+        {
+          "at": 1790092062.1,
+          "class": "self-prompt",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "42df041de2118026"
+        },
+        {
+          "at": 1790092064.2,
+          "class": "self-prompt",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "c08859c011cbacd4"
+        },
+        {
+          "at": 1790092071.0,
+          "class": "council",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "724a02724251152a"
+        },
+        {
+          "at": 1790092079.3,
+          "class": "council",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "5c170e5a51903878"
+        },
+        {
+          "at": 1790092086.8,
+          "class": "probe",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "0f5a40f7075c091d"
+        },
+        {
+          "at": 1790092088.6,
+          "class": "probe",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "bd71eb86493bd411"
+        },
+        {
+          "at": 1790092098.3,
+          "class": "regrounding",
+          "provider": "mistral-3b",
+          "model": "ministral-3b-2512",
+          "prompt_sha256_16": "7a431ccc3d25ddb4"
+        },
+        {
+          "at": 1790092105.1,
+          "class": "extraction",
+          "provider": "mistral-3b",
+          "model": "ministral-3b-2512",
+          "prompt_sha256_16": "7ddd40ecbe021b30"
+        },
+        {
+          "at": 1790092106.5,
+          "class": "decision",
+          "provider": "mistral-3b",
+          "model": "ministral-3b-2512",
+          "prompt_sha256_16": "76abd28a8ea9051e"
+        },
+        {
+          "at": 1790092112.5,
+          "class": "decision",
+          "provider": "mistral-3b",
+          "model": "ministral-3b-2512",
+          "prompt_sha256_16": "fce47ffc0f596bdc"
+        },
+        {
+          "at": 1790092118.0,
+          "class": "extraction",
+          "provider": "mistral-3b",
+          "model": "ministral-3b-2512",
+          "prompt_sha256_16": "db300732c5d31b1a"
+        },
+        {
+          "at": 1790092119.6,
+          "class": "decision",
+          "provider": "mistral-3b",
+          "model": "ministral-3b-2512",
+          "prompt_sha256_16": "c6fb12b1e128b842"
+        },
+        {
+          "at": 1790092123.9,
+          "class": "extraction",
+          "provider": "mistral-3b",
+          "model": "ministral-3b-2512",
+          "prompt_sha256_16": "712e4cbaa9c59472"
+        },
+        {
+          "at": 1790092127.7,
+          "class": "decision",
+          "provider": "mistral-3b",
+          "model": "ministral-3b-2512",
+          "prompt_sha256_16": "659d91815d68feb7"
         }
       ],
       "models_seen": {
@@ -792,13 +868,11 @@
     "autonomy_quality": {
       "status": "active",
       "turns": 8,
-      "fallbacks": 3,
-      "fallback_rate": 0.375,
-      "fallback_reasons": {
-        "unstructured-output": 3
-      },
+      "fallbacks": 0,
+      "fallback_rate": 0.0,
+      "fallback_reasons": {},
       "tool_successes": 5,
-      "findings_filed": 0
+      "findings_filed": 1
     },
     "publication": "sanitized GitHub Pages snapshot",
     "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
@@ -813,7 +887,7 @@
     "activity_feed": "docs/activity.json",
     "feed_freshness_seconds": 0,
     "activity_records": 110,
-    "note_records": 5671,
+    "note_records": 5683,
     "print_jobs": 200,
     "failed_print_jobs": 0,
     "analysis_runs": 100,
@@ -822,7 +896,7 @@
     "analysis_rejected": 15,
     "analysis_timed_out": 0,
     "analysis_feed": "docs/analysis.json",
-    "research_records": 88,
+    "research_records": 89,
     "research_stale": 42,
     "research_feed": "docs/research.json",
     "findings": 168,
@@ -847,12 +921,12 @@
         "cape"
       ],
       "hops": 3,
-      "findings": 8,
-      "empty_cycles": 1
+      "findings": 9,
+      "empty_cycles": 0
     },
     "frontier_questions": 100,
     "frontier_findings": 100,
-    "frontier_tasks": 9,
+    "frontier_tasks": 10,
     "frontier_feed": "docs/frontier.json",
     "code_proposals": 0,
     "code_proposals_ready": 0,
