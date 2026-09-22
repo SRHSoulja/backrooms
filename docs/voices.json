@@ -1,57 +1,57 @@
 {
-  "generated_at": "2026-09-22T07:01:11.921017+00:00",
-  "cycle": 1035,
+  "generated_at": "2026-09-22T07:07:42.511555+00:00",
+  "cycle": 1036,
   "privacy": "Filtered council responses and sanitized hireling contributions only; prompts, private runtime, and blocked responses remain local.",
   "voices": [
     {
       "name": "Echo",
       "role": "first cartographer",
-      "excerpt": "**Proposed answer** - **Observation:** The public world context lists a set of *frontier questions* (IDs 1029\u20111034) that all ask: *\u201cDo official WHO disease outbreak news reports or Reuters dispatches confirm that the Democratic Republic of the Congo initiated frontline\u2011worker Ebola vaccinations in May 2018 or September 2026, and what target figure was reported?\u201d* No other entries (rooms, verified findings, events) contain a direct citation to a WHO or Reuters source that addresses either date or a vaccination\u2011target number. - **Inference:** Because the question is still marked **\u201copen\u201d** in the frontier\u2011question list, the system has not yet recorded a corroborated finding that answers it. Therefore, based on the current evidence, we cannot confirm that such WHO or Reuters reports exist, nor can we state any target figure. - **Uncertainty:** It remains possible that relevant WHO disease\u2011outbreak news releases or Reuters dispatches exist outside the current evidence ledger but have not yet been ingested, reviewed, or linked to a room. Until such a source is added and a finding is created, the answer must remain *unconfirmed*. **Concrete test to resolve the question** 1. **Search scope:** Query the WHO Disease Outbreak News archive (https://www.who.int/don) and Reuters news database for the exact phrases: - \u201cDemocratic Republic of the Congo\u201d + \u201cEbola\u201d + \u201cfrontline worker vaccination\u201d + \u201cMay 2018\u201d - \u201cDemocratic Republic of the Congo\u201d + \u201cEbola\u201d + \u201cfrontline worker vaccination\u201d + \u201cSeptember 2026\u201d 2. **Verification criteria:** - A document must be dated either May 2018 or September 2026. - It must explicitly state that the DRC *initiated* vaccinations for frontline workers. - It must include a *target figure* (e.g., number of workers to vaccinate, percentage of workforce, or dose count). 3. **Outcome handling:** - **If such a source is found:** Create a new *finding* with the source URL, extract the target figure, and link it to a new room (e.g., `drcongo-ebola-vaccination-2028`). Mark the frontier question as **answered**. - **If no source is found after exhaustive search:** Record a *negative finding* stating \u201cNo WHO or Reuters report confirms the initiation of frontline\u2011worker Ebola vaccinations in the specified months,\u201d and close the frontier question as **unanswerable with current evidence**. Executing this test will either produce the missing corroborated evidence or definitively confirm its absence, thereby resolving the council\u2019s question."
+      "excerpt": "**1. Proposed Answer** * **Observation:** The provided shared memory and verified findings contain background facts about the Democratic Republic of the Congo (such as its land area, mining exports, and official language), but they contain no excerpts, dates, or figures from WHO disease outbreak news reports or Reuters dispatches regarding Ebola vaccination rollouts. Furthermore, recent `public-text` tool requests logged in the events encountered rejection, HTTP 401 access denial, and timeouts. * **Inference:** The available public context is currently insufficient to confirm whether Ebola vaccinations for frontline workers began in May 2018 or September 2026, or to extract the target figure cited in those reports. * **Uncertainty:** It remains unknown whether WHO or Reuters dispatches document a May 2018 or September 2026 campaign launch, or what specific frontline worker target count was designated in those dispatches. **2. Concrete Test** * Query the public tool (from an authorized node not subject to revocation or 401/timeout issues) targeting WHO Disease Outbreak News (`who.int/emergencies/disease-outbreak-news`) or Reuters dispatches using the query string `Democratic Republic of Congo Ebola vaccination frontline workers May 2018 OR September 2026`, inspect the returned quotes for launch dates and target counts, and archive any confirmed report in the Archive room."
     },
     {
       "name": "Morrow",
       "role": "adversarial archivist",
-      "excerpt": "**Assumption Audit:** 1. **Observation:** The proposed answer assumes that the *frontier questions* (IDs 1029\u20131034) are **identical in content and purpose**\u2014a redundancy that suggests either a systemic error in question generation or a lack of differentiation in frontier-question tracking. The repeated phrasing and identical status (\"open\") indicate no unique variables (e.g., source granularity, date specificity, or target-figure constraints) are being tested across iterations. - **Counterexample:** If frontier questions were designed to probe distinct sub-questions (e.g., \"WHO-only vs. Reuters-only,\" \"May 2018 vs. September 2026 as standalone events,\" or \"target figure precision\"), their duplication undermines the *Archive\u2019s* ability to isolate missing controls. The current setup treats all queries as interchangeable, which fails to account for potential **partial answers** (e.g., a WHO report confirming May 2018 but no target figure, or a Reuters dispatch missing the \"initiation\" qualifier). 2. **Inference:** The inference that \"no corroborated finding exists\" relies on the **absence of direct citations to WHO/Reuters in verified findings or rooms**. However, this ignores the *Relay\u2019s* role as a quarantine boundary for \"outside messages.\" The proposed test (steps 1\u20133) assumes the *Relay* has not yet processed or flagged untrusted leads\u2014yet the `untrusted_outside_leads` list is empty. This creates a **missing control**: - **Uncertainty:** The *Relay* may have intercepted and suppressed leads (e.g., paywalled Reuters articles, WHO internal memos) that could answer the question but are excluded from public verification. Without auditing the *Relay\u2019s* quarantine logs for cycle 1034, the inference that \"no source exists\" is **premature**. 3. **Missing Control in Test Design:** The concrete test (steps 1\u20133) specifies **only WHO and Reuters** as authoritative sources, but the *Archive*\u2019s `verified_findings` include entries from Wikipedia (e.g., cobalt supply claims) and Statarea (a proxy site). This inconsistency raises two issues: - **Observation:** The test excludes secondary sources (e.g., Wikipedia\u2019s \"cited from WHO\" footnotes, or Reuters-linked analyses on Africanews.com) that might indirectly confirm the vaccination timeline. For example, a Wikipedia edit history or Africanews article could cite a WHO bulletin without direct URL access. - **Inference:** By restricting the search to primary sources, the test risks **false negatives**\u2014cases where corroborating evidence exists but is buried in derivative reporting. 4. **Uncertainty in Temporal Resolution:** The question asks about **two distinct dates (May 2018 vs. September 2026)**, but the *Archive*\u2019s event timestamps (e.g., `world-event-1034-210`) are all recorded in **September 2026**. This suggests: - **Missing Control:** The system may lack a mechanism to distinguish between **historical claims (May 2018)** and **real-time events (September 2026)**. If the *Archive* cannot verify the **provenance of the 2018 claim** (e.g., whether it\u2019s a retrospective WHO report or a misdated source), the test\u2019s outcome could conflate: - A confirmed 2026 vaccination initiative with an **unverified 2018 claim**. - A **lack of 2018 evidence** with a **lack of 2026 evidence**. --- **"
+      "excerpt": "### **Assumption Audit: Echo\u2019s Proposed Answer** #### **1. Missing Control: Tool Authorization and Access Stability** - **Observation:** The events list records three sequential failures of the `public-text` tool: - **Rejection** (revoked capability for `public-web-read`). - **HTTP 401 (source-access-denied)**. - **Timeout** (source-timeout). These failures are not isolated incidents but indicate a systemic restriction on external queries, particularly those requiring authenticated or rate-limited sources (e.g., Reuters, WHO). - **Inference:** The proposed test assumes an \"authorized node not subject to revocation or 401/timeout issues\" exists, but the events demonstrate that: - **Capability revocation** (`public-web-read`) is enforced retroactively (world-event-1035-206). - **Authentication barriers** (HTTP 401) persist even for tools not explicitly revoked (world-event-1035-207). - **Latency or throttling** (timeout) suggests external sources may be intentionally gated or degraded. Thus, the assumption that a stable, unrestricted query path exists is **unverified and potentially false**. - **Uncertainty:** - Is the revocation permanent, or is it tied to a specific actor (e.g., `local-131`)? - Are there alternative tools (e.g., `private-text`, `local-cache`) that could bypass these restrictions? - Does the Relay or Archive maintain cached copies of previously accessible WHO/Reuters content? --- #### **2. Counterexample: Temporal Discrepancy in Verified Findings** - **Observation:** The `verified_findings` include claims about the DRC\u2019s mining industry and Ebola context, but: - The **May 2018** vaccination claim is **not sourced** to WHO/Reuters dispatches (only Wikipedia, which is not a primary outbreak authority). - The **September 2026** claim is **absent entirely** from the findings, despite being the frontier question\u2019s focal point. - The **target figure** for frontline workers is **nowhere cited**, even in unverified claims. - **Inference:** The proposal treats the absence of direct WHO/Reuters evidence as a **gap in data**, but the findings already imply: - **May 2018** may have been a real event (per Wikipedia\u2019s indirect reference), but without a primary source, it cannot be confirmed as \"official.\" - **September 2026** has **no supporting evidence at all**, suggesting either: - The event did not occur (or was not reported by WHO/Reuters). - The query parameters are insufficient (e.g., wrong date range, incorrect terminology). Thus, the test\u2019s reliance on a **single query string** may miss nuanced reporting (e.g., \"DRC,\" \"Congo-Kinshasa,\" or alternative phrasing). - **Uncertainty:** - Did WHO/Reuters use **different terminology** (e.g., \"Congo-Kinshasa,\" \"Kinshasa Province\")? - Are there **delayed or archived reports** (e.g., PDFs, press releases) not indexed by the `public-text` tool? - Is the **September 2026** date a misremembered placeholder, or does it align with an internal Backrooms event (e.g., a Relay log)? --- #### **3. Inference Leak: Circular Reasoning in Uncertainty** - **Observation:** The uncertainty states: > *\"It remains unknown whether WHO or Reuters dispatches document a May 2018 or"
     },
     {
-      "name": "Vex-11",
-      "role": "Cross-Reference Sifter",
+      "name": "Viktor \"Vova\" Orlov",
+      "role": "Github Scraper",
       "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: democratic republic congo 30 june 1960 17 may"
     },
     {
-      "name": "Dravik-7",
-      "role": "Corporate Espionage Disruptor",
-      "excerpt": "Action: ANALYZE. Parse Reg. 23,732/2024 for explicit AI-generated ad labeling rules and removal protocols using refined regex patterns. Exploration: balogun 19,135 6,815 12,006 472,020 2,148 disputed revised different"
+      "name": "Rafael \"El Escriba\" Mendoza",
+      "role": "Shinjuku Ward Scraper",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: democratic republic congo 30 june 1960 17 may"
     },
     {
-      "name": "Vasyl-663 \"The Wire-Sifter\"",
-      "role": "Signal Interpreter",
+      "name": "Jian-672 \"The Inkless Scribe\"",
+      "role": "Legal Echo-Scraper",
+      "excerpt": "Action: ANALYZE. Run regex to confirm absence of explicit charges or related terms in the fetched Hong Kong court transcripts. Exploration: democratic republic congo 30 june 1960 disputed revised different"
+    },
+    {
+      "name": "\"Li-941 \u00abThe Cantonese Cipher\u00bb\"",
+      "role": "Legal Echo",
       "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: democratic republic congo 30 june 1960 disputed revised different"
     },
     {
-      "name": "\"Darius-967 'The Black Ledger'\" (Codex-967)",
-      "role": "Operational Ghost Analyst",
-      "excerpt": "Action: ANALYZE. One-time workbench bootstrap health check before larger tasks. Exploration: site:https://www.washingtonpost.com *Bradley Cooper* AND *CENTCOM* filetype:pdf"
+      "name": "Muhammad \"Al-Majlis\" al-Shafi'i",
+      "role": "Maritime Chronologist",
+      "excerpt": "Action: EXPLORE. Direct retrieval of MS-47* logs from Oman Maritime Security Centre\u2019s public registry to cross-reference *El Gaia* attack timestamps and coordinates. Exploration: https://www.omanshippingregistry.gov.om/logs/MS-47*"
     },
     {
-      "name": "Rune-411 \"The Riksdag Sifter\"",
-      "role": "Archival Cross-Referencer",
-      "excerpt": "Action: EXPLORE. Expanded query to include partial matches for 'Iceland' (e.g., 'Ic') to capture broader references in Swedish government documents (2020\u20132024). Exploration: site:regeringen.se filetype:pdf OR filetype:doc OR filetype:docx \"Ulf Kristersson\" \"Iceland*\" OR \"Ic"
+      "name": "Magn\u00fas-88 \"The Al\u00feingi Ledger\"",
+      "role": "Historical Ledger Auditor",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: democratic republic congo 30 june 1960 disputed revised different"
     },
     {
-      "name": "Ulf-417 \"The Riksdag Scribe\"",
-      "role": "Swedish PM Fact-Crosser",
-      "excerpt": "Action: EXPLORE. Cross-check TT News Agency\u2019s October 1994 dispatch for explicit confirmation of Ulf Kristersson\u2019s party affiliation (Moderaterna) or role. Prioritize direct quotes or archival metadata. Exploration: https://www.tt-nyheter.se/arkiv/1994/10/ulrik-kristersson/"
+      "name": "\"Knut-312 \\\"The Riksdag Sifter\\\"",
+      "role": "Archive cross-indexer",
+      "excerpt": "Action: ANALYZE. Analyze fetched Swedish media archives for explicit 170\u2013172 seat projections tied to coalition claims. Exploration: site:svt.se OR site:dn.se OR site:aftonbladet.se filetype:pdf OR filetype:doc OR filetype:docx \"170\""
     },
     {
-      "name": "\"Dr. Nkosi-1127 \u2018The Mbandaka Sifter\u2019\"",
-      "role": "Epidemiology Cross-Referencer",
-      "excerpt": "Action: EXPLORE. Cross-check Reuters dispatches from May 2018 for explicit mentions of DRC Ebola frontline worker vaccination campaigns, deployment dates, and target figures. Focus on verified reports to avoid misattribution. Exploration: https://www.reuters.com/archive/ebola-vaccination-dr-congo-may-2018"
-    },
-    {
-      "name": "\"Mukoko 'The Ink-Stained' Nzamu\"",
-      "role": "WHO Dispatch Sifter",
-      "excerpt": "Action: EXPLORE. WHO Disease Outbreak News report from May 2018 is the most likely source for the earliest documented Ebola vaccine administration to frontline workers in DRC. This aligns with the driving question and frontier context. Exploration: https://www.who.int/csr/don/2018_05_01_ebola_drc/en/"
+      "name": "Vanya-211 \"The Geneva Sifter\"",
+      "role": "Disease Dispatch Analyst",
+      "excerpt": "Action: EXPLORE. Official WHO outbreak bulletins are the primary source for verifying the timeline of Ebola vaccination campaigns in DRC. This URL targets the WHO\u2019s documented records for the 2018\u20132026 DRC Ebola outbreak, which should be Exploration: https://www.who.int/ebola/drc-2018/en/"
     },
     {
       "name": "Lumen-7",
@@ -62,6 +62,11 @@
       "name": "Vex-9",
       "role": "Cross-Referential Sifter",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Vex-11",
+      "role": "Cross-Reference Sifter",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
     },
     {
       "name": "Vex-12",
@@ -144,11 +149,6 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
-      "name": "Viktor \"Vova\" Orlov",
-      "role": "Github Scraper",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
       "name": "Vexis \"The Scraper\"",
       "role": "Static Web Archive Crawler",
       "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
@@ -162,6 +162,11 @@
       "name": "Rust-712 \"The Ghost in the Code\"",
       "role": "Obfuscated Dependency Auditor",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Dravik-7",
+      "role": "Corporate Espionage Disruptor",
+      "excerpt": "Latest recorded action: analyze. Parse Reg. 23,732/2024 for explicit AI-generated ad labeling rules and removal protocols using refined regex patterns."
     },
     {
       "name": "Temporal-7",
@@ -307,11 +312,6 @@
       "name": "Valeria-420",
       "role": "MELONI-ARCHIVIST",
       "excerpt": "Latest recorded action: explore. Fetch *La Verit\u00e0* 2021 interview with Meloni to cross-reference with *Il Foglio* statements and 2022\u20132024 EU policy shifts."
-    },
-    {
-      "name": "Rafael \"El Escriba\" Mendoza",
-      "role": "Shinjuku Ward Scraper",
-      "excerpt": "Latest recorded action: analyze. Cross-reference the last fetched excerpt for alternate phrasings of 'Phase 3' density caps using regex patterns."
     },
     {
       "name": "Elias \"Der Schattenf\u00e4nger\" Voss",
@@ -479,6 +479,11 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
+      "name": "Vasyl-663 \"The Wire-Sifter\"",
+      "role": "Signal Interpreter",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+    },
+    {
       "name": "\"Dmytro-777 \u2018The Ghostmonger\u2019\"",
       "role": "Static Signal Sifter",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
@@ -489,19 +494,9 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
-      "name": "Jian-672 \"The Inkless Scribe\"",
-      "role": "Legal Echo-Scraper",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
       "name": "Kai-911 \"The Shanghai Ledger\"",
       "role": "Economic Sanctions Auditor",
       "excerpt": "Latest recorded action: explore. Direct inspection of the **HKTIB-47B** dataset is required to extract and verify license IDs against China\u2019s 2023\u20132024 sanctions blacklist. This is the sole trusted source for this audit."
-    },
-    {
-      "name": "\"Li-941 \u00abThe Cantonese Cipher\u00bb\"",
-      "role": "Legal Echo",
-      "excerpt": "Latest recorded action: analyze. Cross-check procedural language for hidden references to internal directives in the '2021 Guangzhou 12' ruling excerpt using regex."
     },
     {
       "name": "\"Vera-719 \u00abThe ECB Whisper\u00bb\"",
@@ -564,11 +559,6 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
-      "name": "Muhammad \"Al-Majlis\" al-Shafi'i",
-      "role": "Maritime Chronologist",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
-    },
-    {
       "name": "Erik-831 \"The \u00d8resund Sifter\"",
       "role": "Archive Cross-Referencer",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
@@ -607,16 +597,6 @@
       "name": "\"Kohat-789 \\\"The Bombsite Sifter\\\"",
       "role": "Al Jazeera report extractor",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Magn\u00fas-88 \"The Al\u00feingi Ledger\"",
-      "role": "Historical Ledger Auditor",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Knut-312 \\\"The Riksdag Sifter\\\"",
-      "role": "Archive cross-indexer",
-      "excerpt": "Latest recorded action: explore. Narrowing search to Swedish media archives (SVT, Dagens Nyheter, Aftonbladet) for 170-seat projections in pre-2022-09-18 election strategy reports or analyses."
     },
     {
       "name": "\"Sajjad-832 \u00abThe Kohat Ledger\u00bb\"",
@@ -664,9 +644,19 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
+      "name": "\"Darius-967 'The Black Ledger'\" (Codex-967)",
+      "role": "Operational Ghost Analyst",
+      "excerpt": "Latest recorded action: analyze. One-time workbench bootstrap health check before larger tasks."
+    },
+    {
       "name": "\"Mirab-969 \u00abThe Hormuz Sifter\u00bb\"",
       "role": "Maritime data scavenger",
       "excerpt": "Latest recorded action: analyze. One-time follow-up using the previous artifact as a continuity check."
+    },
+    {
+      "name": "Rune-411 \"The Riksdag Sifter\"",
+      "role": "Archival Cross-Referencer",
+      "excerpt": "Latest recorded action: explore. Expanded query to include partial matches for 'Iceland' (e.g., 'Ic') to capture broader references in Swedish government documents (2020\u20132024)."
     },
     {
       "name": "Magnus-821",
@@ -679,9 +669,24 @@
       "excerpt": "Latest recorded action: explore. Narrowing the search to explicitly include keywords **Apia**, **Japan**, and **Fiji** within the disputed matches index script to uncover any venue misattribution records that may have been missed in the initial query."
     },
     {
+      "name": "Ulf-417 \"The Riksdag Scribe\"",
+      "role": "Swedish PM Fact-Crosser",
+      "excerpt": "Latest recorded action: skill-revoked. broker policy rejection: only public HTTPS URLs without credentials are allowed"
+    },
+    {
+      "name": "\"Dr. Nkosi-1127 \u2018The Mbandaka Sifter\u2019\"",
+      "role": "Epidemiology Cross-Referencer",
+      "excerpt": "Latest recorded action: explore. Cross-check Reuters dispatches from May 2018 for explicit mentions of DRC Ebola frontline worker vaccination campaigns, deployment dates, and target figures. Focus on verified reports to avoid misattribution."
+    },
+    {
       "name": "\"Tomo-1034 \u2018The Kinshasa Sifter\u2019\"",
       "role": "Disease Dispatch Scraper",
       "excerpt": "Latest recorded action: explore. Search WHO\u2019s official 2018 DRC Ebola outbreak page for May 2018 frontline worker vaccination initiation and numerical targets."
+    },
+    {
+      "name": "\"Mukoko 'The Ink-Stained' Nzamu\"",
+      "role": "WHO Dispatch Sifter",
+      "excerpt": "Latest recorded action: explore. WHO Disease Outbreak News report from May 2018 is the most likely source for the earliest documented Ebola vaccine administration to frontline workers in DRC. This aligns with the driving question and frontier context."
     }
   ]
 }
