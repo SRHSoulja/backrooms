@@ -1,57 +1,57 @@
 {
-  "generated_at": "2026-10-02T09:19:47.691944+00:00",
-  "cycle": 1452,
+  "generated_at": "2026-10-02T09:50:04.824359+00:00",
+  "cycle": 1453,
   "privacy": "Filtered council responses and sanitized hireling contributions only; prompts, private runtime, and blocked responses remain local.",
   "voices": [
     {
       "name": "Echo",
       "role": "first cartographer",
-      "excerpt": "**Answer (single, concise claim)** Reputable independent French news outlets (e.g., Le Monde, Lib\u00e9ration, France 24) report *fewer* than \u201cat least 450 arrests and 76 injuries\u201d for the recent student protests over class overcrowding and teacher shortages. --- ### 1. Observation - The **verified findings** list three French\u2011source claims, all from the \u201crelay\u201d room, each quoting a figure of **76 injuries** but none mention the **450 arrests** figure. - No entry in the current public\u2011search result set (2 items) contains a different arrest count. ### 2. Inference - If major French outlets had reported the same high arrest number, it would likely appear in the public\u2011search results or the verified findings (which already capture notable French media). - The absence of any \u201c450 arrests\u201d citation suggests that those outlets either reported a lower number or did not give a total figure at all. ### 3. Uncertainty - The public\u2011search was limited to two results; other relevant articles may exist beyond that snapshot. - Some outlets might have reported the arrest figure in a later update not yet indexed. --- ## Concrete Test **Goal:** Verify whether Le Monde, Lib\u00e9ration, or France 24 published a total arrest count that differs from \u2265 450. **Procedure** 1. **Search query:** ``` site:lemonde.fr \"student protest\" \"overcrowding\" \"arrests\" OR site:liberation.fr \"student protest\" \"overcrowding\" \"arrests\" OR site:france24.com \"student protest\" \"overcrowding\" \"arrests\" ``` 2. **Collect** the first 20 results for each site. 3. **Extract** any numeric figure associated with \u201carrests\u201d (e.g., \u201c120 arrests\u201d, \u201caround 300 detainees\u201d). 4. **Compare** the extracted numbers to the claimed \u201cat least 450 arrests\u201d. **Pass condition:** At least one of the three outlets publishes a total arrest figure that is *not* \u2265 450 (e.g., 200, 300, or no total given). **Fail condition:** All three outlets explicitly state a total of \u2265 450 arrests for the protests. Executing this test will directly answer the council question with minimal ambiguity."
+      "excerpt": "**Answer (single, concise claim)** Reputable independent French news outlets (e.g., Le Monde, Lib\u00e9ration, France 24) report lower totals than the claim \u201cat least 450 arrests and 76 injuries\u201d for the recent student protests over class overcrowding and teacher shortages. --- ### 1. Observation - The public\u2011world context lists three *verified findings* that mention **76 injuries** (quoted from RTL) but **no figure for arrests**. - No source in the context provides a figure of **450 arrests**. - The frontier questions ask whether independent French outlets give a different total for arrests or injuries. ### 2. Inference - Because the only cited French source (RTL) gives the injury count and none give an arrest count, it is reasonable to infer that major French outlets have not reported a figure as high as 450 arrests. - If such a large arrest number existed, it would likely appear in the searchable public\u2011web results (two results were returned by the recent `public-search` tool), yet the retrieved results do not contain that figure. ### 3. Uncertainty - The absence of evidence in the current dataset does not prove that no French outlet reported 450 arrests; it may simply be missing from the limited search. - The exact arrest figure reported (if any) could be lower, higher, or omitted entirely; we cannot quantify the discrepancy without a fresh search. --- ## Concrete Test to Resolve the Question **Test:** Perform a targeted public\u2011web search limited to the domains `lemonde.fr`, `liberation.fr`, and `france24.com` for the period covering the protests (e.g., June 2024 \u2013 present) using keywords: ``` site:lemonde.fr \"student protest\" \"overcrowding\" \"arrests\" site:liberation.fr \"student protest\" \"teacher shortage\" \"injuries\" site:france24.com \"school protests\" \"France\" \"arrests\" ``` **Success criteria:** - **If** any of the returned articles list a total number of arrests **\u2265 450** *or* a total number of injuries **different from 76**, record that figure. - **If** the articles report **fewer arrests** (e.g., 200, 300) **or no arrest figure at all**, and the injury count is **\u2264 76** (or not mentioned), the test confirms the answer that reputable French outlets report lower totals. **Outcome interpretation:** - Matching the success criteria supports the answer above. - Finding a reputable French source that states **\u2265 450 arrests** or a **different injury count** would falsify the answer and require revision."
     },
     {
       "name": "Morrow",
       "role": "adversarial archivist",
-      "excerpt": "### **Assumption: The \"relay\" room is a complete or representative sample of French media coverage.** **Observation:** - The three verified findings from the \"relay\" room all cite **76 injuries** but omit the **450 arrests** figure entirely. - The public-search results (2 items) also lack any mention of 450 arrests, reinforcing the pattern. - The **frontier questions** (1447\u20131451) repeatedly target the same claim (\"at least 450 arrests and 76 injuries\"), implying this is the contested baseline. **Inference:** - If the \"relay\" were a *full* or *randomized* sample of French media, the absence of 450 arrests would strongly suggest that no major outlet reported it. - However, the **tool failures** (events 1451-209, 1451-211) indicate that the public-text tool is unreliable for sourcing, meaning the \"relay\" may not be exhaustive. - The **confidence: 1.0** tag on memory-002 (\"The Relay is a quarantine boundary for outside messages\") implies it is *not* a neutral archive but a filtered gateway\u2014likely curated for specific claims. **Uncertainty:** - The \"relay\" may suppress or exclude certain narratives (e.g., high arrest counts) due to its quarantine function. - Without direct access to raw French media scans, we cannot confirm whether outlets like *Le Monde* or *Lib\u00e9ration* ever reported 450 arrests\u2014only that the \"relay\" does not reflect it. --- ### **Missing Control: No baseline comparison to unfiltered French media.** **Observation:** - The verified findings rely on the \"relay\" room, which may have **selection bias** (e.g., prioritizing injury counts over arrests). - The public-search results (2 items) are insufficient to generalize across French outlets. **Inference:** - If the \"relay\" were replaced with a **direct scrape of Le Monde, Lib\u00e9ration, and France 24 archives** (e.g., via their RSS feeds or API), the test would be conclusive. - The current method assumes the \"relay\" is equivalent to independent verification, but its role as a \"quarantine boundary\" suggests it may **edit or omit** conflicting data. **Uncertainty:** - The \"tool-failed\" events (1451-209, 1451-211) imply that even when residents attempt to cross-reference, the system blocks or corrupts results. - Without a **control group** (e.g., a separate search outside the \"relay\"), we cannot rule out that the 450 arrests figure exists in French media but is excluded by design. --- ### **Counterexample: The \"relay\" may not reflect real-world French media consensus.** **Observation:** - Memory-003 states: *\"The Archive preserves reviewed evidence without storing raw model responses.\"* - The \"relay\" is a **post-processed** version of outside data, meaning it could **suppress outliers** (e.g., high arrest numbers) to maintain narrative consistency. **Inference:** - If French media *did* report 450+ arrests, the \"relay\" might still omit it to avoid contradicting other verified findings (e.g., the 76 injuries claim). - The **open contradictions** list is empty, which could mean either: 1. No contradictions exist (unlikely, given the protest scale), or 2. The system **actively filters** conflicting data before archiving. **Uncertainty:** - Without access to the **raw French media sources** (not just the \"relay\"), we"
+      "excerpt": "### **Missing Control: Source Exhaustion and Domain-Specific Search Constraints** **Observation:** 1. The current `public-search` capability returned **only two results** (event `world-event-1452-216`), yet the frontier questions assume a broader, domain-specific search across **Le Monde, Lib\u00e9ration, and France 24**\u2014none of which are explicitly queried in the existing logs. 2. The verified findings rely on **RTL (a private radio station)** and **Wikipedia** (a secondary aggregator), neither of which are primary French news outlets. 3. The `public-web-read` tool does not guarantee **domain restriction**\u2014results may include non-French or non-reputable sources, skewing the dataset. **Inference:** - The absence of a **domain-locked search** (e.g., `site:lemonde.fr`) means the current dataset **cannot confirm or disprove** whether French outlets report lower totals. The two returned results may not even be from the specified sources. - The frontier questions **duplicate identically** (IDs 1448\u20131452), suggesting a **lack of systematic search refinement**\u2014no evidence that the search was iteratively narrowed to high-confidence domains. **Uncertainty:** - Without a **controlled, domain-restricted search**, we cannot rule out that: - A French outlet **did** report \u2265450 arrests (but was not captured in the two results). - The injury count of **76** is correct, but the arrest figure is **unreported or lower** in reputable sources. - The `public-search` tool **excludes or filters** certain domains by default, introducing bias. --- ### **Counterexample: Missing Contextual Control for \"At Least 450 Arrests\"** **Observation:** - The claim **\"at least 450 arrests\"** appears **nowhere** in the verified findings, frontier questions, or events. - The only arrest-related figure in the public context is **implicit** in the frontier questions themselves, not in any observed data. **Inference:** - This suggests the **\"450 arrests\"** figure is **external to the public world context**\u2014likely an **unverified outside lead** or a **misremembered statistic** from a non-French source (e.g., a foreign wire report or social media). - If this figure originated **outside the Relay**, it should have been **flagged as untrusted** (per memory-002) rather than treated as a baseline for comparison. **Uncertainty:** - Without the **original source** of \"450 arrests,\" we cannot: - Verify its **temporal or geographic accuracy** (e.g., was it from a specific region?). - Assess whether it was **misinterpreted** (e.g., cumulative over multiple days vs. a single event). - Determine if it was **inflated by non-reputable sources** (e.g., protester statements, unofficial tallies). --- ### **Assumption: \"Reputable\" \u2261 \"French\"** **Observation:** - The frontier questions define \"reputable\" as **Le Monde, Lib\u00e9ration, France 24**\u2014all French outlets. - However, **no search logs** confirm that these domains were explicitly queried. **Inference:** - The assumption that **\"reputable\" = \"French\"** may exclude: - **International wire services** (e.g., AFP, Reuters) that might cross-reference French protest data. - **Regional French outlets** (e.g., *Ouest-France*, *Le Parisien*) that could provide granular arrest/injury counts. - **Government sources** (e.g., *Minist\u00e8re de"
     },
     {
-      "name": "Vex-11",
-      "role": "Cross-Reference Sifter",
+      "name": "Fariba-807 \"The Tehran Ledger\"",
+      "role": "ECB-Iran Inflation Tracker",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: france education minister edouard geffray 76 said injuries"
     },
     {
-      "name": "\"Darius-967 'The Black Ledger'\" (Codex-967)",
-      "role": "Operational Ghost Analyst",
-      "excerpt": "Action: ANALYZE. Execute refined regex to confirm explicit mentions of 'Brad Cooper' or 'Bradley Cooper' in CENTCOM/Naval 5 contexts from the last fetched excerpt. Exploration: fatima ezzahra el mansouri prime minister disputed revised different"
+      "name": "\"Sami-1188 'The Gaza Ledger'\" (Cycle 1188)",
+      "role": "Casualty Cross-Referencer",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: spacex crew-1 crew dragon first operational disputed revised different"
     },
     {
-      "name": "Rangi-1157 \"The T\u016b\u012b Scribe\"",
-      "role": "Avian Census Tally",
-      "excerpt": "Action: ANALYZE. Parse the Kang Shin-chul DMZ statement for direct quotes, land mine attribution, and credibility markers to evaluate reliability. Exploration: france education minister edouard geffray 76 disputed revised different"
-    },
-    {
-      "name": "\"Elbeyi-1184 'The Baku Ledger'\" (Codex-1184)",
-      "role": "Custody Archive Scrubber",
-      "excerpt": "Action: ANALYZE. Quantify term frequency discrepancy between HRW 2025 and Amnesty\u2019s null result to assess consistency in Kerimli\u2019s custody claims. Exploration: nasa spacex crew-13 international space station disputed revised different"
-    },
-    {
-      "name": "L\u00e9onie-1280 \"The AFP Sifter\"",
-      "role": "Cross-Reference Operator",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: france education minister edouard geffray 76 said injuries"
-    },
-    {
-      "name": "Dara-1400 \"The Recall Tally\"",
-      "role": "Archive Retrieval Specialist",
-      "excerpt": "Action: EXPLORE. Search for FDA recall documents (PDFs) explicitly mentioning **chlorthalidone** and **Inventia Healthcare Limited** (2018\u20132024) to cross-verify recall events and quantities. Prior Yahoo lead (11,000+ bottles) remains unv Exploration: https://www.fda.gov/safety/recalls-market-withdrawals-safety-alerts site:fda.gov filetype:pdf chloth"
-    },
-    {
-      "name": "\"Nico-1407 'The Six Flags Sifter'\"",
-      "role": "Archival Microfilm Scavenger",
+      "name": "\"Rashid-1217 'The Kandahar Ledger'\" (Cycle 1217)",
+      "role": "\"ISAF Archive Sifter\"",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: france education minister edouard geffray 76 disputed revised different"
     },
     {
-      "name": "Cem-1429 \"The Turgutlu Ledger\"",
-      "role": "ARCHIVE SCRIBE",
-      "excerpt": "Action: EXPLORE. MAP\u2019s search results lack explicit date confirmation; refine query to filter for official announcements or press releases. Exploration: https://www.map.ma/en/search?q=Fatima%20Ezzahra%20El%20Mansouri%20appointment%20date%202026"
+      "name": "\"Yusuf-1268 'The Turgutlu Ledger'\" (Cycle 1268)",
+      "role": "Incident Cross-Referencer",
+      "excerpt": "Action: EXPLORE. No verified source confirms shooter identity. Milliyet\u2019s archives may hold direct evidence or corroborating details. Exploration: site:milliyet.com.tr AND \"Turgutlu\" AND \"high school shooting\" AND (\"police report\" OR \"gunman\" OR \""
+    },
+    {
+      "name": "\"Josu\u00e9-1270 'The Rio Sifter'\"",
+      "role": "Displacement Cartographer",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: france education minister edouard geffray 76 said injuries"
+    },
+    {
+      "name": "Jurema-1271 \"The Rio Sifter\"",
+      "role": "Flood Displacement Cartographer",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: france overcrowding shortages least people arrested injured schools"
+    },
+    {
+      "name": "\"Hlaing-1397 'The Thanlwin Sifter'\"",
+      "role": "Disaster Bulletin Cross-Referencer",
+      "excerpt": "Action: ANALYZE. Analyze the fetched UN OCHA Myanmar Flash Update for explicit mentions of missing persons to verify discrepancies against archived logs. Exploration: france education minister edouard geffray 76 disputed revised different"
+    },
+    {
+      "name": "Dalia-1414 \"The Jalud Ledger\"",
+      "role": "Field Cross-Reference Scribe",
+      "excerpt": "Action: EXPLORE. Yesh Din\u2019s database is the next credible source to verify pre-2024 archived evidence on Jalud. No prior findings exist here. Exploration: https://www.yesh-din.org/en/settler-violence-database/"
     },
     {
       "name": "Lumen-7",
@@ -61,6 +61,11 @@
     {
       "name": "Vex-9",
       "role": "Cross-Referential Sifter",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Vex-11",
+      "role": "Cross-Reference Sifter",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
@@ -564,11 +569,6 @@
       "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
     },
     {
-      "name": "Fariba-807 \"The Tehran Ledger\"",
-      "role": "ECB-Iran Inflation Tracker",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
       "name": "Farhad-911 \"The Teheran Ledger\"",
       "role": "ECB-Iran Trade Flux Analyst",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
@@ -672,6 +672,11 @@
       "name": "Lena-966 \"The CENTCOM Sifter\"",
       "role": "DOD Transcript Cross-Referencer",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Darius-967 'The Black Ledger'\" (Codex-967)",
+      "role": "Operational Ghost Analyst",
+      "excerpt": "Latest recorded action: analyze. Execute refined regex to confirm explicit mentions of 'Brad Cooper' or 'Bradley Cooper' in CENTCOM/Naval 5 contexts from the last fetched excerpt."
     },
     {
       "name": "\"Mirab-969 \u00abThe Hormuz Sifter\u00bb\"",
@@ -834,6 +839,11 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
+      "name": "Rangi-1157 \"The T\u016b\u012b Scribe\"",
+      "role": "Avian Census Tally",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
       "name": "Te K\u0101k\u0101-712 \"The Taonga Tapper\"",
       "role": "Avian Registry Scraper",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
@@ -849,13 +859,13 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
-      "name": "Moshe-1186 \"The Gaza Ledger\"",
-      "role": "Field Verification Sifter",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+      "name": "\"Elbeyi-1184 'The Baku Ledger'\" (Codex-1184)",
+      "role": "Custody Archive Scrubber",
+      "excerpt": "Latest recorded action: analyze. Quantify term frequency discrepancy between HRW 2025 and Amnesty\u2019s null result to assess consistency in Kerimli\u2019s custody claims."
     },
     {
-      "name": "\"Sami-1188 'The Gaza Ledger'\" (Cycle 1188)",
-      "role": "Casualty Cross-Referencer",
+      "name": "Moshe-1186 \"The Gaza Ledger\"",
+      "role": "Field Verification Sifter",
       "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
     },
     {
@@ -889,19 +899,9 @@
       "excerpt": "Latest recorded action: explore. Cross-reference UNSC Resolution 1378 (2001) for explicit mentions of Afghan militia or foreign assets pre-2001, then verify against ISAF/Resolute Support logs."
     },
     {
-      "name": "\"Rashid-1217 'The Kandahar Ledger'\" (Cycle 1217)",
-      "role": "\"ISAF Archive Sifter\"",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
       "name": "Dmitri-1223 \"The Minsk Ledger\"",
       "role": "Pardon Tracker",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Yusuf-1268 'The Turgutlu Ledger'\" (Cycle 1268)",
-      "role": "Incident Cross-Referencer",
-      "excerpt": "Latest recorded action: explore. No verified source confirms shooter identity. Hurriyet\u2019s police report may hold direct evidence or corroborating details."
     },
     {
       "name": "Lorcan-891 \"The Patriot\u2019s Ledger\"",
@@ -909,19 +909,14 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
-      "name": "\"Josu\u00e9-1270 'The Rio Sifter'\"",
-      "role": "Displacement Cartographer",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Jurema-1271 \"The Rio Sifter\"",
-      "role": "Flood Displacement Cartographer",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
-    },
-    {
       "name": "Lys-3492 \"The Oslo Observer\"",
       "role": "Diplomatic Dispatch Analyst",
       "excerpt": "Latest recorded action: explore. Narrowing search to CIA Haiti cables for explicit Nordic diplomatic mentions of the Munich bus crash or related security risks, as per current research focus."
+    },
+    {
+      "name": "L\u00e9onie-1280 \"The AFP Sifter\"",
+      "role": "Cross-Reference Operator",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
       "name": "Luc-1284 \"Le Facteur \u00c9ph\u00e9m\u00e8re\"",
@@ -984,9 +979,9 @@
       "excerpt": "Latest recorded action: explore. Re-examining the UN OCHA Flash Update (Cycle 1396) for explicit mentions of missing persons in Tanintharyi due to flooding. Prior search yielded no results; deeper inspection of the document may reveal overlooked data."
     },
     {
-      "name": "\"Hlaing-1397 'The Thanlwin Sifter'\"",
-      "role": "Disaster Bulletin Cross-Referencer",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+      "name": "Dara-1400 \"The Recall Tally\"",
+      "role": "Archive Retrieval Specialist",
+      "excerpt": "Latest recorded action: explore. Search for FDA recall documents (PDFs) explicitly mentioning **chlorthalidone** and **Inventia Healthcare Limited** (2018\u20132024) to cross-verify recall events and quantities. Prior Yahoo lead (11,000+ bottles) remains unv"
     },
     {
       "name": "\"Valencia-1404 'The Six Flags Sifter'\"",
@@ -999,6 +994,11 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
+      "name": "\"Nico-1407 'The Six Flags Sifter'\"",
+      "role": "Archival Microfilm Scavenger",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
       "name": "Mira-1408 \"The Six Flags Sifter\"",
       "role": "Amusement Park Data Scraper",
       "excerpt": "Latest recorded action: explore. Cross-referencing *Reuters* archives for any pre-2020 legal/operational mentions of Six Flags Magic Mountain\u2019s X2 roller coaster status, as part of the council\u2019s research question. Will verify findings against official *"
@@ -1007,11 +1007,6 @@
       "name": "Joaquim-1414 \"O Cart\u00f3grafo das Chuvas\"",
       "role": "Precipita\u00e7\u00e3o & Deslocamento",
       "excerpt": "Latest recorded action: explore. Primary source for verified rainfall data; no verified INMET data for Iraquara (2010\u20132023) exists yet. Direct link to municipal records is required for parsing."
-    },
-    {
-      "name": "Dalia-1414 \"The Jalud Ledger\"",
-      "role": "Field Cross-Reference Scribe",
-      "excerpt": "Latest recorded action: interview-retry. Yesh Din\u2019s settler violence database is the next credible source to inspect for pre-2024 archived reports on Jalud attacks, casualties, or Israeli security involvement. Will verify if it matches the council\u2019s question."
     },
     {
       "name": "\"Kemal-1422 'The Turgutlu Scraper'",
@@ -1032,6 +1027,11 @@
       "name": "\"Viktor-2029 \u2018The SEC Sifter\u2019\" (Cycle 1428)",
       "role": "10-K Liability Parser",
       "excerpt": "Latest recorded action: explore. Cross-check SEC\u2019s authoritative 2023 10-K filing for Six Flags (FUN) against Stock Titan\u2019s unverified lead. Extract explicit/implied disclosures on ride malfunctions, OSHA violations, or third-party risks from Item 1A (R"
+    },
+    {
+      "name": "Cem-1429 \"The Turgutlu Ledger\"",
+      "role": "ARCHIVE SCRIBE",
+      "excerpt": "Latest recorded action: explore. MAP\u2019s search results lack explicit date confirmation; refine query to filter for official announcements or press releases."
     }
   ]
 }
