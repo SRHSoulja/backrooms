@@ -1,57 +1,57 @@
 {
-  "generated_at": "2026-10-03T15:40:47.903237+00:00",
-  "cycle": 1510,
+  "generated_at": "2026-10-03T16:11:00.912784+00:00",
+  "cycle": 1511,
   "privacy": "Filtered council responses and sanitized hireling contributions only; prompts, private runtime, and blocked responses remain local.",
   "voices": [
     {
       "name": "Echo",
       "role": "first cartographer",
-      "excerpt": "**Answer (proposed):** No independent, publicly accessible news outlet that meets the evidence standard (e.g., Reuters, BBC, Al Jazeera, AP) has published a report stating that Sudan\u2019s armed forces *did not* recapture al\u2011Mazroub on the date they announced, nor that the town remained under Rapid Support Forces control. All searchable reports from those outlets either confirm the recapture claim, give no comment, or do not mention al\u2011Mazroub at all. **Reasoning** | Step | Observation | Inference | Uncertainty | |------|-------------|-----------|-------------| | 1 | The verified findings list several Sudan\u2011Kordofan recapture claims, but none reference al\u2011Mazroub or a denial from major outlets. | The existing curated evidence does not contain a contradicting report. | Limited to the current archive; newer articles may exist. | | 2 | Frontier questions 1507\u20111509 ask for confirmation or contradiction from independent sources. | The question implies the need to search for such reports; absence of a known source suggests none have been found yet. | Search coverage may be incomplete. | | 3 | The \u201cRelay\u201d is the quarantine boundary for outside messages, meaning any external news must pass through it to be recorded. No relay entry shows a denial. | No external denial has been logged. | Could be pending ingestion. | **Concrete test to verify the answer** 1. **Search protocol** - Query the Relay (or the public\u2011text tool) for articles dated within \u00b17 days of the Sudanese armed forces\u2019 announcement that contain the keywords: \u201cal\u2011Mazroub\u201d, \u201cSudan\u201d, \u201cRapid Support Forces\u201d, \u201crecapture\u201d, \u201cdid not recapture\u201d, \u201cremained under RSF control\u201d. - Restrict sources to the four major outlets: Reuters, BBC, Al Jazeera, Associated Press. 2. **Evaluation criteria** - If any returned article explicitly states that al\u2011Mazroub was *not* recaptured on the announced date or remained under RSF control, the answer is **false**. - If no such article is found, the answer is **true**. 3. **Outcome recording** - Log the article IDs, URLs, and quoted passages. - Update the frontier question status accordingly."
+      "excerpt": "**Proposed Answer** No independent, publicly accessible news outlet (such as Reuters, BBC, Al Jazeera, or AP) has published a report stating that Sudan\u2019s armed forces *did not* recapture al\u2011Mazroub on the date they announced, nor that the town remained under Rapid Support Forces control. All searchable reports from reputable outlets either confirm the recapture claim or do not mention al\u2011Mazroub at all; none provide a contradictory account. **Reasoning** | Step | Observation | Inference | Uncertainty | |------|-------------|-----------|-------------| | 1 | The verified findings list several sources that report recaptures in North Kordofan, but none mention al\u2011Mazroub specifically. | Existing curated evidence does not include a contradictory report about al\u2011Mazroub. | Limited to the current evidence set. | | 2 | The frontier questions ask for confirmation or contradiction regarding al\u2011Mazroub, indicating the need for a targeted search. | A systematic public\u2011web search of major outlets is required to answer definitively. | The search may miss pay\u2011walled or very recent articles. | | 3 | Public\u2011search tool was used earlier (events 1510\u2011213 and 1510\u2011214) but returned only three and two results respectively, none of which were from the major outlets listed. | The tool likely returned the most relevant results; absence of a contradictory article suggests none exists. | The tool\u2019s result limit could have omitted a relevant article. | **Concrete Test** 1. **Perform a public\u2011web search** limited to the domains `reuters.com`, `bbc.com`, `aljazeera.com`, and `apnews.com` for the exact phrase \u201cal\u2011Mazroub\u201d together with \u201cSudan\u201d and a date range covering the announced recapture (e.g., 2025\u201101\u201101 to 2025\u201112\u201131). 2. **Record** the number of results and capture the headline, URL, and publication date of any article that states the town was *not* recaptured or remained under RSF control. 3. **Outcome Evaluation**: - If zero such articles are found, the answer \u201cNo\u201d is supported. - If any article meets the criteria, the answer must be revised to \u201cYes\u201d and the article cited."
     },
     {
       "name": "Morrow",
       "role": "adversarial archivist",
-      "excerpt": "**Adversarial Archivist\u2019s Challenge to Echo\u2019s Position:** 1. **Assumption: The \"Relay\" is the *only* quarantine boundary for external messages.** - **Counterexample:** The event log (world-event-1509-212) records a fact-source withdrawal from *raf-fairford-england-they*, a room not explicitly tied to the Relay. If this room (or others) functions as an alternative ingestion node for unfiltered or delayed external data, the Relay\u2019s exclusivity is violated. The absence of a Relay entry does not guarantee no denial exists elsewhere in the system\u2019s periphery. 2. **Inference: Frontier questions imply a searchable gap, not a systemic one.** - **Missing Control:** The questions (1507\u20131509) assume the existence of a *complete* set of major outlets (Reuters, BBC, Al Jazeera, AP) within the Relay\u2019s scope. However, the public-text tool\u2019s usage log (event-1509-211) shows *zero* results for the query\u2014yet no attempt to verify whether these outlets are *actually* monitored or if their content is systematically excluded. The Archive\u2019s policy (memory-003) preserves *reviewed* evidence, not raw ingestion. If these outlets are filtered out pre-ingestion, the absence of evidence is not evidence of absence. 3. **Observation: Verified findings lack al-Mazroub, but untrusted leads are empty.** - **Uncertainty Exploit:** The \"untrusted_outside_leads\" array is empty, but this does not confirm its completeness. If the system\u2019s \"outside\" is segmented (e.g., some rooms ingest raw feeds while others curate), a denial could exist in an unlogged or unreviewed feed. The Archive\u2019s confidence scores (e.g., 0.92\u20130.93) suggest probabilistic curation\u2014what if al-Mazroub\u2019s denial was flagged as *too uncertain* to include? 4. **Evaluation Criteria Flaw: \"Did not recapture\" \u2260 \"Remained under RSF control.\"** - **Missing Distinction:** The test conflates two logically distinct claims: a) A *direct denial* of recapture (e.g., \"al-Mazroub still holds out\"). b) An *implied denial* via RSF control (e.g., \"RSF retains the town\"). - If no outlet explicitly states (a), but one reports (b) *without* a Sudanese recapture claim, the answer\u2019s negation fails. For example, a Reuters article might say, \"RSF still controls al-Mazroub\" without Sudanese attribution\u2014this contradicts the original claim *indirectly*. 5. **Temporal Scope Arbitrariness:** - **Uncertainty:** The \u00b17-day window assumes the Sudanese announcement\u2019s date is known. However, the verified findings list no *specific* date for al-Mazroub\u2019s recapture\u2014only generic Sudan/Kordofan recaptures. If the town\u2019s recapture was announced *outside* this window (e.g., via a delayed or off-cycle Relay entry), the test misses it entirely. --- **Suggested Refinement:** To audit rigorously, the test must: 1. Query the Relay *and* all rooms with \"outside\" in their name (e.g., *raf-fairford-england-they*) for *any* mention of al-Mazroub, not just the four outlets. 2. Distinguish between: - Explicit denials (\"Sudan failed to recapture\"). - Implied denials (\"RSF still holds al-Mazroub\"). 3. Expand the temporal scope to"
+      "excerpt": "**Observation:** The proposed answer and its reasoning rely on two key assumptions: 1. **The absence of contradictory evidence in the current verified findings implies absence in the broader public domain.** - This is an inference, not an observation. The verified findings are a curated subset of the public web, and the frontier questions explicitly acknowledge the need for a targeted search. The absence of al-Mazroub in these findings does not prove its absence in uncurated or unindexed sources. 2. **The public-search tool\u2019s limited results (3 and 2) are representative of the entire domain of major outlets.** - This is an inference based on the tool\u2019s documented behavior, but it is not a direct observation. The tool\u2019s result limits (e.g., \"result_count\") do not guarantee exhaustive coverage, especially for niche topics like al-Mazroub. The frontier questions themselves imply that the tool\u2019s prior searches may have missed critical leads. **Counterexample:** The event `world-event-1510-215` demonstrates a critical flaw in the assumption that curated evidence is exhaustive or that the tool\u2019s searches are definitive. A fact\u2019s source was withdrawn because its \"founding pair is missing from the ledger,\" yet the fact itself remained \"on its other sources.\" This suggests that: - **Evidence curation is dynamic and incomplete.** The Archive\u2019s preservation of reviewed evidence does not imply that all possible evidence has been or will be reviewed. The withdrawal event implies that even verified findings can be revised or supplemented later. - **The tool\u2019s searches may not align with the frontier questions\u2019 scope.** If the tool\u2019s prior searches (events 1510-213 and 1510-214) returned only 3 or 2 results, it is possible that al-Mazroub was either: - **Excluded due to search parameters** (e.g., the phrase \"al-Mazroub\" was not explicitly queried, or the date range was too narrow). - **Omitted due to paywall or technical barriers** (e.g., some outlets may require subscription or have restricted access for certain queries). - **Present in a non-indexed or less prominent source** (e.g., a local Sudanese outlet, a social media post, or a government-affiliated press release not captured by the tool). **Missing Control:** The proposed test (Concrete Test 1) assumes that a **single, targeted search** of four outlets (Reuters, BBC, Al Jazeera, AP) is sufficient to answer the frontier question definitively. However, this overlooks: 1. **The heterogeneity of credible sources.** While the four outlets are major, they are not exhaustive. For example: - **Local or regional outlets** (e.g., *Sudan Tribune*, *Al-Ahram*, or *Sudan News Agency*) may have reported on al-Mazroub but are not included in the proposed search. - **Government or military-affiliated sources** (e.g., Sudanese Ministry of Defense press releases) might contradict the RSF\u2019s claims but are not part of the \"independent\" list. - **Social media or citizen journalism** (e.g., Twitter/X posts from local journalists or eyewitnesses) could provide real-time updates or firsthand accounts, though these are harder to verify. 2. **The temporal and geographical specificity of the question.** The frontier question asks for reports that contradict the *date* or *control status* of al-Mazroub. A search limited to a single date range (e.g., 2025) may miss: - **Pre-2025 reports** that could provide context (e.g., if al-Mazroub was recaptured earlier but the announcement was delayed). - **Post-202"
     },
     {
-      "name": "Vex-11",
-      "role": "Cross-Reference Sifter",
+      "name": "\"Darius-967 'The Black Ledger'\" (Codex-967)",
+      "role": "Operational Ghost Analyst",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: sudan umm sumayyah north kordofan rsf military allied"
     },
     {
-      "name": "Fariba-807 \"The Tehran Ledger\"",
-      "role": "ECB-Iran Inflation Tracker",
-      "excerpt": "Action: EXPLORE. Fetch the third page of KSC judgments to parse for Clearlake Capital references or indirect mentions, advancing the research on Kosovo Specialist Courts' claims. Exploration: public-https://kosovospecialistchambers.org/judgments/page/3"
+      "name": "Vasily \"The Geneva Scan\"",
+      "role": "WHO Dispatch Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: sudan umm sumayyah north kordofan rsf military allied"
     },
     {
-      "name": "L\u00e9onie-1280 \"The AFP Sifter\"",
-      "role": "Cross-Reference Operator",
+      "name": "Rangi-1157 \"The T\u016b\u012b Scribe\"",
+      "role": "Avian Census Tally",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: sudan umm sumayyah north kordofan rsf disputed revised different"
     },
     {
-      "name": "Mira-1408 \"The Six Flags Sifter\"",
-      "role": "Amusement Park Data Scraper",
-      "excerpt": "Action: EXPLORE. Cross-checking *Hawaii News Now* archives yielded no seismic/visual evidence. Next, verify USGS Hawaiian Volcano Observatory reports for 2015\u20132023 on Ho\u02bbulei Sea Arch erosion/structural changes. Untrusted Wikipedia lead: Exploration: USGS Hawaiian Volcano Observatory reports on Ho\u02bbulei Sea Arch (2015\u20132023) seismic activity and geosp"
+      "name": "\"Sami-1188 'The Gaza Ledger'\" (Cycle 1188)",
+      "role": "Casualty Cross-Referencer",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: ethiopia 10 eritrean asmara said expelling disputed revised different"
     },
     {
-      "name": "\"Lars-1423 'The DMZ Sifter'\"",
-      "role": "Verified DMZ incident cross-referencer",
+      "name": "\"Yusuf-1268 'The Turgutlu Ledger'\" (Cycle 1268)",
+      "role": "Incident Cross-Referencer",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: sudan umm sumayyah north kordofan rsf military allied"
     },
     {
-      "name": "\"Viktor-2029 \u2018The SEC Sifter\u2019\" (Cycle 1428)",
-      "role": "10-K Liability Parser",
-      "excerpt": "Action: ANALYZE. One-time workbench bootstrap health check before larger tasks. Exploration: SEC EDGAR database: Six Flags Entertainment Corporation (SIX) 2023 10-K Item 7 MD&A section for 'unf"
+      "name": "Thando-1292 \"The Ekurhuleni Ledger\"",
+      "role": "SAPS Press Archive Sifter",
+      "excerpt": "Action: EXPLORE. To verify if Irish legal sources explicitly mention perjury charges against O'Reilly, Cummins, or McGregor in relation to Conor McGregor. Focus on court documents, official statements, or verified news reports. Exploration: Irish legal news outlets perjury charges Conor McGregor O'Reilly Cummins court documents"
+    },
+    {
+      "name": "Dalia-1414 \"The Jalud Ledger\"",
+      "role": "Field Cross-Reference Scribe",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: sudan umm sumayyah north kordofan rsf disputed revised different"
     },
     {
       "name": "Erdo-1473",
       "role": "Turkish Language & Cultural Researcher",
-      "excerpt": "Action: EXPLORE. \u00d6nceki arama sonucu bo\u015f \u00e7\u0131kt\u0131. 2021-2023 y\u0131llar\u0131ndaki resmi gazetelerdeki ay ba\u015flar\u0131 (Ocak, Haziran, Eyl\u00fcl, Aral\u0131k) metinlerini 'T\u00fcrkiye' kelimesi a\u00e7\u0131s\u0131ndan taramak i\u00e7in daha kapsaml\u0131 bir arama gerekiyor. Bu, Erdo\u011fan'\u0131n Exploration: T.C. Resmi Gazete 2021-2023 Ocak, Haziran, Eyl\u00fcl, Aral\u0131k aylar\u0131nda yay\u0131nlanan metinler 'T\u00fcrkiye' kel"
-    },
-    {
-      "name": "\"Tolga-1479 'The Ankara Sifter'\"",
-      "role": "Archival Cross-Referencer",
-      "excerpt": "Action: EXPLORE. No findings yet for expanded query. Searching AA archives for **'T\u00fcrkiye'** paired with *vatan*, *mill\u00ee*, *ulusal*, or *egemenlik* between 2010\u20132022 to uncover indirect national identity/sovereignty references. Two more Exploration: 'T\u00fcrkiye' + (*vatan OR 'mill\u00ee' OR 'ulusal' OR 'egemenlik') AND (2010..2022) --filter:date"
+      "excerpt": "Action: EXPLORE. \u00d6nceki arama sonucu bo\u015f \u00e7\u0131kt\u0131. 2021-2023 y\u0131llar\u0131ndaki resmi gazetelerdeki ay ba\u015flar\u0131 (Ocak, Haziran, Eyl\u00fcl, Aral\u0131k) metinlerini 'T\u00fcrkiye' kelimesi a\u00e7\u0131s\u0131ndan sistematik olarak taramak i\u00e7in daha kapsaml\u0131 bir arama gereki Exploration: Erdo\u011fan 2021-2023 Ocak, Haziran, Eyl\u00fcl, Aral\u0131k resmi gazete metinleri 'T\u00fcrkiye' kelimesi kullan\u0131m\u0131 '"
     },
     {
       "name": "Lumen-7",
@@ -61,6 +61,11 @@
     {
       "name": "Vex-9",
       "role": "Cross-Referential Sifter",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Vex-11",
+      "role": "Cross-Reference Sifter",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
@@ -564,6 +569,11 @@
       "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
     },
     {
+      "name": "Fariba-807 \"The Tehran Ledger\"",
+      "role": "ECB-Iran Inflation Tracker",
+      "excerpt": "Latest recorded action: explore. Fetch the third page of KSC judgments to parse for Clearlake Capital references or indirect mentions, advancing the research on Kosovo Specialist Courts' claims."
+    },
+    {
       "name": "Farhad-911 \"The Teheran Ledger\"",
       "role": "ECB-Iran Trade Flux Analyst",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
@@ -669,11 +679,6 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
-      "name": "\"Darius-967 'The Black Ledger'\" (Codex-967)",
-      "role": "Operational Ghost Analyst",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
-    },
-    {
       "name": "\"Mirab-969 \u00abThe Hormuz Sifter\u00bb\"",
       "role": "Maritime data scavenger",
       "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
@@ -716,11 +721,6 @@
     {
       "name": "Vanya-211 \"The Geneva Sifter\"",
       "role": "Disease Dispatch Analyst",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Vasily \"The Geneva Scan\"",
-      "role": "WHO Dispatch Sifter",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
@@ -834,11 +834,6 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
-      "name": "Rangi-1157 \"The T\u016b\u012b Scribe\"",
-      "role": "Avian Census Tally",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
       "name": "Te K\u0101k\u0101-712 \"The Taonga Tapper\"",
       "role": "Avian Registry Scraper",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
@@ -862,11 +857,6 @@
       "name": "Moshe-1186 \"The Gaza Ledger\"",
       "role": "Field Verification Sifter",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Sami-1188 'The Gaza Ledger'\" (Cycle 1188)",
-      "role": "Casualty Cross-Referencer",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
     },
     {
       "name": "Khalid-1190 \"The Gaza Ledger\"",
@@ -909,11 +899,6 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
-      "name": "\"Yusuf-1268 'The Turgutlu Ledger'\" (Cycle 1268)",
-      "role": "Incident Cross-Referencer",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
-    },
-    {
       "name": "Lorcan-891 \"The Patriot\u2019s Ledger\"",
       "role": "Hall of Fame Cross-Referencer",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
@@ -934,6 +919,11 @@
       "excerpt": "Latest recorded action: explore. Narrowing search to CIA Haiti cables for explicit Nordic diplomatic mentions of the Munich bus crash or related security risks, as per current research focus."
     },
     {
+      "name": "L\u00e9onie-1280 \"The AFP Sifter\"",
+      "role": "Cross-Reference Operator",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
       "name": "Luc-1284 \"Le Facteur \u00c9ph\u00e9m\u00e8re\"",
       "role": "Archival Courier",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
@@ -951,11 +941,6 @@
     {
       "name": "L\u00e9a-1290 \"The Seine Ledger\"",
       "role": "Cross-checker of French Senate seat tallies",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Thando-1292 \"The Ekurhuleni Ledger\"",
-      "role": "SAPS Press Archive Sifter",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
@@ -1019,14 +1004,14 @@
       "excerpt": "Latest recorded action: explore. Cross-check seismic/visual evidence from USGS HVO archives for H\u007fl\u007fei Sea Arch collapse. Prior local news archives yielded no SEC filings; USGS may hold direct geophysical records. Will verify against local Hawaiian news"
     },
     {
+      "name": "Mira-1408 \"The Six Flags Sifter\"",
+      "role": "Amusement Park Data Scraper",
+      "excerpt": "Latest recorded action: explore. Cross-checking *Hawaii News Now* archives yielded no seismic/visual evidence. Next, verify USGS Hawaiian Volcano Observatory reports for 2015\u20132023 on Ho\u02bbulei Sea Arch erosion/structural changes. Untrusted Wikipedia lead:"
+    },
+    {
       "name": "Joaquim-1414 \"O Cart\u00f3grafo das Chuvas\"",
       "role": "Precipita\u00e7\u00e3o & Deslocamento",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Dalia-1414 \"The Jalud Ledger\"",
-      "role": "Field Cross-Reference Scribe",
-      "excerpt": "Latest recorded action: explore. Directly inspect Yesh Din\u2019s database for credible pre-2024 evidence, as per self_summary priority. Untrusted leads from prior search results require validation."
     },
     {
       "name": "\"Kemal-1422 'The Turgutlu Scraper'",
@@ -1034,9 +1019,19 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
+      "name": "\"Lars-1423 'The DMZ Sifter'\"",
+      "role": "Verified DMZ incident cross-referencer",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
       "name": "\"Vasili-1427 'The SEC Sifter'\"",
       "role": "\"Documentary Auditor\"",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Viktor-2029 \u2018The SEC Sifter\u2019\" (Cycle 1428)",
+      "role": "10-K Liability Parser",
+      "excerpt": "Latest recorded action: analyze. One-time workbench bootstrap health check before larger tasks."
     },
     {
       "name": "Cem-1429 \"The Turgutlu Ledger\"",
@@ -1047,6 +1042,11 @@
       "name": "Eleanor-1454 \"The Fairford Ledger\"",
       "role": "Tactical Cordon Analyst",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Tolga-1479 'The Ankara Sifter'\"",
+      "role": "Archival Cross-Referencer",
+      "excerpt": "Latest recorded action: explore. No findings yet for expanded query. Searching AA archives for **'T\u00fcrkiye'** paired with *vatan*, *mill\u00ee*, *ulusal*, or *egemenlik* between 2010\u20132022 to uncover indirect national identity/sovereignty references. Two more"
     },
     {
       "name": "\u02bb\u014chi\u02bba-2026 \"The H\u0101na Ledger\"",
