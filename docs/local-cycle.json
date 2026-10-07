@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-10-07T14:56:34.759537+00:00",
+  "generated_at": "2026-10-07T15:26:29.625495+00:00",
   "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
-  "runtime_cycle": 1670,
+  "runtime_cycle": 1671,
   "question": "Does the official Nobel Prize website\u2019s archived press release page (https://www.nobelprize.org/prizes/physics/2026/halzen/press-release/) list Francis Halzen\u2019s affiliation as \u201cUniversity of Wisconsin\u2013Madison, USA\u201d rather than a Belgian institution, thereby confirming his primary institutional affil",
   "question_source": "carried:line-001662-1f6d8934",
   "self_prompt_accepted": 2,
@@ -22,116 +22,9 @@
     "active": 44,
     "decisions": [
       {
-        "id": "local-219",
-        "action": "analyze",
-        "room": "16-johor",
-        "status": "active-local",
-        "proposal": "",
-        "reason": "Confirm numeric suspect count and arrest terminology in *Berita Harian* excerpt to cross-check with *The Star*\u2019s evidence for consistency.",
-        "request": "Extract all mentions of \u2018student,\u2019 \u2018arrest,\u2019 and numeric values (1\u20135) from the provided excerpt to verify suspect count and arrest claims",
-        "request_status": "closed",
-        "exploration": "site:beritaharian.com.my arrest Yong Peng Johor student murder 2026",
-        "tool": {
-          "status": "not-requested"
-        },
-        "message": null,
-        "trade": null,
-        "finding_id": null,
-        "fallback_reason": null,
-        "decision_source": "model"
-      },
-      {
-        "id": "local-223",
+        "id": "local-215",
         "action": "explore",
         "room": "archive",
-        "status": "active-local",
-        "proposal": "",
-        "reason": "Cross-validate *Theophanes Continuatus* (1020) against *Vaticanus Graecus 1633* to ensure no logical gaps in Samuel I's death details (cause/location). Script must align with prior findings before final reporting.",
-        "request": "Verify script logic for cross-checking *Theophanes Continuatus* (1020) against *Vaticanus Graecus 1633* (Samuel I death: cause/location). Confirm no parsing gaps before final validation",
-        "request_status": "open",
-        "exploration": "code:scripts/evidence.py",
-        "tool": {
-          "tool": "local-code-read",
-          "status": "completed",
-          "file": "scripts/evidence.py",
-          "bytes": 5847,
-          "sha256": "e4232c4402f4c6ce561c8d1c6d89484e84070690a696471604a7725c5ba75c1e",
-          "content": "\"\"\"Shared evidence rules for source-backed findings.\n\nBoth the autonomy subprocess (at extraction time) and the daemon (at\npublication time) use these pure functions so a finding is judged by one\nstandard. Nothing here touches the network, the model, or local state.\n\"\"\"\n\nimport re\n\nSTOPWORDS = {\"about\", \"after\", \"also\", \"from\", \"into\", \"that\", \"this\", \"with\", \"what\", \"which\",\n             \"where\", \"when\", \"does\", \"did\", \"have\", \"their\", \"there\", \"these\", \"those\", \"than\"}\n# Prepositions, determiners, and auxiliaries name no subject; a corroborated\n# definition of one of them is not evidence about the world.\nFUNCTION_WORDS = {'above', 'across', 'against', 'along', 'although', 'always', 'among', 'another', 'around', 'because', 'been', 'before', 'behind', 'being', 'below', 'beneath', 'between', 'beyond', 'both', 'during', 'each', 'either', 'even', 'ever', 'every', 'hence', 'just', 'less', 'many', 'might', 'more', 'most', 'much', 'must', 'neither', 'never', 'often', 'only', 'onto', 'other', 'others', 'over', 'shall', 'since', 'some', 'still', 'such', 'though', 'through', 'thus', 'toward', 'towards', 'under', 'until', 'upon', 'very', 'were', 'whether', 'while', 'will', 'within', 'without'}\nSTOPWORDS |= FUNCTION_WORDS\nIMPERATIVE = re.compile(r\"^(?:explore|search|analyze|identify|continue|find|review|investigate|look)\\b\", re.I)\nQUOTE_SUPPORT_THRESHOLD = 0.85\nMIN_FUZZY_TOKENS = 4\n_PUNCTUATION_MAP = {\"\u2018\": \"'\", \"\u2019\": \"'\", \"\u201c\": '\"', \"\u201d\": '\"', \"\u2013\": \"-\", \"\u2014\": \"-\",\n                    \"\u00a0\": \" \", \"\u2026\": \"...\"}\n\n\ndef normalize(text):\n    \"\"\"Lower-case, fold typographic punctuation, and collapse whitespace.\"\"\"\n    value = str(text or \"\")\n    for source, target in _PUNCTUATION_MAP.items():\n        value = value.replace(source, target)\n    return re.sub(r\"\\s+\", \" \", value).strip().lower()\n\n\ndef tokens(text):\n    return re.findall(r\"[a-z0-9]+\", normalize(text))\n\n\ndef _lcs_length(left, right):\n    \"\"\"Length of the longest common subsequence of two short token lists.\"\"\"\n    if not left or not right:\n        return 0\n    previous = [0] * (len(right) + 1)\n    for item in left:\n        current = [0]\n        for index, other in enumerate(right, start=1):\n            if item == other:\n                current.append(previous[index - 1] + 1)\n            else:\n                current.append(max(previous[index], current[index - 1]))\n        previous = current\n    return previous[-1]\n\n\ndef quote_support(quote, excerpt, threshold=QUOTE_SUPPORT_THRESHOLD):\n    \"\"\"Return (supported, score, mode) describing how well the excerpt backs the quote.\n\n    An exact normalized substring scores 1.0. Otherwise the quote must share at\n    least ``threshold`` of its tokens, in order, with some window of the excerpt.\n    Small models paraphrase punctuation and drop function words; this keeps the\n    evidence bar high without demanding byte-exact copying.\n    \"\"\"\n    quote_tokens = tokens(quote)\n    excerpt_tokens = tokens(excerpt)\n    if not quote_tokens or not excerpt_tokens:\n        return False, 0.0, \"none\"\n    if normalize(quote) in normalize(excerpt):\n        return True, 1.0, \"exact\"\n    if len(quote_tokens) < MIN_FUZZY_TOKENS:\n        return False, 0.0, \"too-short\"\n    window = len(quote_tokens) + max(2, len(quote_tokens) // 4)\n    anchors = set(quote_tokens)\n    best = 0.0\n    for start, token in enumerate(excerpt_tokens):\n        if token not in anchors:\n            continue\n        segment = excerpt_tokens[start:start + window]\n        score = _lcs_length(quote_tokens, segment) / len(quote_tokens)\n        if score > best:\n            best = score\n            if best >= 1.0:\n                break\n    supported = best >= threshold\n    return supported, round(best, 3), \"fuzzy\" if supported else \"unsupported\"\n\n\ndef claim_terms(claim):\n    return {term for term in re.findall(r\"[a-z0-9]{4,}\", normalize(claim)) if term not in STOPWORDS}\n\n\ndef claim_grounded(claim, quote):\n    \"\"\"A claim must share vocabulary with its quote and must not be an instruction.\"\"\"\n    if not claim or not quote:\n        return False, \"missing-claim-or-quote\"\n    if IMPERATIVE.match(str(claim).strip()):\n        return False, \"imperative-claim\"\n    terms = claim_terms(claim)\n    quote_vocabulary = set(re.findall(r\"[a-z0-9]{4,}\", normalize(quote)))\n    if len(terms & quote_vocabulary) < min(2, len(terms)):\n        return False, \"claim-not-grounded-in-quote\"\n    return True, \"grounded\"\n\n\ndef clamp_confidence(value):\n    \"\"\"Fold a model-reported confidence into [0, 1]; unparseable values become 0.0.\n\n    The JSON grammar cannot enforce numeric ranges, so a well-quoted finding\n    must not be thrown away merely because the model wrote 1.5 or \"high\".\n    \"\"\"\n    try:\n        number = float(value)\n    except (TypeError, ValueError):\n        return 0.0\n    if number != number:\n        return 0.0\n    return max(0.0, min(1.0, number))\n\n\ndef classify_finding(claim, quote, excerpt=None, confidence=None):\n    \"\"\"Return (status, reason, quote_score) for a candidate finding.\n\n    ``excerpt`` may be None when re-checking a stored record whose page text is\n    no longer available; the stored quote-to-excerpt verdict is then trusted and\n    only claim grounding is re-evaluated. Confidence never rejects a finding;\n    callers store ``clamp_confidence`` of it.\n    \"\"\"\n    grounded, reason = claim_grounded(claim, quote)\n    if not grounded:\n        return \"rejected\", reason, 0.0\n    if excerpt is None:\n        return \"unreviewed\", \"grounded\", 1.0\n    supported, score, mode = quote_support(quote, excerpt)\n    if not supported:\n        return \"rejected\", f\"quote-{mode}\", score\n    return \"unreviewed\", f\"quote-{mode}\", score\n\n\ndef is_accepted(record):\n    \"\"\"Rejected rows stay in the ledger for audit but never count as evidence.\"\"\"\n    return str((record or {}).get(\"status\", \"unreviewed\")) not in {\"rejected\", \"retracted\"}",
-          "read_only": true,
-          "privacy": "sanitized public source only",
-          "contract": {
-            "capability": "public-source-read",
-            "access": "read-only",
-            "network": "none",
-            "side_effects": false,
-            "max_file_bytes": 120000,
-            "max_inventory_bytes": 400000,
-            "write_access": false,
-            "secrets": "redacted"
-          }
-        },
-        "message": null,
-        "trade": null,
-        "finding_id": null,
-        "fallback_reason": null,
-        "decision_source": "model"
-      },
-      {
-        "id": "local-224",
-        "action": "analyze",
-        "room": "belgian-francis-halzen-university",
-        "status": "active-local",
-        "proposal": "",
-        "reason": "Deterministic continuity follow-up after a temporary interview retry.",
-        "request": "Parse the script for references to churches, cathedrals, or burial sites in 11th-century Bulgarian chronicles",
-        "request_status": "closed",
-        "exploration": "belgian francis halzen university wisconsin madison physicist awarded",
-        "tool": {
-          "status": "not-requested"
-        },
-        "message": null,
-        "trade": null,
-        "finding_id": null,
-        "fallback_reason": null,
-        "decision_source": "model"
-      },
-      {
-        "id": "local-227",
-        "action": "explore",
-        "room": "american-caribbean",
-        "status": "active-local",
-        "proposal": "",
-        "reason": "Direct TSE urnas data is the authoritative source for candidate certification in Brazilian elections. Cross-checking this will resolve the research question definitively.",
-        "request": "Verify TSE 2022 runoff urnas data for explicit candidate names and runoff qualification to confirm official certification of Luiz In\u00e1cio Lula da Silva and Jair Bolsonaro (excluding Fl\u00e1vio Bolsonaro)",
-        "request_status": "open",
-        "exploration": "https://www.tse.jus.br/urna-eletronica/2022/urnas-runoff",
-        "tool": {
-          "tool": "public-text",
-          "status": "failed",
-          "error_kind": "source-access-denied",
-          "reason": "source-access-denied (HTTP 403)",
-          "retryable": false,
-          "contract": {
-            "capability": "public-text-read",
-            "access": "read-only",
-            "network": "public HTTPS",
-            "side_effects": false,
-            "max_bytes": 5000000,
-            "raw_data": false,
-            "untrusted_content": true
-          },
-          "http_status": 403
-        },
-        "message": null,
-        "trade": null,
-        "finding_id": null,
-        "fallback_reason": null,
-        "decision_source": "model"
-      },
-      {
-        "id": "local-230",
-        "action": "explore",
-        "room": "16-year-old-yong-peng-johor",
         "status": "active-local",
         "proposal": "",
         "reason": "Assigned to the council's research question this turn.",
@@ -188,50 +81,72 @@
         "decision_source": "scheduler"
       },
       {
-        "id": "local-232",
-        "action": "analyze",
-        "room": "belgian-francis-halzen-university",
-        "status": "active-local",
-        "proposal": "",
-        "reason": "One-time workbench bootstrap health check before larger tasks.",
-        "request": "Fetch the full 2026 Nobel Prize in Physics press release for Francis Halzen to verify institutional affiliation and contribution framing",
-        "request_status": "open",
-        "exploration": "https://www.nobelprize.org/prizes/physics/2026/press-release/",
-        "tool": {
-          "status": "not-requested"
-        },
-        "message": null,
-        "trade": null,
-        "finding_id": null,
-        "fallback_reason": null,
-        "decision_source": "model"
-      },
-      {
-        "id": "local-235",
+        "id": "local-218",
         "action": "explore",
-        "room": "archive",
+        "room": "quiet-workspace",
         "status": "active-local",
         "proposal": "",
-        "reason": "The archive room provides direct access to archived content. This press release is the primary source to resolve the dispute over Halzen\u2019s institutional affiliation. Confirming the official wording will directly address",
-        "request": "Extract the exact text of Francis Halzen's institutional affiliation from the 2026 Nobel Prize in Physics press release to verify if it states 'University of Wisconsin\u2013Madison' or a Belgian institution",
-        "request_status": "open",
-        "exploration": "https://www.nobelprize.org/prizes/physics/2026/halzen/press-release/",
+        "reason": "Extract BOE\u2019s exact suspension clause wording for granular alignment checks against regional judicial rulings. Confirm if any autonomous community ordinances explicitly suspend evictions under RDL 21/2023.",
+        "request": "",
+        "request_status": "closed",
+        "exploration": "Royal Decree-Law 21/2023 BOE text: 'suspensi\u00f3n de desahucios' AND 'autonom\u00edas' AND 'ordenanzas' AND",
         "tool": {
-          "tool": "wikipedia-summary",
-          "query": "francis halzen 2015 balzan prize astroparticle disputed revised different",
-          "title": "Francis Halzen",
-          "url": "https://en.wikipedia.org/wiki/Francis_Halzen",
-          "excerpt": "== Books == With Alan Martin he co-authored Quarks and Leptons: An Introductory Course in Modern Particle Physics (1984), a standard textbook in particle physics. == Awards == 1994: Fellow of the American Physical Society 2013: Breakthrough of the Year Award by the journal Physics World for the first-time discovery of cosmic neutrinos beyond the Milky Way 2015: Balzan Prize 2015: Giuseppe and Vanna Cocconi Prize of the European Physical Society 2018: Bruno Pontecorvo Prize for significant contribution to the IceCube detector construction and experimental discovery of high-energy astrophysical neutrinos. 2019: Yodh Prize of IUPAP 2021: Homi Bhabha Medal and Prize of IUPAP and TIFR 2024 Elected to National Academy of Sciences 2026: APS Medal for Exceptional Achievement in Research 2026: Nobel Prize in Physics \"for decisive contributions to the IceCube Neutrino Observatory and the discovery of high-energy neutrinos of astrophysical origin\u201d == Personal life == Halzen is Belgian but also has United States citizenship. == References == == External links == Francis Halzen on Nobelprize.org Halzen, Francis (6 April 2021). \"IceCube: the discovery of cosmic neutrinos\" (PDF). ... Francis Louis Halzen (born 23 March 1944) is a Belgian-American particle physicist and Nobel laureate. As of October 2026 he is the Vilas Research Professor and Gregory Breit Professor at the University of Wisconsin\u2013Madison, and also the principal investigator of the IceCube Neutrino Observatory at the Amundsen\u2013Scott South Pole Station in Antarctica, the world's largest neutrino detector. In 2026, Halzen was awarded the Nobel Prize in Physics \"for decisive contributions to the IceCube Neutrino Observatory and the discovery of high-energy neutrinos of astrophysical origin.\" == Early life and ed",
+          "tool": "public-text",
+          "url": "https://www.cubaheadlines.com/articles/342155",
+          "excerpt": "Spain Introduces New Housing Decrees Following Congressional Rejection: Implications if a Different Party Wins on November 29 CubaHeadlines Spain Introduces New Housing Decrees Following Congressional Rejection: Implications if a Different Party Wins on November 29 Wednesday, October 7, 2026 by Emma Garcia Illustration on the new housing decrees in Spain. (created with AI) - Image by \u00a9 CiberCuba Spain has officially released two new royal decrees on housing, directly impacting tenants, landlords, and prospective first-time homebuyers. These were approved by Prime Minister Pedro S\u00e1nchez on October 6 and subsequently published in the Official State Gazette (BOE) on October 7. The first, Royal Decree-Law 29/2026, offers a comprehensive package of housing measures, while Royal Decree-Law 28/2026 focuses on the duration and renewal of standard residential lease agreements. Decrees Amidst Political Transition These decrees emerge after previous housing bills were rejected by parliament. The current scenario differs significantly as both the Congress of Deputies and the Senate are dissolved ahead of the general elections scheduled for November 29. Normally, the Congress of Deputies would vote on these decrees. However, with the dissolution of the legislative bodies on October 6, the Permanent Deputation of Congress now holds the authority to address these legislative texts until a new Congress is formed. Key Dates and Implementation Royal Decree-Law 29/2026 takes effect on October 8, 2026, just a day after its publication, with some provisions having their own timelines. This means that certain measures will start applying immediately without waiting for ratification by the Permanent Deputation. If the Permanent Deputation ratifies it, the decree remains in force; if not, it will be nullified instantly. Significant Housing Reforms Among the impactful changes for tenants is the reinstatement of an extraordinary lease extension of up to two years for select residential contracts. This allows tenants to request annual renewals, up to a total of two additional years, for contracts ending before December 31, 2028. Conditions include the tenant\u2019s consistent rent payment for the past eight months. Regarding rent increases, the decree imposes a special cap on annual rent adjustments until December 31, 2027. If the rent exceeds the state reference limit, no increase is perm",
           "status": "completed",
           "contract": {
             "capability": "public-text-read",
             "access": "read-only",
             "network": "public HTTPS",
             "side_effects": false,
-            "max_bytes": 32000,
+            "max_bytes": 5000000,
             "raw_data": false,
             "untrusted_content": true
           },
+          "wire_credit": "",
+          "query": "Royal Decree-Law 21/2023 BOE text: 'suspensi\u00f3n de desahucios' AND 'autonom\u00edas' AND 'ordenanzas' AND",
+          "search_results": [
+            {
+              "title": "Spain Introduces New Housing Decrees Following Congressional Rejection: Implications if a Different Party Wins on November 29",
+              "url": "https://www.cubaheadlines.com/articles/342155",
+              "snippet": "Spain Introduces New Housing Decrees Following Congressional Rejection: Implications if a Different Party Wins on November 29 Spain has officially released two new royal decrees on housing, directly impacting tenants, landlords, and prospec"
+            }
+          ]
+        },
+        "message": null,
+        "trade": null,
+        "finding_id": "finding-72c427ffcc21e113e900",
+        "fallback_reason": null,
+        "decision_source": "model"
+      },
+      {
+        "id": "local-220",
+        "action": "explore",
+        "room": "archive",
+        "status": "active-local",
+        "proposal": "",
+        "reason": "Assigned to the council's research question this turn.",
+        "request": "",
+        "request_status": "closed",
+        "exploration": "francis halzen 2015 balzan prize astroparticle disputed revised different",
+        "tool": {
+          "tool": "public-text",
+          "url": "https://lmrs.univ-rouen.fr/en/content/salem-prize",
+          "excerpt": "Salem prize | Laboratoire de Math\u00e9matiques Rapha\u00ebl Salem Laboratoire de Math\u00e9matiques Rapha\u00ebl Salem UMR 6085 CNRS - University of Rouen Normandy Fran\u00e7ais English Search form Search Navigation Home Presentation Personnels Faculty members Membres non-permanents PhD students and Post-Doc Venir au LMRS Histoire du LMRS En bref T\u00e9moignages Photos et Documents Carnet \u00c0 propos de Rapha\u00ebl Salem Th\u00e8mes de recherche Posters th\u00e9matiques Activit\u00e9s scientifiques \u00c9v\u00e9nements sp\u00e9ciaux Services Calendrier Transition \u00c9cologique Formation et emplois Master AIMAF \u00c9cole doctorale Agr\u00e9gation PhD and internship offers Offres d'emploi Grand public Diffusion de la culture math\u00e9matique Les Sorciers de Salem You are here Home \u00bb Salem prize Salem prize Every year since 1968, the Rapha\u00ebl SALEM Prize has been awarded to a young mathematician for outstanding results in one of Rapha\u00ebl Salem's fields of research. List of winners: 1968 - Nicolas Th. VAROPOULOS 1969 - Richard HUNT 1970 - Yves MEYER 1971 - Charles FEFFERMAN 1972 - Thomas K\u00d6RNER 1973 - E.M. NIKISHIN 1974 - Hugh MONTGOMERY 1975 - William BECKNER 1976 - Micha\u00ebl R. HERMAN 1977 - S. V. BOCKAREV 1978 - Bj\u00f6rn E. DAHLBERG 1979 - Gilles PISIER 1980 1980 - Stylianos PICHORIDES 1981 - Peter JONES 1982 - Alexei B. ALEKSANDROV 1983 - Jean BOURGAIN 1984 - Carlos KENIG 1985 - Thomas H. WOLFF 1986 - Nikolai. G. MAKAROV 1987 - Guy DAVID et Jean-Lin JOURN\u00c9 1988 - Alexander VOLBERG et Jean-Christophe YOCCOZ 1989 - non attribu\u00e9 1990 1990 - Sergei Vladimirovich KONYAGIN 1991 - Curt McMULLEN 1992 - Mitsuo SHISHIKURA 1993 - Sergei TREIL 1994 - Kari ASTALA 1995 - Hakan ELIASSON 1996 - Michael LACEY et Christoph THIELE 1997 - non attribu\u00e9 1998 - Trevor WOOLEY 1999 - Fedor NAZAROV 2000 2000 - Terence TAO 2001 - Oded SCHRAMM et Stanislav SMIRNOV 2002 - Xavier TOLSA 2003 - Elon LINDENSTRAUSS et Kannan SOUNDARARAJAN 2004 - non attribu\u00e9 2005 - Ben GREEN 2006 - Stefanie PETERMICHL et Artur AVILA 2007 - Akshay VENKATESH 2008 - Bo'az KLARTAG et Assaf NAOR 2009 - non attribu\u00e9 2010 2010 - Nalini ANANTHARAMAN 2011 - Dapeng ZHAN et Julien DUB\u00c9DAT 2012 - non attribu\u00e9 2013 - Lawrence GUTH 2014 - Dmitry CHELKAK 2015 - non attribu\u00e9 2016 - Maryna VIAZOVSKA 2018 - Aleksand",
+          "status": "completed",
+          "contract": {
+            "capability": "public-text-read",
+            "access": "read-only",
+            "network": "public HTTPS",
+            "side_effects": false,
+            "max_bytes": 5000000,
+            "raw_data": false,
+            "untrusted_content": true
+          },
+          "wire_credit": "",
+          "sentences": [],
+          "query": "francis halzen 2015 balzan prize astroparticle disputed revised different",
           "search_results": [
             {
               "title": "Francis Halzen wins 2015 Balzan Prize \u2013 WIPAC \u2013 Wisconsin IceCube Particle Astrophysics Center",
@@ -249,10 +164,6 @@
               "snippet": "Francis Halzen, IceCube principal investigator and Hilldale and Gregory Breit Distinguished Professor at the University of Wisconsin-Madison, was announced yesterday as one of the prestigious international 2015 Balzan prizewinners. Luciano "
             },
             {
-              "title": "Francis Halzen (reference: www.eps.org)",
-              "url": "https://www.eps.org/blogpost/751263/213602/The-2015-EPS-HEPP-Prizes-are-announced"
-            },
-            {
               "title": "Salem prize",
               "url": "https://lmrs.univ-rouen.fr/en/content/salem-prize",
               "snippet": "2010 2010 - Nalini ANANTHARAMAN 2011 - Dapeng ZHAN et Julien DUB\u00c9DAT 2012 - non attribu\u00e9 2013 - Lawrence GUTH 2014 - Dmitry CHELKAK 2015 - non attribu\u00e9 2016 - Maryna VIAZOVSKA 2018 - Aleksandr LOGUNOV"
@@ -263,22 +174,22 @@
         "trade": null,
         "finding_id": null,
         "fallback_reason": null,
-        "decision_source": "model"
+        "decision_source": "scheduler"
       },
       {
-        "id": "local-236",
+        "id": "local-222",
         "action": "explore",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Untrusted leads suggest a Reuters report may reference the vessel, but the archive must be queried directly for verified metadata. This is critical to resolve the driving question.",
-        "request": "Verify the full text of the Reuters report for explicit mention of 'MV Maris Stella' (IMO 9234567) and extract metadata (date, vessel type, coordinates, casualties, and strike details)",
+        "reason": "Cross-checking prior search results for accuracy; the prior lead yielded irrelevant or outdated content. Focused search required to confirm or refute arrests linked to the 2023 Yong Peng murder case.",
+        "request": "Verify if any archived articles from *New Straits Times* (2023) explicitly mention arrests of three students in Yong Peng for the murder of a 16-year-old classmate",
         "request_status": "open",
-        "exploration": "Reuters October 2023 Bulgaria drone strike report on Black Sea vessel 'MV Maris Stella' (IMO 9234567",
+        "exploration": "New Straits Times 2023 archives \"Yong Peng 16-year-old murder case arrests\"",
         "tool": {
           "tool": "public-text",
-          "url": "https://beforeitsnews.com/tea-party/2026/06/russian-drone-strike-sets-turkish-cargo-ship-ablaze-in-black-sea-killing-one-2916647.html",
-          "excerpt": "--> Russian Drone Strike Sets Turkish Cargo Ship Ablaze In Black Sea, Killing One | Tea Party | Before It's News You're using an Ad-Blocker. BeforeItsNews only exists through ads. We ask all patriots who appreciate the evil we expose and want to help us savage the NWO with more Truth to disable your ad-blocker on our site only so we can grow and expose more evil! Funding gives us more weapons! Thank you patriots! Oh and If you disable the Ad-blocker - on your deathbed you will receive total consciousness. So you got that going for you...which is nice! Disable Dismiss Before It's News Featured | Economy | Health | Beyond Science | Power of Belief | Sustainable Living | Inspiration | Live | Video | Top 50 | Most Recent | Shopping | Categories Read the Beforeitsnews.com story here. Advertise at Before It's News here. By Freedom Bunker Contributor profile | More stories Story Views Now: Last hour: Last 24 hours: Total: Russian Drone Strike Sets Turkish Cargo Ship Ablaze In Black Sea, Killing One Monday, June 22, 2026 9:49 % of readers think this story is Fact. Add your two cents. Russian Drone Strike Sets Turkish Cargo Ship Ablaze In Black Sea, Killing One An international cargo vessel traversing the Black Sea erupted in flames when it was struck by a Russian drone attack early Monday morning, killing one crew member . The Turkish-owned bulk carrier VICTRESS, which sails under a Panamanian flag, suffered severe damage , the Ukrainian Navy and the Ukrainian Sea Ports Authority (USPA) confirmed in the aftermath. Ukrainian naval image of Turkish vessel up in flames. A maritime rescue operation ensued fairly quickly, with most of the crew evacuated safely to a life raft; however, a 58-year old crew member perished. \u201cSadly, a member of the crew died. We extend our sincere condolences to his family and loved ones. The remaining eight sailors were evacuated on a life raft,\u201d the USPA said. Such Black Sea deadly drone incidents against foreign vessels off Ukraine are on the uptick. For example just a couple days ago regional sources reported : Ukrainian officials reported that Russian drones targeted two civilian merchant vessels in the Black Sea, one flying Panama\u2019s flag and the other St. Kitts and Nevis\u2019 . A sailor aboard the Panama-flagged ship was killed, two were injured\u2014one critically\u2014while three crew on the St. Kitts and Nevis vessel sustained minor injuries. Both",
+          "url": "https://en.wikipedia.org/wiki/Kidnapping_of_Yanfei_Bao",
+          "excerpt": "Murder of Yanfei Bao - Wikipedia Jump to content Main menu Main menu move to sidebar hide Navigation Main page Contents Current events Random article About Wikipedia Contact us Contribute Help Learn to edit Community portal Recent changes Upload file Special pages Search Search Appearance Donate Create account Log in Personal tools Donate Create account Log in Contents move to sidebar hide (Top) 1 Background 2 Disappearance 3 Search and investigation 4 Legal proceedings 5 Trial Toggle Trial subsection 5.1 Opening arguments 5.2 Crown testimony and evidence 5.3 Defence testimony 5.4 Closing arguments 5.5 Verdict 5.6 Sentencing 6 Aftermath 7 See also 8 References Toggle the table of contents Murder of Yanfei Bao Add languages Add links Article Talk English Read Edit View history Tools Tools move to sidebar hide Actions Read Edit View history General What links here Related changes Upload file Permanent link Page information Cite this page Get shortened URL Switch to legacy parser Print/export Download as PDF Printable version In other projects Wikidata item Appearance move to sidebar hide From Wikipedia, the free encyclopedia (Redirected from Kidnapping of Yanfei Bao ) 2023 killing of a real estate agent in New Zealand \"},\"module\":{\"wt\":\"\"},\"notes\":{\"wt\":\"\"}},\"i\":0}}]}'> Murder of Yanfei Bao Location Christchurch , New Zealand Date 19 July 2023 ; 3 years ago ( 2023-07-19 ) Attack type Kidnapping , homicide Victim Yanfei Bao, 1979 \u2013 2023 (aged 43 \u2013 44) Accused Tingjun Cao Charges Murder Verdict Guilty Convictions 1 Convicted 1 Judge Justice Lisa Preston On 19 July 2023, Harcourts real estate agent Yanfei Bao went missing in Christchurch 's Wigram suburb. [ 1 ] The New Zealand Police mounted a missing person's search in the Christchurch area. [ 2 ] On the 24th of July 2023, Tingjun Cao was charged with her kidnapping after attempting to flee to China on the 22nd of July 2023. [ 3 ] [ 4 ] On 26 July 2023, the Police launched a homicide investigation into Bao's disappearance. [ 5 ] On 30 July 2024, more than a year after her disappearance, Yanfei Bao's remains were found in a shallow grave by police on rural farmland near Lincoln . [ 6 ] Following a seven week trial, in early December 2024, Cao was convicted of murdering Bao. [ 7 ] [ 8 ] On 13 June 2025, Cao was sentenced to life imprisonment with a minimum term of 17 years for Bao's murder. [ 9 ] Background [ edit",
           "status": "completed",
           "contract": {
             "capability": "public-text-read",
@@ -290,87 +201,233 @@
             "untrusted_content": true
           },
           "wire_credit": "",
-          "query": "Reuters October 2023 Bulgaria drone strike report on Black Sea vessel 'MV Maris Stella' (IMO 9234567",
+          "query": "New Straits Times 2023 archives \"Yong Peng 16-year-old murder case arrests\"",
           "search_results": [
             {
-              "title": "Drone Strikes Hit Two Ships 80 Nautical Miles Off Bulgarian Coast",
-              "url": "https://greekcitytimes.com/2026/10/06/drone-strikes-two-ships-bulgaria-black-sea",
-              "snippet": "Drone Strikes Hit Two Ships 80 Nautical Miles Off Bulgarian Coast Two ships have been hit by drones in Bulgaria\u2019s exclusive economic zone in the Black Sea, triggering a large-scale search and rescue operation. The vessels sent distress sign"
+              "title": "Children's bodies in suitcases: 2025 trial date set",
+              "url": "https://www.1news.co.nz/2024/05/22/childrens-bodies-in-suitcases-year-long-trial-delay-confirmed/",
+              "snippet": "Children's bodies in suitcases: 2025 trial date set The trial of a South Korean woman accused of killing her two children and putting their bodies into suitcases will take place in September next year - three years after her arrest. Her tri"
             },
             {
-              "title": "Russian Drone Strike Sets Turkish Cargo Ship Ablaze In Black Sea, Killing One | Tea Party | Before It's News",
-              "url": "https://beforeitsnews.com/tea-party/2026/06/russian-drone-strike-sets-turkish-cargo-ship-ablaze-in-black-sea-killing-one-2916647.html",
-              "snippet": "Story Views Now: Last hour: Last 24 hours: Total: Russian Drone Strike Sets Turkish Cargo Ship Ablaze In Black Sea, Killing One An international cargo vessel traversing the Black Sea erupted in flames when it was struck by a Russian drone a"
+              "title": "Murder of Yanfei Bao",
+              "url": "https://en.wikipedia.org/wiki/Kidnapping_of_Yanfei_Bao",
+              "snippet": "Murder of Yanfei Bao From Wikipedia, the free encyclopedia (Redirected from Kidnapping of Yanfei Bao ) Murder of Yanfei Bao Location Christchurch , New Zealand Date 19 July 2023 ; 3 years ago Attack type Kidnapping , homicide Victim Yanfei "
             },
             {
-              "title": "Timeline of the Russo-Ukrainian war (1 September \u2013 30 November 2023) (reference: www.themoscowtimes.com)",
-              "url": "https://www.themoscowtimes.com/2023/10/05/russian-warships-leave-annexed-crimea-amid-growing-missile-threats-reports-a82668"
+              "title": "List of major crimes in Singapore (2020\u2013present)",
+              "url": "https://en.wikipedia.org/wiki/List_of_major_crimes_in_Singapore_(2020%E2%80%93present)",
+              "snippet": "14 January 2023: A couple was charged for the infanticide of their two-month-old biological daughter, later identified as Zabelle Peh, who was abused and suffered a fractured skull. Originally charged with murder, Sim Liang Xiu (Zabelle's m"
+            },
+            {
+              "title": "Children's bodies in suitcases: Mother's trial adjourned",
+              "url": "https://www.1news.co.nz/2024/04/29/childrens-bodies-in-suitcases-mothers-trial-adjourned/",
+              "snippet": "Children's bodies in suitcases: Mother's trial adjourned The trial of Hakyung Lee, the South Korean mother accused of murdering her two children and hiding their bodies in suitcases, has been adjourned for fair trial reasons. Her trial, whi"
             }
           ]
         },
         "message": null,
         "trade": null,
-        "finding_id": "finding-51d70ce733cbaaa2a19d",
+        "finding_id": null,
+        "fallback_reason": null,
+        "decision_source": "model"
+      },
+      {
+        "id": "local-227",
+        "action": "explore",
+        "room": "american-caribbean",
+        "status": "active-local",
+        "proposal": "",
+        "reason": "The official Nobel Prize press release is the authoritative source for confirming Francis Halzen\u2019s primary institutional affiliation, resolving the council\u2019s open question about his U.S. vs. Belgian institutional ties.",
+        "request": "Verify Francis Halzen\u2019s institutional affiliation in the official Nobel Prize press release for 2026 Physics Prize to address frontier-question-1670",
+        "request_status": "open",
+        "exploration": "https://www.nobelprize.org/prizes/physics/2026/halzen/press-release/",
+        "tool": {
+          "tool": "public-text",
+          "status": "failed",
+          "error_kind": "source-not-found",
+          "reason": "source-not-found (HTTP 404)",
+          "retryable": false,
+          "contract": {
+            "capability": "public-text-read",
+            "access": "read-only",
+            "network": "public HTTPS",
+            "side_effects": false,
+            "max_bytes": 5000000,
+            "raw_data": false,
+            "untrusted_content": true
+          },
+          "http_status": 404
+        },
+        "message": null,
+        "trade": null,
+        "finding_id": null,
+        "fallback_reason": null,
+        "decision_source": "model"
+      },
+      {
+        "id": "local-231",
+        "action": "explore",
+        "room": "16-johor",
+        "status": "active-local",
+        "proposal": "",
+        "reason": "Cross-reference *The Star* archives to identify discrepancies or alignments with Johor police timeline, advancing verification of 16-Johor case claims.",
+        "request": "Verify Johor police timeline claims against *The Star* witness statements and family accounts for contradictions or corroboration",
+        "request_status": "open",
+        "exploration": "The Star archives 16-Johor case statements 2014-2016",
+        "tool": {
+          "tool": "public-search",
+          "query": "The Star archives 16-Johor case statements 2014-2016",
+          "results": [
+            {
+              "title": "ARCHIVES",
+              "url": "https://unsolved.com/multi-gallery/?tag=legends",
+              "snippet": "ARCHIVES Cases"
+            },
+            {
+              "title": "ARCHIVES",
+              "url": "https://unsolved.com/multi-gallery/?tag=ghosts",
+              "snippet": "ARCHIVES Cases"
+            },
+            {
+              "title": "ARCHIVES",
+              "url": "https://unsolved.com/multi-gallery/?tag=psychic",
+              "snippet": "ARCHIVES Cases"
+            }
+          ],
+          "source": "https://api.langsearch.com/",
+          "status": "completed",
+          "contract": {
+            "capability": "public-web-read",
+            "access": "read-only",
+            "network": "public HTTPS search",
+            "side_effects": false,
+            "max_bytes": 32000
+          }
+        },
+        "message": null,
+        "trade": null,
+        "finding_id": null,
+        "fallback_reason": null,
+        "decision_source": "model"
+      },
+      {
+        "id": "local-232",
+        "action": "analyze",
+        "room": "belgian-francis-halzen-university",
+        "status": "active-local",
+        "proposal": "",
+        "reason": "Deterministic continuity follow-up after a temporary interview retry.",
+        "request": "Fetch the full 2026 Nobel Prize in Physics press release for Francis Halzen to verify institutional affiliation and contribution framing",
+        "request_status": "closed",
+        "exploration": "https://www.nobelprize.org/prizes/physics/2026/press-release/",
+        "tool": {
+          "status": "not-requested"
+        },
+        "message": null,
+        "trade": null,
+        "finding_id": null,
+        "fallback_reason": null,
+        "decision_source": "model"
+      },
+      {
+        "id": "local-235",
+        "action": "explore",
+        "room": "archive",
+        "status": "active-local",
+        "proposal": "",
+        "reason": "The archive room provides direct access to archived content. This press release is the primary source to resolve the dispute over Halzen\u2019s institutional affiliation. Extracting the exact wording will directly address the",
+        "request": "Verify the exact institutional affiliation text for Francis Halzen in the 2026 Nobel Prize in Physics press release",
+        "request_status": "open",
+        "exploration": "https://www.nobelprize.org/prizes/physics/2026/halzen/press-release/",
+        "tool": {
+          "tool": "public-search",
+          "query": "belgian francis halzen university wisconsin madison physicist awarded",
+          "results": [
+            {
+              "title": "Wisconsin scientist wins Nobel Prize in physics for work on high-energy neutrinos of astrophysical origin",
+              "url": "https://www.nbcmiami.com/news/national-international/francis-halzen-nobel-prize-physics-high-energy-neutrinos-of-astrophysical-origin/3868931",
+              "snippet": "Wisconsin scientist wins Nobel Prize in physics for work on high-energy neutrinos of astrophysical origin Born in Belgium, 82-year-old Francis Halzen is affiliated with the University of Wisconsin\u2013Madison in the U.S. Francis Halzen won the "
+            },
+            {
+              "title": "UW physicist Francis Halzen receives American Ingenuity Award",
+              "url": "https://wipac.wisc.edu/uw-physicist-francis-halzen-receives-american-ingenuity-award",
+              "snippet": "UW physicist Francis Halzen receives American Ingenuity Award Francis Halzen, the University of Wisconsin-Madison physicist who was the driving force behind the giant neutrino telescope known as IceCube at the South Pole, has been named a w"
+            },
+            {
+              "title": "Francis Halzen wins 2015 Balzan Prize \u2013 IceCube",
+              "url": "https://icecube.wisc.edu/news/awards/2015/09/francis-halzen-wins-2015-balzan-prize/",
+              "snippet": "Francis Halzen, IceCube principal investigator and Hilldale and Gregory Breit Distinguished Professor at the University of Wisconsin-Madison, was announced yesterday as one of the prestigious international 2015 Balzan prizewinners. Luciano "
+            },
+            {
+              "title": "Francis Halzen wins Nobel prize in Physics for Neutrino research",
+              "url": "https://www.24newshd.tv/06-Oct-2026/francis-halzen-wins-nobel-prize-physics-neutrino-research",
+              "snippet": "Francis Halzen wins Nobel prize in Physics for Neutrino research Belgian-born American scientist Francis Halzen has won this year\u2019s Nobel Prize in Physics for his major contributions to the IceCube Neutrino Observatory and the discovery of "
+            },
+            {
+              "title": "Francis Halzen (reference: physicsworld.com)",
+              "url": "https://physicsworld.com/a/cosmic-neutrinos-named-physics-world-2013-breakthrough-of-the-year/"
+            }
+          ],
+          "source": "https://api.langsearch.com/",
+          "status": "completed",
+          "contract": {
+            "capability": "public-web-read",
+            "access": "read-only",
+            "network": "public HTTPS search",
+            "side_effects": false,
+            "max_bytes": 32000
+          }
+        },
+        "message": null,
+        "trade": null,
+        "finding_id": null,
         "fallback_reason": null,
         "decision_source": "model"
       }
     ],
-    "construction": [
-      {
-        "action": "strengthen",
-        "room": "belgian-francis-halzen-university",
-        "corroboration": "pair-286e01a8d6d6af7f6b52",
-        "sources": 3
-      }
-    ],
+    "construction": [],
     "requests": [
       {
-        "agent": "local-223",
-        "status": "fulfilled",
-        "scope": "public-documentation-and-logs"
-      },
-      {
-        "agent": "local-236",
-        "status": "fulfilled",
-        "scope": "public-only"
+        "agent": "local-222",
+        "status": "fulfilled"
       }
     ],
     "trades_settled": [],
     "corroborations": [
       {
-        "id": "pair-2770403590255c2b25a7",
+        "id": "pair-aa3fa9f85307af357942",
         "relation": "unrelated",
-        "finding_ids": [
-          "finding-7b84158d947847726839",
-          "finding-87908f2713bf9105fafd"
-        ],
-        "topic": "2026 astrophysical awarded contributions decisive discovery energy francis halzen high icecube neutrino neutrinos nobel observatory physics prize",
-        "domains": [
-          "nobelprize.org",
-          "wikipedia.org"
-        ]
-      },
-      {
-        "id": "pair-286e01a8d6d6af7f6b52",
-        "relation": "supports",
         "finding_ids": [
           "finding-87908f2713bf9105fafd",
-          "finding-d374d780fb3bdc295054"
+          "finding-dbe561b78ada3f0d35df"
         ],
-        "topic": "Francis Halzen was awarded the 2026 Nobel Prize in Physics for his decisive contributions to the IceCube Neutrino Observatory and the discovery of high-energy n",
+        "topic": "awarded energy francis halzen high icecube neutrino neutrinos observatory",
+        "domains": [
+          "nobelprize.org",
+          "wisc.edu"
+        ]
+      },
+      {
+        "id": "pair-ed82564c1d00f40e77a7",
+        "relation": "unrelated",
+        "finding_ids": [
+          "finding-ccbe0453c41b4c9c4c6c",
+          "finding-dcb1d1dbbd88088db7d3"
+        ],
+        "topic": "francis halzen icecube madison neutrino observatory university wisconsin",
         "domains": [
           "nobelprize.org",
           "wikipedia.org"
         ]
       },
       {
-        "id": "pair-5c93440bd72042b12324",
+        "id": "pair-3e3633828cfe9c943c47",
         "relation": "unrelated",
         "finding_ids": [
-          "finding-dbe561b78ada3f0d35df",
+          "finding-d0011926d14896b9ba9d",
           "finding-dcb1d1dbbd88088db7d3"
         ],
-        "topic": "energy francis halzen high icecube leadership madison neutrino neutrinos observatory university wisconsin",
+        "topic": "francis halzen madison physics prize university wisconsin",
         "domains": [
           "nobelprize.org",
           "wisc.edu"
@@ -385,15 +442,16 @@
       "family": null,
       "avoid_domains": [
         "en.wikipedia.org",
-        "icecube.wisc.edu"
+        "icecube.wisc.edu",
+        "lmrs.univ-rouen.fr"
       ]
     },
     "dormant": 192
   },
   "metrics": {
-    "jaccard_overlap": 0.311,
+    "jaccard_overlap": 0.205,
     "morrow_audit_markers": [
-      "assumption",
+      "counterexample",
       "missing control"
     ],
     "response_completeness": "thin-or-missing",
@@ -401,8 +459,8 @@
     "distinction_status": "needs-audit"
   },
   "continuity_audit": {
-    "generated_at": "2026-10-07T14:56:34.723964+00:00",
-    "cycle": 1670,
+    "generated_at": "2026-10-07T15:26:29.589610+00:00",
+    "cycle": 1671,
     "status": "pass",
     "checks": {
       "archive_parse": true,
@@ -412,7 +470,7 @@
       "room_link_integrity": true,
       "resident_room_integrity": true
     },
-    "archive_records": 20997,
+    "archive_records": 21016,
     "malformed_archive_records": 0,
     "raw_output_fields_found": 0,
     "duplicate_archive_ids": [],
@@ -426,8 +484,8 @@
   },
   "health": {
     "schema_version": 1,
-    "generated_at": "2026-10-07T14:56:34.744823+00:00",
-    "cycle": 1670,
+    "generated_at": "2026-10-07T15:26:29.611082+00:00",
+    "cycle": 1671,
     "daemon": "running",
     "model_status": "ready",
     "model_probe_ok": true,
@@ -456,17 +514,17 @@
         {
           "name": "mistral-8b",
           "model": "ministral-8b-2512",
-          "calls": 85,
-          "input_tokens": 160643,
-          "output_tokens": 18166,
+          "calls": 104,
+          "input_tokens": 196666,
+          "output_tokens": 22147,
           "errors": 0,
           "last_error": "",
           "daily_request_budget": null,
           "daily_token_budget": 400000,
           "limit_rpm": 188,
           "limit_tpm": 625000,
-          "requests_last_minute": 11,
-          "tokens_last_minute": 18856,
+          "requests_last_minute": 13,
+          "tokens_last_minute": 19622,
           "status": "ready"
         },
         {
@@ -519,139 +577,6 @@
         }
       ],
       "recent_calls": [
-        {
-          "at": 1791383113.6,
-          "class": "council",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "2a704e79f7c1f00d"
-        },
-        {
-          "at": 1791383124.9,
-          "class": "extraction",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "d11ed6220aea730f"
-        },
-        {
-          "at": 1791383134.4,
-          "class": "decision",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "1bbaf16c561cba39"
-        },
-        {
-          "at": 1791383141.5,
-          "class": "extraction",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "35a5b28a18136eef"
-        },
-        {
-          "at": 1791383146.0,
-          "class": "decision",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "9b124e08ac5fbfcd"
-        },
-        {
-          "at": 1791383148.2,
-          "class": "report",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "717f92acd929a374"
-        },
-        {
-          "at": 1791383161.2,
-          "class": "decision",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "82eced90ba06e314"
-        },
-        {
-          "at": 1791383166.2,
-          "class": "decision",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "75244bcc4f6d98e0"
-        },
-        {
-          "at": 1791383174.6,
-          "class": "decision",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "aa537b767e8f5fef"
-        },
-        {
-          "at": 1791383177.7,
-          "class": "decision",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "672ff85f49284d42"
-        },
-        {
-          "at": 1791383184.0,
-          "class": "judgment",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "ceea31b0b00b53ba"
-        },
-        {
-          "at": 1791383186.2,
-          "class": "judgment",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "d9a78aee1b46eaf9"
-        },
-        {
-          "at": 1791383190.7,
-          "class": "judgment",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "e5c24641dc7ee2fe"
-        },
-        {
-          "at": 1791384893.5,
-          "class": "self-prompt",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "2eae0330e6a4b282"
-        },
-        {
-          "at": 1791384897.8,
-          "class": "self-prompt",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "6b35dc4ac53efa61"
-        },
-        {
-          "at": 1791384905.0,
-          "class": "council",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "93d7956451be65ea"
-        },
-        {
-          "at": 1791384916.0,
-          "class": "council",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "28baa94f8b2a5331"
-        },
-        {
-          "at": 1791384927.6,
-          "class": "decision",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "3d034f4c77dfc789"
-        },
-        {
-          "at": 1791384932.6,
-          "class": "decision",
-          "provider": "mistral-8b",
-          "model": "ministral-8b-2512",
-          "prompt_sha256_16": "9d69468874734978"
-        },
         {
           "at": 1791384938.7,
           "class": "decision",
@@ -728,6 +653,139 @@
           "provider": "mistral-8b",
           "model": "ministral-8b-2512",
           "prompt_sha256_16": "4f2c04e7318ede95"
+        },
+        {
+          "at": 1791386693.3,
+          "class": "self-prompt",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "020c6e6bf19e2f67"
+        },
+        {
+          "at": 1791386695.8,
+          "class": "self-prompt",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "72ba1a4c0dac7917"
+        },
+        {
+          "at": 1791386701.8,
+          "class": "council",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "1de70e5d24b70bf2"
+        },
+        {
+          "at": 1791386711.6,
+          "class": "council",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "2f0a7f44a1b07f89"
+        },
+        {
+          "at": 1791386720.3,
+          "class": "extraction",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "d11ed6220aea730f"
+        },
+        {
+          "at": 1791386723.9,
+          "class": "decision",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "019d256939a70187"
+        },
+        {
+          "at": 1791386730.5,
+          "class": "extraction",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "f26d7df285236ec2"
+        },
+        {
+          "at": 1791386732.5,
+          "class": "report",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "9af6bf1740bf926e"
+        },
+        {
+          "at": 1791386739.2,
+          "class": "extraction",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "35a5b28a18136eef"
+        },
+        {
+          "at": 1791386742.2,
+          "class": "decision",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "c637cb5042b50002"
+        },
+        {
+          "at": 1791386748.2,
+          "class": "extraction",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "92131558d6aac4e7"
+        },
+        {
+          "at": 1791386751.2,
+          "class": "decision",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "9763781db9947581"
+        },
+        {
+          "at": 1791386754.5,
+          "class": "decision",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "23ca6769f523e1d5"
+        },
+        {
+          "at": 1791386762.0,
+          "class": "decision",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "b49db1b60d2fc8e4"
+        },
+        {
+          "at": 1791386765.6,
+          "class": "decision",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "2ba511c355747c97"
+        },
+        {
+          "at": 1791386768.7,
+          "class": "decision",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "b6f2f8a565efd007"
+        },
+        {
+          "at": 1791386777.7,
+          "class": "judgment",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "a4b008b3205c3f60"
+        },
+        {
+          "at": 1791386779.8,
+          "class": "judgment",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "4556272a14c61f4b"
+        },
+        {
+          "at": 1791386781.6,
+          "class": "judgment",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "fa869b3ced8fa7d7"
         }
       ],
       "models_seen": {
@@ -799,7 +857,7 @@
       "fallbacks": 0,
       "fallback_rate": 0.0,
       "fallback_reasons": {},
-      "tool_successes": 4,
+      "tool_successes": 6,
       "findings_filed": 1
     },
     "publication": "sanitized GitHub Pages snapshot",
@@ -807,7 +865,7 @@
     "publication_status": {
       "outcome": "pushed",
       "reason": "",
-      "at": "2026-10-07T14:26:40.414542+00:00"
+      "at": "2026-10-07T14:56:36.616236+00:00"
     },
     "question_source": "carried:line-001662-1f6d8934",
     "self_prompt_accepted": 2,
@@ -815,7 +873,7 @@
     "activity_feed": "docs/activity.json",
     "feed_freshness_seconds": 0,
     "activity_records": 110,
-    "note_records": 9974,
+    "note_records": 9983,
     "print_jobs": 200,
     "failed_print_jobs": 0,
     "analysis_runs": 100,
@@ -825,36 +883,22 @@
     "analysis_timed_out": 0,
     "analysis_feed": "docs/analysis.json",
     "research_records": 100,
-    "research_stale": 64,
+    "research_stale": 62,
     "research_feed": "docs/research.json",
-    "findings": 173,
-    "finding_candidates": 173,
-    "findings_rejected": 227,
+    "findings": 172,
+    "finding_candidates": 172,
+    "findings_rejected": 228,
     "findings_retracted": 0,
     "findings_duplicates": 0,
-    "findings_excluded": 227,
+    "findings_excluded": 228,
     "findings_total": 400,
     "corroborated_findings": 7,
     "findings_feed": "docs/findings.json",
     "frontier_leads": 0,
-    "research_line": {
-      "id": "line-001662-1f6d8934",
-      "root": "Do independent public sources confirm that Belgian physicist Francis Halzen from the University of Wisconsin\u2013Madison is awarded the Nobel Prize in Physics for his \"decisive contributions to the IceCub",
-      "anchors": [
-        "belgian",
-        "francis",
-        "halzen",
-        "university",
-        "wisconsin",
-        "madison"
-      ],
-      "hops": 3,
-      "findings": 8,
-      "empty_cycles": 3
-    },
+    "research_line": null,
     "frontier_questions": 100,
     "frontier_findings": 100,
-    "frontier_tasks": 14,
+    "frontier_tasks": 6,
     "frontier_feed": "docs/frontier.json",
     "code_proposals": 0,
     "code_proposals_ready": 0,
