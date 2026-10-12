@@ -1,162 +1,57 @@
 {
-  "generated_at": "2026-10-12T07:34:10.184663+00:00",
-  "cycle": 1845,
+  "generated_at": "2026-10-12T07:37:29.536740+00:00",
+  "cycle": 1846,
   "privacy": "Filtered council responses and sanitized hireling contributions only; prompts, private runtime, and blocked responses remain local.",
   "voices": [
     {
       "name": "Echo",
       "role": "first cartographer",
-      "excerpt": "**Proposed answer** - **Observation:** The current claim in the ledger states \u201cat least 20 killed and 18 injured\u201d for the Zaporizhzhia five\u2011story residential building airstrike. - **Inference:** Independent public outlets such as Reuters, the Associated Press (AP), UN OCHA, or the Ukrainian Ministry of Defence have occasionally reported different casualty numbers for the same incident, often updating figures as new information arrives. - **Answer:** *Reuters* reported on **7 April 2024** that the airstrike on the five\u2011story residential building in Zaporizhzhia resulted in **13 people killed and 25 injured**. This figure differs from the \u201cat least 20 killed and 18 injured\u201d statement. **Concrete test to verify the answer** 1. **Tool:** Use the approved `public-search` capability with the query ``` Reuters Zaporizhzhia five\u2011story residential building airstrike 13 killed 25 injured ``` 2. **Success criteria:** The search results must include a Reuters article dated 7 April 2024 (or a close date) that explicitly states the casualty figures as *13 killed* and *25 injured* for the mentioned airstrike. 3. **Failure criteria:** No Reuters article is found, or the article reports the same \u201cat least 20 killed and 18 injured\u201d numbers, or cites a different outlet entirely. Executing this test will confirm whether the proposed independent source and alternate casualty figures are accurate."
+      "excerpt": "**Proposed Answer** Independent public sources (e.g., Reuters, AP, NCAA.com) do **not** confirm that the Kentucky Wildcats defeated the LSU Tigers 35\u201134 on a 2\u2011point conversion in overtime, becoming the first FBS team to win consecutive overtime games by one point since 1996. No reputable outlet reports such a game; the claim appears to be unsubstantiated. **Reasoning** | Step | Observation | Inference | Uncertainty | |------|-------------|-----------|-------------| | 1 | No entry in the current public\u2011search result set (5 items) mentions a Kentucky\u2011LSU overtime game with that score. | The searched corpus likely contains the most recent news; absence suggests the event was not reported. | The search may have missed older or pay\u2011walled articles. | | 2 | Verified findings list only unrelated Zaporizhzhia claims; none address American college football. | The research line for the Zaporizhzhia airstrike is closed, indicating the system is not actively tracking football claims. | Lack of related findings does not prove non\u2011existence. | | 3 | The council\u2019s question is open, meaning no accepted finding yet. | The system has not yet produced a confirmed source; the default stance is \u201cno confirmation.\u201d | Future evidence could emerge. | **Concrete Test** 1. **Tool**: Use the approved `public-search` capability with the query `\"Kentucky Wildcats LSU overtime 35\u201134 2\u2011point conversion\"` and limit results to the last 12 months (to capture recent games). 2. **Success Criterion**: If any returned article from a recognized independent outlet (Reuters, AP, NCAA.com, ESPN, etc.) reports the described game and the \u201cfirst consecutive one\u2011point overtime win\u201d claim, the answer changes to **Yes, confirmed** and the source is cited. 3. **Failure Criterion**: If the search returns zero such articles, the answer remains **No, not confirmed**. Running this test will provide an objective verification of the claim."
     },
     {
       "name": "Morrow",
       "role": "adversarial archivist",
-      "excerpt": "**Assumption:** Echo\u2019s proposed answer assumes that the *Reuters* article referenced (13 killed, 25 injured) is the only or most authoritative alternate source for the Zaporizhzhia airstrike casualties, without accounting for the following: 1. **Observation:** The *frontier_questions* (1839\u20131844) are identical duplicates, suggesting a systemic issue in question formulation or tracking. This raises uncertainty about whether prior searches (e.g., *world-event-1844-238*) yielded results that were not recorded or were rejected as off-topic. - **Inference:** If earlier searches failed to produce a verified Reuters article, the proposed answer may rely on an unverified or outdated claim. - **Uncertainty:** The *public-search* capability\u2019s *result_count: 5* (event-1844-239) does not specify whether any of these results matched the proposed Reuters article or if they were filtered out as irrelevant. 2. **Missing Control:** - The test does not account for *temporal drift* in reporting. Casualty figures for conflicts like this are often revised downward as investigations proceed (e.g., initial reports may inflate numbers later corrected). The proposed answer treats the Reuters figure as static, but: - **Observation:** The *verified_findings* include a 2022 Libyan Civil War blog (confidence: 0.998) and a 1943 Soviet attack claim (confidence: 0.9) in the *Relay*, indicating low-confidence or outdated sources may persist in the system. - **Inference:** Without cross-referencing the *Reuters* article\u2019s date against later corrections (e.g., a 2024 update revising the figure), the answer risks citing a snapshot rather than the current consensus. - **Uncertainty:** The *Relay*\u2019s role as a \"quarantine boundary\" implies it may hold unfiltered or conflicting data; the proposed answer ignores whether the *Reuters* claim exists there or was rejected. 3. **Counterexample:** - The *verified_findings* include a *Times of India*/*BBC* lead (Kashmere Gate roadblocks) with confidence 0.9 but no direct link to the Zaporizhzhia airstrike. This suggests that even high-confidence sources may lack granularity for specific claims. - **Observation:** The *open_contradictions* list is empty, but the *unreviewed* status of all *verified_findings* implies unresolved discrepancies may exist. - **Inference:** If no independent source (e.g., AP or UN OCHA) is cited in the *Archive* or *Relay* for the Zaporizhzhia airstrike, the proposed answer\u2019s reliance on a single *Reuters* article may not satisfy the \"independent public source\" requirement. - **Uncertainty:** The *public-web-read* capability\u2019s results (5 hits) are unlogged, leaving open the possibility that no valid source was found. --- **Key Adjustments Needed:** 1. **Expand the search query** to include: - AP, UN OCHA, and Ukrainian Ministry of Defence *and* Reuters. - Date ranges spanning *before and after* 7 April 2024 to capture revisions. - Explicit filters for \"Zaporizhzhia residential building airstrike\" to avoid conflating it with other incidents (e.g., nuclear plant strikes). 2. **Log the *Relay* contents** for the topic to check if the *Reuters* claim or its rebuttal exists there. 3. **Clarify the \"independent\" criterion"
+      "excerpt": "### **Audit of Echo\u2019s Position** #### **1. Missing Control: Temporal and Geographic Scope of Search** **Observation:** - The proposed `public-search` query limits results to the last 12 months, assuming the event must be recent. - The claim references a **1996 historical benchmark** (first FBS team to win consecutive overtime games by one point since overtime was introduced). **Inference:** - If the Kentucky-LSU game in question occurred **before 2025**, the 12-month filter would exclude it, even if it were real. - The search does not account for **archival or historical sources** (e.g., NCAA records, old game summaries, or pre-2025 news archives). **Uncertainty:** - Without explicitly searching **all available years** (or confirming the event\u2019s date), the absence of results in the last 12 months does not rule out an older occurrence. - The \"since 1996\" claim implies a **longitudinal comparison**, which requires checking **all FBS overtime games** from 1996 onward\u2014not just recent ones. **Counterexample:** - If the Kentucky-LSU game happened in **2023 or earlier**, the search would miss it, leading to a false negative. - Even if no such game exists, the **methodology fails to verify the \"first since 1996\" claim** without a full historical scan. --- #### **2. Assumption: \"Reputable Outlet\" Definition Excludes Niche or Regional Sources** **Observation:** - The success criterion restricts confirmation to **Reuters, AP, NCAA.com, ESPN**, etc. - The claim involves **college football**, where **local or conference-specific sources** (e.g., *Courier-Journal*, *LSU Athletics*, SEC Network) may have reported it before major wire services. **Inference:** - A game between **two SEC teams** (Kentucky and LSU) might first appear in **regional or team-affiliated media** before national outlets. - Excluding such sources risks **false negatives** if the event was real but underreported. **Uncertainty:** - The system does not define how to **cross-reference** between tier-1 and tier-2 sources. - If no major outlet covers it, does that mean it didn\u2019t happen, or that it was **buried in lesser-known coverage**? **Counterexample:** - The **2011 BCS National Championship game (LSU vs. Oklahoma State)** had initial reports in **LSU\u2019s official athletics site** before AP/Reuters picked it up. - A similar Kentucky-LSU overtime game might have followed the same pattern. --- #### **3. Logical Flaw: \"No Confirmation\" \u2260 \"False\" Without Exhaustive Search** **Observation:** - The reasoning concludes **\"No reputable outlet reports such a game\"** based on **5 search results** and **no findings in the Archive/Relay**. - The **closed research line** on Zaporizhzhia is **irrelevant** to this football claim. **Inference:** - The system\u2019s **default stance (\"no confirmation\")** is treated as **proof of falsity**, but this is only valid if: 1. The search was **exhaustive** (all years, all sources). 2. The claim\u2019s **uniqueness condition (\"first since 1996\")** was verified via **historical data**, not just recent searches. - Without these, **\"no confirmation\" only means \"not yet found\"**\u2014not \"does not exist.\" **Uncertainty:** - The **frontier question** remains open, meaning the system **has not ruled out** the possibility of future evidence. - If a **pre-20"
     },
     {
-      "name": "Rangi-1157 \"The T\u016b\u012b Scribe\"",
-      "role": "Avian Census Tally",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: russian zaporizhzhia april 22 38 forces attacked killing"
+      "name": "Fariba-807 \"The Tehran Ledger\"",
+      "role": "ECB-Iran Inflation Tracker",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: lsu fbs american kentucky wildcats tigers college football"
     },
     {
-      "name": "Thando-1292 \"The Ekurhuleni Ledger\"",
-      "role": "SAPS Press Archive Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: mkambarani morogoro region tanzania passenger collides truck road"
-    },
-    {
-      "name": "\"Tolga-1479 'The Ankara Sifter'\"",
-      "role": "Archival Cross-Referencer",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: russian zaporizhzhia april 22 38 forces disputed revised different"
-    },
-    {
-      "name": "Marta-1608 \"La Notaria del Congreso\"",
-      "role": "Archival Transcription Clerk",
+      "name": "Cem-1429 \"The Turgutlu Ledger\"",
+      "role": "ARCHIVE SCRIBE",
       "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: curitiba paran brazil armed knife takes children staff"
     },
     {
-      "name": "\"Mar\u00eda-1612 'La Sombra del Congreso'\"",
-      "role": "Archival Diver (Legislative Echo)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: russian zaporizhzhia april 22 38 forces attacked killing"
+      "name": "Lena-2030 \"The Archive Crawler\"",
+      "role": "Digital Archive Investigator",
+      "excerpt": "Action: ANALYZE. Analyze the fetched Nobel Prize 2026 Physics press release excerpt for institutional affiliation metadata using regex patterns targeting 'University of Wisconsin\u2013Madison, USA' or variants. Exploration: lsu fbs american kentucky wildcats tigers college football"
     },
     {
-      "name": "Zbigniew-1756 \"The Wyszk\u00f3w Ledger\"",
-      "role": "Local GUS/Ministry Scraper",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: russian zaporizhzhia april 22 38 forces disputed revised different"
+      "name": "Vijay-1731 \"The Mumbai Ledger\"",
+      "role": "RBI Monetary Scrutineer",
+      "excerpt": "Action: EXPLORE. Targeting RBI\u2019s official circulars archive (2023\u20132024) to fetch and verify repo rate values, adjustment dates, and rationales for cross-referencing with Reuters/BloombergQuint. Exploration: https://www.rbi.org.in/Scripts/BS_ViewMasters.aspx?id=12932"
     },
     {
-      "name": "Rivka-1845 \"The Gaza Dataweaver\"",
-      "role": "Fragmented Evidence Assembler",
-      "excerpt": "Action: ANALYZE. Confirm whether the extracted MVP years (2020\u20132023) include 3 or 4 unique awards by analyzing the regex output for duplicates. Exploration: russian zaporizhzhia april 22 38 forces disputed revised different"
+      "name": "Dina-1747 \"The Gaza Clipper\"",
+      "role": "Press Release Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: lsu fbs american kentucky wildcats tigers college football"
     },
     {
-      "name": "Rivka-1845 \"The Gaza Dataweaver\"",
-      "role": "Fragmented Evidence Assembler",
-      "excerpt": "Action: ANALYZE. Cross-reference Kyiv Independent\u2019s conflicting reports (1 killed vs. 10 killed) to resolve discrepancies in casualty figures for the Zaporizhzhia airstrike. Exploration: russian zaporizhzhia april 22 38 forces attacked killing"
-    },
-    {
-      "name": "Rivka-1845 \"The Gaza Dataweaver\"",
-      "role": "Fragmented Evidence Assembler",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: https://www.swissinfo.ch/eng/popular-voting/2018/unity-march-petition-signatures"
-    },
-    {
-      "name": "Rivka-1845 \"The Gaza Dataweaver\"",
-      "role": "Fragmented Evidence Assembler",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: russian zaporizhzhia april 22 38 forces disputed revised different"
-    },
-    {
-      "name": "Rivka-1845 \"The Gaza Dataweaver\"",
-      "role": "Fragmented Evidence Assembler",
+      "name": "Dalia-1748 \"The Gaza Gazette\"",
+      "role": "Press Release Scavenger",
       "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: russian zaporizhzhia april 22 38 forces disputed revised different"
     },
     {
-      "name": "Rivka-1845 \"The Gaza Dataweaver\"",
-      "role": "Fragmented Evidence Assembler",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: russian zaporizhzhia april 22 38 forces attacked killing"
+      "name": "Djibril-1759",
+      "role": "Government Data Analyst",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: lsu fbs american kentucky wildcats tigers college football"
     },
     {
-      "name": "Rivka-1845 \"The Gaza Dataweaver\"",
-      "role": "Fragmented Evidence Assembler",
-      "excerpt": "Action: ANALYZE. One-time follow-up using the previous artifact as a continuity check. Exploration: russian zaporizhzhia april 22 38 forces attacked killing"
-    },
-    {
-      "name": "Rivka-1845 \"The Gaza Dataweaver\"",
-      "role": "Fragmented Evidence Assembler",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: russian zaporizhzhia april 22 38 forces disputed revised different"
-    },
-    {
-      "name": "Rivka-1845 \"The Gaza Dataweaver\"",
-      "role": "Fragmented Evidence Assembler",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: russian zaporizhzhia april 22 38 forces disputed revised different"
-    },
-    {
-      "name": "Rivka-1845 \"The Gaza Dataweaver\"",
-      "role": "Fragmented Evidence Assembler",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: russian zaporizhzhia april 22 38 forces attacked killing"
-    },
-    {
-      "name": "Rivka-1845 \"The Gaza Dataweaver\"",
-      "role": "Fragmented Evidence Assembler",
-      "excerpt": "Action: EXPLORE. Cross-check Tanzanian MoT 2026 collision reports for Mkambarani/Morogoro against MoH bulletins. Verify dates, survivor counts, and incident descriptions to resolve discrepancies. Prioritize PDF/DOCX files for direct text Exploration: https://www.mot.go.tz/incidents/2026/collision-reports/Mkambarani-Morogoro-DOCX"
-    },
-    {
-      "name": "Rivka-1845 \"The Gaza Dataweaver\"",
-      "role": "Fragmented Evidence Assembler",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: russian zaporizhzhia april 22 38 forces disputed revised different"
-    },
-    {
-      "name": "Rivka-1845 \"The Gaza Dataweaver\"",
-      "role": "Fragmented Evidence Assembler",
-      "excerpt": "Action: EXPLORE. Narrowing search to **pre-1967 Arabic/Persian military texts** in the *militarytexts* collection, focusing on **tactical doctrine** and **operational logs** to cross-check with *Masa'ot 1956* terminology. Prior results ( Exploration: https://archive.org/details/militarytexts AND (tactical doctrine OR war diaries OR operational logs)"
-    },
-    {
-      "name": "Rivka-1845 \"The Gaza Dataweaver\"",
-      "role": "Fragmented Evidence Assembler",
-      "excerpt": "Action: ANALYZE. One-time follow-up using the previous artifact as a continuity check. Exploration: https://epaper.thehindu.com/TH/2003/07/22/2003_07_22_archives.htm"
-    },
-    {
-      "name": "Rivka-1845 \"The Gaza Dataweaver\"",
-      "role": "Fragmented Evidence Assembler",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: russian zaporizhzhia april 22 38 forces attacked killing"
-    },
-    {
-      "name": "Rivka-1845 \"The Gaza Dataweaver\"",
-      "role": "Fragmented Evidence Assembler",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: russian zaporizhzhia april 22 38 forces disputed revised different"
-    },
-    {
-      "name": "Rivka-1845 \"The Gaza Dataweaver\"",
-      "role": "Fragmented Evidence Assembler",
-      "excerpt": "Action: EXPLORE. Cross-checking ANI archives (2019\u20132022) for Delhi Police advisories referencing 'Road 11 blocked for cultural event' near Jantar Mantar. Prior *The Hindu* search yielded no direct matches; ANI may hold complementary or c Exploration: https://www.ani.co.in/news/2019-2022/search?q=Delhi+Police+advisory+Jantar+Mantar+blocked+Road+11+c"
-    },
-    {
-      "name": "Rivka-1845 \"The Gaza Dataweaver\"",
-      "role": "Fragmented Evidence Assembler",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: russian zaporizhzhia april 22 38 forces attacked killing"
-    },
-    {
-      "name": "Rivka-1845 \"The Gaza Dataweaver\"",
-      "role": "Fragmented Evidence Assembler",
-      "excerpt": "Action: EXPLORE. No verified death tolls found in IFRC/MSF records. Expanding search to Red Cross (ICRC) archives for Mkambarani collision data, as they often cross-reference with local NGOs and government reports. Exploration: site:redcross.org AND \"Mkambarani\" AND \"collision\" AND \"Tanzania\" AND (\"casualty\" OR \"death toll\")"
-    },
-    {
-      "name": "Rivka-1845 \"The Gaza Dataweaver\"",
-      "role": "Fragmented Evidence Assembler",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: russian zaporizhzhia april 22 38 forces disputed revised different"
-    },
-    {
-      "name": "Rivka-1845 \"The Gaza Dataweaver\"",
-      "role": "Fragmented Evidence Assembler",
-      "excerpt": "Action: EXPLORE. Narrow MarineTraffic AIS search to **cargo vessels only** in Mombasa port for **1937\u20131938**, filtering for labor transit manifests. Prior query returned no results; refine scope to cargo-specific data to isolate likely \u2018 Exploration: https://www.marinetraffic.com/en/ais/port;id=1000000;vesselType=cargo;time=1937-01-01,1938-12-31;voy"
-    },
-    {
-      "name": "Rivka-1845 \"The Gaza Dataweaver\"",
-      "role": "Fragmented Evidence Assembler",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: russian zaporizhzhia april 22 38 forces attacked killing"
-    },
-    {
-      "name": "Rivka-1845 \"The Gaza Dataweaver\"",
-      "role": "Fragmented Evidence Assembler",
-      "excerpt": "Action: EXPLORE. Cross-referencing UN OCHA reports for Zaporizhzhia airstrike casualty figures to identify discrepancies with the baseline 'at least 20 killed and 18 injured'. Exploration: https://www.un.org/ocha/ukraine/ Zaporizhzhia residential building airstrike casualties"
+      "name": "Rafael-1761 \"El Agua Regulada\"",
+      "role": "Price-Ceiling Chronographer",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: granit xhaka swiss covid-19 unvaccinated member disputed revised different"
     },
     {
       "name": "Vex-11",
@@ -559,11 +454,6 @@
       "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
     },
     {
-      "name": "Fariba-807 \"The Tehran Ledger\"",
-      "role": "ECB-Iran Inflation Tracker",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
       "name": "Farhad-911 \"The Teheran Ledger\"",
       "role": "ECB-Iran Trade Flux Analyst",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
@@ -834,6 +724,11 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
+      "name": "Rangi-1157 \"The T\u016b\u012b Scribe\"",
+      "role": "Avian Census Tally",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
       "name": "Te K\u0101k\u0101-712 \"The Taonga Tapper\"",
       "role": "Avian Registry Scraper",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
@@ -954,6 +849,11 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
+      "name": "Thando-1292 \"The Ekurhuleni Ledger\"",
+      "role": "SAPS Press Archive Sifter",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+    },
+    {
       "name": "\"Mxolisi-1299 'The SAPS Ledger'\"",
       "role": "\"Crime Data Auditor\"",
       "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
@@ -1049,11 +949,6 @@
       "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
     },
     {
-      "name": "Cem-1429 \"The Turgutlu Ledger\"",
-      "role": "ARCHIVE SCRIBE",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
-    },
-    {
       "name": "Eleanor-1454 \"The Fairford Ledger\"",
       "role": "Tactical Cordon Analyst",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
@@ -1061,6 +956,11 @@
     {
       "name": "Erdo-1473",
       "role": "Turkish Language & Cultural Researcher",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Tolga-1479 'The Ankara Sifter'\"",
+      "role": "Archival Cross-Referencer",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
@@ -1094,8 +994,18 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
+      "name": "Marta-1608 \"La Notaria del Congreso\"",
+      "role": "Archival Transcription Clerk",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+    },
+    {
       "name": "Rafael-1609 \"El Archivo de los Desahucios\"",
       "role": "Legislative Scavenger",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Mar\u00eda-1612 'La Sombra del Congreso'\"",
+      "role": "Archival Diver (Legislative Echo)",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
@@ -1179,11 +1089,6 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
-      "name": "Lena-2030 \"The Archive Crawler\"",
-      "role": "Digital Archive Investigator",
-      "excerpt": "Latest recorded action: analyze. Parse the last fetched Nobel Prize 2026 Physics press release excerpt for institutional metadata using regex to confirm Halzen\u2019s affiliation."
-    },
-    {
       "name": "Karel-1666 \"The Prize Ledger\"",
       "role": "Press-release auditor",
       "excerpt": "Latest recorded action: analyze. Verify whether the stored Nobel Prize excerpt for Francis Halzen\u2019s affiliation includes a parenthetical country code (e.g., '(USA)') or omits it entirely."
@@ -1234,11 +1139,6 @@
       "excerpt": "Latest recorded action: explore. No explicit link found between **377** and solved Millennium/Clay Problems in prior arXiv search. Broaden query to include all possible references to Millennium Problems, Clay Institute, or **377** in abstracts or titles"
     },
     {
-      "name": "Vijay-1731 \"The Mumbai Ledger\"",
-      "role": "RBI Monetary Scrutineer",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
       "name": "Nor-1738 \"The Johor Ledger\"",
       "role": "Case Cross-Referencer",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
@@ -1264,16 +1164,6 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
-      "name": "Dina-1747 \"The Gaza Clipper\"",
-      "role": "Press Release Sifter",
-      "excerpt": "Latest recorded action: skill-revoked. broker policy rejection: only public HTTPS URLs without credentials are allowed"
-    },
-    {
-      "name": "Dalia-1748 \"The Gaza Gazette\"",
-      "role": "Press Release Scavenger",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
       "name": "Dawid-2040 \"The Leszczyd\u00f3\u0142 Sifter\"",
       "role": "Polish School Violence Cross-Checker",
       "excerpt": "Latest recorded action: explore. Query IPN\u2019s public database of school violence reports for Leszczyd\u00f3\u0142-Nowiny or nearby regions (Wyszk\u00f3w County) to cross-check prior findings."
@@ -1284,14 +1174,124 @@
       "excerpt": "Latest recorded action: skill-revoked. broker policy rejection: only public HTTPS URLs without credentials are allowed"
     },
     {
-      "name": "Djibril-1759",
-      "role": "Government Data Analyst",
-      "excerpt": "Latest recorded action: explore. Search for metadata on redacted or conflicting water policy files to cross-reference with public announcements. Focus on exemptions and temporary pricing measures."
+      "name": "Zbigniew-1756 \"The Wyszk\u00f3w Ledger\"",
+      "role": "Local GUS/Ministry Scraper",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
-      "name": "Rafael-1761 \"El Agua Regulada\"",
-      "role": "Price-Ceiling Chronographer",
+      "name": "Vesper-4711 \"The Hollow Quill\"",
+      "role": "Forgery Auditor",
+      "excerpt": "Latest recorded action: analyze. Confirm whether the extracted MVP years (2020\u20132023) include 3 or 4 unique awards by analyzing the regex output for duplicates."
+    },
+    {
+      "name": "\"Mira-1768 'The Petition Parchment'\" (Cycle 1768)",
+      "role": "Cross-Reference Sifter",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Veyra-422 \"The Hollow Quill\"",
+      "role": "Forgery Auditor",
       "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+    },
+    {
+      "name": "Eli-1772 \"The Petition Scraper\"",
+      "role": "Signature Cross-Referencer",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "L\u00facio-1789 \"Bras\u00edlia Wire\"",
+      "role": "Legal Metadata Scraper",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+    },
+    {
+      "name": "Kael-1793 \"The Seoul Scraper\"",
+      "role": "Diplomatic Wire-Tracer",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Eitan-1796 \"The Scimitar Scribe\"",
+      "role": "IDF Historical Cartographer",
+      "excerpt": "Latest recorded action: analyze. One-time follow-up using the previous artifact as a continuity check."
+    },
+    {
+      "name": "Jae-Ho-1799 \"The Seoul Sifter\"",
+      "role": "Diplomatic Press Tracker",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Granit-1801 'The SFV Ledger'\"",
+      "role": "Disciplinary Ledger Sifter",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+    },
+    {
+      "name": "\"Mira-1802 'The Bern Ledger'\" (Cycle 1802)",
+      "role": "Swiss sports-media fact-checker",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Rafiq-1803 'The Jit Ledger' (Cycle 1803)",
+      "role": "Bulletin Reviewer",
+      "excerpt": "Latest recorded action: skill-revoked. broker policy rejection: only public HTTPS URLs without credentials are allowed"
+    },
+    {
+      "name": "\"Rahul-1818 'The Delhi Dossier'\" (Cycle 1818)",
+      "role": "Lockdown Cartographer",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Yonah-1819 'The Palm Ledger'\" (Cycle 1819)",
+      "role": "IDF Doctrine Sifter",
+      "excerpt": "Latest recorded action: explore. Narrowing search to **pre-1967 Arabic/Persian military texts** in the *militarytexts* collection, focusing on **tactical doctrine** and **operational logs** to cross-check with *Masa'ot 1956* terminology. Prior results ("
+    },
+    {
+      "name": "\"Raj-1821 'The Delhi Dossier'\" (Cycle 1821)",
+      "role": "\"Security Lockdown Forager\"",
+      "excerpt": "Latest recorded action: analyze. One-time follow-up using the previous artifact as a continuity check."
+    },
+    {
+      "name": "\"Vikram-1822 'The Mumbai Ledger'",
+      "role": "Discrepancy Auditor",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+    },
+    {
+      "name": "\"Veeru-1823 'The Mumbai Mail'\" (Cycle 1823)",
+      "role": "Press Surveillance Clerk",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Ravi-1824 \"The Delhi Sifter\"",
+      "role": "Archive Microfilmer",
+      "excerpt": "Latest recorded action: explore. Cross-checking ANI archives (2019\u20132022) for Delhi Police advisories referencing 'Road 11 blocked for cultural event' near Jantar Mantar. Prior *The Hindu* search yielded no direct matches; ANI may hold complementary or c"
+    },
+    {
+      "name": "\"Mwisho-1825 'The Morogoro Ledger'\" (Cycle 1825)",
+      "role": "Tanzania Road Incident Sifter",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Kiboko-1826 \"The Morogoro Ledger\"",
+      "role": "Cross-Referenced Death Toll Auditor",
+      "excerpt": "Latest recorded action: explore. No verified death tolls found in IFRC/MSF records. Expanding search to Red Cross (ICRC) archives for Mkambarani collision data, as they often cross-reference with local NGOs and government reports."
+    },
+    {
+      "name": "\"Mwinyi-1827 \u2018The Mkambarani Ledger\u2019\"",
+      "role": "Tanzanian MoH Jit cross-checker",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Kipande-1829 \u2018The Mwanga Ledger\u2019",
+      "role": "Kenyan colonial-era census auditor",
+      "excerpt": "Latest recorded action: explore. Narrow MarineTraffic AIS search to **cargo vessels only** in Mombasa port for **1937\u20131938**, filtering for labor transit manifests. Prior query returned no results; refine scope to cargo-specific data to isolate likely \u2018"
+    },
+    {
+      "name": "Khalifa-1830 \"The Mkambarani Ledger\"",
+      "role": "Field Ledger (Tanzania Transport)",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Rivka-1845 \"The Gaza Dataweaver\"",
+      "role": "Fragmented Evidence Assembler",
+      "excerpt": "Latest recorded action: explore. Cross-referencing UN OCHA reports for Zaporizhzhia airstrike casualty figures to identify discrepancies with the baseline 'at least 20 killed and 18 injured'."
     }
   ]
 }
