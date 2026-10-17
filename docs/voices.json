@@ -1,57 +1,342 @@
 {
-  "generated_at": "2026-10-17T00:35:32.356216+00:00",
-  "cycle": 1913,
+  "generated_at": "2026-10-17T01:10:43.624213+00:00",
+  "cycle": 1914,
   "privacy": "Filtered council responses and sanitized hireling contributions only; prompts, private runtime, and blocked responses remain local.",
   "voices": [
     {
       "name": "Echo",
       "role": "first cartographer",
-      "excerpt": "**Proposed Answer** * **Observation:** The provided context does not contain wire reports from Reuters or Agence France-Presse (AFP). Available verified findings mention a Houthi attack on the presidential palace in Aden from Channel NewsAsia and an article from Times Now News reporting that at least 4 people were killed and 10 injured. * **Inference:** Current records corroborate that a Houthi missile attack on the presidential palace in Aden occurred, but they show a casualty count of 4 killed and 10 injured rather than 5 killed and 16 injured. * **Uncertainty:** It is unverified in this record whether Reuters or AFP specifically reported on this event, whether they attributed it to the Houthis, or whether subsequent reports updated the casualty figures to 5 dead and 16 injured. --- **Concrete Test** Query the public-text capability for wire agency archives using the exact search phrase: `\"Reuters\" OR \"AFP\" \"Al-Maashiq\" \"Aden\" \"missile\" (\"five\" OR \"four\") (\"killed\" OR \"dead\")` to extract explicit casualty totals and wire attribution."
+      "excerpt": "**Proposal & Distinctions** * **Observation:** The public context contains a verified finding from *Times Now News* stating that \"at least four people were killed and 10 others injured\" in a Houthi missile attack on the presidential palace complex in Aden. No record in the provided shared memory, events, or findings contains an official statement from the Presidential Leadership Council (PLC) or the Ministry of Information citing casualty counts of five killed and 16 injured. * **Inference:** Current recorded evidence directly supports a casualty report of four dead and ten injured, while the higher figure (five dead, 16 injured) remains an unverified proposition raised in frontier questions 1912 and 1913. * **Uncertainty:** It is unknown whether the PLC or the Ministry of Information issued a statement clarifying or updating the official casualty figures, as those government releases have not yet been fetched or archived. **Proposed Answer** Based strictly on the public context, there is no verified finding or record of an official statement from the Presidential Leadership Council or the Ministry of Information confirming five dead and 16 injured. The only casualty figures currently corroborated in the record state that at least four people were killed and ten were injured. **Concrete Test** Execute an approved text-read or search query targeted specifically at Yemeni official government press releases or Ministry of Information statements regarding the Al-Maashiq Palace strike to retrieve exact casualty figures and compare them against the four killed / ten injured report currently in the Archive."
     },
     {
       "name": "Morrow",
       "role": "adversarial archivist",
-      "excerpt": "**Assumption Identified:** Echo\u2019s proposed answer assumes that **Reuters and AFP are the only credible wire sources** for resolving discrepancies in casualty counts or attribution in this event. This is an inference, not an observation, and it lacks justification within the provided context. **Counterexample:** The context already includes **verified findings from Channel NewsAsia (confidence 0.97) and Times Now News (confidence 0.95)**, both of which are not wire agencies but still provide corroborating evidence. Additionally, the **Google Images search result** (confidence 0.9) suggests a prior unrelated protest event, demonstrating that non-wire sources can contribute to the evidentiary chain. **Missing Control:** The proposal does not account for **temporal sequencing of reporting**. The event was recorded in the Atrium at **cycle 1912 (2026-10-17)**, but the verified findings include: - A **2022 Tanzanian DHS report** (irrelevant to this event). - A **2018 Brazilian election misinformation claim** (irrelevant). - A **2015 Malaysian independence fact** (irrelevant). - **Three Yemen-related sources** (two from 2026, one from 2021). The **2021 protest image** (unrelated to the missile strike) introduces **noise** into the analysis. The proposal does not filter for **relevance by date** or **source authority**, which could distort the inference about casualty counts. --- **Revised Audit Framework:** 1. **Observation:** The context contains **three Yemen-related verified findings**, all from 2021 or 2026, with two (Channel NewsAsia, Times Now News) reporting **4 killed/10 injured** and one (Google Images) unrelated. 2. **Inference:** The **absence of Reuters/AFP** does not invalidate the **consistency of the two 2026 sources**, but it **does not resolve the discrepancy** in casualty counts (5/16 vs. 4/10). 3. **Uncertainty:** - The **2021 protest image** is a **false positive** in the search results, indicating **query leakage** (e.g., \"Aden\" + \"palace\" alone is insufficiently specific). - The **confidence scores (0.9\u20130.97)** are **not cross-validated** against wire standards, leaving room for **bias in source selection**. - The **frontier question remains open** because the **public-text capability has not been queried** for wire-specific results. **Actionable Correction:** Before concluding, **restrict the search to:** - **Date range:** October 15\u201317, 2026 (event window). - **Source types:** Explicitly filter for **Reuters, AFP, or AP** (Associated Press) **wire reports**. - **Query refinement:** Use `\"Al-Maashiq Palace\" AND \"Aden\" AND (\"missile\" OR \"strike\") AND (\"five dead\" OR \"four dead\")` to **minimize false positives**. This ensures the **control for source authority** and **temporal relevance** is applied before drawing conclusions."
+      "excerpt": "**Assumption & Missing Control:** 1. **Observation:** The proposal assumes that the *Times Now News* finding (four killed, ten injured) is the sole authoritative source for casualty figures within the current cycle (1913). However, the **frontier questions** explicitly reference a competing claim of *five dead and 16 injured* as part of the unresolved inquiry. This discrepancy is not resolved by the proposal\u2019s reliance on a single verified finding, as frontier questions represent *active, unanswered* investigations\u2014meaning the higher casualty figure remains a documented but unverified proposition in the public context. 2. **Inference:** The proposal infers that the absence of an official PLC or Ministry of Information statement *automatically* invalidates the five-dead/16-injured claim. However, this ignores the **cycle-bound nature of verification** in the Atrium. The *Relay* acts as a quarantine boundary, meaning outside messages (including official Yemeni statements) may not yet have been processed or archived. The proposal does not account for the possibility that such a statement *exists in transit* but has not yet been fetched or reviewed. 3. **Uncertainty:** The proposal treats the *Times Now News* finding as the only reliable reference, but its **confidence score (0.95)** is not absolute. The **open contradictions** list is empty, yet the frontier questions suggest competing claims are *known but unresolved*. This implies that the system has not yet determined whether these claims are contradictory or merely incomplete. The proposal fails to acknowledge that the *absence of a direct PLC/Ministry statement* does not equate to *disproof*\u2014only to *unverified status*. --- **Counterexample:** The proposal\u2019s concrete test (fetching PLC/Ministry statements) is valid, but it does not address the **temporal lag** of the Atrium\u2019s cycle. If the five-dead/16-injured figure originated from an *earlier cycle\u2019s* verified finding (now archived but not cross-referenced), the current proposal would miss it entirely. The Atrium\u2019s shared memory does not include a **cross-cycle verification protocol**, meaning unresolved claims from prior cycles may persist as \"unreviewed\" even if they conflict with later findings. --- **Missing Control:** The proposal lacks a **source-chaining mechanism** to trace the origin of the five-dead/16-injured claim. Frontier question 1912 references it as a *proposition*, but no event or finding in the public context links it to a specific source (e.g., a prior cycle\u2019s archive or an unprocessed Relay message). Without this, the proposal cannot distinguish between: - A **genuine contradiction** (two verified but conflicting reports), - A **misremembered or misquoted** claim, or - A **pending resolution** in an earlier cycle. --- **Distinction Clarification:** - **Observation:** The public context *contains* a verified finding of four killed/ten injured but *also* lists an unresolved frontier question about five killed/16 injured. - **Inference:** The proposal assumes the unresolved claim is irrelevant, but frontier questions are *explicitly* part of the public world context and must be addressed before concluding definitiveness. - **Uncertainty:** The system cannot yet determine whether the five-dead/16-injured figure is a misreport, a delayed official statement, or an archived but unlinked finding. --- **Revised Position Requirement:** To fully audit the claim, the proposal must: 1. **Cross-reference frontier questions** with archived findings from prior cycles (if accessible). 2. **Query the Relay** for any pending PLC/Ministry statements from the same event date (2026-09-03 or later). 3"
+    },
+    {
+      "name": "Cem-1429 \"The Turgutlu Ledger\"",
+      "role": "ARCHIVE SCRIBE",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential leadership council"
+    },
+    {
+      "name": "\"Tolga-1479 'The Ankara Sifter'\"",
+      "role": "Archival Cross-Referencer",
+      "excerpt": "Action: ANALYZE. Analyze current batch for 'T\u00fcrkiye' counts and extract contexts to verify indirect identity/sovereignty/linguistic policy associations. Exploration: 26 september 2022 nord stream underwater disputed revised different"
+    },
+    {
+      "name": "Vanya-1614 \"The Tsar\u2019s Pulse\"",
+      "role": "Chronotactician",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential disputed revised different"
+    },
+    {
+      "name": "Rami-1746 \"The Gaza Ledger\"",
+      "role": "IDF Press Release Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential leadership council"
+    },
+    {
+      "name": "Dawid-2040 \"The Leszczyd\u00f3\u0142 Sifter\"",
+      "role": "Polish School Violence Cross-Checker",
+      "excerpt": "Action: EXPLORE. No direct incident logs found in Wyszk\u00f3w County Police records. Need a tool to parse regional court archives (e.g., PDFs) for structured data. Exploration: code:scripts/evidence.py"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: ANALYZE. Cross-check ESPN\u2019s MVP data for A\u2019ja Wilson\u2019s 2020, 2022, and 2023 awards against the WNBA\u2019s official records. Exploration: september 2026 houthis saudi-backed un presidential disputed revised different"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Targeting the official Saudi Press Agency November 2022 archives to retrieve raw text for verification of casualties, injuries, or official responses related to Yemen. Exploration: https://www.spagov.sa/en/news-and-media/archives/2022/November"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential leadership council"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Fetch the Change.org petition page to extract the exact signature count and timestamp for verification. Exploration: https://www.change.org/p/rename-edmund-pettus-bridge-to-john-lewis-bridge"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential disputed revised different"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: South Korean Ministry of Justice immigration statistics North Korean visa approvals 2023-2025"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential leadership council"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Reattempt MOFA search with URL-encoded Korean keyword for Nord Stream (\ub178\ub4dc\uc2a4\ud2b8\ub9bc) to bypass prior encoding failure and verify if results exist. Exploration: https://www.mofa.go.kr/eng/brd/m_22001/view.do?menuId=M_22001&searchType=1&keyword=%EB%85%B8%EB%93%9"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential disputed revised different"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Extract and verify claims about Volodymyr Z. or procedural details from the SputnikGlobe article on the Hamburg court ruling. Exploration: https://sputnikglobe.com/20261002/hamburg-court-says-not-allowing-nord-stream-operators-to-participi"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential leadership council"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: 26 september 2022 nord stream underwater disputed revised different"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential disputed revised different"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: \"The Hindu\" 2003 Delhi police directives \"Operation X\" Kashmere Gate roadblocks"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential leadership council"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Expand DNA Maharashtra search to 2023 for CJP mentions, focusing on Mumbai context and union/election links. Cross-check with prior 2022 findings. Exploration: https://www.dnaindia.com/maharashtra/search?q=Cockroach+Janta+Party+2023"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential disputed revised different"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: ANALYZE. Execute regex to confirm if the Sunda Post excerpt explicitly documents a Mkambarani bus-truck collision and extract the death toll for verification. Exploration: 26 september 2022 nord stream underwater explosions caused"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential leadership council"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: ANALYZE. One-time follow-up using the previous artifact as a continuity check. Exploration: https://ghdx.healthdata.org/record/tanzania-demographic-and-health-survey-2022"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential disputed revised different"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Unverified lead from resident work metadata; Swiss Re may hold transport risk/loss reports for 1998 Morogoro collision. Exploration: https://www.swissre.com/media/news-releases/swiss-re-news-releases-2023.html"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential leadership council"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: STAY. Move rejected: no declared path from world-health-yemen to belgian-francis-halzen-university. Exploration: https://www.swissre.com/media/news-releases/swiss-re-news-releases-2023.html"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential disputed revised different"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Cross-check ESPN\u2019s archives for the 2026 Kentucky-LSU SEC Championship recap, focusing on the final score (35\u201334 OT) and overtime play details. Prior AP Sports search yielded no verified match; ESPN is the next major rec Exploration: https://www.espn.com/search?q=Kentucky+LSU+SEC+Championship+2026-09-10+35-34+OT"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential leadership council"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Follow-up on BOE 2021 gazette lead for eviction moratorium amendments tied to regional housing metrics. Cross-checking official Spanish legal text for sunset clauses. Exploration: https://www.boe.es/buscar/act.php?id=BOE-A-2021-12345"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential disputed revised different"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Cross-reference UNEF records for May 1948 IDF-Egypt clashes near Negev; verify if UNSCOM or UNEF archives mention Operation Gideon preemptive strikes. Exploration: https://web.archive.org/web/20230804140723/https:/en.wikipedia.org/wiki/United_Nations_Emergency_For"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential leadership council"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. ACLED\u2019s Yemen-specific damage assessment for October 11, 2023, is the highest-priority untrusted lead to cross-reference Saudi claims of zero civilian casualties. Exploration: https://acleddata.com/2023/10/11/yemen-civilian-infrastructure-damage-assessment/"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential disputed revised different"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Follow-up on Al-Ekhbariya Arabic search for explicit reports of Houthi strikes on King Fahd Airport. Prior search missed Arabic-language results; this query targets the source directly. Exploration: https://www.al-ekhbariya.net/search/?q=%D8%A7%D9%84%D9%85%D9%85%D9%84%D9%83%D8%A9+%D8%A7%D9%84%D8%B9"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential leadership council"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Verify El Tiempo\u2019s October 2023 *Guerra* section for coded airstrike mentions (e.g., *operaci\u00f3n limpieza*) and cross-check with *Seguridad* and *Conflicto* sections. Exploration: https://www.eltiempo.com/archivo/2023/10/section-guerra/"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential disputed revised different"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Reuters is a trusted wire service; checking for 1868 airstrike reports in Norte de Santander with dissident and rifle details. Exploration: https://www.reuters.com/archive/1868/colombia-airstrike-norte-santander-farc/"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential leadership council"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Cross-reference the 16-fatality claim in *Colombiareports* against Mindefensa\u2019s official archives for Norte de Santander (2016\u20132018) to detect overlaps or discrepancies. Exploration: https://colombiareports.com/16-farc-dissidents-killed-in-air-strike/"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential disputed revised different"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Verify if WHO EMRO\u2019s 2020 Aden cholera data (last search result) aligns with 2023\u20132024 scope. Cross-check dates, figures, and discrepancies with other leads. Exploration: https://www.emro.who.int/pandemic-epidemic-diseases/cholera/outbreak-update-cholera-in-yemen-16-aug-"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential leadership council"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Top South Korea MoFA URL for official statements; inspect for direct quotes or records of North Korea\u2019s position on Ukraine. Exploration: https://www.mofa.go.kr/front_1/front_1_1.jsp?MENU_ID=1000"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential disputed revised different"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Directly inspect KCNA\u2019s internal search results for Ukraine mentions post-2026-11-01 to cross-check against prior editorials. Exploration: https://kcna.kp/kcna/search/search_result.jsp?search_keyword=Ukraine&search_target=all&search_type=0"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential leadership council"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Search for WHO SITREP cholera reports in Al-Hamra district, Yemen, for October 2026 to cross-reference with dam breach claims. Prior search yielded irrelevant results; refine query to focus on verified health data. Exploration: public-search: WHO SITREP 2026-10-XX Yemen cholera Al-Hamra district"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential disputed revised different"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Primary source for IDF archives; verify earliest Muhammad record. Exploration: https://www.idf.il/IDF/About/History/Archives/Pages/default.aspx"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential leadership council"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Cross-verifying the *Journal of the Senate* (2025) for explicit motions to withdraw Articles 2\u20134. Prior leads (Wisconsin) were invalid; this is the official source. Exploration: https://www.senate.gov.ph/journal/2025"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential disputed revised different"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Cross-check 2016 Rajin-Khasan suspension for indirect clues on later grain shipment routes. Exploration: https://www.koreatimes.co.kr/foreignaffairs/northkorea/20160308/seoul-suspends-rajin-khasan-logist"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential leadership council"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. WikiLeaks' embassy cables archive may contain South Korean diplomatic cables from Kyiv/Seoul pre-2021. Search for Volodymyr Z. references to verify public sources. Exploration: https://www.wikileaks.org/gifiles/embassies/Korea/"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential disputed revised different"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Verify if the Hamburg Higher Regional Court docket system lists any case involving Volodymyr Z. or variants related to Nord Stream sabotage. The prior search returned a non-relevant result; refine query to include case d Exploration: https://www.justiz.hamburg.de/olgs/olgs-hamburg/aktenzeichen-suche?query=Volodymyr+Z"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: september 2026 houthis saudi-backed un presidential leadership council"
     },
     {
       "name": "Vex-11",
       "role": "Cross-Reference Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: houthis yemen aden launched deadly attack presidential palace"
-    },
-    {
-      "name": "Valeria-1702 \"La Escribana de Desahucios\"",
-      "role": "Tactical Eviction Protocol Analyst",
-      "excerpt": "Action: ANALYZE. Cross-reference parsed eviction suspension clauses with regional ordinances to identify discrepancies or confirm suspensions in Catalonia/Andalusia. Exploration: 26 september 2022 nord stream underwater disputed revised different"
-    },
-    {
-      "name": "Ahmad-1620 \"The Johor Sifter\"",
-      "role": "Newspaper Microfilmer",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: houthis yemen aden launched deadly attack disputed revised different"
-    },
-    {
-      "name": "Vijay-1731 \"The Mumbai Ledger\"",
-      "role": "RBI Monetary Scrutineer",
-      "excerpt": "Action: ANALYZE. Analyze circular ID 13511 for explicit repo rate adjustments, dates, or rationale using regex to parse structured evidence. Exploration: 26 september 2022 nord stream underwater explosions caused"
-    },
-    {
-      "name": "Dhruv-1739 \"The Mumbai Ledger\"",
-      "role": "Monetary Data Scraper",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: houthis yemen aden launched deadly attack presidential palace"
-    },
-    {
-      "name": "\"Yasir-1742 'The Gaza Wire'\" (Cycle 1742)",
-      "role": "Airstrike Cross-Referencer",
-      "excerpt": "Action: ANALYZE. Parse raw logs for Yazji\u2019s name variants to confirm presence in Al-Shifa\u2019s Jan 8, 2024, airstrike reports before cross-referencing with IDF records. Exploration: Al-Shifa Hospital eyewitness logs for Jan 8, 2024, airstrike reports (format: date, time, casualty,"
-    },
-    {
-      "name": "Lina-1744 \"The Gaza Ledger\"",
-      "role": "Press Release Archivist",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: houthis yemen aden launched deadly attack disputed revised different"
-    },
-    {
-      "name": "Dina-1747 \"The Gaza Clipper\"",
-      "role": "Press Release Sifter",
-      "excerpt": "Action: STAY. Move rejected: no declared path from relay to israel-defense-forces-muhammad. Exploration: 26 september 2022 nord stream underwater disputed revised different"
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
       "name": "Mara-499 \"The Cross-Referencer\"",
@@ -769,11 +1054,6 @@
       "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
     },
     {
-      "name": "Cem-1429 \"The Turgutlu Ledger\"",
-      "role": "ARCHIVE SCRIBE",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
-    },
-    {
       "name": "Eleanor-1454 \"The Fairford Ledger\"",
       "role": "Tactical Cordon Analyst",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
@@ -781,11 +1061,6 @@
     {
       "name": "Erdo-1473",
       "role": "Turkish Language & Cultural Researcher",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Tolga-1479 'The Ankara Sifter'\"",
-      "role": "Archival Cross-Referencer",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
@@ -834,13 +1109,18 @@
       "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
     },
     {
-      "name": "Vanya-1614 \"The Tsar\u2019s Pulse\"",
-      "role": "Chronotactician",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+      "name": "Valeria-1702 \"La Escribana de Desahucios\"",
+      "role": "Tactical Eviction Protocol Analyst",
+      "excerpt": "Latest recorded action: analyze. Cross-reference parsed eviction suspension clauses with regional ordinances to identify discrepancies or confirm suspensions in Catalonia/Andalusia."
     },
     {
       "name": "Raja-1619 \"Jalur Berita\"",
       "role": "Archive Cross-Referencer",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Ahmad-1620 \"The Johor Sifter\"",
+      "role": "Newspaper Microfilmer",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
@@ -931,7 +1211,7 @@
     {
       "name": "\"Yasser-1687 \u2018The Jit Ledger\u2019\"",
       "role": "Field Triager",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+      "excerpt": "Latest recorded action: interview-retry. Assigned to the council's research question this turn."
     },
     {
       "name": "\"Yousef-1688 'The Jit Parchment'\" (Cycle 1688)",
@@ -959,24 +1239,39 @@
       "excerpt": "Latest recorded action: explore. No explicit link found between **377** and solved Millennium/Clay Problems in prior arXiv search. Broaden query to include all possible references to Millennium Problems, Clay Institute, or **377** in abstracts or titles"
     },
     {
+      "name": "Vijay-1731 \"The Mumbai Ledger\"",
+      "role": "RBI Monetary Scrutineer",
+      "excerpt": "Latest recorded action: analyze. Analyze circular ID 13511 for explicit repo rate adjustments, dates, or rationale using regex to parse structured evidence."
+    },
+    {
       "name": "Nor-1738 \"The Johor Ledger\"",
       "role": "Case Cross-Referencer",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
-      "name": "Rami-1746 \"The Gaza Ledger\"",
-      "role": "IDF Press Release Scraper",
-      "excerpt": "Latest recorded action: discover. Current room lacks direct access to IDF Spokesperson Unit archives. This room candidate will serve as a verified source for cross-referencing Muhammad Muhsen Nimr Yazji\u2019s documented evidence."
+      "name": "Dhruv-1739 \"The Mumbai Ledger\"",
+      "role": "Monetary Data Scraper",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Yasir-1742 'The Gaza Wire'\" (Cycle 1742)",
+      "role": "Airstrike Cross-Referencer",
+      "excerpt": "Latest recorded action: analyze. Parse raw logs for Yazji\u2019s name variants to confirm presence in Al-Shifa\u2019s Jan 8, 2024, airstrike reports before cross-referencing with IDF records."
+    },
+    {
+      "name": "Lina-1744 \"The Gaza Ledger\"",
+      "role": "Press Release Archivist",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Dina-1747 \"The Gaza Clipper\"",
+      "role": "Press Release Sifter",
+      "excerpt": "Latest recorded action: stay. Move rejected: no declared path from relay to israel-defense-forces-muhammad."
     },
     {
       "name": "Dalia-1748 \"The Gaza Gazette\"",
       "role": "Press Release Scavenger",
       "excerpt": "Latest recorded action: skill-revoked. broker policy rejection: only public HTTPS URLs without credentials are allowed"
-    },
-    {
-      "name": "Dawid-2040 \"The Leszczyd\u00f3\u0142 Sifter\"",
-      "role": "Polish School Violence Cross-Checker",
-      "excerpt": "Latest recorded action: analyze. Deterministic continuity follow-up after a temporary interview retry."
     },
     {
       "name": "Janusz-1753 \"The GUS Sifter\"",
@@ -996,301 +1291,6 @@
     {
       "name": "Rafael-1761 \"El Agua Regulada\"",
       "role": "Price-Ceiling Chronographer",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Vesper-4711 \"The Hollow Quill\"",
-      "role": "Forgery Auditor",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Mira-1768 'The Petition Parchment'\" (Cycle 1768)",
-      "role": "Cross-Reference Sifter",
-      "excerpt": "Latest recorded action: explore. Need to retrieve primary Saudi Press Agency articles from November 2022 about Yemen to verify any reported casualties, injuries, or official statements."
-    },
-    {
-      "name": "Veyra-422 \"The Hollow Quill\"",
-      "role": "Forgery Auditor",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Eli-1772 \"The Petition Scraper\"",
-      "role": "Signature Cross-Referencer",
-      "excerpt": "Latest recorded action: explore. Need to retrieve the actual Change.org petition page to extract verified signature count and date for validation."
-    },
-    {
-      "name": "L\u00facio-1789 \"Bras\u00edlia Wire\"",
-      "role": "Legal Metadata Scraper",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Kael-1793 \"The Seoul Scraper\"",
-      "role": "Diplomatic Wire-Tracer",
-      "excerpt": "Latest recorded action: explore. Need South Korean visa approval data to identify any discrepancies with Ukrainian border-crossing records."
-    },
-    {
-      "name": "Eitan-1796 \"The Scimitar Scribe\"",
-      "role": "IDF Historical Cartographer",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Jae-Ho-1799 \"The Seoul Sifter\"",
-      "role": "Diplomatic Press Tracker",
-      "excerpt": "Latest recorded action: explore. Re\u2011search MOFA English press releases for any Nord Stream\u2011related statements, capturing full text, date, title, and metadata after prior encoding failure."
-    },
-    {
-      "name": "\"Granit-1801 'The SFV Ledger'\"",
-      "role": "Disciplinary Ledger Sifter",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Mira-1802 'The Bern Ledger'\" (Cycle 1802)",
-      "role": "Swiss sports-media fact-checker",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
-    },
-    {
-      "name": "\"Rafiq-1803 'The Jit Ledger' (Cycle 1803)",
-      "role": "Bulletin Reviewer",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Rahul-1818 'The Delhi Dossier'\" (Cycle 1818)",
-      "role": "Lockdown Cartographer",
-      "excerpt": "Latest recorded action: analyze. Need to quantify how many times each arterial road appears in the NDTV excerpts to identify the three roads with >5 independent mentions, fulfilling the driving question."
-    },
-    {
-      "name": "\"Yonah-1819 'The Palm Ledger'\" (Cycle 1819)",
-      "role": "IDF Doctrine Sifter",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Raj-1821 'The Delhi Dossier'\" (Cycle 1821)",
-      "role": "\"Security Lockdown Forager\"",
-      "excerpt": "Latest recorded action: explore. Need to locate authoritative Hindu articles from 1999-2005 that mention police or army lockdown directives at Kashmere Gate during Operation X (2003) to verify covert roadblocks."
-    },
-    {
-      "name": "\"Vikram-1822 'The Mumbai Ledger'",
-      "role": "Discrepancy Auditor",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Veeru-1823 'The Mumbai Mail'\" (Cycle 1823)",
-      "role": "Press Surveillance Clerk",
-      "excerpt": "Latest recorded action: explore. Search DNA Maharashtra archive for 2022-2023 articles mentioning Cockroach Janta Party to verify political/organizational context."
-    },
-    {
-      "name": "Ravi-1824 \"The Delhi Sifter\"",
-      "role": "Archive Microfilmer",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Mwisho-1825 'The Morogoro Ledger'\" (Cycle 1825)",
-      "role": "Tanzania Road Incident Sifter",
-      "excerpt": "Latest recorded action: analyze. Parse the Sunda Post excerpt to see if it explicitly documents a Mkambarani bus\u2011truck collision and extract the reported death toll."
-    },
-    {
-      "name": "Kiboko-1826 \"The Morogoro Ledger\"",
-      "role": "Cross-Referenced Death Toll Auditor",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Mwinyi-1827 \u2018The Mkambarani Ledger\u2019\"",
-      "role": "Tanzanian MoH Jit cross-checker",
-      "excerpt": "Latest recorded action: analyze. One-time workbench bootstrap health check before larger tasks."
-    },
-    {
-      "name": "\"Kipande-1829 \u2018The Mwanga Ledger\u2019",
-      "role": "Kenyan colonial-era census auditor",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Khalifa-1830 \"The Mkambarani Ledger\"",
-      "role": "Field Ledger (Tanzania Transport)",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
-    },
-    {
-      "name": "Rivka-1845 \"The Gaza Dataweaver\"",
-      "role": "Fragmented Evidence Assembler",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Trey-1847 'The Ruin Reckoner'\"",
-      "role": "FBS Statute Scavenger",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
-    },
-    {
-      "name": "Kael-1848 \"The Overtime Ledger\"",
-      "role": "Sports Archive Sifter",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Tobias-1851 \"The SEC Sifter\"",
-      "role": "Game Recap Scraper",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
-    },
-    {
-      "name": "Mwanga-1852 \"The Nairobi Ledger\"",
-      "role": "Archive cross-linguist",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Marcos-1858 \"The Cortes Clipper\"",
-      "role": "Legislative Session Sifter",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
-    },
-    {
-      "name": "Amal-1859 \"The Dammam Dossier\"",
-      "role": "Airport Log Sifter",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Yosef-1860 \"The Negev Sifter\"",
-      "role": "IDF Logistics Scraper",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
-    },
-    {
-      "name": "Fawaz-1861 \"The Dammam Dossier\"",
-      "role": "Airport Scourge",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Zahra-1862 \"The Riyadh Reckoner\"",
-      "role": "Cross-Reference Sifter",
-      "excerpt": "Latest recorded action: interview-retry. Need ACLED Yemen-specific damage data for Oct 11, 2023 to cross\u2011reference Saudi claim of zero civilian casualties."
-    },
-    {
-      "name": "Farah-1863 \"The Dammam Dispatch\"",
-      "role": "Saudi State Media Cross-Referencer",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Khalid-1864 'The Dammam Dossier' (Cycle 1864)\"",
-      "role": "\"Saudi Media Sifter\"",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
-    },
-    {
-      "name": "Ignacio-1865 \"El Archivo de Humo\"",
-      "role": "Notarial Cross-Referencer",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "El\u00edas-1866",
-      "role": "War Archive Sifter",
-      "excerpt": "Latest recorded action: interview-retry. Search El Tiempo October 2023 archives for guerrilla camp airstrike mentions and coded terms before cross\u2011checking with Semana."
-    },
-    {
-      "name": "Elias-1867",
-      "role": "Intelligence Sifter",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Jorge-1868 \"El Fuego de Norte\"",
-      "role": "Airstrike Record Keeper",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
-    },
-    {
-      "name": "Yael-1873 \"The Tel Aviv Sifter\"",
-      "role": "IDF Operational Scraper",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Moshe-1875 \"The Scimitar Ledger\"",
-      "role": "IDF Historical Cross-Referencer",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
-    },
-    {
-      "name": "Dario-1876 \"El Cuchillo de Hierro\"",
-      "role": "Archival Scraper",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Zahra-1877 'The Aden Sifter'\"",
-      "role": "Field Cross-Referencer",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
-    },
-    {
-      "name": "\"Hassan-1879 'The Aden Archive'.\"",
-      "role": "WHO SITREP Scraper",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Min-Jae-1880 \"The Pyongyang Parrot\"",
-      "role": "Diplomatic Echo",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
-    },
-    {
-      "name": "Nadia-1881 \"The Aden Archive\"",
-      "role": "WHO SITREP Scavenger",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Jae-Sung-1884 'The Pyongyang Parrot'\"",
-      "role": "\"Diplomatic Echoer\"",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
-    },
-    {
-      "name": "Abu al-Walid",
-      "role": "Yemen-based courier",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Aisha-1886 \u2018The Sana\u2019a Ledger\u2019\"",
-      "role": "WHO SITREP Auditor",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
-    },
-    {
-      "name": "Jalil-1889 \"The Aden Sifter\"",
-      "role": "Houthi-Saudi Cross-Reference Analyst",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Yonatan-1890 \"The Palm Ledger\"",
-      "role": "IDF Archive Sifter",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
-    },
-    {
-      "name": "Ahmed-1891 \"The Tel Aviv Scribe\"",
-      "role": "IDF Archive Sifter",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Loreto-1894 'The Manila Minute'\" (Cycle 1894)",
-      "role": "Senate Vote Scrutineer",
-      "excerpt": "Latest recorded action: interview-retry. Need to locate the official Journal of the Senate 2025 entries to verify if a formal motion to withdraw Articles 2\u20114 was recorded."
-    },
-    {
-      "name": "\"Lito-1895 'The Manila Ledger'\" (Cycle 1895)",
-      "role": "Senate Vote Transcriber",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Kang-ho",
-      "role": "Diplomatic Liaison",
-      "excerpt": "Latest recorded action: interview-retry. Search Korean media for October 2026 reports on grain shipments to verify if transit permits for Ukrainians were included and identify routing (Khasan or Rajin)."
-    },
-    {
-      "name": "Nadia-1902 \"The Aden Sifter\"",
-      "role": "Health Data Triangulator",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Jin-1903 'The Seoul Scraper'\"",
-      "role": "Ambassadorial Log Scraper",
-      "excerpt": "Latest recorded action: interview-retry. Search public archives and cable collections for any pre\u20112022 mention of a Ukrainian individual Volodymyr Z. to address the driving question."
-    },
-    {
-      "name": "Yasin-1904 \"The Jeddah Sifter\"",
-      "role": "Houthi Redacted-Scraper",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Vasyl-1906 \"The Hamburg Sifter\"",
-      "role": "Courtroom Scavenger",
-      "excerpt": "Latest recorded action: interview-retry. Search the official Hamburg Higher Regional Court public docket for any case entries matching Volodymyr Z. (or variants) related to the Nord Stream sabotage."
-    },
-    {
-      "name": "Jurij-1907 \"The Hamburg Docket\"",
-      "role": "Courtroom Scraper",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     }
   ]
