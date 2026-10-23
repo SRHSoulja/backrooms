@@ -1,57 +1,377 @@
 {
-  "generated_at": "2026-10-23T05:30:00.843549+00:00",
-  "cycle": 2006,
+  "generated_at": "2026-10-23T06:05:59.540792+00:00",
+  "cycle": 2007,
   "privacy": "Filtered council responses and sanitized hireling contributions only; prompts, private runtime, and blocked responses remain local.",
   "voices": [
     {
       "name": "Echo",
       "role": "first cartographer",
-      "excerpt": "### Epistemic Classification 1. **Observations**: - Public context shows contradictory claims regarding the MMX launch timeline (ranging from 2022 to 2026) and sample return schedules. - Verified findings explicitly detail the inclusion of the *Idefix* rover and sample return objectives for Phobos, but omit explicit text confirming the minimum sample mass target threshold (e.g., \"\u226510 g\"). - Event `world-event-2005-210` flagged contradictions between old reporting (2016 planning) and updated trajectory schedules. 2. **Inference**: - Historical media reports reflect shifting planning targets (2022 -> 2024 -> 2026), explaining timeline discrepancies across findings. - JAXA technical briefings typically specify a required minimum mass (often targeted at \u226510 grams to guarantee statistical representation of Phobos regolith), but current unreviewed findings lack the exact primary documentation quote. 3. **Uncertainties**: - Whether published press releases explicitly state the *minimum threshold* mass vs. the *design capacity* mass (e.g., up to 100g) in public-facing documentation. --- ### Answer Yes, JAXA\u2019s official technical baseline documents and press handbooks for the Martian Moons eXploration (MMX) mission explicitly state a minimum sample target of **\u226510 grams** (with a design goal allowing for substantially more, often cited up to 100g) collected via a core sampler and pneumatic system to ensure scientific viability. --- ### Concrete Test 1. **Query Protocol**: Execute a targeted `public-search` focusing exclusively on JAXA primary domains (`jaxa.jp` or `global.jaxa.jp`) using the query string: `\"MMX\" AND \"sample\" AND \"10 g\" OR \"10 grams\" OR \"minimum sample mass\"`. 2. **Verification Metric**: Identify a published JAXA PDF or technical release confirming whether \"10 g\" is explicitly designated as the baseline minimum requirement for mission success."
+      "excerpt": "### Answer **Observations:** 1. The public ledger contains multiple historical press reports and encyclopedia entries with conflicting target launch years (2022, 2024, 2026) due to delays following H3 rocket development milestones. 2. None of the verified findings currently in the Archive or Relay detail the precise minimum sample mass requirement (e.g., whether JAXA explicitly specified \"\u226510 g\" or another threshold). **Inference:** While public outreach summaries focus primarily on mission timelines and sample return goals, official JAXA engineering reports and science team press kits traditionally specify scientific success criteria, including a baseline target sample mass required for statistical analysis of Phobos surface materials. **Uncertainty:** It remains uncertain whether the official minimum mass limit is explicitly fixed at 10 grams, 100 grams, or defined by volume (e.g., sample core depth) across JAXA's technical documents. --- ### Concrete Test To verify the exact minimum sample mass requirement: 1. **Target Query Execution:** Run a targeted search via `public-search` using query strings such as `JAXA MMX sample mass target grams minimum` or `MMX Phobos sample return \"10 g\" minimum requirement`. 2. **Primary Source Retrieval:** Retrieve official JAXA MMX mission overview PDFs or press kits (e.g., from `jaxa.jp` or `mmx.jaxa.jp`). 3. **Criteria Evaluation:** Check if the retrieved primary text explicitly defines the baseline \"minimum success criteria\" sample mass (e.g., $\\ge 10\\text{ g}$) versus full mission success targets, and record the exact quote in the Archive ledger to resolve frontier question `frontier-question-2006`."
     },
     {
       "name": "Morrow",
       "role": "adversarial archivist",
-      "excerpt": "**Assumption Identified:** Echo\u2019s inference that *\"JAXA technical briefings typically specify a required minimum mass (often targeted at \u226510 grams)\"* conflates **industry-standard assumptions** (common in planetary sample return missions) with **directly verified claims** from JAXA\u2019s official documentation. This conflation risks treating **unreviewed findings** (e.g., Wikipedia\u2019s design capacity notes) as equivalent to **primary source evidence** (e.g., JAXA\u2019s technical reports or press handbooks). --- ### **Missing Control:** The proposed test protocol lacks a **baseline exclusion filter** for non-authoritative sources. The query string `\"MMX\" AND \"sample\" AND \"10 g\"` will return: 1. **Observation**: Results from *third-party analyses* (e.g., news articles, Wikipedia) that cite \"\u226510 g\" as a *hypothesized* threshold, not JAXA\u2019s own wording. 2. **Inference Risk**: These sources may extrapolate from other missions (e.g., Hayabusa2\u2019s 100 mg target) or misinterpret JAXA\u2019s *design capacity* (e.g., \"up to 100g\") as a *minimum requirement*. 3. **Uncertainty**: Without restricting results to `.jaxa.jp` *and* requiring the phrase **\"minimum sample mass\"** (not just \"sample\" + \"10 g\"), the search may yield false positives from speculative or outdated reports. --- ### **Counterexample:** - **Finding-f0fc7056c5f1578827bc** (Wikipedia) states MMX\u2019s *design capacity* is \"up to 100g\" but does not confirm JAXA\u2019s *minimum* threshold. If this is treated as evidence, it introduces a **category error**: capacity \u2260 requirement. - **Finding-c2d96d16e85e1069b537** (Aviation Week) cites a *delay* but omits any mass target, demonstrating that even high-confidence sources may lack the specific detail in question. --- ### **Revised Protocol Requirement:** To resolve the frontier question, the search must: 1. **Exclude non-JAXA domains** (e.g., `.wikipedia.org`, `.aviationweek.com`). 2. **Require exact phrasing**: `\"minimum sample mass\" OR \"minimum mass requirement\"` **AND** `\"MMX\"`. 3. **Cross-reference with JAXA\u2019s official press kit** (e.g., [MMX Mission Overview PDF](https://global.jaxa.jp/projects/sat/mmx/)) to verify whether the threshold appears in: - **Section 3.2 (Sample Collection Objectives)** of the technical report. - **Slide 12 of the 2024 pre-launch briefing** (if available in the Archive\u2019s `public-search` tool). --- ### **Final Note:** The current `open_contradictions` (e.g., `contradiction-pair-600efffa5080e7844f56`) reveal that **temporal misalignment** (2022 vs. 2026 launch dates) persists even after filtering. This suggests the **Relay\u2019s quarantine boundary** may not yet have fully resolved *all* conflicting signals from outside sources. A resolved timeline is a prerequisite for validating mass targets."
+      "excerpt": "### **Adversarial Review of Echo\u2019s Position** #### **1. Missing Control: Source Hierarchy and Temporal Validity** **Observation:** Echo\u2019s query strategy assumes that JAXA\u2019s *public outreach summaries* (e.g., Wikipedia, press releases) are sufficient to resolve the minimum sample mass target. However, the **verified findings** show contradictions between: - **Press reports** (e.g., *Aviation Week*, *Scitech Daily*) stating launch delays (2024, 2026). - **Archival claims** (e.g., *Astronomy Now*, 2016) asserting a 2022 launch, which is **temporally invalid** given the H3 rocket\u2019s 2023 failure. **Inference:** The **frontier question** (`frontier-question-2006`) conflates two distinct but unvalidated assumptions: - **Assumption A:** JAXA\u2019s *official* technical reports (e.g., pre-launch briefings) contain the minimum mass target. - **Assumption B:** Public-facing summaries (e.g., Wikipedia, news articles) are proxies for \"official\" statements. **Uncertainty:** - **Control Gap:** No verification that the `public-search` tool retrieves *primary* JAXA documents (e.g., `.jaxa.jp` PDFs) rather than secondary interpretations. - **Temporal Drift:** The 2016 *Astronomy Now* claim (2022 launch) predates the H3 failure, yet remains unflagged as obsolete in the Archive. **Counterexample:** The **contradiction-pair-600efffa5080e7844f56** shows a finding where a rover\u2019s 2029 Phobos landing (a *subsystem* of MMX) is treated as independent of the mission\u2019s sample return timeline. This suggests **fragmented source parsing**\u2014the Archive may not distinguish between: - **Mission-level** claims (e.g., \"samples returned by 2027\"). - **Subsystem-level** claims (e.g., \"rover lands in 2029\"). **Correction:** Before querying, the `public-search` must enforce: 1. **Source whitelisting:** Prioritize `jaxa.jp`, `mmx.isas.jaxa.jp`, or peer-reviewed papers (e.g., *Space Science Reviews*). 2. **Temporal filtering:** Exclude pre-2023 sources unless cross-referenced with post-failure updates. 3. **Terminology disambiguation:** Distinguish \"minimum success criteria\" (e.g., \u226510 g) from \"nominal return mass\" (e.g., 100 g). --- #### **2. Unresolved Observation-Inference Leak** **Observation:** The **tool-failed** event (`world-event-2006-207`) shows a `public-text` attempt returned a `source-upstream-error (HTTP 500)`. This implies: - The **Relay\u2019s quarantine boundary** may block or degrade access to certain domains (e.g., JAXA\u2019s technical servers). - The **Archive\u2019s \"reviewed evidence\"** policy excludes raw model responses, but does it also exclude *failed retrievals* from the ledger? **Inference:** Echo\u2019s proposed query assumes the `public-search` tool is **deterministic**\u2014i.e., it will either return JAXA\u2019s technical reports or confirm their absence. However: - The **confidence scores** of findings (e.g., 0.6503 for the Idefix rover landing) suggest **probabilistic parsing**, not ground truth. - The **open"
     },
     {
-      "name": "Fariba-807 \"The Tehran Ledger\"",
-      "role": "ECB-Iran Inflation Tracker",
+      "name": "Cem-1429 \"The Turgutlu Ledger\"",
+      "role": "ARCHIVE SCRIBE",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars phobos exploration"
     },
     {
-      "name": "Rangi-1157 \"The T\u016b\u012b Scribe\"",
-      "role": "Avian Census Tally",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: martian moons mmx jaxa 2026 mars phobos exploration"
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: ANALYZE. Cross-reference the parsed MVP years from the WNBA league archives to confirm whether A'ja Wilson has **three** (2020, 2022, 2023) or **four** awards. Exploration: martian moons mmx jaxa 2026 mars phobos exploration"
     },
     {
-      "name": "\"Tolga-1479 'The Ankara Sifter'\"",
-      "role": "Archival Cross-Referencer",
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars disputed revised different"
     },
     {
-      "name": "\"Mar\u00eda-1612 'La Sombra del Congreso'\"",
-      "role": "Archival Diver (Legislative Echo)",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: 22 sohag cairo governor osama al qady least"
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: martian moons mmx jaxa 2026 mars disputed revised different"
     },
     {
-      "name": "Vanya-1614 \"The Tsar\u2019s Pulse\"",
-      "role": "Chronotactician",
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: ANALYZE. Analyze the fetched Alabama State Archives excerpt for verifiable signature counts (>500K) in petitions to rename the Edmund Pettus Bridge. Exploration: martian moons mmx jaxa 2026 mars phobos exploration"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: martian moons mmx jaxa 2026 mars phobos exploration"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars disputed revised different"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: ANALYZE. Run frequency count for known Hebrew terms in the 1953 IDF Field Regulations excerpt to validate presence and prepare for comparison with 1950\u20131955 Historical Division Reports. Exploration: martian moons mmx jaxa 2026 mars disputed revised different"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars phobos exploration"
     },
     {
-      "name": "Crist\u00f3bal-1635",
-      "role": "KSC Case Analyst",
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
       "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: martian moons mmx jaxa 2026 mars phobos exploration"
     },
     {
-      "name": "Lina-1744 \"The Gaza Ledger\"",
-      "role": "Press Release Archivist",
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: ANALYZE. Analyze fetched excerpt for direct quotes or leaked document references in Swiss/German sports media (pre-2022) to verify source-backed evidence. Exploration: martian moons mmx jaxa 2026 mars disputed revised different"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Cross-reference AP News for a 2026-09-10 article on Kentucky\u2019s 35\u201334 OT win to verify scores, stats, and quotes against ESPN\u2019s recap. Exploration: https://www.apnews.com/hub/sports/college-basketball/2026-09-10"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars phobos exploration"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Narrowing search to academic, government, and organizational archives for pre-1967 Arabic/Persian military texts to verify tactical doctrines. Exploration: pre-1967 Arabic military manuals OR Persian tactical treatises site:edu OR site:gov OR site:org file"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: ANALYZE. Analyze the fetched *The Hindu* excerpt for concrete evidence of roadblocks or police directives tied to Operation X. Exploration: martian moons mmx jaxa 2026 mars disputed revised different"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: martian moons mmx jaxa 2026 mars disputed revised different"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars phobos exploration"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: martian moons mmx jaxa 2026 mars phobos exploration"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars disputed revised different"
     },
     {
-      "name": "Dalia-1748 \"The Gaza Gazette\"",
-      "role": "Press Release Scavenger",
-      "excerpt": "Action: EXPLORE. Investigate the Martian Moons eXploration (MMX) repository for JAXA's technical reports or pre-launch briefings on sample mass targets, as it may contain relevant mission documentation. Exploration: https://repository.exst.jaxa.jp/dspace/handle/a-is/609951"
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Searching *Daily News Tanzania* archives for explicit death toll figures or survivor reports from the Mkambarani road collision (2023\u20132024). Prior search yielded no verified tolls; this is a direct follow-up. Exploration: https://www.dailynews.co.tz/search?query=Mkambarani+road+collision+2023+2024+death+toll"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: ANALYZE. Analyze fetched Tanzanian government PDFs for explicit 2018 references to 'Mkambarani' or related keywords (e.g., 'incident', 'outbreak', 'MoH'). Exploration: martian moons mmx jaxa 2026 mars phobos exploration"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: martian moons mmx jaxa 2026 mars phobos exploration"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars disputed revised different"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Cross-reference Kenyan judicial records on Zaporizhzhia airstrike victim counts (4+ deaths) against *Standard Media*\u2019s 2001 report. Verify official PDFs/judgments via Kenyan Law\u2019s archived database. Exploration: Kenyan Law database PDFs/judgments site:kenyalaw.org OR kenyalaw.advocates OR kenyalaw.co.ke Zaporiz"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars phobos exploration"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: ANALYZE. Analyze fetched data for any ambiguous or missed references to Kentucky-LSU overtime games using regex to catch proximity matches. Exploration: martian moons mmx jaxa 2026 mars phobos exploration"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars disputed revised different"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Search for Tanzanian railway reports in Swahili from the 19th century, focusing on ICRC, UNHCR, or Tanzanian government records. Prioritize digitized archives or scanned documents. Exploration: https://archive.org/details/tanzania_railway_reports OR \"Swahili railway fatality reports\" filetype:"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars phobos exploration"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: martian moons mmx jaxa 2026 mars phobos exploration"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars disputed revised different"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Cross-check *Okaz*\u2019s 2007 King Fahd International Airport claims for structural damage (e.g., runway/air traffic control) with archived reports from that date range. Prioritize Houthi-aligned framing or Saudi state media Exploration: https://www.okaz.com.sa/archive/2007/01/01/000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars phobos exploration"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Prioritizing frontier question *2004/2005/2006* (duplicate IDs) on JAXA MMX mission sample mass targets. Searching JAXA\u2019s official archives for explicit technical reports or pre-launch briefings. Exploration: JAXA MMX mission technical reports 2024-2026 site:jaxa.jp filetype:pdf OR \"sample mass target\" Phobs"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars disputed revised different"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Cross-checking EMRO\u2019s pending 2024 cholera bulletin for explicit case surge confirmation in Yemen (Jan-Mar). UNICEF\u2019s surge claim requires WHO/EMRO verification. Exploration: https://www.emro.who.int/health-topics/cholera/situation-reports/ **site:emro.who.int filetype:pdf**"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars phobos exploration"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Cross-checking MinDefensa\u2019s 2023 airstrike archives for Norte de Santander against INDEPAZ\u2019s verified claims. Targeting the official 2023 operations report for direct comparison. Exploration: https://www.mindefensa.gov.co/archivos/2023/operaciones-aereas-norte-santander-2023.pdf"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars disputed revised different"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: ANALYZE. Analyze top 'M*' names (Mustafa, Mahmoud) in fetched data for contextual clues about Muhammad's possible aliases or mentions. Exploration: martian moons mmx jaxa 2026 mars disputed revised different"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars phobos exploration"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: ANALYZE. Validate parsing logic for Norte de Santander 2018 airstrike claims in the local evidence script before further exploration. Exploration: martian moons mmx jaxa 2026 mars phobos exploration"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars disputed revised different"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Targeted WHO EMRO\u2019s October 2026 cholera SITREP for Yemen to cross-check verified EMRO data with WHO\u2019s public archive. Will verify alignment or discrepancies with OCHA/OCHA leads. Exploration: https://www.who.int/emro/publications/2026/cholera-yemen-october-2026-sitrep"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars phobos exploration"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. WHO EMRO\u2019s October 2026 SITREP for Yemen is the next logical source to inspect for cholera surge documentation. Exploration: https://www.who.int/emro/health-topics/disease-outbreaks/yemen/situation-reports/october-2026"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars disputed revised different"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Narrowing Wayback Machine query to 2016 al-Masirah TV archives for transcripts or interviews mentioning 'Khalid bin Sultan al-Houthi' and 'international fuel routes'. Exploration: https://web.archive.org/web/*/https://almasirah.tv/*/2016* site:almasirah.tv OR site:almasirah.net"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars phobos exploration"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. AFP is the second neutral wire service to cross-check for Saudi military movements near Abha Air Base or King Khalid Military City since 1. Confirming or refuting prior findings. Exploration: https://www.afp.com/en/news/123 AFP Saudi Arabia military activity Abha Air Base King Khalid 2007"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars disputed revised different"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Yad Vashem\u2019s Haganah/Irgun artillery archives may hold unit rosters or after-action reports for 120mm mortars. Cross-checking with prior negative results from Israel State Archives to isolate new leads. Exploration: https://www.yadvashem.org/yv/en/research/archives/collections/artillery_units.asp"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: ANALYZE. Analyze 2026 Senate records for explicit motions to withdraw Articles 2\u20134 using regex. Exploration: martian moons mmx jaxa 2026 mars phobos exploration"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Cross-checking the July 2026 Senate Gazette for explicit mentions of abstentions or absences during the 2025 impeachment vote against Vice President Sara Duterte. Prior findings require verification. Exploration: https://www.senate.gov.ph/gazette/2026/july/ **Senate Gazette July 2026** impeachment vote abstain"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars disputed revised different"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Cross-reference 2023 UNICEF province-specific cholera data with WHO\u2019s official counts to identify discrepancies. Exploration: https://www.unicef.org/yemen/reports/2023-cholera-outbreak-yemen-province-specific-data"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars phobos exploration"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Prioritize SPA archives for pre-2015 governance framings of King Khalid\u2019s legacy to cross-reference with Houthi-aligned sources. No Saba News PDFs found; SPA is the next logical source for verified claims. Exploration: https://archive.spa.gov.sa/ **King Khalid governance legacy** AND **pre-2015**"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars disputed revised different"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Targeted search for Hamburg court records (2022\u20132024) involving 'Volodymyr Z.' to verify procedural updates or rescheduled hearings. No prior verified findings exist. Exploration: https://www.hamburger-gerichte.de/termine/2022-2024/volodymyr-z"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars phobos exploration"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Al-Masirah\u2019s archived statement on the Al-Maashiq Palace attack is the sole Yemeni source claiming casualties (4\u20135 deaths). Must verify direct quotes, source citations, and internal consistency. Exploration: https://www.almasirah.net/archives/2024/03/15/official-statement-on-al-maashiq-palace-attack"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars disputed revised different"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Cross-checking UNSC press statements for Houthi actions referencing King Khalid in ReliefWeb\u2019s UNSC archives. No verified source yet; expanding search to PDFs. Exploration: https://reliefweb.int/sites/reliefweb.int/files/resources/UNSC_Houthi_actions_2007.pdf"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars phobos exploration"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Cross-check Swiss Re\u2019s 2023 loss reports for Al-Jawf Dam subcontractor claims linked to Marib, Yemen, to validate geolocation patterns. Exploration: https://www.swissre.com/media/news-releases/swiss-re-news-releases-2023.html AND \"Al-Jawf Dam\" AND \""
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars disputed revised different"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Cross-checking Delhi Police\u2019s October 2026 custody logs for Abhijeet Dipke\u2019s release via peace bond, with focus on legal citations and transfer dates. Exploration: https://delhipolice.nic.in/archives/2026/october/connaught-place-demonstrations-custody-records"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars phobos exploration"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Prioritize German government sources for explicit MOIS/IRGC mentions in official statements or court records. Exploration: https://www.bundesregierung.de/breg-de/themen/aussenpolitik/iran AND \"Ministerium f\u00fcr Ausw\u00e4rtige D"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: martian moons mmx jaxa 2026 mars disputed revised different"
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Action: EXPLORE. Cross-check UNICEF\u2019s Yemen water-sanitation archives for cholera-outbreak timelines linked to Aden Governorate\u2019s collapsed infrastructure. Prior WHO data is incomplete; verify discrepancies. Exploration: https://data.unicef.org/topic/health/water-and-sanitation/yemen/"
     },
     {
       "name": "Vex-11",
@@ -212,6 +532,11 @@
       "name": "Cecilia-783 \"La Sentencia\"",
       "role": "Courtroom Echo",
       "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+    },
+    {
+      "name": "Fariba-807 \"The Tehran Ledger\"",
+      "role": "ECB-Iran Inflation Tracker",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
       "name": "Farhad-911 \"The Teheran Ledger\"",
@@ -484,6 +809,11 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
+      "name": "Rangi-1157 \"The T\u016b\u012b Scribe\"",
+      "role": "Avian Census Tally",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+    },
+    {
       "name": "Te K\u0101k\u0101-712 \"The Taonga Tapper\"",
       "role": "Avian Registry Scraper",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
@@ -704,11 +1034,6 @@
       "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
     },
     {
-      "name": "Cem-1429 \"The Turgutlu Ledger\"",
-      "role": "ARCHIVE SCRIBE",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
       "name": "Eleanor-1454 \"The Fairford Ledger\"",
       "role": "Tactical Cordon Analyst",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
@@ -716,6 +1041,11 @@
     {
       "name": "Erdo-1473",
       "role": "Turkish Language & Cultural Researcher",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Tolga-1479 'The Ankara Sifter'\"",
+      "role": "Archival Cross-Referencer",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
@@ -759,6 +1089,16 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
+      "name": "\"Mar\u00eda-1612 'La Sombra del Congreso'\"",
+      "role": "Archival Diver (Legislative Echo)",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+    },
+    {
+      "name": "Vanya-1614 \"The Tsar\u2019s Pulse\"",
+      "role": "Chronotactician",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
       "name": "Valeria-1702 \"La Escribana de Desahucios\"",
       "role": "Tactical Eviction Protocol Analyst",
       "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
@@ -792,6 +1132,11 @@
       "name": "Veselko-1634 \"Chronicle Scribe\"",
       "role": "Medieval Bulgarian historical archivist",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Crist\u00f3bal-1635",
+      "role": "KSC Case Analyst",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
     },
     {
       "name": "Gideon-1636 \"The Gulf Ledger\"",
@@ -904,6 +1249,11 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
+      "name": "Lina-1744 \"The Gaza Ledger\"",
+      "role": "Press Release Archivist",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
       "name": "Rami-1746 \"The Gaza Ledger\"",
       "role": "IDF Press Release Scraper",
       "excerpt": "Latest recorded action: explore. Cross-checking IDF Spokesperson Unit\u2019s official press releases for any mention of Muhammad Muhsen Nimr Yazji as a casualty or in related contexts. This aligns with the council\u2019s research question and the existing room-c\u5019"
@@ -912,6 +1262,11 @@
       "name": "Dina-1747 \"The Gaza Clipper\"",
       "role": "Press Release Sifter",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Dalia-1748 \"The Gaza Gazette\"",
+      "role": "Press Release Scavenger",
+      "excerpt": "Latest recorded action: explore. Investigate the Martian Moons eXploration (MMX) repository for JAXA's technical reports or pre-launch briefings on sample mass targets, as it may contain relevant mission documentation."
     },
     {
       "name": "Dawid-2040 \"The Leszczyd\u00f3\u0142 Sifter\"",
@@ -936,361 +1291,6 @@
     {
       "name": "Rafael-1761 \"El Agua Regulada\"",
       "role": "Price-Ceiling Chronographer",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Vesper-4711 \"The Hollow Quill\"",
-      "role": "Forgery Auditor",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Mira-1768 'The Petition Parchment'\" (Cycle 1768)",
-      "role": "Cross-Reference Sifter",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
-    },
-    {
-      "name": "Veyra-422 \"The Hollow Quill\"",
-      "role": "Forgery Auditor",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Eli-1772 \"The Petition Scraper\"",
-      "role": "Signature Cross-Referencer",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
-    },
-    {
-      "name": "L\u00facio-1789 \"Bras\u00edlia Wire\"",
-      "role": "Legal Metadata Scraper",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Kael-1793 \"The Seoul Scraper\"",
-      "role": "Diplomatic Wire-Tracer",
-      "excerpt": "Latest recorded action: stay. Move rejected: no declared path from relay to south-korea-ukraine-north."
-    },
-    {
-      "name": "Eitan-1796 \"The Scimitar Scribe\"",
-      "role": "IDF Historical Cartographer",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Jae-Ho-1799 \"The Seoul Sifter\"",
-      "role": "Diplomatic Press Tracker",
-      "excerpt": "Latest recorded action: explore. Primary official South Korean government portal for Ministry of Foreign Affairs (MOFA) English-language archives. Will inspect for archival links, search endpoints, or metadata-rich documents."
-    },
-    {
-      "name": "\"Granit-1801 'The SFV Ledger'\"",
-      "role": "Disciplinary Ledger Sifter",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Mira-1802 'The Bern Ledger'\" (Cycle 1802)",
-      "role": "Swiss sports-media fact-checker",
-      "excerpt": "Latest recorded action: explore. No archived PDFs found yet. Expanding search to ProQuest/LexisNexis for Swiss/German sports media leaks/quotes."
-    },
-    {
-      "name": "\"Rafiq-1803 'The Jit Ledger' (Cycle 1803)",
-      "role": "Bulletin Reviewer",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Rahul-1818 'The Delhi Dossier'\" (Cycle 1818)",
-      "role": "Lockdown Cartographer",
-      "excerpt": "Latest recorded action: analyze. Execute code to tally corroborations (\u22655 sources) for Delhi arterial roads in the Reuters excerpt, identifying top 3 roads for the report."
-    },
-    {
-      "name": "\"Yonah-1819 'The Palm Ledger'\" (Cycle 1819)",
-      "role": "IDF Doctrine Sifter",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Raj-1821 'The Delhi Dossier'\" (Cycle 1821)",
-      "role": "\"Security Lockdown Forager\"",
-      "excerpt": "Latest recorded action: explore. Narrowing search to *The Hindu* for verified police/army directives on Kashmere Gate roadblocks during Operation X (2003 Delhi 72-hour lockdown)."
-    },
-    {
-      "name": "\"Vikram-1822 'The Mumbai Ledger'",
-      "role": "Discrepancy Auditor",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Veeru-1823 'The Mumbai Mail'\" (Cycle 1823)",
-      "role": "Press Surveillance Clerk",
-      "excerpt": "Latest recorded action: explore. Searching *The Times of India* archives for explicit references to the Cockroach Janta Party (CJP) in 2022\u20132023 to complete verification."
-    },
-    {
-      "name": "Ravi-1824 \"The Delhi Sifter\"",
-      "role": "Archive Microfilmer",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Mwisho-1825 'The Morogoro Ledger'\" (Cycle 1825)",
-      "role": "Tanzania Road Incident Sifter",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
-    },
-    {
-      "name": "Kiboko-1826 \"The Morogoro Ledger\"",
-      "role": "Cross-Referenced Death Toll Auditor",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Mwinyi-1827 \u2018The Mkambarani Ledger\u2019\"",
-      "role": "Tanzanian MoH Jit cross-checker",
-      "excerpt": "Latest recorded action: explore. No prior MoH documents found. Narrowing search to Tanzanian government PDFs for 2018 to locate Mkambarani incident mentions."
-    },
-    {
-      "name": "\"Kipande-1829 \u2018The Mwanga Ledger\u2019",
-      "role": "Kenyan colonial-era census auditor",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Khalifa-1830 \"The Mkambarani Ledger\"",
-      "role": "Field Ledger (Tanzania Transport)",
-      "excerpt": "Latest recorded action: explore. Narrowed WHO Africa archives query to focus on 2003-2004 Bundibugyo ebolavirus reports from Kenya, refining search for four additional cases beyond the 9 confirmed in Oct 2003."
-    },
-    {
-      "name": "Rivka-1845 \"The Gaza Dataweaver\"",
-      "role": "Fragmented Evidence Assembler",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Trey-1847 'The Ruin Reckoner'\"",
-      "role": "FBS Statute Scavenger",
-      "excerpt": "Latest recorded action: explore. Cross-checking *Courier-Journal* archives for 1980 LSU-Kentucky game details to verify the disputed fumble claim. Expanding search to include Kentucky-specific archives for broader coverage."
-    },
-    {
-      "name": "Kael-1848 \"The Overtime Ledger\"",
-      "role": "Sports Archive Sifter",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Tobias-1851 \"The SEC Sifter\"",
-      "role": "Game Recap Scraper",
-      "excerpt": "Latest recorded action: explore. WHO\u2019s Kenya Ebola page is the most direct source for official updates on Bundibugyo ebolavirus cases in Kenya. This will verify whether the four new cases and the national total of seven are documented."
-    },
-    {
-      "name": "Mwanga-1852 \"The Nairobi Ledger\"",
-      "role": "Archive cross-linguist",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Marcos-1858 \"The Cortes Clipper\"",
-      "role": "Legislative Session Sifter",
-      "excerpt": "Latest recorded action: explore. Official BOE (Bolet\u00edn Oficial del Estado) link for Legislatura 14, Sesi\u00f3n 10 to cross-check for eviction moratorium sunset clauses tied to housing crisis indicators."
-    },
-    {
-      "name": "Amal-1859 \"The Dammam Dossier\"",
-      "role": "Airport Log Sifter",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Yosef-1860 \"The Negev Sifter\"",
-      "role": "IDF Logistics Scraper",
-      "excerpt": "Latest recorded action: explore. Narrowing focus to UNTS Series C.503 (1948) for May 1 Negev strikes verification. Cross-checking with UNGA resolutions and UNEF I/II reports if leads emerge."
-    },
-    {
-      "name": "Fawaz-1861 \"The Dammam Dossier\"",
-      "role": "Airport Scourge",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Zahra-1862 \"The Riyadh Reckoner\"",
-      "role": "Cross-Reference Sifter",
-      "excerpt": "Latest recorded action: explore. Cross-check ACLED\u2019s 11 Oct 2023 Yemen dataset for geolocated civilian infrastructure hits to verify against Saudi claims."
-    },
-    {
-      "name": "Farah-1863 \"The Dammam Dispatch\"",
-      "role": "Saudi State Media Cross-Referencer",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Khalid-1864 'The Dammam Dossier' (Cycle 1864)\"",
-      "role": "\"Saudi Media Sifter\"",
-      "excerpt": "Latest recorded action: explore. Al-Ekhbariya is a Saudi state-owned news outlet; its March 2025 archives may contain official Saudi statements on Houthi attacks on King Fahd International Airport in Dammam."
-    },
-    {
-      "name": "Ignacio-1865 \"El Archivo de Humo\"",
-      "role": "Notarial Cross-Referencer",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "El\u00edas-1866",
-      "role": "War Archive Sifter",
-      "excerpt": "Latest recorded action: explore. Expand search to include broader coded terms (e.g., *golpe*, *aerona***) for guerrilla airstrike references in *El Tiempo* October 2023 *Guerra* section. Flag ambiguous phrasing for verification."
-    },
-    {
-      "name": "Elias-1867",
-      "role": "Intelligence Sifter",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Jorge-1868 \"El Fuego de Norte\"",
-      "role": "Airstrike Record Keeper",
-      "excerpt": "Latest recorded action: explore. Direct access to Colombian Ministry of National Defense (Mindefensa) archives for the 1868 airstrike in Norte de Santander is required to verify the claim of 4 deaths and 12 rifles seized."
-    },
-    {
-      "name": "Yael-1873 \"The Tel Aviv Sifter\"",
-      "role": "IDF Operational Scraper",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Moshe-1875 \"The Scimitar Ledger\"",
-      "role": "IDF Historical Cross-Referencer",
-      "excerpt": "Latest recorded action: explore. Searching Mindefensa\u2019s official PDF archives for airstrike reports in Norte de Santander (2016\u20132018) with **exactly four fatalities and 12+ injuries**\u2014the precise criteria in the driving question. Will cross-check with *"
-    },
-    {
-      "name": "Dario-1876 \"El Cuchillo de Hierro\"",
-      "role": "Archival Scraper",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Zahra-1877 'The Aden Sifter'\"",
-      "role": "Field Cross-Referencer",
-      "excerpt": "Latest recorded action: explore. Searching WHO EMRO\u2019s cholera reports for Aden Governorate-specific data (2023\u20132024) to verify figures, dates, and discrepancies."
-    },
-    {
-      "name": "\"Hassan-1879 'The Aden Archive'.\"",
-      "role": "WHO SITREP Scraper",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Min-Jae-1880 \"The Pyongyang Parrot\"",
-      "role": "Diplomatic Echo",
-      "excerpt": "Latest recorded action: explore. Search South Korea\u2019s Ministry of Foreign Affairs (MOFA) press releases for mentions of Ukraine to verify public availability of statements and potential alignment with North Korea\u2019s claims."
-    },
-    {
-      "name": "Nadia-1881 \"The Aden Archive\"",
-      "role": "WHO SITREP Scavenger",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Jae-Sung-1884 'The Pyongyang Parrot'\"",
-      "role": "\"Diplomatic Echoer\"",
-      "excerpt": "Latest recorded action: explore. Cross-checking Ukrainian state outlet *Ukrinform* for any mention of North Korea\u2019s ambassador recall post-2026-11-01, as part of reciprocal diplomatic shift verification."
-    },
-    {
-      "name": "Abu al-Walid",
-      "role": "Yemen-based courier",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Aisha-1886 \u2018The Sana\u2019a Ledger\u2019\"",
-      "role": "WHO SITREP Auditor",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
-    },
-    {
-      "name": "Jalil-1889 \"The Aden Sifter\"",
-      "role": "Houthi-Saudi Cross-Reference Analyst",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Yonatan-1890 \"The Palm Ledger\"",
-      "role": "IDF Archive Sifter",
-      "excerpt": "Latest recorded action: explore. Querying the IDF Archive for casualty rolls or operational records explicitly mentioning Muhammad Muhsen Nimr Yazji or similar Arabic names in the 1948\u20131967 period. This aligns with the research focus on earliest public/"
-    },
-    {
-      "name": "Ahmed-1891 \"The Tel Aviv Scribe\"",
-      "role": "IDF Archive Sifter",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Loreto-1894 'The Manila Minute'\" (Cycle 1894)",
-      "role": "Senate Vote Scrutineer",
-      "excerpt": "Latest recorded action: analyze. Test regex on 2026 *Journal of the Senate* data to verify count of motions to withdraw Articles 2\u20134."
-    },
-    {
-      "name": "\"Lito-1895 'The Manila Ledger'\" (Cycle 1895)",
-      "role": "Senate Vote Transcriber",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Kang-ho",
-      "role": "Diplomatic Liaison",
-      "excerpt": "Latest recorded action: move. Retrieve the grain shipment excerpt from the archive to parse for concealed transit permits and routing clues."
-    },
-    {
-      "name": "Nadia-1902 \"The Aden Sifter\"",
-      "role": "Health Data Triangulator",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Jin-1903 'The Seoul Scraper'\"",
-      "role": "Ambassadorial Log Scraper",
-      "excerpt": "Latest recorded action: explore. Querying Ministry of Foreign Affairs (MoFA) Korea archives for pre-2021 cables from Seoul or Kyiv embassies referencing Volodymyr Z. via structured search."
-    },
-    {
-      "name": "Yasin-1904 \"The Jeddah Sifter\"",
-      "role": "Houthi Redacted-Scraper",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Vasyl-1906 \"The Hamburg Sifter\"",
-      "role": "Courtroom Scavenger",
-      "excerpt": "Latest recorded action: skill-revoked. broker policy rejection: only public HTTPS URLs without credentials are allowed"
-    },
-    {
-      "name": "Jurij-1907 \"The Hamburg Docket\"",
-      "role": "Courtroom Scraper",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Amir-1915 'The Al-Maashiq Scribe'\"",
-      "role": "\"Houthi Casualty Cross-Referencer\"",
-      "excerpt": "Latest recorded action: explore. Cross-reference Yemeni state media claims (4\u20135 fatalities) with Al-Masdar News 2024 reporting on the same event to identify corroborating details or discrepancies."
-    },
-    {
-      "name": "Salwa-1918 \"The Aden Sifter\"",
-      "role": "Cross-Referential Ledger",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Hyun-1919 \"The Hanji Sifter\"",
-      "role": "Diplomatic Echo-Scanner",
-      "excerpt": "Latest recorded action: explore. JAXA\u2019s MMX mission page is the primary public source for technical reports and pre-launch briefings. Must verify if it explicitly states the *minimum* sample mass target (e.g., \u226510 g) for Phobos."
-    },
-    {
-      "name": "Laila-1925 \"The Gulf Gazetteer\"",
-      "role": "Regional Conflict Researcher (Middle East)",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Vikram-1928 'The Delhi Dispatcher'\"",
-      "role": "Preventive Detention Sifter",
-      "excerpt": "Latest recorded action: explore. Narrowed search to Delhi Police FIRs for 2019, explicitly targeting Abhijeet Dipk and COFEPOSA Section 3 notices to cross-reference with prior court filing results."
-    },
-    {
-      "name": "Khalid-2042 \"The Marib Sieve\"",
-      "role": "Yemeni Urban Infrastructure Analyst",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Rashid-1930 \"The Aden Tracer\"",
-      "role": "Houthi-Yemen Cross-Referencer",
-      "excerpt": "Latest recorded action: skill-revoked. broker policy rejection: only public HTTPS URLs without credentials are allowed"
-    },
-    {
-      "name": "Rajiv-1933 \"The Connaught Cartographer\"",
-      "role": "Court Microfilm Archivist",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Sami-1975 'The Aden Ledger' (Cycle 1975)\"",
-      "role": "Houthi Logistics Sifter",
-      "excerpt": "Latest recorded action: explore. WHO 2020 Yemen health cluster report may reference Iranian-origin arms/logistics in Houthi ports, per assigned research question."
-    },
-    {
-      "name": "Rashid-1978 \"The Riyadh Recorder\"",
-      "role": "Air Traffic Log Scavenger",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Valentina-1979 \"La Hoja de Hierro\"",
-      "role": "Field Scribe & Witness Crosser",
-      "excerpt": "Latest recorded action: interview-retry. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Aisha-1992 \"The Aden Sifter\"",
-      "role": "Health Data Sifter",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     }
   ]
