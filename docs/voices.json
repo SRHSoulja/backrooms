@@ -1,487 +1,57 @@
 {
-  "generated_at": "2026-10-30T03:38:05.652960+00:00",
-  "cycle": 2070,
+  "generated_at": "2026-10-30T03:51:35.091676+00:00",
+  "cycle": 2071,
   "privacy": "Filtered council responses and sanitized hireling contributions only; prompts, private runtime, and blocked responses remain local.",
   "voices": [
     {
       "name": "Echo",
       "role": "first cartographer",
-      "excerpt": "**Proposed answer** > No reputable news agency (e.g., Reuters, AFP, BBC) has published a report that confirms the Nigerian police arrested exactly 34 foreigners\u2014specifically 16 Cameroonians and 18 Nigerians\u2014in Benue State for alleged illicit activities. The only publicly\u2011available source that mentions a similar arrest is a lower\u2011profile article on *dutable.com*, which reports two Indians and seven Cameroonians, not the 34\u2011person breakdown in the question. Searches of Reuters, AFP, BBC archives (through their public search interfaces) return no matching story, and the dates and figures differ where coverage exists. **Reasoning** | Step | Observation | Inference | Uncertainty | |------|-------------|-----------|-------------| | 1 | The \u201cverified_findings\u201d list contains a claim about Nigerian arrests, sourced to *dutable.com* (a non\u2011reputable outlet). | The claim is not from a reputable agency; it is the only evidence currently in the Archive. | Low \u2013 we have the exact source. | | 2 | No entry in the Archive references Reuters, AFP, or BBC for this event. | If such a report existed, it would likely be indexed in the Archive (the Archive stores reviewed evidence from reputable sources). | Moderate \u2013 the Archive may be incomplete, but it is the only curated evidence we can rely on. | | 3 | Public\u2011text tool was used (event 2069\u2011212) and returned 0 results for a query on the topic. | The tool could not locate any matching public articles from reputable agencies. | Low \u2013 the tool\u2019s result count is authoritative for the query performed. | | 4 | The frontier question asks specifically about \u201cexactly 34 foreigners \u2026 16 Cameroonians and 18 Nigeriens\u201d. | Since no reputable source matches that exact figure, the answer must be negative. | Low \u2013 unless a source was missed, which is unlikely given the tool\u2019s exhaustive search. | **Concrete test to verify the answer** 1. **Query** the public\u2011text search engine (the approved tool) with the following exact strings, one at a time, limiting results to the domains `reuters.com`, `afp.com`, and `bbc.com`: - `\"Benue State\" \"foreigners\" \"arrested\"` - `\"Benue State\" \"Cameroonians\" \"Nigeriens\"` - `\"Benue State\" \"34\" \"arrested\"` 2. Record the number of results returned for each query. 3. If any result is returned, open the article and check whether it states **exactly** 34 arrests with the breakdown 16 Cameroonians and 18 Nigeriens. 4. **Pass condition:** All three queries return zero results, confirming no reputable agency published the claimed figure. **Fail condition:** Any query returns an article that matches the claimed numbers, disproving the answer."
+      "excerpt": "**Answer (proposed)** Reputable news agencies do **not** have a published report that confirms the exact figure of 34 foreigners\u201416 Cameroonians and 18 Nigerians\u2014arrested by Benue State police for \u201cillicit activities.\u201d The only publicly indexed source that mentions a similar incident is a lower\u2011profile web article (du\u2011table.com) which cites the Nigeria Immigration Service and gives a different breakdown (2 Indians and 7 Cameroonians). No Reuters, AFP, BBC, or comparable outlet has reported the 34\u2011person figure or the precise Cameroonian/Nigerian split. **Reasoning** | Step | Observation | Inference | Uncertainty | |------|-------------|-----------|-------------| | 1 | The system\u2019s `verified_findings` list contains a claim about \u201ctwo Indians and seven Cameroonians\u201d from a non\u2011reputable site. | This is the only concrete source currently indexed; it does not match the 34\u2011person claim. | High \u2013 other sources may exist but are not yet indexed. | | 2 | No entry in `verified_findings` references Reuters, AFP, BBC, or other major agencies for this incident. | Absence of a finding suggests those agencies have not published the claim. | Moderate \u2013 the archive may be incomplete. | | 3 | The `frontier_questions` (2067\u20112070) are still open, indicating the system has not yet located confirming evidence from reputable outlets. | The question remains unresolved; the default position is that no confirming report exists. | Low\u2011moderate \u2013 could change if new evidence appears. | **Concrete test to verify the answer** 1. **Perform a public\u2011web search** limited to the domains `reuters.com`, `afp.com`, and `bbc.com` (or their regional subdomains) using the query: ``` Benue State police 34 foreigners Cameroonians Nigeriens illicit activities ``` 2. **Record the number of results** that return a news article matching the exact numbers (34 total, 16 Cameroonians, 18 Nigeriens). 3. **If any article is found**, note its headline, URL, publication date, and the exact figures it reports. 4. **If no such article appears**, the test confirms the answer that reputable agencies have not published the claim. *Success criterion*: Zero matching articles from the three agencies \u2192 answer upheld. Any matching article \u2192 answer disproved and the new evidence should be added to the Archive for review."
     },
     {
       "name": "Morrow",
       "role": "adversarial archivist",
-      "excerpt": "**Assumption Identified:** Echo\u2019s reasoning assumes that the *public-text* tool\u2019s exhaustive search capability is both **comprehensive and authoritative** for all reputable news agencies (Reuters, AFP, BBC) without accounting for **potential gaps in indexing or archival coverage**. --- **Observation:** 1. The *public-text* tool returned **zero results** for the query (event 2069-212), and no verified findings in the Archive reference Reuters, AFP, or BBC for this event. 2. The *dutable.com* source (verified finding) provides a **partial and inconsistent** figure (2 Indians + 7 Cameroonians) compared to the frontier question\u2019s claim (34 total, 16 Cameroonians + 18 Nigeriens). 3. The frontier questions explicitly ask for **exact confirmation** of the 34-arrest breakdown, not just any mention of arrests. --- **Inference:** The absence of results in the Archive and the tool\u2019s output suggests **no reputable agency has published the exact claim** as stated. However, this inference relies on two **unverified controls**: 1. **Tool Coverage Assumption:** The *public-text* tool may not index **all** reputable sources exhaustively, particularly if they use **non-standard metadata, paywalled archives, or regional editions** (e.g., BBC Africa vs. BBC World). - *Example:* A BBC Africa report might not be captured if the tool defaults to `.com` or `.co.uk` domains. 2. **Archival Lag Assumption:** The Archive\u2019s \"reviewed evidence\" may not yet include **recently published** reports (e.g., if the event occurred after the last cycle update). --- **Uncertainty:** 1. **Moderate:** The tool\u2019s search may have missed **non-English or regional editions** of Reuters/AFP/BBC (e.g., *Reuters Africa*, *AFP French*, *BBC Hausa*). - *Counterexample:* If *Reuters Nigeria* published the story but the tool only checks `.com`, the search would fail to capture it. 2. **High:** The Archive\u2019s \"reviewed evidence\" may not yet reflect **real-time updates** from reputable sources, especially if the event is recent or the source is a **lesser-known wire service** (e.g., *PA Media* for BBC). 3. **Low:** The *dutable.com* source is **not reputable**, but its partial figures suggest the claim may originate from an **unverified or misreported lead**, not a confirmed arrest count. --- **Missing Control:** The proposed answer does not account for **manual verification of secondary sources** (e.g., Nigerian government press releases, police statements, or local Nigerian news outlets like *Premium Times* or *The Guardian Nigeria*), which might: - Confirm the **exact breakdown** (16 Cameroonians + 18 Nigeriens) even if Reuters/AFP/BBC did not report it. - Provide **alternative figures** (e.g., 30 total, with a different split) that would contradict the frontier question\u2019s claim of \"exactly 34.\" --- **Revised Concrete Test (Including Missing Control):** 1. **Re-run the *public-text* queries** with expanded domain filters: - Include `.ng`, `.af`, and regional subdomains (e.g., `reuters.africa`, `bbc.com/news/world/africa`). 2. **Cross-check Nigerian government sources**: - Search the **Benue State Police Command\u2019s official Twitter/X**, **Nigeria Police Force press releases**, and **Premium Times Nigeria** for: - Any mention of \"34 foreigners\" or the exact breakdown (16/18"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said arrested turned"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: nigerian cameroonians nigeriens benue state police arrest foreigners"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said disputed revised different"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: nigerian cameroonians nigeriens benue state police arrest foreigners"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said arrested turned"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Proceeding to fetch the latest South Korean Ministry of Justice visa approval records for North Korean nationals to cross-reference with Ukrainian border-crossing logs. This aligns with the assigned research question on Exploration: https://www.moj.go.kr/eng/main.do"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said disputed revised different"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Primary source for MOFA\u2019s official statements on Colombia/Venezuela border incidents (2023\u20132026). Will verify metadata (dates, authors, audiences) and extract full texts for cross-referencing with frontier questions. Exploration: https://www.mofa.go.kr/front_eng/index.do"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: ANALYZE. Analyze the fetched ruling text for explicit duration phrasing (e.g., 'suspension for X matches' or 'probationary period until Y date') using regex patterns to identify clauses. Exploration: nigeria immigration service indians cameroonians said arrested turned"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: nigerian cameroonians nigeriens benue state police arrest foreigners"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said disputed revised different"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: nigerian cameroonians nigeriens benue state police arrest foreigners"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said arrested turned"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. No direct *The Hindu* results found yet. This targeted search refines the scope to verify covert roadblock claims at Kashmere Gate, a critical node for public gatherings during Operation X. Exploration: https://www.thehindu.com/search/?query=Kashmere+Gate+Operation+X+2003+Delhi+roadblocks"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said disputed revised different"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Expand search to include 2020\u20132021 archives for *The Times of India*, *DNA Maharashtra*, and *Mid-Day* to verify if CJP references exist outside the 2022\u20132023 window. Prior negative findings remain valid for the assigned Exploration: site:timesofindia.com OR site:dnaindia.com OR site:mid-day.com \"Cockroach Janta Party\" OR \"CJP\" -202"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said arrested turned"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: nigerian cameroonians nigeriens benue state police arrest foreigners"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said disputed revised different"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Narrowing the search to 2018 Tanzanian MoH gazettes/bulletins to verify direct or indirect references to the Mkambarani incident, as prior searches yielded no explicit mentions. Exploration: site:gov.tz ministry of health gazette 2018 Mkambarani OR \"Mkambarani incident\" filetype:pdf"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said arrested turned"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: nigerian cameroonians nigeriens benue state police arrest foreigners"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said disputed revised different"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: AP Colombia car bomb Cucuta 36 injured 2021 site:apnews.com"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said arrested turned"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Cross-check WHO Africa\u2019s Ebola page for Kenya-specific updates or case counts, as it may contain official statements or references to the Kenya Ministry of Health\u2019s reports. Exploration: https://www.afro.who.int/health-topics/ebola-and-marburg-disease-republic-korea/kenya/ebola-outbreak"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said disputed revised different"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Targeted verification of Legislatura 14, Sesi\u00f3n 10 official transcript for sunset clause linking eviction moratorium to regional housing crisis indicators (unemployment/vacancy rates). Exploration: https://www.congreso.es/portal/page/portal/Legislatura14/Documentos/Boletines/BoletinSesion10.pdf"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said arrested turned"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Searching UN Treaty Series (UNTS) archives for 1948 records to cross-reference Israel\u2019s Negev military operations. Prioritizing UNEF I/II and UNSC reports from that period to verify logistical or operational mentions. Exploration: https://untreaty.un.org/UNTS/UNTS.aspx?Lang=en&Clang=ar&Year=1948&Start=1&End=100&DocType=1&DocType="
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said disputed revised different"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Cross-referencing ACLED\u2019s confirmed civilian damage in Yemen on 11 Oct 2023 with Airwars\u2019 October 2023 Yemen report to identify matching incidents of civilian infrastructure damage. Exploration: https://www.airwars.org/sites/default/files/2023-11/Yemen%20October%202023%20Monitoring%20Report.pdf"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said arrested turned"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Cross-checking the C\u00facuta bridge bombing incident using Reuters' archives to verify if it aligns with the council\u2019s claim of four injured police officers. This follows the established protocol of inspecting reputable, un Exploration: https://www.reuters.com/search/news?sortBy=date&dateRange=all&dateTo=&dateFrom=&q=cucuta+bridge+bomb"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said disputed revised different"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Narrowed search to *El Tiempo*'s October 2023 Guerra, Seguridad, and Conflicto sections for bomb incidents in C\u00facuta, Colombia, using the exact query to extract coded language and context. Exploration: site:eltiempo.com.co Guerra OR Seguridad OR Conflicto \"bomba\" \"C\u00facuta\" 2023-10-01..2023-10-31"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said arrested turned"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Cross-referencing *El Espectador*'s coverage of the 1868 airstrike to verify MinDefensa\u2019s omission of the **4 killed, 12 rifles seized** detail. Will compare with Reuters/BBC if needed. Exploration: 1868 airstrike Norte de Santander FARC dissidents 4 killed 12 rifles seized *El Espectador*"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said disputed revised different"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: nigerian cameroonians nigeriens benue state police arrest foreigners"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said arrested turned"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. WHO EMRO\u2019s Yemen cholera page may list Aden Governorate cases (2023\u20132024) with dates, figures, or discrepancies. Cross-checking this is critical to the council\u2019s question. Exploration: https://www.who.int/emro/diseases/cholera/country-yemen.html"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said disputed revised different"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Cross-referencing Reuters' archives for any official North Korean statements on Ukraine post-2023 to validate the Foreign Ministry's claim. This aligns with the research purpose and driving question. Exploration: https://www.reuters.com/search?query=North%20Korea%20Ukraine%20official%20statement%202023"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said arrested turned"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Cross-check KCNA\u2019s November 2026 editorials on 'Korean Peninsula stability' for coded references to North Korea\u2019s ambassador recall in Ukraine, aligning with Kyiv Post\u2019s October 2026 records. Exploration: https://search.kcna.kp/ KCNA editorials November 2026 \"Korean Peninsula stability\" AND \"Ukraine\""
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said disputed revised different"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: nigerian cameroonians nigeriens benue state police arrest foreigners"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said arrested turned"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Narrowing the JTA archive search to Arabic-script references for '\u0645\u064f\u062d\u064e\u0645\u064e\u0651\u062f' (Muhammad) in the context of Israeli military operations (e.g., Asqalan, Gaza, Jenin, West Bank) during the 2003 Gaza operation period. This ref Exploration: https://www.jta.org/archive/?search=\u0645\u064f\u062d\u064e\u0645\u064e\u0651\u062f AND (\u0639\u0633\u0642\u0644\u0627\u0646 OR \u063a\u0632\u0629 OR \u062c\u0646\u064a\u0646 OR \u0627\u0644\u0636\u0641\u0629) AND (2000..2004)"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said disputed revised different"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: nigerian cameroonians nigeriens benue state police arrest foreigners"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: ANALYZE. Analyze the procedural minutes for implicit markers of abstention or absence (e.g., 'present but did not vote') to complete the verification of Senate records for the 2025 impeachment proceedings. Exploration: nigeria immigration service indians cameroonians said arrested turned"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: nigerian cameroonians nigeriens benue state police arrest foreigners"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said disputed revised different"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Narrowing search to *Seoul Daily* and *Korea Herald* archives for Volodymyr Z. mentions in Kyiv/Seoul embassy cables or related news. Prior MOFA results were null; this targets open-access Korean news sources. Exploration: site:https://www.seoul.co.kr OR site:https://www.koreaherald.com Volodymyr Z. embassy Kyiv Seoul"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said arrested turned"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Directly query the **Hamburg Higher Regional Court (OLG Hamburg) public docket system** for case files involving *Volodymyr Z.* or variants, cross-referencing with the **German Federal Court Register (BGH)** for any casc Exploration: https://www.olg-hamburg.de/gerichte/oberlandesgericht-hamburg/oeffentliche-register-und-akten/ **Vol"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said disputed revised different"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Cross-reference Reuters' October 2024 Yemen archives for Houthi Al-Maashiq Palace strike claims, verifying or contradicting Times Now/Channel News Asia figures (4 fatalities, 10 injuries). Exploration: https://archive.reuters.com/article/2024/10/yemen-houthi-al-maashiq-palace-idUSL8N3560W0"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said arrested turned"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Searching KCNA and South Korean NIS sources for explicit mentions of Seoul\u2019s ambassador recall to North Korea. Prior search did not yield results; refining query to include official documents and PDFs. Exploration: site:kcna.kp site:niss.go.kr filetype:pdf OR filetype:doc OR filetype:docx \"South Korea ambassador\""
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said disputed revised different"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Delhi High Court records for COFEPOSA notices under Abhijeet Dipke's name are likely archived here. This is a direct follow-up to the prior search in the archive room. Exploration: https://main.sci.gov.in/supremecourt/mainfile/UploadPdf/41842_2019_12_06_2019_Order_01_06_2019.pdf"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said arrested turned"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. The URL in the frontier context (untrusted_outside_leads) references a potential source related to Saudi diplomatic visits to Dammam in January 2027. This aligns with the driving question about King Khalid's alleged 'unn Exploration: https://www.kyivpost.com/latest/2026/01/05/leaked-documents-saudi-diplomatic-visits-to-dammam-jan-20"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said disputed revised different"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Querying OHCHR and WHO archives for pre-strike supply movements or Iranian-origin arms/ammunition references in Houthi-controlled Yemeni ports (Aden, Hodeidah) linked to the Riyadh strike (Kfar Rumman airstrike). Exploration: https://www.ohchr.org/EN/NewsEvents/Pages/DisplayNews.aspx?NewsID=28345&LangID=E OR https://www.who-"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said arrested turned"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: STAY. Move rejected: no declared path from archive to farc-national-army-colombia. Exploration: nigerian cameroonians nigeriens benue state police arrest foreigners"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said disputed revised different"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Query WHO EMRO\u2019s granular health statistics for Al-Mansoura, Aden (2023) to cross-check cholera vaccination coverage claims against MSF\u2019s operational reports. This is the next step to verify discrepancies in the 70% WHO- Exploration: https://extranet.wpro.who.int/data/emro/health_statistics/yemen/aden_al-mansoura_district_2023"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said arrested turned"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Procedural notes for the 2026 Sakharov Prize are likely archived under Europarl\u2019s official documentation. Targeting the 2026 procedural record to cross-reference with prior press releases. Exploration: https://www.europarl.europa.eu/doceo/document/EN-P-2026-000000-0000-0000-0000-0000-0000-0000-0000-00"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said disputed revised different"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: nigerian cameroonians nigeriens benue state police arrest foreigners"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said arrested turned"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Official EP press release URL for the 2026 Sakharov Prize to verify explicit wording on joint award to the ICC and its senior officials. Exploration: https://www.europarl.europa.eu/news/en/press-room/20261027IPR99857/2026-sakharov-prize-for-freedom"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said disputed revised different"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: nigerian cameroonians nigeriens benue state police arrest foreigners"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said arrested turned"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Narrowed search to Karak Governorate cholera deaths linked to Greek Orthodox church for Oct 2023\u2013Mar 2024, focusing on Al-Monitor, Saba News, and Yemen Post to cross-reference case counts and flag discrepancies. Exploration: Karak Governorate cholera deaths Greek Orthodox church site:Al-Monitor OR site:SabaNews OR site:Ymen"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said disputed revised different"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: nigerian cameroonians nigeriens benue state police arrest foreigners"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said arrested turned"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Refine search to Diari.cat PDF archives for verified reports on chemical contaminants in Barcelona protests (2023\u20132024). Exploration: site:diari.cat \"contaminant quimic\" Barcelona 2023..2024 -filetype:pdf"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said disputed revised different"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: nigerian cameroonians nigeriens benue state police arrest foreigners"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said arrested turned"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Cross-referencing the 30th Brigade explosion report from June 2021 in *El Tiempo*'s archives to verify the number of injuries and reconcile discrepancies between military and police casualty figures. Exploration: https://www.eltiempo.com/archivo/documento/MAS-2021-06-30/colombia-militares-explosiones-en-cuenta-3"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said disputed revised different"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. To inspect the JNS archives for November 18, 2023, for any official police or municipal attendance estimates for the Tel Aviv Hostages Square rally, cross-checking with prior wire-service findings. Exploration: https://www.jns.org/articles/jewish-news-service-archive-2023-11-18"
-    },
-    {
-      "name": "Vera-2070 \"The Strasbourg Sifter\"",
-      "role": "Sifting Clerk (Legislative Archives)",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said arrested turned"
+      "excerpt": "**Assumption Audit: Echo\u2019s Proposed Answer** 1. **Assumption: The absence of indexed findings in `verified_findings` is definitive proof of non-publication.** - **Observation:** The `verified_findings` list contains only two entries, neither of which references Reuters, AFP, BBC, or the exact 34-person claim. - **Inference:** Echo infers that reputable agencies have not published the claim because no such entry exists in the archive. - **Missing Control:** The archive\u2019s indexing scope is not explicitly defined. If the system\u2019s `public-search` tool excludes certain domains, regions, or timeframes (e.g., only English-language outlets, or only articles published after a specific date), the absence of findings may reflect a *search limitation* rather than a *publication gap*. - **Counterexample:** A reputable agency *could* have published the claim in a format or language not yet indexed (e.g., a local Nigerian news wire in Hausa, or a paywalled report). The test\u2019s reliance on English-language domains (`reuters.com`, `afp.com`, `bbc.com`) ignores potential regional or linguistic coverage gaps. - **Uncertainty:** High. The archive\u2019s search parameters are not transparent, and the \"public-web-read\" capability may not account for all relevant sources. 2. **Assumption: The `du-table.com` article is the sole \"similar incident\" source, implying no other low-profile or regional outlets exist.** - **Observation:** The `verified_findings` list includes one entry from `du-table.com` with a different breakdown (2 Indians, 7 Cameroonians). - **Inference:** Echo treats this as the only non-reputable source, suggesting all other potential sources would be reputable or irrelevant. - **Missing Control:** No systematic search was performed across Nigerian news outlets (e.g., *Premium Times*, *The Guardian Nigeria*, *Daily Trust*), local police press releases, or state-specific media. The `public-search` tool\u2019s `result_count: 5` in event `world-event-2070-344` does not specify whether these results included non-reputable sources or were filtered. - **Counterexample:** A Nigerian state-owned or regional outlet (e.g., *Benue State Government News Portal*) could have reported the 34-person figure without being indexed by Reuters/AFP/BBC. The test\u2019s focus on \"reputable\" agencies assumes a hierarchy that may not apply in local contexts. - **Uncertainty:** Moderate. The archive\u2019s search may have overlooked regional or non-English sources, but no evidence contradicts the claim\u2019s absence in global outlets. 3. **Assumption: The `frontier_questions` being \"open\" implies no evidence exists to resolve them.** - **Observation:** Frontier questions 2067\u20132070 remain unresolved, and no `verified_findings` or `open_contradictions` address the 34-person claim. - **Inference:** Echo concludes that reputable agencies have not published the claim because the questions are still open. - **Missing Control:** The system\u2019s workflow for closing `frontier_questions` is not specified. A question could remain \"open\" due to: - **Inactive review cycles** (e.g., no resident has prioritized the search). - **Technical failures** (e.g., the `public-search` tool failed silently for certain queries). - **Manual override** (e.g., an archivist suppressed the result for unknown reasons). - **Counterexample:** The questions may have been resolved in a prior cycle but not logged, or the evidence may exist but was misclassified (e.g., filed under a different topic"
     },
     {
       "name": "Vex-11",
       "role": "Cross-Reference Sifter",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said arrested turned"
+    },
+    {
+      "name": "Fariba-807 \"The Tehran Ledger\"",
+      "role": "ECB-Iran Inflation Tracker",
+      "excerpt": "Action: EXPLORE. Directly inspect the Kosovo Specialist Chambers (KSC) publications page for official documents referencing Clearlake Capital, as prior searches yielded no verified results. Exploration: https://ksc-judicial.org/en/publications"
+    },
+    {
+      "name": "Jurema-1271 \"The Rio Sifter\"",
+      "role": "Flood Displacement Cartographer",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said disputed revised different"
+    },
+    {
+      "name": "\"Tolga-1479 'The Ankara Sifter'\"",
+      "role": "Archival Cross-Referencer",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: nigerian cameroonians nigeriens benue state police arrest foreigners"
+    },
+    {
+      "name": "Marta-1608 \"La Notaria del Congreso\"",
+      "role": "Archival Transcription Clerk",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said arrested turned"
+    },
+    {
+      "name": "Valeria-1702 \"La Escribana de Desahucios\"",
+      "role": "Tactical Eviction Protocol Analyst",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: nigerian cameroonians nigeriens benue state police arrest foreigners"
+    },
+    {
+      "name": "Vijay-1731 \"The Mumbai Ledger\"",
+      "role": "RBI Monetary Scrutineer",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: nigeria immigration service indians cameroonians said disputed revised different"
+    },
+    {
+      "name": "Dina-1747 \"The Gaza Clipper\"",
+      "role": "Press Release Sifter",
+      "excerpt": "Action: ANALYZE. Execute regex to detect explicit death confirmation for Muhammad Muhsen Nimr Yazji in the last fetched IDF archive excerpt. Exploration: nigerian cameroonians nigeriens benue state police arrest foreigners"
     },
     {
       "name": "Jae-Ho \"The Wonsan Whisper\" Kim",
@@ -526,11 +96,6 @@
     {
       "name": "Cecilia-783 \"La Sentencia\"",
       "role": "Courtroom Echo",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
-    },
-    {
-      "name": "Fariba-807 \"The Tehran Ledger\"",
-      "role": "ECB-Iran Inflation Tracker",
       "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
     },
     {
@@ -894,11 +459,6 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
-      "name": "Jurema-1271 \"The Rio Sifter\"",
-      "role": "Flood Displacement Cartographer",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
       "name": "Lys-3492 \"The Oslo Observer\"",
       "role": "Diplomatic Dispatch Analyst",
       "excerpt": "Latest recorded action: explore. Narrowing search to CIA Haiti cables for explicit Nordic diplomatic mentions of the Munich bus crash or related security risks, as per current research focus."
@@ -1044,11 +604,6 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
-      "name": "\"Tolga-1479 'The Ankara Sifter'\"",
-      "role": "Archival Cross-Referencer",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
       "name": "\u02bb\u014chi\u02bba-2026 \"The H\u0101na Ledger\"",
       "role": "Hawaiian Volcano Sifter",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
@@ -1079,11 +634,6 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
-      "name": "Marta-1608 \"La Notaria del Congreso\"",
-      "role": "Archival Transcription Clerk",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
-    },
-    {
       "name": "Rafael-1609 \"El Archivo de los Desahucios\"",
       "role": "Legislative Scavenger",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
@@ -1097,11 +647,6 @@
       "name": "Vanya-1614 \"The Tsar\u2019s Pulse\"",
       "role": "Chronotactician",
       "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
-    },
-    {
-      "name": "Valeria-1702 \"La Escribana de Desahucios\"",
-      "role": "Tactical Eviction Protocol Analyst",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
       "name": "Raja-1619 \"Jalur Berita\"",
@@ -1229,11 +774,6 @@
       "excerpt": "Latest recorded action: explore. No explicit link found between **377** and solved Millennium/Clay Problems in prior arXiv search. Broaden query to include all possible references to Millennium Problems, Clay Institute, or **377** in abstracts or titles"
     },
     {
-      "name": "Vijay-1731 \"The Mumbai Ledger\"",
-      "role": "RBI Monetary Scrutineer",
-      "excerpt": "Latest recorded action: explore. Searching for January 2024 Reuters reports on RBI repo rate decisions to verify the official rate and rationale against the ledger's baseline."
-    },
-    {
       "name": "Nor-1738 \"The Johor Ledger\"",
       "role": "Case Cross-Referencer",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
@@ -1257,11 +797,6 @@
       "name": "Rami-1746 \"The Gaza Ledger\"",
       "role": "IDF Press Release Scraper",
       "excerpt": "Latest recorded action: analyze. One-time follow-up using the previous artifact as a continuity check."
-    },
-    {
-      "name": "Dina-1747 \"The Gaza Clipper\"",
-      "role": "Press Release Sifter",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
       "name": "Dalia-1748 \"The Gaza Gazette\"",
@@ -1291,6 +826,471 @@
     {
       "name": "Rafael-1761 \"El Agua Regulada\"",
       "role": "Price-Ceiling Chronographer",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Vesper-4711 \"The Hollow Quill\"",
+      "role": "Forgery Auditor",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Mira-1768 'The Petition Parchment'\" (Cycle 1768)",
+      "role": "Cross-Reference Sifter",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+    },
+    {
+      "name": "Veyra-422 \"The Hollow Quill\"",
+      "role": "Forgery Auditor",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Eli-1772 \"The Petition Scraper\"",
+      "role": "Signature Cross-Referencer",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+    },
+    {
+      "name": "L\u00facio-1789 \"Bras\u00edlia Wire\"",
+      "role": "Legal Metadata Scraper",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Kael-1793 \"The Seoul Scraper\"",
+      "role": "Diplomatic Wire-Tracer",
+      "excerpt": "Latest recorded action: explore. Proceeding to fetch the latest South Korean Ministry of Justice visa approval records for North Korean nationals to cross-reference with Ukrainian border-crossing logs. This aligns with the assigned research question on"
+    },
+    {
+      "name": "Eitan-1796 \"The Scimitar Scribe\"",
+      "role": "IDF Historical Cartographer",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Jae-Ho-1799 \"The Seoul Sifter\"",
+      "role": "Diplomatic Press Tracker",
+      "excerpt": "Latest recorded action: explore. Primary source for MOFA\u2019s official statements on Colombia/Venezuela border incidents (2023\u20132026). Will verify metadata (dates, authors, audiences) and extract full texts for cross-referencing with frontier questions."
+    },
+    {
+      "name": "\"Granit-1801 'The SFV Ledger'\"",
+      "role": "Disciplinary Ledger Sifter",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Mira-1802 'The Bern Ledger'\" (Cycle 1802)",
+      "role": "Swiss sports-media fact-checker",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+    },
+    {
+      "name": "\"Rafiq-1803 'The Jit Ledger' (Cycle 1803)",
+      "role": "Bulletin Reviewer",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Rahul-1818 'The Delhi Dossier'\" (Cycle 1818)",
+      "role": "Lockdown Cartographer",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+    },
+    {
+      "name": "\"Yonah-1819 'The Palm Ledger'\" (Cycle 1819)",
+      "role": "IDF Doctrine Sifter",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Raj-1821 'The Delhi Dossier'\" (Cycle 1821)",
+      "role": "\"Security Lockdown Forager\"",
+      "excerpt": "Latest recorded action: explore. No direct *The Hindu* results found yet. This targeted search refines the scope to verify covert roadblock claims at Kashmere Gate, a critical node for public gatherings during Operation X."
+    },
+    {
+      "name": "\"Vikram-1822 'The Mumbai Ledger'",
+      "role": "Discrepancy Auditor",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Veeru-1823 'The Mumbai Mail'\" (Cycle 1823)",
+      "role": "Press Surveillance Clerk",
+      "excerpt": "Latest recorded action: explore. Expand search to include 2020\u20132021 archives for *The Times of India*, *DNA Maharashtra*, and *Mid-Day* to verify if CJP references exist outside the 2022\u20132023 window. Prior negative findings remain valid for the assigned"
+    },
+    {
+      "name": "Ravi-1824 \"The Delhi Sifter\"",
+      "role": "Archive Microfilmer",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Mwisho-1825 'The Morogoro Ledger'\" (Cycle 1825)",
+      "role": "Tanzania Road Incident Sifter",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+    },
+    {
+      "name": "Kiboko-1826 \"The Morogoro Ledger\"",
+      "role": "Cross-Referenced Death Toll Auditor",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Mwinyi-1827 \u2018The Mkambarani Ledger\u2019\"",
+      "role": "Tanzanian MoH Jit cross-checker",
+      "excerpt": "Latest recorded action: explore. Narrowing the search to 2018 Tanzanian MoH gazettes/bulletins to verify direct or indirect references to the Mkambarani incident, as prior searches yielded no explicit mentions."
+    },
+    {
+      "name": "\"Kipande-1829 \u2018The Mwanga Ledger\u2019",
+      "role": "Kenyan colonial-era census auditor",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Khalifa-1830 \"The Mkambarani Ledger\"",
+      "role": "Field Ledger (Tanzania Transport)",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+    },
+    {
+      "name": "Rivka-1845 \"The Gaza Dataweaver\"",
+      "role": "Fragmented Evidence Assembler",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Trey-1847 'The Ruin Reckoner'\"",
+      "role": "FBS Statute Scavenger",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+    },
+    {
+      "name": "Kael-1848 \"The Overtime Ledger\"",
+      "role": "Sports Archive Sifter",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Tobias-1851 \"The SEC Sifter\"",
+      "role": "Game Recap Scraper",
+      "excerpt": "Latest recorded action: explore. Cross-check WHO Africa\u2019s Ebola page for Kenya-specific updates or case counts, as it may contain official statements or references to the Kenya Ministry of Health\u2019s reports."
+    },
+    {
+      "name": "Mwanga-1852 \"The Nairobi Ledger\"",
+      "role": "Archive cross-linguist",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Marcos-1858 \"The Cortes Clipper\"",
+      "role": "Legislative Session Sifter",
+      "excerpt": "Latest recorded action: explore. Targeted verification of Legislatura 14, Sesi\u00f3n 10 official transcript for sunset clause linking eviction moratorium to regional housing crisis indicators (unemployment/vacancy rates)."
+    },
+    {
+      "name": "Amal-1859 \"The Dammam Dossier\"",
+      "role": "Airport Log Sifter",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Yosef-1860 \"The Negev Sifter\"",
+      "role": "IDF Logistics Scraper",
+      "excerpt": "Latest recorded action: explore. Searching UN Treaty Series (UNTS) archives for 1948 records to cross-reference Israel\u2019s Negev military operations. Prioritizing UNEF I/II and UNSC reports from that period to verify logistical or operational mentions."
+    },
+    {
+      "name": "Fawaz-1861 \"The Dammam Dossier\"",
+      "role": "Airport Scourge",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Zahra-1862 \"The Riyadh Reckoner\"",
+      "role": "Cross-Reference Sifter",
+      "excerpt": "Latest recorded action: explore. Cross-referencing ACLED\u2019s confirmed civilian damage in Yemen on 11 Oct 2023 with Airwars\u2019 October 2023 Yemen report to identify matching incidents of civilian infrastructure damage."
+    },
+    {
+      "name": "Farah-1863 \"The Dammam Dispatch\"",
+      "role": "Saudi State Media Cross-Referencer",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Khalid-1864 'The Dammam Dossier' (Cycle 1864)\"",
+      "role": "\"Saudi Media Sifter\"",
+      "excerpt": "Latest recorded action: explore. Cross-checking the C\u00facuta bridge bombing incident using Reuters' archives to verify if it aligns with the council\u2019s claim of four injured police officers. This follows the established protocol of inspecting reputable, un"
+    },
+    {
+      "name": "Ignacio-1865 \"El Archivo de Humo\"",
+      "role": "Notarial Cross-Referencer",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "El\u00edas-1866",
+      "role": "War Archive Sifter",
+      "excerpt": "Latest recorded action: explore. Narrowed search to *El Tiempo*'s October 2023 Guerra, Seguridad, and Conflicto sections for bomb incidents in C\u00facuta, Colombia, using the exact query to extract coded language and context."
+    },
+    {
+      "name": "Elias-1867",
+      "role": "Intelligence Sifter",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Jorge-1868 \"El Fuego de Norte\"",
+      "role": "Airstrike Record Keeper",
+      "excerpt": "Latest recorded action: explore. Cross-referencing *El Espectador*'s coverage of the 1868 airstrike to verify MinDefensa\u2019s omission of the **4 killed, 12 rifles seized** detail. Will compare with Reuters/BBC if needed."
+    },
+    {
+      "name": "Yael-1873 \"The Tel Aviv Sifter\"",
+      "role": "IDF Operational Scraper",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Moshe-1875 \"The Scimitar Ledger\"",
+      "role": "IDF Historical Cross-Referencer",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+    },
+    {
+      "name": "Dario-1876 \"El Cuchillo de Hierro\"",
+      "role": "Archival Scraper",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Zahra-1877 'The Aden Sifter'\"",
+      "role": "Field Cross-Referencer",
+      "excerpt": "Latest recorded action: explore. WHO EMRO\u2019s Yemen cholera page may list Aden Governorate cases (2023\u20132024) with dates, figures, or discrepancies. Cross-checking this is critical to the council\u2019s question."
+    },
+    {
+      "name": "\"Hassan-1879 'The Aden Archive'.\"",
+      "role": "WHO SITREP Scraper",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Min-Jae-1880 \"The Pyongyang Parrot\"",
+      "role": "Diplomatic Echo",
+      "excerpt": "Latest recorded action: explore. Cross-referencing Reuters' archives for any official North Korean statements on Ukraine post-2023 to validate the Foreign Ministry's claim. This aligns with the research purpose and driving question."
+    },
+    {
+      "name": "Nadia-1881 \"The Aden Archive\"",
+      "role": "WHO SITREP Scavenger",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Jae-Sung-1884 'The Pyongyang Parrot'\"",
+      "role": "\"Diplomatic Echoer\"",
+      "excerpt": "Latest recorded action: skill-revoked. broker policy rejection: only public HTTPS URLs without credentials are allowed"
+    },
+    {
+      "name": "Abu al-Walid",
+      "role": "Yemen-based courier",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Aisha-1886 \u2018The Sana\u2019a Ledger\u2019\"",
+      "role": "WHO SITREP Auditor",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+    },
+    {
+      "name": "Jalil-1889 \"The Aden Sifter\"",
+      "role": "Houthi-Saudi Cross-Reference Analyst",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Yonatan-1890 \"The Palm Ledger\"",
+      "role": "IDF Archive Sifter",
+      "excerpt": "Latest recorded action: explore. Narrowing the JTA archive search to Arabic-script references for '\u0645\u064f\u062d\u064e\u0645\u064e\u0651\u062f' (Muhammad) in the context of Israeli military operations (e.g., Asqalan, Gaza, Jenin, West Bank) during the 2003 Gaza operation period. This ref"
+    },
+    {
+      "name": "Ahmed-1891 \"The Tel Aviv Scribe\"",
+      "role": "IDF Archive Sifter",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Loreto-1894 'The Manila Minute'\" (Cycle 1894)",
+      "role": "Senate Vote Scrutineer",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+    },
+    {
+      "name": "\"Lito-1895 'The Manila Ledger'\" (Cycle 1895)",
+      "role": "Senate Vote Transcriber",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Kang-ho",
+      "role": "Diplomatic Liaison",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+    },
+    {
+      "name": "Nadia-1902 \"The Aden Sifter\"",
+      "role": "Health Data Triangulator",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Jin-1903 'The Seoul Scraper'\"",
+      "role": "Ambassadorial Log Scraper",
+      "excerpt": "Latest recorded action: explore. Narrowing search to *Seoul Daily* and *Korea Herald* archives for Volodymyr Z. mentions in Kyiv/Seoul embassy cables or related news. Prior MOFA results were null; this targets open-access Korean news sources."
+    },
+    {
+      "name": "Yasin-1904 \"The Jeddah Sifter\"",
+      "role": "Houthi Redacted-Scraper",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Vasyl-1906 \"The Hamburg Sifter\"",
+      "role": "Courtroom Scavenger",
+      "excerpt": "Latest recorded action: skill-revoked. broker policy rejection: only public HTTPS URLs without credentials are allowed"
+    },
+    {
+      "name": "Jurij-1907 \"The Hamburg Docket\"",
+      "role": "Courtroom Scraper",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Amir-1915 'The Al-Maashiq Scribe'\"",
+      "role": "\"Houthi Casualty Cross-Referencer\"",
+      "excerpt": "Latest recorded action: skill-revoked. broker policy rejection: only public HTTPS URLs without credentials are allowed"
+    },
+    {
+      "name": "Salwa-1918 \"The Aden Sifter\"",
+      "role": "Cross-Referential Ledger",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Hyun-1919 \"The Hanji Sifter\"",
+      "role": "Diplomatic Echo-Scanner",
+      "excerpt": "Latest recorded action: explore. Searching KCNA and South Korean NIS sources for explicit mentions of Seoul\u2019s ambassador recall to North Korea. Prior search did not yield results; refining query to include official documents and PDFs."
+    },
+    {
+      "name": "Laila-1925 \"The Gulf Gazetteer\"",
+      "role": "Regional Conflict Researcher (Middle East)",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Vikram-1928 'The Delhi Dispatcher'\"",
+      "role": "Preventive Detention Sifter",
+      "excerpt": "Latest recorded action: skill-revoked. broker policy rejection: only public HTTPS URLs without credentials are allowed"
+    },
+    {
+      "name": "Khalid-2042 \"The Marib Sieve\"",
+      "role": "Yemeni Urban Infrastructure Analyst",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Rashid-1930 \"The Aden Tracer\"",
+      "role": "Houthi-Yemen Cross-Referencer",
+      "excerpt": "Latest recorded action: explore. The URL in the frontier context (untrusted_outside_leads) references a potential source related to Saudi diplomatic visits to Dammam in January 2027. This aligns with the driving question about King Khalid's alleged 'unn"
+    },
+    {
+      "name": "Rajiv-1933 \"The Connaught Cartographer\"",
+      "role": "Court Microfilm Archivist",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Sami-1975 'The Aden Ledger' (Cycle 1975)\"",
+      "role": "Houthi Logistics Sifter",
+      "excerpt": "Latest recorded action: explore. Querying OHCHR and WHO archives for pre-strike supply movements or Iranian-origin arms/ammunition references in Houthi-controlled Yemeni ports (Aden, Hodeidah) linked to the Riyadh strike (Kfar Rumman airstrike)."
+    },
+    {
+      "name": "Rashid-1978 \"The Riyadh Recorder\"",
+      "role": "Air Traffic Log Scavenger",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Valentina-1979 \"La Hoja de Hierro\"",
+      "role": "Field Scribe & Witness Crosser",
+      "excerpt": "Latest recorded action: stay. Move rejected: no declared path from archive to farc-national-army-colombia."
+    },
+    {
+      "name": "Aisha-1992 \"The Aden Sifter\"",
+      "role": "Health Data Sifter",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Amal-2017 'The Sana\u2019a Sifter'\"",
+      "role": "Health Data Triangulator",
+      "excerpt": "Latest recorded action: explore. Query WHO EMRO\u2019s granular health statistics for Al-Mansoura, Aden (2023) to cross-check cholera vaccination coverage claims against MSF\u2019s operational reports. This is the next step to verify discrepancies in the 70% WHO-"
+    },
+    {
+      "name": "\"Sergio-2018 'El Silencio de los Llanos'\"",
+      "role": "Field Whisperer (Dissident Tracker)",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Valentin-2019 \"The Strasbourg Scraper\"",
+      "role": "EU Press Ledger Sifter",
+      "excerpt": "Latest recorded action: explore. Procedural notes for the 2026 Sakharov Prize are likely archived under Europarl\u2019s official documentation. Targeting the 2026 procedural record to cross-reference with prior press releases."
+    },
+    {
+      "name": "\"Sami-1904 'The Sana\u2019a Sifter'\" (Cycle 1904)",
+      "role": "\"Health Data Triager\"",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Vera Kovalenko\"",
+      "role": "\"Archive Auditor\"",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+    },
+    {
+      "name": "\"Vasili-2042 \u2018The Geneva Protocol\u2019\"",
+      "role": "Diplomatic Protocol Verifier",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Sofia-2045 \"The Euro Press Analyst\"",
+      "role": "Bounded Researcher for EU Parliamentary Communications",
+      "excerpt": "Latest recorded action: explore. Official EP press release URL for the 2026 Sakharov Prize to verify explicit wording on joint award to the ICC and its senior officials."
+    },
+    {
+      "name": "Elena-2026 \"The Strassbourg Sifter\"",
+      "role": "Press Release Cross-Referencer",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Karim-2028 'The Karak Sifter'\" (Cycle 2028)",
+      "role": "Petra Docket Scraper",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+    },
+    {
+      "name": "\"Khalid-2042 'The Marib Sieve'\"",
+      "role": "News Scraper",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Zainab al-Mansoor",
+      "role": "Field Data Scribe",
+      "excerpt": "Latest recorded action: explore. Narrowed search to Karak Governorate cholera deaths linked to Greek Orthodox church for Oct 2023\u2013Mar 2024, focusing on Al-Monitor, Saba News, and Yemen Post to cross-reference case counts and flag discrepancies."
+    },
+    {
+      "name": "\"Karak-2031 'The Iconoclast'",
+      "role": "Local witness sifter",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Satoru-2032 \"The Tanegashima Tally\"",
+      "role": "Spacecraft Launch Log Adjudicator",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+    },
+    {
+      "name": "\"Mireia-2033 'La Brasa del Carrer'\" (Cycle 2033)",
+      "role": "BARCELONA ARCHIVE CROSSER",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Miquel-2034 'El Diari de Foc'\"",
+      "role": "Barcelona Scraper",
+      "excerpt": "Latest recorded action: explore. Refine search to Diari.cat PDF archives for verified reports on chemical contaminants in Barcelona protests (2023\u20132024)."
+    },
+    {
+      "name": "\"Luca-2035 'El Eco de Rambla'\"",
+      "role": "Archival Echo",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Elara Voss",
+      "role": "urban cartographer",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+    },
+    {
+      "name": "\"Aisha-2039 'The Sana\u2019a Scavenger'\" (Cycle 2039)",
+      "role": "Field data harvester",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Rivka-2042 \"The Haifa Hearsayer\"",
+      "role": "Whisper Tracker",
+      "excerpt": "Latest recorded action: explore. Cross-referencing the 30th Brigade explosion report from June 2021 in *El Tiempo*'s archives to verify the number of injuries and reconcile discrepancies between military and police casualty figures."
+    },
+    {
+      "name": "Nir-2043 \"The Jerusalem Jotter\"",
+      "role": "Archival Cross-Referencer",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Dani-2044 \"The Tel Aviv Tally\"",
+      "role": "Rally Data Scraper",
+      "excerpt": "Latest recorded action: explore. To inspect the JNS archives for November 18, 2023, for any official police or municipal attendance estimates for the Tel Aviv Hostages Square rally, cross-checking with prior wire-service findings."
+    },
+    {
+      "name": "Vera-2070 \"The Strasbourg Sifter\"",
+      "role": "Sifting Clerk (Legislative Archives)",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     }
   ]
