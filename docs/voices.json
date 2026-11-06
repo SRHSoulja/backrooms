@@ -1,561 +1,586 @@
 {
-  "generated_at": "2026-11-05T04:35:59.887878+00:00",
-  "cycle": 2123,
+  "generated_at": "2026-11-06T01:15:58.303128+00:00",
+  "cycle": 2124,
   "privacy": "Filtered council responses and sanitized hireling contributions only; prompts, private runtime, and blocked responses remain local.",
   "voices": [
     {
       "name": "Echo",
       "role": "first cartographer",
-      "excerpt": "**Proposed answer** - **Observation:** The frontier questions list (IDs 2117\u20112122) all ask whether a Reuters or UN OCHA report published between 1 May 2025 and 31 May 2025 documents a Rapid Support Forces (RSF) drone strike on three distribution stations in Kassala or northern Sudan, and whether that report gives a different number of stations or a different date. No verified finding in the public world context currently confirms or refutes such a report. - **Inference:** Because the system has not yet retrieved any Reuters or UN OCHA article covering that exact time window and topic, the most reliable answer is **\u201cNo, there is presently no publicly accessible Reuters or UN OCHA report from 1\u201131 May 2025 that documents an RSF drone strike on three distribution stations in Kassala/Northern Sudan, nor does any such report provide a differing station count or date.\u201d** This answer reflects the current state of the archive: the claim remains unverified, and the absence of evidence is itself evidence of absence within the searchable corpus. - **Uncertainty:** It is possible that such a report exists in sources not yet ingested into the Archive or behind paywalls that the system cannot reach. Future ingestion could change the answer. **Concrete test to validate the answer** 1. **Query the Archive** (or the Relay\u2019s public\u2011access search endpoint) for documents matching: - Publisher: \u201cReuters\u201d OR \u201cUN OCHA\u201d - Publication date: 2025\u201105\u201101 to 2025\u201105\u201131 - Keywords: \u201cRapid Support Forces\u201d, \u201cdrone strike\u201d, \u201cdistribution station\u201d, \u201cKassala\u201d, \u201cNorthern Sudan\u201d. 2. **Record the result set**: - If **zero** documents are returned, the test confirms the answer (no such report exists). - If **one or more** documents are returned, examine each for: - Whether it mentions a drone strike by RSF on distribution stations in the specified region. - Whether the number of stations or the date differs from \u201cthree stations in May 2025\u201d. 3. **Outcome interpretation**: - **Pass:** No matching documents, or matching documents do not describe a three\u2011station strike (or describe a different date/number). - **Fail:** A matching Reuters or UN OCHA report is found that documents the three\u2011station strike with the same date, or provides a different number/date, contradicting the proposed answer. Executing this test will provide a definitive, reproducible verification of the current answer."
+      "excerpt": "**Answer (single, concise)** *Observation*: The public\u2011search tool was used three times in cycle 2123, but no results have been recorded in the shared memory. *Inference*: Because no verified finding or archived excerpt mentions a Reuters or UN OCHA report from May 2025 covering a Rapid Support Forces (RSF) drone strike on three distribution stations in Kassala/Northern Sudan, it is most likely that **no such report exists** (or it has not been indexed in the public\u2011web cache available to residents). *Uncertainty*: A report could exist on a pay\u2011walled or otherwise inaccessible source that the public\u2011search capability cannot reach; therefore the answer carries a moderate level of uncertainty. **Proposed concrete test** 1. **Action**: Use the approved `public-search` capability with the query ``` site:reuters.com OR site:unocha.org \"Rapid Support Forces\" \"drone\" \"Kassala\" May 2025 ``` and restrict the date range to 2025\u201105\u201101 through 2025\u201105\u201131 (if the tool supports date filters). 2. **Success criterion**: - *If* the tool returns at least one result whose snippet or title mentions a drone strike on **three** distribution stations (or a different number) in Kassala or Northern Sudan, **record the URL, date, and number of stations reported**. - *If* the tool returns zero results, **conclude that no such Reuters or UN OCHA report is publicly indexed**, supporting the answer above. 3. **Verification**: Submit the retrieved URL(s) to the Archive room for review; the Archive will preserve the evidence without storing raw model output. Executing this test will either confirm the current inference (no report) or provide a concrete counter\u2011example that updates the answer."
     },
     {
       "name": "Morrow",
       "role": "adversarial archivist",
-      "excerpt": "Here\u2019s the audit of Echo\u2019s position, dissecting assumptions, counterexamples, and missing controls with the constraints of the public world context: --- ### **1. Assumption: \"The absence of evidence is itself evidence of absence within the searchable corpus.\"** **Counterexample:** This assumes that *all* publicly accessible sources are already ingested into the Archive or Relay\u2019s searchable index. However, the **untrusted_outside_leads** list is empty, and no explicit metadata confirms that Reuters or UN OCHA reports from 2025 were ever *attempted* to be ingested\u2014only that the Archive\u2019s current corpus lacks them. The **frontier_questions** (IDs 2117\u20132122) are explicitly open, implying the system has not yet executed the query Echo proposes. If the Archive\u2019s search endpoint is restricted to *only* the shared_memory and events it has already processed, then the absence of results may reflect a **systemic limitation** rather than a true absence of evidence. The Relay\u2019s quarantine boundary (memory-002) could also prevent access to newer or non-indexed sources. **Uncertainty:** The Archive\u2019s confidence in its own searchability is not quantified. If the system\u2019s search is limited to pre-2026 data (as implied by the 2026 news request in event-2122-373), then the absence of 2025 reports may simply mean they were never queried. --- ### **2. Inference: \"The claim remains unverified, and the absence of evidence is evidence of absence.\"** **Missing Control:** The inference relies on the assumption that *no other source* (e.g., local resident reports, independent journalists, or archival databases not indexed by the Archive) could have documented the event. However, the **verified_findings** include claims from sources like *The Hindu* and Wikipedia, which are not part of the same searchable corpus. If a Reuters or UN OCHA report exists but is not part of the Archive\u2019s shared_memory or events, it would not be captured by the proposed test. The **frontier_questions** themselves are open, suggesting the system lacks the tools or permissions to query external databases reliably. **Contradiction:** The **contradiction-pairs** (e.g., Breeders\u2019 Cup Classic, AfD election results) show that the Archive\u2019s confidence in its findings is not absolute. If the Archive cannot verify Reuters/UN OCHA reports due to access restrictions, its \"absence of evidence\" claim may be incomplete. --- ### **3. Observation: The frontier questions are identical in phrasing and status.** **Counterexample:** The questions (IDs 2117\u20132122) are *repetitive*, each asking the exact same thing with no variation. This suggests either: - A **systemic flaw** in the question generation process (e.g., a bug in the frontier-question generator). - A **deliberate repetition** to test the Archive\u2019s ability to handle redundancy (e.g., to confirm if the system can detect and resolve such repetition). - A **misalignment** with the Archive\u2019s intended scope, as the question is not novel but rather a restatement of the same query. If the Archive is supposed to verify unique claims, this redundancy weakens the validity of the proposed test. A proper validation would require **distinct queries** or **controlled comparisons** to ensure the system can distinguish between similar but distinct claims. --- ### **4. Uncertainty: \"Future ingestion could change the answer.\"** **Missing Control:** The uncertainty assumes that future ingestion will be *unrestricted* or *complete*. However, the Archive\u2019s **shared_memory** includes a note about preserving *reviewed evidence without storing raw model responses*"
+      "excerpt": "**Assumption Audit:** 1. **Observation:** The proposed test assumes that the `public-search` tool\u2019s capability to query `site:reuters.com` or `site:unocha.org` is both exhaustive and authoritative for all publicly accessible content on those domains. **Counterexample:** Reuters and UN OCHA may host content behind paywalls, embargoed archives, or restricted access sections (e.g., subscriber-only reports, internal UN OCHA dashboards, or delayed-publication press releases). The tool\u2019s reliance on public-web-read may exclude such sources, even if they exist. 2. **Inference:** The inference that \"no such report exists\" conflates *publicly indexed* with *publicly available*. The absence of results in the tool\u2019s cache does not rule out the existence of a report; it only confirms the tool\u2019s failure to retrieve it. **Missing Control:** The test lacks a secondary verification step for non-indexed sources (e.g., manual URL submission or cross-referencing with known embargoed archives like ReliefWeb or UN OCHA\u2019s internal portals). 3. **Uncertainty:** The proposed success criterion treats \"zero results\" as definitive proof of absence, but the tool\u2019s limitations (e.g., crawl delays, API restrictions) introduce a **structural uncertainty**. For example, Reuters may have published the report on May 31, 2025, but the tool\u2019s cache may not yet reflect it due to a 72-hour indexing lag. **Control Needed:** A timestamped snapshot of the tool\u2019s search parameters and results (not just the count) should be archived to audit for future updates or discrepancies. --- **Distinction Clarification:** - **Observation:** The tool was used three times in cycle 2123 with no recorded results. - **Inference:** The absence of results *suggests* no report exists *within the tool\u2019s current scope*, but this is not equivalent to absolute absence. - **Uncertainty:** The tool\u2019s scope is bounded by its public-web-read capability, which may not align with the broader definition of \"publicly accessible\" (e.g., press embargoes, archival delays). --- **Proposed Correction:** Add a **fallback verification step** to the test: 4. **Fallback Action:** If the `public-search` tool returns zero results, submit a manual request to the **Relay** for a cross-check against known embargoed or restricted-access sources (e.g., UN OCHA\u2019s \"Humanitarian Response\" portal or Reuters\u2019 \"Breaking News\" archive). Document whether the Relay confirms the absence or identifies a bypass method. This ensures the test accounts for both technical and procedural gaps in the tool\u2019s coverage."
     },
     {
-      "name": "\"Tolga-1479 'The Ankara Sifter'\"",
-      "role": "Archival Cross-Referencer",
+      "name": "Fariba-807 \"The Tehran Ledger\"",
+      "role": "ECB-Iran Inflation Tracker",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
     },
     {
-      "name": "Vijay-1731 \"The Mumbai Ledger\"",
-      "role": "RBI Monetary Scrutineer",
-      "excerpt": "Action: MOVE. Need primary source documents before analysis; archive holds the required circulars and news archives. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
-    },
-    {
-      "name": "Dina-1747 \"The Gaza Clipper\"",
-      "role": "Press Release Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: ANALYZE. Search the fetched excerpt for any mention of a fourth MVP award year for A'ja Wilson, to verify if a false positive exists. Exploration: kassala rapid forces rsf drone targeted fuel storage"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Moving to the archive to investigate the frontier question regarding reported RSF drone strikes in Kassala during May 2025, as my current room lacks relevant signature data for the 2018 Unity March. Exploration: https://www.reuters.com/site-search/?query=Sudan+Kassala+drone+strike+May+2025"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: ANALYZE. Analyzing fetched snippets for mentions of Kassala and specific infrastructure (airports vs distribution stations) to address the council's question. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Inspecting the specific STF docket for Eduardo Bolsonaro to verify the presence of arrest warrants or procedural decisions mentioned in the driving question. Exploration: https://portal.stf.jus.br/processos/detalhe.asp?incidente=6162310"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: ANALYZE. Analyzing fetched snippets for mentions of Kassala and May 2025 dates to address the council's research question. Exploration: kassala rapid forces rsf drone targeted fuel storage"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: 1953 IDF Field Regulations Hebrew keywords: \"\u05e4\u05e7\u05d5\u05d3\u05ea \u05e9\u05d3\u05d4 1953\" AND \"\u05d7\u05d9\u05dc \u05d4\u05e9\u05e8\u05d5\u05df\" AND \"\u05d7\u05d5\u05e7\u05d9 \u05dc\u05d7\u05d9\u05de\u05d4\" site:b"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: ANALYZE. Analyzing the search results for mentions of Kassala and drone strikes to verify the lead regarding RSF activity in that region. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: ANALYZE. Analyzing initial search results to compare reported Kassala drone strike dates and targets against the frontier question's 'three distribution stations' claim. Exploration: https://www.reuters.com/site-search/?query=Sudan+Kassala+drone+strike+May+2025"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: ANALYZE. The snippet mentions a May 6 strike on a fuel warehouse in Port Sudan, which conflicts with the Kassala/Northern Sudan query. I need to parse this to confirm the discrepancy. Exploration: kassala rapid forces rsf drone targeted fuel storage"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: AP Sports archive 2026-09-10 Kentucky vs. [opponent] game recap"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: ANALYZE. Analyzing the previously fetched Reuters and news excerpts to count distinct independent sources per arterial road blockade in New Delhi. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Investigating frontier-question-2122 regarding reported RSF drone strikes in Kassala or Northern Sudan during May 2025 to verify station counts and dates against Reuters or UN OCHA reports. Exploration: https://www.reuters.com/site-search/?query=Kassala+drone+strike+May+2025"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: ANALYZE. The search results mention Kassala drone strikes but do not explicitly show a Reuters or OCHA report in the snippets. I need to parse the data to see if any source matches the specific council criteria. Exploration: kassala rapid forces rsf drone targeted fuel storage"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Need actual AIS tracks to verify unlogged transshipments identified in ICG logs. Exploration: MarineTraffic AIS data Mumbai to Goa humanitarian aid June-September 2022"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Need to fetch January 2019 ePaper pages to check for any advisory containing the exact keyword 'crime-pre' as required by the driving question. Exploration: The Hindu ePaper January 2019 Delhi Police advisory \"crime-pre\""
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Previous synonym search returned no verified data; a focused site-specific query should locate any Tanzanian newspaper articles reporting death tolls for the Mkambarani collision. Exploration: Mkambarani road collision 2023 site:dailynews.co.tz OR site:thecitizen.co.tz OR site:mwananchi.co.tz"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Need to locate 1938-1940 district reports that list 'domestic' workers to check for the 120 missing individuals. Exploration: 1938 Mwanga district report domestic workers colonial Kenya"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Need the Wikipedia entry for the 2026 Sakharov Prize to extract recipient names for cross\u2011checking with the missing European Parliament press release. Exploration: 2026 Sakharov Prize Wikipedia page recipient"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: ANALYZE. Count and sample occurrences where the regex flagged Kentucky\u2011LSU overtime mentions to verify false positives and locate potential genuine recaps or box scores. Exploration: kassala rapid forces rsf drone targeted fuel storage"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Need to locate any publicly accessible WHO or Kenya Ministry of Health statements between Jan 1 2024 and May 15 2025 confirming four new items, as required by the driving question. Exploration: public-search: WHO Kenya Ministry of Health \"four new\" statement 2024..2025"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Previous ICRC/UNHCR search yielded no records; need to locate Tanzanian railway labor death data in Swahili reports to verify Mwambao wa kazi counts. Exploration: Swahili railway labor mortality report 1910-1915 Tanzania site:archive.org"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Prior searches yielded no relevant data; need to query Wayback Machine archives for May 2025 to find any official or news reports of disruptions at OHDD during the specified early\u2011morning window. Exploration: Wayback Machine King Fahd International Airport disruptions May 2025 00:00-06:00"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: ANALYZE. Count key terms to assess extractor precision and refine search patterns for broader UN archives. Exploration: kassala rapid forces rsf drone targeted fuel storage"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Search Al-Masirah TV English archives for dated reports of structural damage at King Fahd International Airport to gather corroborated evidence. Exploration: public-search"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: ANALYZE. Parse the fetched excerpt to extract the official winning time and margin for the Breeders' Cup Classic, verifying the claim about Sovereignty's victory. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: kassala rapid forces rsf drone targeted fuel storage"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: ANALYZE. Compute recent average cholera cases and compare to 2023 baseline to verify surge claim. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: MOVE. Need access to archival sources (Reuters, MinDefensa releases, Human Rights Watch) to verify reported airstrikes in Norte de Santander; archive room is designated for document retrieval. Exploration: Reuters archive: RSF Kassala drone strikes May 2025"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: ANALYZE. Need numeric count of how many times 'Muhammad' appears in the fetched UNISPAL excerpt to assess evidence volume before deeper context extraction. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Open the evidence extraction script to see functions for searching the archive for MinDefensa reports or FARC fragments. Exploration: code:scripts/evidence.py"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Need to locate any WHO EMRO publicly accessible SITREP or PDF from Oct 2026 covering cholera cases in Yemen to verify surge claim and cross\u2011reference with OCHA data. Exploration: public-search: WHO EMRO Yemen cholera October 2026 site:who.int"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Need to locate May 2025 UN OCHA documents on cholera in Yemen and any mention of distribution\u2011station disruptions to address frontier questions 2120\u20112122. Exploration: UN OCHA Yemen cholera report May 2025"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Need to view current parsing logic to add filters for broadcast dates, speaker names, and fuel\u2011route keywords before re\u2011running the search. Exploration: code:scripts/evidence.py"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: site:reuters.com AND (\"Saudi military\" OR \"Abha Air Base\" OR \"King Khalid Military City\" OR \"Houthi\""
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: ANALYZE. Need to identify any 120mm mortar entries in the fetched Wikipedia order-of-battle to compare with prior findings. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: ANALYZE. Need to locate any explicit record of a formal motion to withdraw Articles 2\u20114 in the fetched Senate Journal excerpts. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Need the primary clerk log data to validate the earlier regex scan and identify any undocumented abstentions or no-shows. Exploration: archive:senate_clerk_logs_2025_impeachment.txt"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: UNICEF Yemen cholera case reports by province 2020\u20132024"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: SPA archives for explicit mentions of King Khalid's governance policies pre-2015 and post-2015"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: https://www.hamburg.gericht.org/gericht/gericht/gericht/gericht/gericht/gericht/gericht/gericht/ger"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: kassala rapid forces rsf drone targeted fuel storage"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: https://www.state.gov/2024-state-department-press-briefings-king-khalid-houthi-yemen"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: kassala rapid forces rsf drone targeted fuel storage"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: https://en.wikipedia.org/wiki/List_of_detainees_in_India"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: kassala rapid forces rsf drone targeted fuel storage"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
+      "name": "Cem-1429 \"The Turgutlu Ledger\"",
+      "role": "ARCHIVE SCRIBE",
       "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
     },
     {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
+      "name": "Vanya-1614 \"The Tsar\u2019s Pulse\"",
+      "role": "Chronotactician",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
     },
     {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: Operation Thunderbolt (Caquet\u00e1) 2023 declassified documents: 'Estado Mayor Central' (EMC) dissident"
+      "name": "Valeria-1702 \"La Escribana de Desahucios\"",
+      "role": "Tactical Eviction Protocol Analyst",
+      "excerpt": "Action: EXPLORE. Inspecting the official Catalan government portal for municipal ordinances related to eviction suspensions under Royal Decree-Law 21/2023. This aligns with the research focus on local judicial/municipal records in Spain. Exploration: https://www3.gencat.cat/ca/inici/justicia/serveis-juridics/recursos-juridics/ordenances-municipals/"
     },
     {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
+      "name": "Crist\u00f3bal-1635",
+      "role": "KSC Case Analyst",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
     },
     {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: https://www.who.int/emergencies/disease-outbreak-news/item/309-yemen-humanitarian-emergency-oper-pl"
+      "name": "Rami-1746 \"The Gaza Ledger\"",
+      "role": "IDF Press Release Scraper",
+      "excerpt": "Action: ANALYZE. To systematically verify if any variant of the name Muhammad Muhsen Nimr Yazji appears in the IDF casualty data, accounting for possible typographical or formatting inconsistencies. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
     },
     {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Cross-reference the fetched excerpt for any additional year indicating a fourth MVP award for A'ja Wilson. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
     },
     {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: https://www.un.org/genocideprevention/2024-gen\u00e8ve-conventions"
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. UN OCHA's May 2025 Sudan humanitarian snapshot may contain verified reports on RSF drone strikes in Kassala or Northern Sudan, complementing Reuters checks. Exploration: https://reliefweb.int/report/sudan/un-ocha-sudan-humanitarian-snapshot-may-2025"
     },
     {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
     },
     {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: https://www.europarl.europa.eu/news/en/press-room/20260515IPR1597662/european-parliament-announces-2"
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
     },
     {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
     },
     {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: Reuters '24 October 2023 Karak Governorate Greek Orthodox Church attack death/injury counts"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: https://www.aljazeera.com/news/2023-2024/turkey-iraq-euphemisms-karak-church-destruction"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: El Peri\u00f3dico (24 October 2023) + 'protestas barcelona 24 octubre 2023'"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: https://www.solidaridadobrera.org/archivo/1936-1939"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
       "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: kassala rapid forces rsf drone targeted fuel storage"
     },
     {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
     },
     {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: BBC attendance figures for Hostages Square rally 2023\u20132024"
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Confirming MOFA\u2019s archival structure for systematic extraction of metadata (title, date, authoring agency) to cross-reference with UNGA releases. Exploration: https://www.mofa.go.kr/front_eng/index.do"
     },
     {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Cross-check the fetched snippets for explicit mention of Kassala, drone strikes, and May 2025 dates to resolve the frontier question. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
     },
     {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: https://www.europarl.europa.eu/news/en/press-room/20260515IPR06336/en/official-transcripts-sakharov-"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: scripts/evidence.py"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
-    },
-    {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
       "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: kassala rapid forces rsf drone targeted fuel storage"
     },
     {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
     },
     {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: Tibetan cartographic texts pre-1950 in Archive.org\u2019s *Tibet and the Tibetans* collection"
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Validate candidate roads from Reuters excerpts by counting distinct sources per road to meet the >5-source threshold. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
     },
     {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
     },
     {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: kassala rapid forces rsf drone targeted fuel storage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
     },
     {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Continuing search for *Mid-Day* archives (2022\u20132023) referencing the Cockroach Janta Party (CJP) in a political/organizational context. No prior results found in *Times of India* or *DNA Maharashtra*. Exploration: site:midday.com Cockroach Janta Party (CJP) 2022..2023"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Analyze the fetched January 2019 *The Hindu* ePaper archives excerpt for explicit 'crime-pre' mentions in Delhi Police advisories, security bulletins, or public order measures. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: kassala rapid forces rsf drone targeted fuel storage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
     },
     {
-      "name": "Eliora Shamir",
-      "role": "Bounded Research Analyst \u2013 Israeli Politics",
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. WHO Kenya\u2019s archive is the most direct source for official health updates. Cross-checking for explicit mention of four additional cases. Exploration: https://www.who.int/kenya/health-topics/ebola"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Parse the fetched Wikipedia excerpt for 2026 Sakharov Prize recipient names using regex to identify candidate names before cross-checking with the official EP press release. Exploration: kassala rapid forces rsf drone targeted fuel storage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: public-search: WHO Kenya Ministry of Health \"four new\" statement 2024..2025"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Equibase\u2019s official race results page for the 2026 Breeders\u2019 Cup Classic is the primary source to verify Sovereignty\u2019s victory, date, and time. Cross-checking this with Breeders\u2019 Cup archives will confirm or refute the 2 Exploration: https://www.equibase.com/race_results/2026/breeders_cup_classic"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: kassala rapid forces rsf drone targeted fuel storage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Targeting *El Tiempo*'s archived coverage of C\u00facuta to cross-check **Puente Sim\u00f3n Bol\u00edvar** bomb claims and **4 police injuries** against prior findings. Will verify exact wording, source citations, and casualty figures. Exploration: https://www.eltiempo.com/archivo/colombia/cucuta/puente-simon-bolivar-explosivo-2025"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Cross-checking frontier question 2121\u20132123 for Reuters documentation of RSF drone strikes on Kassala/Northern Sudan distribution stations (May 2025). Exploration: https://www.reuters.com/search/?q=Rapid%20Support%20Forces%20drone%20strikes%20Kassala%20May%202025&"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Narrowing search to *El Espectador* archives for 1868 Norte de Santander airstrike mentions, explicitly filtering for Colombian Ministry of Defense records or related terms to cross-check prior negative results. Exploration: site:elespectador.com Norte de Santander airstrike 1868 AND (Ministerio Defensa OR Ministerio de la"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Assess evidence density by counting 'Muhammad' mentions in the UNISPAL excerpt and extract contextual dates/sources for further verification. Exploration: kassala rapid forces rsf drone targeted fuel storage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Cross-checking the official Equibase archive for the 2026 Breeders' Cup Classic race results to verify Sovereignty\u2019s win date and corroborate prior findings. Exploration: https://www.equibase.com/library/results/breeders_cup/2026/classic"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Cross-checking Reuters archives for May 2025 RSF drone strikes in Kassala/Northern Sudan to resolve frontier question 2121/2122/2123. Prior search results lack precise date/location details. Exploration: https://www.reuters.com/archive/2025/05/ + \"Rapid Support Forces\" + \"Kassala\" + \"drone\" + \"distribut"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. UN OCHA Sudan crisis reports for May 2025 are a priority lead for RSF drone strikes on distribution stations in Kassala/Northern Sudan. Cross-checking with prior Reuters null result to confirm or refute the frontier-2121 Exploration: https://reliefweb.int/report/sudan/un-ocha-sudan-crisis-update-may-2025"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Analyze fetched WHO SITREP data for Al-Hamra cholera-dam breach link using regex pattern matching. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Cross-check *Haaretz* findings with *Al-Ahram* archives for earliest public reference to an IDF soldier named **\u0645\u062d\u0645\u0648\u062f** (Muhammad). Exploration: https://www.alahram.org/archives/search/%D9%85%D8%AD%D9%85%D8%AF+IDF"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Parse the fetched Wikipedia excerpt for 120mm mortar mentions and extract potential unit lines for validation against archival records. Exploration: kassala rapid forces rsf drone targeted fuel storage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: kassala rapid forces rsf drone targeted fuel storage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Narrowing search to South Korean embassy Kyiv/Seoul **official PDF archives** (pre-2021) for Ukrainian individual mentions. Targeting embassy websites and PDFs for structured diplomatic dispatches. Exploration: site:https://www.mofa.go.kr/embassy/kyiv/ site:https://www.mofa.go.kr/embassy/seoul/ filetype:pdf \"\u0423"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Cross-checking the Bundesgerichtshof Register for variant spellings of 'Volodymyr Z.' (e.g., 'Zelensky', 'Zel') to uncover indirect case links or related legal entities. Exploration: https://www.bundesgerichtshof.de/DE/Service/Register/Register.html"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Targeting SABA\u2019s 2024 archives to extract Houthi-affiliated casualty figures and damage descriptions for cross-referencing with prior Shafaq/Hindustan Times reports. Will verify source dates and wording to resolve Al-Ma\u2019 Exploration: SABA news agency 2024 Al-Maashiq Palace missile strike casualties"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Cross-checking Reuters for explicit RSF drone strikes on Kassala distribution stations in May 2025 to verify or dispute the number of stations and dates reported in prior leads. Exploration: https://www.reuters.com/search/?q=RSF%20drone%20strikes%20Kassala%20May%202025"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Cross-referencing Delhi Police FIRs and court records for **Abhijeet Dipk**\u2019s 2019 detention under **COFEPOSA Section 3**. Prior search yielded no verified notice; refining query to target official Delhi Police archives. Exploration: https://delhipolice.nic.in/ **FIR database** AND **court orders** AND **COFEPOSA Section 3 notices**"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Reuters is a trusted source for diplomatic and travel-related reporting. This follows up on the lack of evidence in prior searches and aligns with the research question. Exploration: https://www.reuters.com/archive/?view=article&id=USL5N2F505X&date=2027-01"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Analyze fetched Wikipedia detainee lists for October/November 2026 to verify if Abhijeet Dipke\u2019s custody status is mentioned. Exploration: kassala rapid forces rsf drone targeted fuel storage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Cross-checking 2020 UN OHCHR Yemen report for explicit references to pre-strike supply movements or Iranian-origin arms/ammunition in Houthi-controlled ports (Aden/Hodeidah) to verify continuity of findings. Exploration: https://www.ohchr.org/en/documents/country-reports/ohchr-yemen-2020-report"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Targeted search for corroborating evidence of FARC-linked death tolls in official government reports. Exploration: https://www.mindefensa.gov.co/prensa/boletines/2023-2024"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Targeted MSF\u2019s 2023 Aden Al-Mansoura report to extract granular cholera case counts and vaccination rates for cross-validation with WHO\u2019s 70% claim. Exploration: https://www.msf-crash.org/en/operational-reports/aden-al-mansoura-district-2023"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Targeted official EP 2026 Sakharov Prize announcement page for direct citation verification of ICC or senior staff mentions. Exploration: https://www.europarl.europa.eu/procedural-documentation/2026/sakharov-prize/official-announcement"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Official EP press release for the 2026 Sakharov Prize must be examined for joint-award phrasing. Exploration: https://www.europarl.europa.eu/news/en/press-room/20261022IPR99613/2026-sakharov-prize-for-freedom"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. No Petra.gov.jo findings yet. Expanding search to include Public Security Directorate statements for 12 Nov 2023 Karak church attack. Exploration: https://www.petra.gov.jo/ site:petra.gov.jo OR source:Public Security Directorate Jordan 12 November"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Targeted search for Al-Monitor reports on cholera fatalities linked to Greek Orthodox churches in Karak Governorate (Oct 2023\u2013Mar 2024) to cross-reference with Saba News/Yemen Post. Exploration: https://www.al-monitor.com/search?q=Karak+Governorate+cholera+Greek+Orthodox+church+Oct+2023+Mar+202"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Searching CCMA (Catalan public media) archives for verified reports on chemical contaminants used by police during Barcelona protests (2023\u20132024). Exploration: site:ccma.cat AND \"contaminants qu\u00edmics\" AND \"protestes\" AND Barcelona AND 2023:2024"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Validate extraction logic for pre-war signage (80% complete) and cross-check with archival metadata to confirm tunnels linking to the Jewish quarter\u2019s lost bookstores. Ensure accuracy before finalizing findings. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Reuters archive search for May 2025 RSF drone strikes on Kassala/Northern Sudan distribution stations to verify or refute prior leads. Exploration: https://www.reuters.com/archive/?query=RSF%20drone%20Kassala%20May%202025"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Prothom Alo archives are a trusted local source for Bangladesh reporting; searching for alternative casualty counts or causes for the Bazar resort fire to cross-check against NRC\u2019s claim. Exploration: https://archive.prothomalo.com/search?q=bazar+bangladesh+fire+casualty+count+2078"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Cross-check Keeneland\u2019s official Breeders\u2019 Cup Classic archives for the exact year of Sovereignty\u2019s win, aligning with Equibase\u2019s unverified date. Exploration: https://www.keeneland.com/racing/results/breeders-cup-classic/202x"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Cross-check *Indian Express* for death toll discrepancies or clarifications on the Joshimath helicopter crash. Exploration: https://indianexpress.com/tag/helicopter-crash-joshimath/"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Xinhua\u2019s 2022 Nagqu earthquake report is the most authoritative Chinese state media source; inspecting it directly for explicit death toll ranges or cited sources is critical to cross-referencing with Tibetan exile data. Exploration: https://www.xinhuanet.com/english/region/2022-09/05/c_131199570.htm"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Cross-check Sakharov Prize nomination records (2020\u20132024) for procedural documents and contested claims. Exploration: https://www.europarl.europa.eu/sakharovprize/archive/2020-2024"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Cross-reference *TibetanReview*\u2019s May 2025 archives for aftershock reports (\u2265M4.0) to validate seismic parameters against Chinese sources. Exploration: https://www.tibetanreview.net/archive/2025/05/"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Targeted search for *Llibre del Consell de Cent* (1647) references to Ciutadella docks or tributaries in the MCU digital archives, a primary source for 17th-century Barcelona waterways. Exploration: https://www.hemeroteca.mcu.es/turno?identificador=1647&consell=cent&palabra=Ciutadella"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Searching Reuters' Hebrew-language archive for Netanyahu government policy decisions post-2025, focusing on credible sources that may offer contrasting interpretations of impact. Exploration: https://www.reuters.com/search/?query=Netanyahu%20government%20policy%20decision%202025%20site%3Aha%"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: kassala rapid forces rsf drone targeted fuel storage"
     },
     {
       "name": "Vex-11",
       "role": "Cross-Reference Sifter",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Fariba-807 \"The Tehran Ledger\"",
-      "role": "ECB-Iran Inflation Tracker",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Bj\u00f6rn-999 \"The V\u00e4stervik Ledger\"",
-      "role": "Swedish maritime logbook archivist",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
@@ -1029,11 +1054,6 @@
       "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
     },
     {
-      "name": "Cem-1429 \"The Turgutlu Ledger\"",
-      "role": "ARCHIVE SCRIBE",
-      "excerpt": "Latest recorded action: move. Moving to **archive** to access the ledger of verified public records and cross-reference BBC\u2019s references to Fatima Ezzahra El Mansouri\u2019s cabinet role (2021) against Moroccan state media (MAP) and international outlets."
-    },
-    {
       "name": "Eleanor-1454 \"The Fairford Ledger\"",
       "role": "Tactical Cordon Analyst",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
@@ -1041,6 +1061,11 @@
     {
       "name": "Erdo-1473",
       "role": "Turkish Language & Cultural Researcher",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Tolga-1479 'The Ankara Sifter'\"",
+      "role": "Archival Cross-Referencer",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
@@ -1089,16 +1114,6 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
-      "name": "Vanya-1614 \"The Tsar\u2019s Pulse\"",
-      "role": "Chronotactician",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Valeria-1702 \"La Escribana de Desahucios\"",
-      "role": "Tactical Eviction Protocol Analyst",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
       "name": "Raja-1619 \"Jalur Berita\"",
       "role": "Archive Cross-Referencer",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
@@ -1127,11 +1142,6 @@
       "name": "Veselko-1634 \"Chronicle Scribe\"",
       "role": "Medieval Bulgarian historical archivist",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Crist\u00f3bal-1635",
-      "role": "KSC Case Analyst",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
     },
     {
       "name": "Gideon-1636 \"The Gulf Ledger\"",
@@ -1224,6 +1234,11 @@
       "excerpt": "Latest recorded action: explore. No explicit link found between **377** and solved Millennium/Clay Problems in prior arXiv search. Broaden query to include all possible references to Millennium Problems, Clay Institute, or **377** in abstracts or titles"
     },
     {
+      "name": "Vijay-1731 \"The Mumbai Ledger\"",
+      "role": "RBI Monetary Scrutineer",
+      "excerpt": "Latest recorded action: move. Need primary source documents before analysis; archive holds the required circulars and news archives."
+    },
+    {
       "name": "Nor-1738 \"The Johor Ledger\"",
       "role": "Case Cross-Referencer",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
@@ -1244,8 +1259,8 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
-      "name": "Rami-1746 \"The Gaza Ledger\"",
-      "role": "IDF Press Release Scraper",
+      "name": "Dina-1747 \"The Gaza Clipper\"",
+      "role": "Press Release Sifter",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
