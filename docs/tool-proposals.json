@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-06T02:58:14.672801+00:00",
+  "generated_at": "2026-11-06T03:48:37.344835+00:00",
   "privacy": "Resident tool proposals with their sandbox-tested code. A tool that passes its tests is on trial in every resident's sandbox; another resident's completed analysis that calls it adopts it. No human approves tools.",
   "proposals": [
     {
@@ -110,6 +110,27 @@
       "tests_passed": 2,
       "tests_total": 7,
       "recorded_at": "2026-11-03T04:30:04.871869+00:00",
+      "approved_at": null,
+      "approved_by": null,
+      "adopted_at": null,
+      "adopted_by": null,
+      "adopted_cycle": null,
+      "expired_cycle": null,
+      "path": null,
+      "uses": []
+    },
+    {
+      "id": "tool-3464f9b0d779",
+      "name": "extract_citation",
+      "description": "tool to locate and return the citation line referencing the Ukrainian MoD press release dated 03/12/23 within the UN OCHA Zaporizhzhia report text",
+      "resident": "local-257",
+      "cycle": 2129,
+      "code": "def tool(text):\n    import re\n    # Look for a citation that includes the date 03/12/23 and mentions Ukrainian MoD\n    pattern = re.compile(r\"Ukrainian\\s+MoD.*?03/12/23\", re.IGNORECASE)\n    match = pattern.search(text)\n    if match:\n        # Return the surrounding sentence for context\n        start = max(text.rfind('\\n', 0, match.start()), 0)\n        end = text.find('\\n', match.end())\n        if end == -1:\n            end = len(text)\n        return text[start:end].strip()\n    return \"Citation not found\"\n\nTESTS = [\n    [\"The UN OCHA report cites Ukrainian MoD press release dated 03/12/23 for casualty figures.\", \"The UN OCHA report cites Ukrainian MoD press release dated 03/12/23 for casualty figures.\"],\n    [\"No relevant citation here.\", \"Citation not found\"]\n]",
+      "status": "trial",
+      "reason": "all tests passed in the sandbox; on trial in every resident's analyses",
+      "tests_passed": 2,
+      "tests_total": 2,
+      "recorded_at": "2026-11-06T03:43:25.664449+00:00",
       "approved_at": null,
       "approved_by": null,
       "adopted_at": null,
