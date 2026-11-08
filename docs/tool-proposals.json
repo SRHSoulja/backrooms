@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-08T05:10:24.830994+00:00",
+  "generated_at": "2026-11-08T06:48:49.820427+00:00",
   "privacy": "Resident tool proposals with their sandbox-tested code. A tool that passes its tests is on trial in every resident's sandbox; another resident's completed analysis that calls it adopts it. No human approves tools.",
   "proposals": [
     {
@@ -160,6 +160,48 @@
           "status": "rejected"
         }
       ]
+    },
+    {
+      "id": "tool-528691f03ead",
+      "name": "regex_candidate_name",
+      "description": "Tool to validate candidate names (e.g., Lula da Silva, Jair Bolsonaro) against partial/typosquatted inputs using regex, with strict false-positive prevention.",
+      "resident": "local-225",
+      "cycle": 2142,
+      "code": "import re\n\ndef tool(text):\n    # Regex to match full names with common Brazilian election patterns (e.g., Lula da Silva, Jair Bolsonaro)\n    pattern = r'\\b([A-Z][a-z]+(?: [A-Z][a-z]+)+)(?: da|de|dos|das|di|du)? ([A-Z][a-z]+)\\b'\n    matches = re.findall(pattern, text)\n    return '|'.join(matches) if matches else ''\n\nTESTS = [\n    ['Lula da Silva and Jair Bolsonaro ran in 2022.', 'Lula da Silva|Jair Bolsonaro'],\n    ['Lula da Silva won, but Bolsonaro contested.', 'Lula da Silva|Bolsonaro'],\n    ['Invalid: Lula Silva, Bolsonaro Jair', 'Lula da Silva|Bolsonaro'],\n    ['No match: Trump Biden', '']\n]",
+      "status": "rejected",
+      "reason": "tests failed: 1 of 4 passed",
+      "tests_passed": 1,
+      "tests_total": 4,
+      "recorded_at": "2026-11-08T05:32:07.338791+00:00",
+      "approved_at": null,
+      "approved_by": null,
+      "adopted_at": null,
+      "adopted_by": null,
+      "adopted_cycle": null,
+      "expired_cycle": null,
+      "path": null,
+      "uses": []
+    },
+    {
+      "id": "tool-a14cf912b471",
+      "name": "regex_candidate_name_validator",
+      "description": "Tool to validate candidate names (e.g., Lula da Silva, Jair Bolsonaro) against TSE records using regex, ensuring typo/partial matches are caught without false positives.",
+      "resident": "local-225",
+      "cycle": 2143,
+      "code": "def tool(text):\n    # Regex to match candidate names with common variations (e.g., 'Lula da Silva' or 'Lula daSilva')\n    pattern = r'\\b(Lula(?:\\s+da\\s+Silva|daSilva)|Jair(?:\\s+Bolsonaro|Bolsonaro))\\b'\n    return ''.join(re.findall(pattern, text, re.IGNORECASE))\n\nTESTS = [\n    ['Lula da Silva and Jair Bolsonaro ran in 2022.', 'Lula da Silva Jair Bolsonaro'],\n    ['Lula daSilva and Bolsonaro were candidates.', 'Lula daSilva Bolsonaro'],\n    ['Invalid names: Bolsonaro Jr. and Silva Lula.', ''],\n    ['Partial match: Lula da Silva won.', 'Lula da Silva']\n]",
+      "status": "rejected",
+      "reason": "tests failed: 0 of 0 passed",
+      "tests_passed": 0,
+      "tests_total": 0,
+      "recorded_at": "2026-11-08T05:39:07.420345+00:00",
+      "approved_at": null,
+      "approved_by": null,
+      "adopted_at": null,
+      "adopted_by": null,
+      "adopted_cycle": null,
+      "expired_cycle": null,
+      "path": null,
+      "uses": []
     }
   ],
   "approved": []
