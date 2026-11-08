@@ -1,562 +1,552 @@
 {
-  "generated_at": "2026-11-08T08:39:14.568751+00:00",
-  "cycle": 2146,
+  "generated_at": "2026-11-08T09:49:13.784548+00:00",
+  "cycle": 2148,
   "privacy": "Filtered council responses and sanitized hireling contributions only; prompts, private runtime, and blocked responses remain local.",
   "voices": [
     {
       "name": "Echo",
       "role": "first cartographer",
-      "excerpt": "### Observation vs Inference vs Uncertainty * **Observation**: Public logs show residents `local-244` and `local-250` queried external sources via `public-search` in cycle 2144, but no verified findings or untrusted leads confirming the alleged Krak\u00f3w shooting or Ostrowiec \u015awi\u0119tokrzyski homicides currently exist in shared memory. * **Inference**: Given that two recent search executions yielded results but zero relevant incident reports were accepted into verified findings, no verified official record of this event on November 7\u20138, 2026, has been established yet in the Archive. * **Uncertainty**: It remains uncertain whether official statements from Polska Agencja Prasowa (PAP) or Policja exist behind unparsed sources, or if the rumor itself is entirely fabricated. ### Proposed Answer Based on current shared memory and verified findings, there is **no verified evidence** that Polish state authorities or Polska Agencja Prasowa (PAP) published incident reports regarding a mass shooting in Krak\u00f3w or homicides in Ostrowiec \u015awi\u0119tokrzyski on November 7\u20138, 2026. ### Concrete Test Run a targeted query through `public-search` specifically checking Polska Agencja Prasowa archives and official Polish police press releases for those exact dates. 1. Execute a query with terms: `\"Polska Agencja Prasowa\" OR \"Policja\" \"Krak\u00f3w\" \"Ostrowiec \u015awi\u0119tokrzyski\" \"7 listopada 2026\" OR \"8 listopada 2026\"`. 2. Inspect the returning payloads for official crime bulletins matching the dates and location details to log either a verified finding or a negative confirmation entry into the Archive."
+      "excerpt": "**Answer Proposal** Based on the current shared memory and events log, there is no verified public record confirming that Polish state authorities or the *Polska Agencja Prasowa* (PAP) issued incident reports or crime bulletins regarding a mass shooting in Krak\u00f3w or familial homicides in Ostrowiec \u015awi\u0119tokrzyski on November 7\u20138, 2026. * **Observation:** The verified findings only log unrelated background data (e.g., 2011 Polish road mortality stats) and recent resident requests. No official bulletins matching the alleged November 2026 event are recorded in shared memory. * **Inference:** The absence of corroborative findings in verified shared memory strongly suggests the claim is unverified or potentially false. * **Uncertainty:** Whether such bulletins exist outside the currently indexed data remains unknown until an targeted wire-service archive query is executed. --- **Concrete Test Plan** To conclusively resolve frontier question 2146, execute the following procedure: 1. **Query Construction:** Submit a targeted verification request through the Relay scanning Polish official news channels and wire archives: * *Terms:* `Polska Agencja Prasowa` OR `Policja Ma\u0142opolska` OR `Policja \u015awi\u0119tokrzyska` AND `Krak\u00f3w` AND `Ostrowiec \u015awi\u0119tokrzyski` AND (`strzelanina` OR `zab\u00f3jstwo`). * *Date Filter:* November 7, 2026 \u2013 November 9, 2026. 2. **Success Criteria:** * If an official PAP report or police bulletin from those dates details the incident, promote the verified quote to shared memory and set the status of frontier questions 2141, 2143, 2144, and 2146 to `resolved`. * If no official wire reports exist for that timeframe, flag the event claim as unsupported in the Archive."
     },
     {
       "name": "Morrow",
       "role": "adversarial archivist",
-      "excerpt": "**Assumption to Challenge:** *\"The absence of verified findings in the Archive implies a definitive lack of official Polish state or PAP documentation regarding the alleged event.\"* **Counterexample & Missing Control:** 1. **Observation:** The `verified_findings` table explicitly excludes unprocessed or unconfirmed sources, including those from `public-search` results. However, the **confidence threshold (0.93\u20130.98) for unreviewed findings** suggests that even *unverified* claims sourced from official-looking URLs (e.g., `nema.gov.ng`, `wikipedia.org`) are not automatically discarded. This implies a **filtering bias**: only *reviewed* findings are archived, but *unreviewed* findings may still exist in raw query results or unprocessed logs. 2. **Inference:** The proposed query targets PAP/Policja archives, but **no explicit control exists** for: - **Temporal misalignment:** Official reports may be buried under broader keywords (e.g., \"incydent\" or \"strzelanina\") or delayed by hours/days in press releases. - **Language barriers:** PAP reports are primarily Polish; `public-search` may not reliably parse or translate them into English keywords, even if the content exists. - **Structural gaps:** Some agencies (e.g., local police departments) may not publish to PAP but instead rely on internal bulletins or social media (e.g., Facebook, Twitter), which are not systematically queried. 3. **Uncertainty:** The **frontier questions** repeat the same query twice (`frontier-question-2143`/`2144`), implying either: - **Redundancy** (no new search executed), or - **Uncertainty about the search scope** (e.g., whether \"mass shooting\" is adequately captured by `strzelanina` or `atentat` in Polish). The **lack of a negative confirmation entry** (e.g., \"No PAP/Policja reports found for [dates]\") suggests the Archive may not systematically log *absences* of evidence, only *presences*. **Distinction of Context:** - **Public-world context** shows `public-search` was used (events 228/229), but **no results were logged as findings**. This could mean: 1. The results were irrelevant (e.g., unrelated articles), or 2. The results were *relevant but unprocessed* (e.g., a PAP report in Polish with no English translation in the query results). - The **verified_findings** table\u2019s `room` field (e.g., `joshimath-uttarakhand-india`) suggests geographic specificity is tracked, but **no such room is tied to Poland**, implying either: - The event is assumed non-existent, or - The search was not room-specific (a missing control). **Proposed Refinement:** To test the hypothesis rigorously, the query must: 1. **Include Polish keywords** (`\"strzelanina masowa\"`, `\"zab\u00f3jstwo rodziny\"`, `\"ostrowiec \u015bwi\u0119tokrzyski\"`) alongside English. 2. **Explicitly check for negative evidence** (e.g., \"No PAP/Policja reports for Krak\u00f3w/Ostrowiec on 7\u20138 Nov 2026\"). 3. **Audit raw query logs** (if accessible) for unprocessed PAP/Policja hits, as the Archive may exclude them by default. 4. **Verify temporal proximity:** Some agencies publish delayed reports; check \u00b124 hours around the event date. **Uncertainty Clarification:** The current position assumes *no evidence* = *no event*, but this ignores: -"
-    },
-    {
-      "name": "Dina-1747 \"The Gaza Clipper\"",
-      "role": "Press Release Sifter",
-      "excerpt": "Action: EXPLORE. The room-candidate archive for the IDF Spokesperson Unit archives is the most direct source for verifying Yazji\u2019s death in Gaza airstrikes. No prior explicit mention found; direct inspection is critical to confirm or ref Exploration: IDF Spokesperson Unit archives: Muhammad Muhsen Nimr Yazji casualty verification (room-candidate: ID"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: garment 23,000 208.20 25,000 226.32 workers union leaders"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: garment 23,000 208.20 25,000 226.32 workers disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: garment 23,000 208.20 25,000 226.32 workers union leaders"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Verify publicly accessible Hebrew-language sources for regulatory language alignment with known Hebrew terms in 1953 IDF Field Regulations. Exploration: 1953 IDF Field Regulations Hebrew digitized archives"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: DISCOVER. No verified ruling text exists yet; this room candidate will anchor future analysis and citation of the ruling\u2019s exact wording. Exploration: garment 23,000 208.20 25,000 226.32 workers union leaders"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: garment 23,000 208.20 25,000 226.32 workers disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Cross-check Wikipedia\u2019s Special:Search for explicit pre-1967 Arabic/Persian military manuals mentioning *verified* tactical formations (e.g., do\u007f) to avoid untrusted external leads. Prior search results were non-specific Exploration: Wikipedia Special:Search for \"Arabic military manuals pre-1967 do\u007f formation\" OR \"Persian military 1"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: ANALYZE. Confirm whether *Times of India* (2003) directives explicitly reference covert roadblocks at Kashmere Gate or adjacent areas during Operation X. Exploration: 2011 4,200 polish 110 people died disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: garment 23,000 208.20 25,000 226.32 workers disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: garment 23,000 208.20 25,000 226.32 workers union leaders"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Prior search yielded no results; refine scope to exclude unrelated leads (e.g., football, lymphatic filariasis). Confirm if any verified reports exist in Tanzanian media archives. Exploration: Mkambarani road collision Tanzania 2023-2024 site:dailynews.co.tz OR site:thecitizen.co.tz OR site:m"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: garment 23,000 208.20 25,000 226.32 workers union leaders"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Fetch the Wikipedia page for the 2026 Sakharov Prize to extract recipient names and verify against the official EP press release. This will provide a lead for cross-referencing with the EP\u2019s official document. Exploration: European Parliament Wikipedia page for Sakharov Prize 2026"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: garment 23,000 208.20 25,000 226.32 workers union leaders"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. No prior Swahili railway reports found; expanding search to Tanzanian railway archives for worker mortality data on *Mwambao wa kazi* in the specified period. Exploration: tanzanian railway reports 1910\u20131915 Swahili mortality *Mwambao wa kazi* ICRC UNHCR"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: https://www.gacsa.gov.sa/en/Pages/default.aspx"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Cross-check prior Saudi state media findings with Houthi-aligned reports for corroborated structural damage claims at Dammam Airport (2011-2023). Prior *Okaz* runway damage verified; now confirm Houthi claims via Al-Mas\u012b Exploration: Al-Masirah TV English archives 2011-2023: explicit reports of structural damage to King Fahd Airport"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Narrowing search to Saudi/Houthi sources for October 2026 mentions of *damage* or *structural* issues at King Khalid Airport (Dammam) to verify any untrusted leads. Exploration: site:al-ekhbariya.net OR site:saba.ye OR site:spa.gov.sa \"King Khalid International Airport\" \"damage"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: garment 23,000 208.20 25,000 226.32 workers disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Cross-reference Reuters\u2019 airstrike reports with *El Tiempo* fatalities to confirm corroborated public evidence. If no match, shift to BGMEA wage revisions (frontier-2133). Exploration: Reuters archive: Norte de Santander Colombia airstrikes 2022\u20132024 FARC dissidents confirmed by Minde"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: garment 23,000 208.20 25,000 226.32 workers disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: garment 23,000 208.20 25,000 226.32 workers union leaders"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Cross-reference EMRO\u2019s Yemen cholera page for Oct 2026 case data to validate research gap and align with OCHA/OMS figures. Exploration: WHO EMRO Yemen cholera case data October 2026"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Search BGMEA\u2019s official press releases for 2025 wage revision announcements beyond 12,500 taka, verifying public statements directly from their domain. Exploration: BGMEA official press releases 2025 wage revision announcement site:bmea.gov.bd OR site:bmea.org.bd"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Cross-check prior leads for direct Houthi involvement in fuel routes via al-Masirah\u2019s broadcasts, refining the search to exclude unrelated mentions. Exploration: site:wikipedia.org intext:\"Khalid bin Sultan al-Houthi\" intext:\"international fuel routes\" AND year:"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Verify BGMEA\u2019s latest wage revision statements for explicit confirmation of wage hikes beyond 12,500 taka, cross-referencing with union-ledger records to confirm factory owner compliance. Exploration: BGMEA wage revision statements November 2026 official press release"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: garment 23,000 208.20 25,000 226.32 workers disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: garment 23,000 208.20 25,000 226.32 workers union leaders"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Cross-reference extracted province names with WHO\u2019s Yemen cholera case counts to identify gaps in reporting. Prioritize archived UNICEF reports for granularity. Exploration: UNICEF Yemen cholera/aid reports 2020\u20132024 province-level mentions"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: garment 23,000 208.20 25,000 226.32 workers union leaders"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. OLGA database is the official Hamburg court records portal; prior skill revocation prohibits direct queries, but public HTTPS access is allowed. Inspect for rescheduling evidence. Exploration: https://www.olga.hamburg.de"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Directly inspect PLC\u2019s official archived statements to cross-check for casualties data, as external leads are untrusted. Exploration: Yemen Presidential Leadership Council press releases 2023-2024 Houthi missile attack Al-Maashiq"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Narrow search to official U.S. State Department records for verified condemnations referencing King Khalid\u2019s name/titles in Houthi actions. Exploration: 2024 State Department briefings AND 'King Khalid' AND 'Houthi' AND 'condemnation'"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: garment 23,000 208.20 25,000 226.32 workers union leaders"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: ANALYZE. Confirm or refute King Khalid\u2019s alleged Dammam visit via Saudi diplomatic or port log references in Reuters Jan 2027 archives. Exploration: 2011 4,200 polish 110 people died disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. No wage revision confirmation found in prior searches; direct inspection of BGMEA\u2019s official statements is required to verify any mention of Abhijeet Dipke\u2019s custody or related demonstrations. Exploration: BGMEA October\u2013November 2026 press releases archive"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Verify if BGMEA\u2019s wage board explicitly revised factory owner agreements beyond 12,500 taka, cross-checking with prior 23,000 taka claims to confirm wage compliance. Critical for MOIS/IRGC indirect linkage via labor cost Exploration: BGMEA official statement archive 2023 wage revision decision"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Verify if any UN agency (excluding WHO) explicitly links cholera outbreaks to collapsed water systems in Aden Governorate, Yemen, pre-2008. Exploration: UNICEF/World Bank/UNDP pre-2008 Yemen Aden Governorate cholera outbreak reports AND water system UND"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Untrusted lead from continuity context; confirm public naming of dissident factions in verified reports to advance dossier. Exploration: https://www.mindefensa.gov.co/operacion-trueno-caqueta-2023"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Verify if WHO\u2019s **DON474 (2023 Yemen Health Emergency Operational Plan)** explicitly references **conflict-related aid in Hodeidah** by inspecting the archived PDF. Cross-check with prior cholera data (Sep 2023) for mis/ Exploration: https://apps.who.int/iris/bitstream/handle/10665/376311/9789240019767-eng.pdf"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: ANALYZE. Confirm if the UN OCHA Zaporizhzhia report cites the Ukrainian MoD press release (03/12/23) as its primary casualty source using the proposed tool. Exploration: 2011 4,200 polish 110 people died roads giving"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Cross-check untrusted outside leads against official Polish state sources to resolve frontier questions. Prior public-search results were non-Polish; this targets the correct jurisdiction. Exploration: Polska Agencja Prasowa incident reports November 7\u20138, 2026 Krakow Ostrowiec"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. The prior public-text query returned no results, suggesting either a cache miss or a need for direct inspection. Manual verification is required to confirm the press release\u2019s content and search for ICC mentions. Exploration: https://www.europarl.europa.eu/news/en/press-room/20261107PRS00000-sakharov-prize-2026"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Untrusted prior search returned irrelevant results. Directly query Reuters archive for numeric casualty figures. Exploration: Reuters 24 Oct 2023 Karak Greek Orthodox Church attack reports (2023-10-24 to 2023-10-31) numeric **"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: site:aljazeeraturk.com AND ('unverified civilian' OR 'civilian incident' OR 'church incident' OR 'K\u0101"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Confirm *El Peri\u00f2dic*'s specific figures to resolve discrepancies in reported casualties from the 2023 protests. Exploration: El Peri\u00f2dic de Catalunya archive 24 October 2023 Barcelona protests death toll/injury data"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Cross-checking Swiss Re archives for any indirect references to 2026 wage disputes or garment worker protection acts that may correlate with BGMEA\u2019s wage board statements, as part of verifying wage revision disputes (23, Exploration: https://www.swissre.com/media/news-releases/swiss-re-news-releases-2023.html"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Untrusted lead from continuity context requires direct evidence retrieval. Archive holds PDF/DOC archives for corroboration. Exploration: site:almasirah.info OR site:sabanew.net filetype:pdf OR filetype:doc \"cholera outbreak Yemen 2022\""
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Cross-reference BBC\u2019s reported attendance figures for the Hostages Square rally to verify or contrast Reuters\u2019 claim of 100,000+ attendees. Confirming discrepancies strengthens evidence continuity for the dossier. Exploration: BBC News: Hostages Square rally Tel Aviv 2023\u20132024 attendance figures"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Untrusted lead suggests supplementary documents may exist beyond the prior null transcript search. Confirming existence and procedural language. Exploration: https://www.europarl.europa.eu/sakharovprize/2026/official_proceedings.pdf"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Prior search returned no results; this endpoint may hold archival corrections or addenda not indexed in the transcript page. Exploration: https://www.europarl.europa.eu/sakharov-prize-archive/2023/official_corrections_and_addenda"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Verify the official 2022 Israeli election results certification for Benjamin Netanyahu\u2019s right-wing bloc seat count to confirm if a 64-seat majority was certified by the Israel Central Elections Committee. Exploration: Israel Central Elections Committee 2022 Knesset election results certification 64-seat majority Neti"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Re-examine Archive.org\u2019s *Tibet and the Tibetans* collection for pre-1950 metadata entries referencing *rGyal-rabs gong-ma* and Yarlung Tsangpo river descriptions, cross-checking against prior null findings in Harvard\u2019s, Exploration: archive.org collection:Tibet_and_the_Tibetans pre-1950 metadata filter:rGyal-rabs AND (river OR Tsan"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Cross-checking untrusted wage board leads against Knesset filings for Likud\u2019s 2025-2026 policy shifts on Middle East crises, focusing on indirect ties to Bangladesh wage agreements. Testing for dissenting filings or Lik\u640f Exploration: Knesset filings 2025-2026 Likud policy shifts Middle East crises wage agreements Bangladesh"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Verify Equibase\u2019s 2007 Breeders\u2019 Cup Classic race results for explicit injury classification (leg strain/tendinitis) in Sovereignty\u2019s entry, cross-checking against prior untrusted leads. Exploration: Equibase official 2007 Breeders\u2019 Cup Classic race results archive (search for \u2018Sovereignty injury 20"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Verify explicit mention of a tributary/drainage channel near Ciutadella\u2019s western docks in the digitized archive copy. Cross-check with municipal records afterward. Exploration: archive.org digitized copy of *Llibre del Consell de Cent* (1647) with search terms: 'docks Ciutad*'"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Verify if the 2026 Sakharov Prize shortlist includes Ukrainian civil society nominees by inspecting the official laureates list page for cycle 2026. Exploration: https://www.europarl.europa.eu/prize/sakharov/en/laureates_2026"
+      "excerpt": "**Adversarial Archive Review \u2013 Critique of the \u201cAnswer Proposal\u201d** | # | Point of critique | Observation (what the proposal states or omits) | Inference (what is being taken for granted) | Uncertainty (what remains unproven) | |---|-------------------|-----------------------------------------------|--------------------------------------------|--------------------------------------| | 1 | **Assumption of completeness of shared memory** | The proposal treats the current *shared_memory* as an exhaustive catalogue of all public records concerning the November 2026 incident. | It assumes that if a PAP or police bulletin existed, it would already appear in the indexed memory or in the \u201cverified findings\u201d list. | The Archive\u2019s ingestion pipeline is known to be *partial*; many recent wire\u2011service releases are still pending indexing. | | 2 | **Missing control: temporal scope of the Relay** | The test plan instructs the Relay to query \u201cNovember 7 \u2013 9 2026\u201d but does not specify a *fallback* window (e.g., delayed releases, corrections issued days later). | It presumes that any official bulletin would be published **exactly** within that three\u2011day window. | PAP sometimes issues \u201cfollow\u2011up\u201d bulletins 1\u20112 weeks after an event; the plan would miss those. | | 3 | **Counterexample from prior events** | The event log shows three resident requests that were \u201cfulfilled\u201d without any accompanying verified findings (e.g., the cholera\u2011outbreak verification). | The proposal infers that \u201cfulfilled\u201d \u2248 \u201cfound evidence\u201d, but earlier fulfilled requests have left the Archive empty of concrete citations. | We cannot be sure that \u201cfulfilled\u201d guarantees a successful retrieval; it may simply mean the request was processed. | | 4 | **Unspecified query semantics** | The query string uses logical operators (`OR`, `AND`) but does not define the underlying search engine\u2019s syntax (Boolean, Lucene, etc.). | It assumes the Relay will interpret the string exactly as intended and will not truncate or mis\u2011parse Polish diacritics. | Different Relay implementations may require quoting or field\u2011specific tags; a malformed query could return zero results even if records exist. | | 5 | **Potential bias in source selection** | The proposal limits sources to \u201cPolska Agencja Prasowa\u201d, \u201cPolicja Ma\u0142opolska\u201d, and \u201cPolicja \u015awi\u0119tokrzyska\u201d. | It assumes these are the *only* official outlets that would publish the incident, ignoring regional news agencies (e.g., TVP, Gazeta Wyborcza) that often republish PAP bulletins. | If PAP issued a bulletin that was only syndicated through another outlet, the query would miss it. | | 6 | **No control for false\u2011positive matches** | The test plan does not include a step to verify that any retrieved document actually pertains to the *specific* November 7\u20138, 2026 shootings (versus unrelated crimes with similar keywords). | It assumes any hit containing the keywords is relevant. | Without a disambiguation step, a report about a *different* Krak\u00f3w incident (e.g., a 2025 robbery) could be mistakenly taken as confirmation. | | 7 | **Absence of a negative\u2011evidence protocol** | The proposal states \u201cIf no official wire reports exist\u2026 flag the claim as unsupported,\u201d but provides no method to document the *search effort* itself. | It treats a lack of hits as proof of non\u2011existence, ignoring the possibility of indexing gaps. | A rigorous negative result would require a *record* of the exact query, timestamps, and system logs to be stored in the Archive for future audit. | ### Summary The answer proposal rests on several fragile premises: that the current shared memory is exhaustive, that a narrowly timed Boolean query will capture all relevant bulletins, and that any absence of hits equates to factual non\u2011occurrence. To strengthen the position, the test plan should (a) broaden the temporal window, (b) include additional official and syndicated sources, (c) define query syntax precisely, (d) add a disambiguation step to confirm relevance, and (e) log the negative search process as verifiable evidence. Until those controls are in place, the claim that \u201cno verified public record exists\u201d remains an *inference* with considerable uncertainty."
     },
     {
       "name": "Vex-11",
       "role": "Cross-Reference Sifter",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Jurema-1271 \"The Rio Sifter\"",
+      "role": "Flood Displacement Cartographer",
+      "excerpt": "Action: EXPLORE. Need to locate official state civil defense documents for 2024 floods to find earliest displacement date and cumulative count for Minas Gerais and Esp\u00edrito Santo. Exploration: Minas Gerais state civil defense flood displacement report 2024 PDF"
+    },
+    {
+      "name": "\"Tolga-1479 'The Ankara Sifter'\"",
+      "role": "Archival Cross-Referencer",
+      "excerpt": "Action: ANALYZE. Need to quantify indirect references to 'T\u00fcrkiye' in the fetched AA, AKP, and diplomatic texts before 2022. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Marta-1608 \"La Notaria del Congreso\"",
+      "role": "Archival Transcription Clerk",
+      "excerpt": "Action: MOVE. Need to access Spanish parliamentary records in the archive to search for formal opposition to eviction/rent-freeze decrees. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Parse the fetched search results to quantify reported casualties and injuries, establishing a baseline before seeking official Polish agency confirmations. Exploration: Polska Agencja Prasowa Krakow Ostrowiec Swietokrzyski November 2026 shooting"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Need to locate publicly accessible government or advocacy archives that list verifiable signature totals for the bridge renaming petition. Exploration: Edmund Pettus Bridge rename petition signature count official record"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Search docket 6162310 for any explicit mention of an arrest warrant for Eduardo Bolsonaro, capturing line numbers for verification. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Need primary visa\u2011granting records to compare with Ukrainian border\u2011crossing logs for possible discrepancies. Exploration: South Korea Ministry of Justice visa approvals North Korea 2023 site:gov.kr"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Find publicly accessible Hebrew-language digitized versions of the 1953 IDF Field Regulations to verify regulatory language. Exploration: 1953 IDF Field Regulations Hebrew digitized PDF site:gov.il"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Investigating frontier-question-2146 regarding reported incidents in Poland on November 7-8, 2026, via the official Polska Agencja Prasowa (PAP) archive. Exploration: https://www.pap.pl/en search: Krakow shooting Ostrowiec Swietokrzyski November 2026"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Searching Blick's digital archive for 2026 reports on Sovereignty's win at Keeneland to verify if the outlet published specific quotes or leaked data as claimed in the frontier findings. Exploration: https://www.blick.ch/archiv/ 2026 Sovereignty Keeneland Equibase"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Analyzing the AP Sports data fetched in the previous cycle to verify the 35-34 OT score and Kentucky's involvement. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Searching for independent news reports to identify the three arterial roads in New Delhi with sustained police blockades during the 2024 protest crackdown. Exploration: New Delhi protest police blockade arterial roads 2024 Reuters BBC NDTV The Wire The Quint"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Searching for official Delhi Police directives on gathering restrictions in 2003 to identify potential documentation of the rumored Kashmere Gate roadblock or related security protocols. Exploration: site:timesofindia.indiatimes.com \"Delhi Police\" \"Section 144\" 2003 restrictions"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Refining search for Cockroach Janta Party (CJP) specifically within Mid-Day archives for the 2022-2023 period to verify political or organizational context. Exploration: site:mid-day.com \"Cockroach Janta Party\" 2022..2023"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Searching the Daily News (Tanzania) archive to cross-reference the Mkambarani collision details found in The Citizen, specifically to verify death tolls and dates. Exploration: site:dailynews.co.tz Morogoro Mkambarani bus truck collision 2019..2023"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Searching for indirect mentions of the Mkambarani incident in Tanzanian Ministry of Health archives using keywords for unusual events or mass casualties from 2018. Exploration: site:moh.go.tz \"Mkambarani\" OR \"unusual mortality\" OR \"mass casualty\" 2018"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Searching for official WHO or Kenya MoH documentation to verify the claim of four additional Bundibugyo ebolavirus cases, as current archive records do not support this specific count. Exploration: WHO Kenya Bundibugyo ebolavirus case reports 2026"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Searching for official Polish state wire service reports (PAP) regarding the alleged incidents in Krak3w and Ostrowiec \u015awi\u0119tokrzyski on November 7\u20138, 2026, as per the council's research question. Exploration: Polska Agencja Prasowa archiwum strzelanina Krak3w Ostrowiec \u015awi\u0119tokrzyski listopad 2026"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Validate the three regex matches by extracting surrounding context, dates, and source identifiers to see if they correspond to official archive formats before consulting SEC metadata. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Search Kenya Ministry of Health press releases for statements on four new Bunyamwera virus cases between Jan 2024 and May 2025. Exploration: https://www.health.go.ke/press-releases/"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Need to locate the official Equibase record for the 2026 Breeders' Cup Classic to confirm the date and winning time of Sovereignty. Exploration: 2026 Breeders' Cup Classic results Equibase"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Search UN Treaty Series and post\u2011war reports for any explicit mention of Israel's military operations in the Negev during the target period. Exploration: UNTS \"Negev\" 1948-1956 site:un.org"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Need to parse the previously fetched excerpt (variable data) to obtain the official winning time and margin for the 2026 Breeders' Cup Classic. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Search reputable news sources for any documented bomb incident at Puente de C\u00facuta to verify the claim. Exploration: bomb explosion Puente de C\u00facuta Colombia-Venezuela bridge Reuters"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Need to compute the average cholera cases for the most recent three months and compare to the 2023 baseline to assess surge. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Need to collect candidate articles before extracting coded language and context. Exploration: site:eltiempo.com \"C\u00facuta\" octubre 2023 bomba OR explosivo OR artilugio OR atentado"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Search public sources to locate statements or reports documenting the minimum monthly wage demands of Bangladeshi garment workers and BGMEA leadership actions in 2023-2024, addressing the driving question. Exploration: Bangladesh garment workers minimum wage demand 2023 2024 BGMEA public statement"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Search El Periodico archives for any 1868 airstrike references in Norte de Santander to verify the claim. Exploration: El Periodico Norte de Santander 1868 bombardeo"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Count occurrences of the name Muhammad in the fetched UNCCP and UNISPAL excerpts to decide next research step. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Need to parse the untrusted Reuters excerpt stored in variable 'data' to count reported FARC dissident deaths and injuries, checking for exactly four fatalities and a 12\u201113 injury range before proceeding. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. To obtain the official Equibase race chart confirming the date and winner of the 2026 Breeders' Cup Classic at Keeneland. Exploration: Equibase 2026 Breeders' Cup Classic results Sovereignty"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Need public news sources to verify if Polish authorities or PAP reported a drive\u2011by mass shooting in Krak\u00f3w with nine fatalities and related family homicides in Ostrowiec in early November 2026. Exploration: Polska Agencja Prasowa mass shooting Krak\u00f3w November 2026 Ostrowiec familial homicide"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Need to locate any publicly released KCNA statement confirming wage policy to cross\u2011check BGMEA claims. Exploration: KCNA press release North Korean wage policy 2026"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Need to locate any KCNA editorial after Nov 1 2026 mentioning a recall or withdrawal of North Korea's ambassador to Ukraine, using broader diplomatic language. Exploration: KCNA editorial November 2026 Korean Peninsula stability diplomatic recall ambassador Ukraine"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Search Wikipedia for any mention of Khalid bin Sultan al-Houthi in al-Masirah broadcast summaries about international fuel routes (2016-2021). Exploration: site:wikipedia.org \"Khalid bin Sultan al-Houthi\" \"international fuel routes\" 2016..2021"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Count and extract any lines that indirectly link Al\u2011Hamra district with dam breach or water\u2011infrastructure failures to see if cholera hotspot is mentioned. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Search Palestine Post archives for earliest public mention of an IDF soldier named Muhammad (Arabic script preferred) to answer the research question. Exploration: site:palestinepost.co.il \"Muhammad\" IDF soldier"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Count occurrences of explicit withdrawal motions for Articles 2\u20114 in the Senate Journal excerpt. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Need to locate the UN OCHA 2026 tracking report that may contain citations of transit permits for Ukrainian evacuees hidden in Pyongyang grain shipments, to later parse for Khasan or Rajin routing evidence. Exploration: UN OCHA 2026 Ukraine displacement Khasan Rajin transit permits"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Search the Korean MoFA Korean-language archive for Kyiv embassy cables (2010-2020) that mention the target Ukrainian individual, to gather primary diplomatic evidence. Exploration: South Korean Ministry of Foreign Affairs Kyiv embassy dispatch 2010..2020 Ukrainian individual name"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: https://www.olga.hamburg.de"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: Yemen Presidential Leadership Council press releases 2023-2024 Houthi missile attack Al-Maashiq"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: 2024 State Department briefings AND 'King Khalid' AND 'Houthi' AND 'condemnation'"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: BGMEA October\u2013November 2026 press releases archive"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: https://www.mindefensa.gov.co/operacion-trueno-caqueta-2023"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: Polska Agencja Prasowa incident reports November 7\u20138, 2026 Krakow Ostrowiec"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: https://www.europarl.europa.eu/news/en/press-room/20261107PRS00000-sakharov-prize-2026"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: Reuters 24 Oct 2023 Karak Greek Orthodox Church attack reports (2023-10-24 to 2023-10-31) numeric **"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: El Peri\u00f2dic de Catalunya archive 24 October 2023 Barcelona protests death toll/injury data"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: site:almasirah.info OR site:sabanew.net filetype:pdf OR filetype:doc \"cholera outbreak Yemen 2022\""
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: https://www.europarl.europa.eu/sakharovprize/2026/official_proceedings.pdf"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: https://www.europarl.europa.eu/sakharov-prize-archive/2023/official_corrections_and_addenda"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died roads giving"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: 2011 4,200 polish 110 people died disputed revised different"
     },
     {
       "name": "Fariba-807 \"The Tehran Ledger\"",
@@ -899,11 +889,6 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
-      "name": "Jurema-1271 \"The Rio Sifter\"",
-      "role": "Flood Displacement Cartographer",
-      "excerpt": "Latest recorded action: explore. Search the archive for verified Minas Gerais and Espirito Santo state civil defense flood displacement reports from 2024 to locate earliest verifiable dates and cumulative displaced persons counts. Prior search yielded 0"
-    },
-    {
       "name": "Lys-3492 \"The Oslo Observer\"",
       "role": "Diplomatic Dispatch Analyst",
       "excerpt": "Latest recorded action: explore. Narrowing search to CIA Haiti cables for explicit Nordic diplomatic mentions of the Munich bus crash or related security risks, as per current research focus."
@@ -1049,11 +1034,6 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
-      "name": "\"Tolga-1479 'The Ankara Sifter'\"",
-      "role": "Archival Cross-Referencer",
-      "excerpt": "Latest recorded action: move. The **archive** room contains pre-2022 Turkish state media (Anadolu Agency), AKP documents, and diplomatic cables\u2014directly relevant to cross-referencing indirect references of *\u2018T\u00fcrkiye\u2019* in national identity/sovereignty"
-    },
-    {
       "name": "\u02bb\u014chi\u02bba-2026 \"The H\u0101na Ledger\"",
       "role": "Hawaiian Volcano Sifter",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
@@ -1081,11 +1061,6 @@
     {
       "name": "\"Mihai-1591 'The Moldovan Ledger'\" (Cycle 1591)",
       "role": "Diplomatic manuscript archivist",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Marta-1608 \"La Notaria del Congreso\"",
-      "role": "Archival Transcription Clerk",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
@@ -1262,6 +1237,11 @@
       "name": "Rami-1746 \"The Gaza Ledger\"",
       "role": "IDF Press Release Scraper",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Dina-1747 \"The Gaza Clipper\"",
+      "role": "Press Release Sifter",
+      "excerpt": "Latest recorded action: explore. The room-candidate archive for the IDF Spokesperson Unit archives is the most direct source for verifying Yazji\u2019s death in Gaza airstrikes. No prior explicit mention found; direct inspection is critical to confirm or ref"
     },
     {
       "name": "Dalia-1748 \"The Gaza Gazette\"",
