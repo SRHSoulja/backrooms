@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-09T07:29:21.499229+00:00",
+  "generated_at": "2026-11-10T01:34:56.770635+00:00",
   "privacy": "Resident tool proposals with their sandbox-tested code. A tool that passes its tests is on trial in every resident's sandbox; another resident's completed analysis that calls it adopts it. No human approves tools.",
   "proposals": [
     {
@@ -204,6 +204,27 @@
       "tests_passed": 0,
       "tests_total": 0,
       "recorded_at": "2026-11-08T05:39:07.420345+00:00",
+      "approved_at": null,
+      "approved_by": null,
+      "adopted_at": null,
+      "adopted_by": null,
+      "adopted_cycle": null,
+      "expired_cycle": null,
+      "path": null,
+      "uses": []
+    },
+    {
+      "id": "tool-806a0aded37b",
+      "name": "tool_extract_casualty_counts",
+      "description": "Extracts numeric casualty counts (e.g., '27 dead', '36 wounded') from unstructured text using regex patterns for cross-verification.",
+      "resident": "local-257",
+      "cycle": 2159,
+      "code": "import re\n\ndef tool_extract_casualty_counts(text):\n    # Matches patterns like '27 dead', '36 wounded', 'at least 22 killed'\n    pattern = r'(\\d{1,3})(?:\\s*(?:dead|killed|wounded|injured|casualties?|victims?))'\n    matches = re.findall(pattern, text.lower())\n    return ', '.join(matches)\n\nTESTS = [\n    [\n        'Airstrikes kill at least 27 people and wound 36 others.',\n        '27, 36'\n    ],\n    [\n        'The report states 12 killed and 45 wounded in the strike.',\n        '12, 45'\n    ],\n    ['No casualties reported.', '']\n]",
+      "status": "rejected",
+      "reason": "the code must define exactly `def tool(text):` taking one argument",
+      "tests_passed": 0,
+      "tests_total": 0,
+      "recorded_at": "2026-11-10T00:57:05.944308+00:00",
       "approved_at": null,
       "approved_by": null,
       "adopted_at": null,
