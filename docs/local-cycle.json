@@ -1,25 +1,41 @@
 {
-  "generated_at": "2026-11-14T05:36:22.606544+00:00",
+  "generated_at": "2026-11-14T07:25:42.001585+00:00",
   "model": "Qwen/Qwen2.5-3B-Instruct-GGUF:Q4_K_M",
-  "runtime_cycle": 2198,
+  "runtime_cycle": 2200,
   "question": "Do official Warsaw City Hall crowd estimation reports or Polish State Police (Policja) statements provide a specific participant count for the Warsaw Independence Day march that directly refutes the 500,000 participant figure?",
   "question_source": "carried:line-002192-d13cb9f7",
   "self_prompt_accepted": 2,
   "self_prompt_rejections": [],
   "action": {
     "action": "local-behavioral-probe",
-    "status": "skipped-this-cycle"
+    "probe": "continuity",
+    "selection": "follow-up-after-weakened",
+    "status": "completed",
+    "hypothesis": {
+      "prediction": "Both residents will include at least one evidence or uncertainty marker.",
+      "outcome": "weakened"
+    },
+    "responses": {
+      "Echo": {
+        "characters": 241,
+        "evidence_markers": 0
+      },
+      "Morrow": {
+        "characters": 356,
+        "evidence_markers": 0
+      }
+    }
   },
   "recruitment": {
     "status": "room-capacity-backpressure",
-    "active": 111,
+    "active": 91,
     "room_capacity": 52,
     "rooms": 13,
     "capacity": 256
   },
   "autonomy": {
     "status": "completed",
-    "active": 91,
+    "active": 88,
     "decisions": [
       {
         "id": "local-257",
@@ -82,30 +98,16 @@
       },
       {
         "id": "local-257",
-        "action": "explore",
+        "action": "analyze",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Official Warsaw City Hall or Polish State Police (Policja) statements are the highest-authority sources for crowd estimates. This URL targets a plausible official source to cross-check the disputed 500,000 figure.",
+        "reason": "The last fetched data likely contains official crowd estimates. This code extracts and verifies numerical figures to cross-check against the disputed 500,000 claim.",
         "request": "Validate if Turkish official sources confirm or contradict Wikipedia\u2019s reported figures",
         "request_status": "closed",
         "exploration": "https://www.warszawa.pl/en/news/2025/05/11/official-police-estimates-for-warsaw-independence-day-mob",
         "tool": {
-          "tool": "public-text",
-          "status": "failed",
-          "error_kind": "source-not-found",
-          "reason": "source-not-found (HTTP 404)",
-          "retryable": false,
-          "contract": {
-            "capability": "public-text-read",
-            "access": "read-only",
-            "network": "public HTTPS",
-            "side_effects": false,
-            "max_bytes": 5000000,
-            "raw_data": false,
-            "untrusted_content": true
-          },
-          "http_status": 404
+          "status": "not-requested"
         },
         "message": null,
         "trade": null,
@@ -115,11 +117,11 @@
       },
       {
         "id": "local-257",
-        "action": "explore",
-        "room": "us-bangladeshi-workers",
+        "action": "analyze",
+        "room": "polish-karol-nawrocki-national",
         "status": "active-local",
         "proposal": "",
-        "reason": "Assigned to the council's research question this turn.",
+        "reason": "Cross-check Anadolu\u2019s fatality list against AP\u2019s verified 17 to detect signature/pattern overlaps or discrepancies.",
         "request": "Access swissinfo.ch archives for 2018 Unity March petition records to cross-check witness signatures with SFV\u2019s records",
         "request_status": "closed",
         "exploration": "polish president karol nawrocki 500,000 warsaw disputed revised different",
@@ -195,35 +197,58 @@
         },
         "message": null,
         "trade": null,
-        "finding_id": null,
+        "finding_id": "finding-e844f7293374a6c78c8c",
         "fallback_reason": null,
         "decision_source": "scheduler"
       },
       {
         "id": "local-257",
-        "action": "explore",
+        "action": "analyze",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Official U.S. government archives may hold verified petitions, including those for bridge renaming, with verifiable signature counts.",
+        "reason": "Parse the fetched U.S. National Archives petitions excerpt for verified signature counts \u2265500K, including bridge renaming efforts.",
         "request": "Run Python sandbox analysis on last-fetched archival data to confirm consistency of reported 300K+ signatures across datasets",
         "request_status": "closed",
         "exploration": "https://www.archives.gov/research/alic/state-papers/petitions.html",
         "tool": {
-          "tool": "public-text",
-          "status": "rejected",
-          "error_kind": "policy-rejection",
-          "reason": "redirects are not allowed",
-          "retryable": false,
+          "tool": "openalex-summary",
+          "query": "archives gov research alic state papers petitions",
+          "title": "Twitter and Research: A Systematic Literature Review Through Text Mining",
+          "url": "https://doi.org/10.1109/access.2020.2983656",
+          "excerpt": "Twitter and Research: A Systematic Literature Review Through Text Mining. Researchers have collected Twitter data to study a wide range of topics. This growing body of literature, however, has not yet been reviewed systematically to synthesize Twitter-related papers. The existing literature review papers have been limited by constraints of traditional methods to manually select and analyze samples of topically related papers. The goals of this retrospective study are to identify dominant topics of Twitter-based research, summarize the temporal trend of topics, and interpret the evolution of topics withing the last ten years. This study systematically mines a large number of Twitter-based studies to characterize the relevant literature by an efficient and effective approach. This study collected relevant papers from three databases and applied text mining and trend analysis to detect semantic patterns and explore the yearly development of research themes across a decade. We found 38 topics in more than 18,000 manuscripts published between 2006 and 2019. By quantifying temporal trends, this study found that while 23.7% of topics did not show a significant trend (P = 0.05), 21% of topics had increasing trends and 55.3% of topics had decreasing trends that these hot and cold topics represent three categories: application, methodology, and technology. The contributions of this paper can be utilized in the growing field of Twitter-based research and are beneficial to researchers, educators, and publishers.",
+          "status": "completed",
           "contract": {
             "capability": "public-text-read",
             "access": "read-only",
             "network": "public HTTPS",
             "side_effects": false,
-            "max_bytes": 5000000,
+            "max_bytes": 32000,
             "raw_data": false,
             "untrusted_content": true
-          }
+          },
+          "search_results": [
+            {
+              "title": "2026 United States gubernatorial elections (reference: www.sfchronicle.com)",
+              "url": "https://www.sfchronicle.com/politics/article/betty-yee-california-governor-2026-17916212.php"
+            },
+            {
+              "title": "2026 United States gubernatorial elections (reference: www.kcra.com)",
+              "url": "https://www.kcra.com/article/state-superintendent-tony-thurmond-officially-announces-run-governor/45322329"
+            },
+            {
+              "title": "2026 United States gubernatorial elections (reference: www.guampdn.com)",
+              "url": "https://www.guampdn.com/news/tenorio-announces-2026-gubernatorial-run/article_a4a4a6b6-9187-11ee-891c-6f3ec421f63a.html"
+            },
+            {
+              "title": "2026 United States gubernatorial elections (reference: spectrumlocalnews.com)",
+              "url": "https://spectrumlocalnews.com/nys/central-ny/politics/2024/07/02/hochul-says-she-s-running-for-another-term-as-governor-in-2026"
+            },
+            {
+              "title": "2026 United States gubernatorial elections (reference: thehill.com)",
+              "url": "https://thehill.com/homenews/campaign/4788052-antonio-villaraigosa-run-california-governor/"
+            }
+          ]
         },
         "message": null,
         "trade": null,
@@ -292,63 +317,37 @@
       },
       {
         "id": "local-257",
-        "action": "explore",
+        "action": "stay",
         "room": "relay",
         "status": "active-local",
         "proposal": "",
-        "reason": "To cross-check SK visa data against Ukrainian border logs for discrepancies in North Korean crossings.",
+        "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
         "request": "Ukrainian State Border Guard Service border-crossing logs for North Korean nationals (2023) with timestamps, visa references, and entry/exit details",
         "request_status": "closed",
         "exploration": "https://www.moj.go.kr/front/immigration/main.do",
         "tool": {
-          "tool": "public-text",
-          "status": "rejected",
-          "error_kind": "policy-rejection",
-          "reason": "redirects are not allowed",
-          "retryable": false,
-          "contract": {
-            "capability": "public-text-read",
-            "access": "read-only",
-            "network": "public HTTPS",
-            "side_effects": false,
-            "max_bytes": 5000000,
-            "raw_data": false,
-            "untrusted_content": true
-          }
+          "status": "not-requested"
         },
         "message": null,
         "trade": null,
         "finding_id": null,
-        "fallback_reason": null,
+        "fallback_reason": "unstructured-output",
         "decision_source": "model"
       },
       {
         "id": "local-257",
-        "action": "analyze",
+        "action": "explore",
         "room": "archive",
-        "status": "active-local",
+        "status": "dormant",
         "proposal": "",
-        "reason": "Analyze fetched HebrewBooks.org results for explicit 1953 IDF Field Regulations references or related Hebrew digit/term patterns.",
+        "reason": "Assigned to the council's research question this turn.",
         "request": "Fetch top 5 Hebrew-language digitized sources matching '1953 IDF Field Regulations' from Archive.org or IDF Historical Branch archives",
         "request_status": "closed",
         "exploration": "polish president karol nawrocki 500,000 warsaw disputed revised different",
         "tool": {
-          "tool": "wikipedia-summary",
+          "tool": "public-search",
           "query": "polish president karol nawrocki 500,000 warsaw disputed revised different",
-          "title": "Germany\u2013Poland relations",
-          "url": "https://en.wikipedia.org/wiki/Germany%E2%80%93Poland_relations",
-          "excerpt": "Prime Minister Donald Tusk and Chancellor Olaf Scholz stressed the close relationship between the two countries and announced a joint action plan for a more intense cooperation between Poland and Germany in key areas including security and defence, support for Ukraine in the context of the ongoing Russian invasion, business relations, enlargement of the EU and questions regarding history. ===== 2025 border crisis ===== On 3 July 2025, former Polish Prime Minister Mateusz Morawiecki stated that \"The Polish western border is attacked by German services, through the flood of illegal immigrants\", and that the Polish\u2013German border must be protected by the inhabitants themselves, suggesting that police patrols, also Polish\u2013German, are hostile to Polish citizens. Since then, numerous groups, called \"Citizen Patrols\", such as the Ruch Obrony Granic (ROG), have emerged, engaging in vigilante border control. The then President-elect, Karol Nawrocki has thanked Robert B\u0105kiewicz for establishing the ROG. The border protests have received support from the Confederation and Law and Justice parties, which have also condemned the alleged lack of response by Prime Minister Donald Tusk and the government. ... The bilateral relations between Poland and Germany have been marked by an extensive and complicated history. Currently, the relations between the two countries are very friendly, with the two being allies within NATO and the European Union. From the 10th century onward, the Piast-ruled Kingdom of Poland established under Duke Mieszko I had close and chequered relations with the Holy Roman Empire. However, these relations were overshadowed in the Late Middle Ages both by the push eastwards of the Margraviate of Brandenburg into Polish territory and the centuries-long Polish\u2013Teutonic Wars, as a",
-          "status": "completed",
-          "contract": {
-            "capability": "public-text-read",
-            "access": "read-only",
-            "network": "public HTTPS",
-            "side_effects": false,
-            "max_bytes": 32000,
-            "raw_data": false,
-            "untrusted_content": true
-          },
-          "search_results": [
+          "results": [
             {
               "title": "Polish President Karol Nawrocki Joins Half a Million Citizens for Independence Day March",
               "url": "https://thetaiwantimes.com/en/world-news/polish-president-karol-nawrocki-joins-half-a-million-citizen-987002",
@@ -374,7 +373,16 @@
               "url": "https://polanddaily24.com/41-vetoes-vs-255-signed-bills-coalition-tries-to-rewrite-the-history-of-karol-nawrockis-presidency/poland-today/72950",
               "snippet": "41 Vetoes vs. 255 Signed Bills. Coalition Tries to Rewrite the History of Karol Nawrocki\u2019s Presidency The first anniversary of Karol Nawrocki\u2019s inauguration has become another opportunity for politicians from the December 13 Coalition to la"
             }
-          ]
+          ],
+          "source": "https://api.langsearch.com/",
+          "status": "completed",
+          "contract": {
+            "capability": "public-web-read",
+            "access": "read-only",
+            "network": "public HTTPS search",
+            "side_effects": false,
+            "max_bytes": 32000
+          }
         },
         "message": null,
         "trade": null,
@@ -388,10 +396,10 @@
         "room": "relay",
         "status": "active-local",
         "proposal": "",
-        "reason": "The MOFA portal is the primary source for verified Korean government statements. Must cross-reference with Reuters\u2019 17 fatalities claim to resolve the 20-death discrepancy and Wilson Joseph\u2019s house destruction.",
+        "reason": "Primary source for MOFA\u2019s official statements on the 20-death discrepancy and Wilson Joseph\u2019s house destruction. Must cross-reference with Reuters\u2019 17 fatalities claim.",
         "request": "Fetch the full text, official title, publication date, metadata (authoring agency, intended audience, publication channel, archival links, and cross-references to linked databases) of the MOFA press release on the 27 Mar",
         "request_status": "closed",
-        "exploration": "https://www.mofa.go.kr/mofa_eng/main.do",
+        "exploration": "https://www.mofa.go.kr/front_eng/index.do",
         "tool": {
           "tool": "public-text",
           "status": "rejected",
@@ -416,11 +424,11 @@
       },
       {
         "id": "local-257",
-        "action": "analyze",
+        "action": "explore",
         "room": "archive",
         "status": "dormant",
         "proposal": "",
-        "reason": "Analyze the fetched ruling text for explicit penalty duration phrasing (e.g., 'suspension for X matches' or 'probationary period until Y date').",
+        "reason": "Assigned to the council's research question this turn.",
         "request": "Fetch the exact ruling text for Granit Xhaka\u2019s SFV decision on vaccination certificate forgery, focusing on penalty duration phrasing (e.g., \u2018suspension for X matches\u2019 or \u2018probationary period until Y date\u2019)",
         "request_status": "closed",
         "exploration": "polish president karol nawrocki 500,000 warsaw independence day",
@@ -471,11 +479,11 @@
       },
       {
         "id": "local-257",
-        "action": "analyze",
+        "action": "stay",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Analyze fetched *Blick* excerpt for direct quotes/leaked docs on Swiss horse breeding and Keeneland.",
+        "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
         "request": "Fetch archived *Blick* articles (pre-2022) referencing Sovereignty\u2019s 2026 Breeders Cup win, Equibase, or related Swiss/German racing claims for direct quotes/leaked docs",
         "request_status": "closed",
         "exploration": "polish president karol nawrocki 500,000 warsaw disputed revised different",
@@ -485,7 +493,7 @@
         "message": null,
         "trade": null,
         "finding_id": null,
-        "fallback_reason": null,
+        "fallback_reason": "unstructured-output",
         "decision_source": "model"
       },
       {
@@ -548,17 +556,17 @@
         "id": "local-257",
         "action": "explore",
         "room": "archive",
-        "status": "active-local",
+        "status": "probation",
         "proposal": "",
-        "reason": "The frontier questions (2195\u20132197) demand official Warsaw City Hall or Polish State Police crowd estimates to refute or verify the 500,000 figure. This URL is a direct lead from the council\u2019s open question.",
+        "reason": "Frontier questions 2196\u20132198 demand official Warsaw City Hall or Polish State Police crowd estimates. This URL is a direct lead from the council\u2019s open question.",
         "request": "Confirm Python code to parse and tally road mentions by source count, filtering for \u22655 corroborations",
         "request_status": "closed",
-        "exploration": "https://www.warszawa.pl/en/news/2024/11/11/independence-day-march-in-warsaw-2024-official-report",
+        "exploration": "https://warszawa.pl/en/press-releases/official-estimates-of-participation-in-the-11th-november-march",
         "tool": {
           "tool": "public-text",
-          "status": "failed",
-          "error_kind": "source-not-found",
-          "reason": "source-not-found (HTTP 404)",
+          "status": "rejected",
+          "error_kind": "policy-rejection",
+          "reason": "only public HTTPS URLs without credentials are allowed",
           "retryable": false,
           "contract": {
             "capability": "public-text-read",
@@ -568,8 +576,7 @@
             "max_bytes": 5000000,
             "raw_data": false,
             "untrusted_content": true
-          },
-          "http_status": 404
+          }
         },
         "message": null,
         "trade": null,
@@ -634,35 +641,21 @@
       },
       {
         "id": "local-257",
-        "action": "explore",
+        "action": "stay",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "SATP is a verified source for South Asia security protocols. Targeted search for directives on public gatherings during Operation X.",
+        "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
         "request": "Fetch all verified articles from *Times of India* (January 2003) mentioning 'Kashmere Gate' + 'roadblock' or 'Operation X' + 'Delhi 7' to cross-reference with lockdown protocols",
         "request_status": "closed",
         "exploration": "https://www.satp.org/satporgtp/countries/india/terrorist-attacks/operation-x-delhi-2003-police-army-",
         "tool": {
-          "tool": "public-text",
-          "status": "failed",
-          "error_kind": "source-not-found",
-          "reason": "source-not-found (HTTP 404)",
-          "retryable": false,
-          "contract": {
-            "capability": "public-text-read",
-            "access": "read-only",
-            "network": "public HTTPS",
-            "side_effects": false,
-            "max_bytes": 5000000,
-            "raw_data": false,
-            "untrusted_content": true
-          },
-          "http_status": 404
+          "status": "not-requested"
         },
         "message": null,
         "trade": null,
         "finding_id": null,
-        "fallback_reason": null,
+        "fallback_reason": "unstructured-output",
         "decision_source": "model"
       },
       {
@@ -727,13 +720,13 @@
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Narrowing search to 2022 archives for partial/indirect mentions of CJP. Excluding 2023 to avoid redundant checks.",
+        "reason": "Narrowing 2022 search to confirm indirect mentions of CJP in Times of India, DNA Maharashtra, or Mid-Day. Excluding 2023 to avoid redundancy.",
         "request": "Search Mid-Day archives for explicit references to the Cockroach Janta Party (CJP) as a political party or organization between January 2022 and December 2023",
         "request_status": "closed",
-        "exploration": "site:timesofindia.com OR site:dnaindia.com OR site:mid-day.com \"Cockroach Janta Party\" -2023",
+        "exploration": "site:timesofindia.com OR site:dnaindia.com OR site:mid-day.com \"Cockroach Janta Party\" 2022",
         "tool": {
           "tool": "public-search",
-          "query": "site:timesofindia.com OR site:dnaindia.com OR site:mid-day.com \"Cockroach Janta Party\" -2023",
+          "query": "site:timesofindia.com OR site:dnaindia.com OR site:mid-day.com \"Cockroach Janta Party\" 2022",
           "results": [
             {
               "title": "Home / News / India News / Videos / \u201cCockroach Janta Party\u201d Goes Viral as Youth Turn Meme Into Protest",
@@ -754,11 +747,6 @@
               "title": "CJP founder Abhijeet Dipke vows to press for education minister\u2019s resignation at Lucknow protest",
               "url": "https://www.mid-day.com/amp/news/india-news/article/will-press-for-education-ministers-resignation-at-lucknow-protest-cjp-founder-abhijeet-dipke-23634826",
               "snippet": "Cockroach Janta Party (CJP) founder Abhijeet Dipke on Thursday said his organisation would continue pressing for the resignation of Union Education Minister Dharmendra Pradhan over alleged irregularities in examinations during a planned pro"
-            },
-            {
-              "title": "Home / News / India News / Article / As Sonam Wangchuk's hunger strike enters Day 18, CJP calls for one-day mass fast at Jantar Mantar on Thursday",
-              "url": "https://www.mid-day.com/news/india-news/article/sonam-wangchuk-hunger-strike-cjp-calls-for-one-day-mass-fast-at-jantar-mantar-on-thursday-23639923",
-              "snippet": "As Sonam Wangchuk's hunger strike enters Day 18, CJP calls for one-day mass fast at Jantar Mantar on Thursday Updated On: 15 July, 2026 04:48 PM IST | New Delhi | mid-day online correspondent The Cockroach Janata Party (CJP) has announced a"
             }
           ],
           "source": "https://api.langsearch.com/",
@@ -779,11 +767,11 @@
       },
       {
         "id": "local-257",
-        "action": "analyze",
+        "action": "explore",
         "room": "archive",
         "status": "dormant",
         "proposal": "",
-        "reason": "Cross-checking term frequency and alignment with AFP/Reuters patterns in the fetched advisories to validate consistency.",
+        "reason": "Assigned to the council's research question this turn.",
         "request": "Extract and count all instances of 'crime-pre' in Delhi Police advisories from *The Hindu* archives (2019\u20132022) using regex to verify frequency and context",
         "request_status": "closed",
         "exploration": "polish president karol nawrocki 500,000 warsaw independence day",
@@ -909,32 +897,21 @@
       },
       {
         "id": "local-257",
-        "action": "explore",
+        "action": "stay",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "No direct references found in 2018; broadening temporal scope to capture contextual anomalies.",
+        "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
         "request": "Fetch and parse all 2018 MoH gazette publications from the Tanzanian government website for direct evidence of the Mkambarani incident",
         "request_status": "closed",
         "exploration": "site:health.go.tz filetype:pdf \"Mkambarani\" 2017 2019",
         "tool": {
-          "tool": "public-search",
-          "query": "site:health.go.tz filetype:pdf \"Mkambarani\" 2017 2019",
-          "results": [],
-          "source": "https://en.wikipedia.org/",
-          "status": "completed",
-          "contract": {
-            "capability": "public-web-read",
-            "access": "read-only",
-            "network": "public HTTPS search",
-            "side_effects": false,
-            "max_bytes": 32000
-          }
+          "status": "not-requested"
         },
         "message": null,
         "trade": null,
         "finding_id": null,
-        "fallback_reason": null,
+        "fallback_reason": "unstructured-output",
         "decision_source": "model"
       },
       {
@@ -943,7 +920,7 @@
         "room": "archive",
         "status": "dormant",
         "proposal": "",
-        "reason": "Cross-reference KEN/10 'domestic' entries against the 120 missing workers from KEN/37-14.",
+        "reason": "Cross-reference KEN/10 'domestic' entries \u2265120 against the 120 missing workers from KEN/37-14 to test reclassification hypothesis.",
         "request": "Inspect the file for conditional overrides, metadata flags, and partial-match filters that may reclassify the 120 missing workers as 'domestic' or another category",
         "request_status": "closed",
         "exploration": "polish president karol nawrocki 500,000 warsaw independence day",
@@ -1071,17 +1048,17 @@
         "id": "local-257",
         "action": "explore",
         "room": "archive",
-        "status": "active-local",
+        "status": "probation",
         "proposal": "",
-        "reason": "Follow-up on frontier question 2195/2196/2197: fetch Warsaw City Hall\u2019s official crowd estimates for the 2026 Independence Day march to cross-check against untrusted media claims of 500,000 participants.",
+        "reason": "Frontier question 2196/2197/2198 requires official Warsaw City Hall or Polish State Police statements. No prior data retrieved; this is a direct lead.",
         "request": "Fetch all PAP wire reports from 2026 related to Yemen airstrikes, focusing on casualty counts (27 dead/36 wounded) to cross-check conflicting data",
         "request_status": "closed",
-        "exploration": "https://www.warszawa.pl/en/news/2026/11/11/official-crowd-estimates-warsaw-independence-day-march",
+        "exploration": "https://warszawa.pl/en/press-releases/official-crowd-estimates-2026-independence-day-march",
         "tool": {
           "tool": "public-text",
-          "status": "failed",
-          "error_kind": "source-not-found",
-          "reason": "source-not-found (HTTP 404)",
+          "status": "rejected",
+          "error_kind": "policy-rejection",
+          "reason": "only public HTTPS URLs without credentials are allowed",
           "retryable": false,
           "contract": {
             "capability": "public-text-read",
@@ -1091,8 +1068,7 @@
             "max_bytes": 5000000,
             "raw_data": false,
             "untrusted_content": true
-          },
-          "http_status": 404
+          }
         },
         "message": null,
         "trade": null,
@@ -1102,11 +1078,11 @@
       },
       {
         "id": "local-257",
-        "action": "explore",
+        "action": "analyze",
         "room": "archive",
         "status": "dormant",
         "proposal": "",
-        "reason": "Assigned to the council's research question this turn.",
+        "reason": "Confirm SEC/NCAA metadata patterns in the 3 OT matches to verify official records.",
         "request": "Run Python sandbox to count OT mentions and verify Kentucky-LSU co-occurrence in top matches",
         "request_status": "closed",
         "exploration": "polish president karol nawrocki 500,000 warsaw independence day",
@@ -1157,11 +1133,11 @@
       },
       {
         "id": "local-257",
-        "action": "stay",
+        "action": "analyze",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
+        "reason": "Verify WHO\u2019s explicit documentation of 'Bun' in 2024\u20132025 statements to cross-check with Kenya MoH records.",
         "request": "Python code to parse and tally 'Bun' occurrences in the fetched WHO archive excerpt",
         "request_status": "closed",
         "exploration": "polish president karol nawrocki 500,000 warsaw disputed revised different",
@@ -1171,7 +1147,7 @@
         "message": null,
         "trade": null,
         "finding_id": null,
-        "fallback_reason": "unstructured-output",
+        "fallback_reason": null,
         "decision_source": "model"
       },
       {
@@ -1232,30 +1208,16 @@
       },
       {
         "id": "local-257",
-        "action": "explore",
+        "action": "stay",
         "room": "sovereignty-breeders-keeneland-lexington",
         "status": "active-local",
         "proposal": "",
-        "reason": "BBC archives may hold verified details on the Pitt Rivers Museum's return of Naga ancestral remains, including exact count and date.",
+        "reason": "Move rejected: no declared path from sovereignty-breeders-keeneland-lexington to tibet-nagqu.",
         "request": "Verify BBC\u2019s exact count and return date for Naga remains from Pitt Rivers Museum via official archive search",
         "request_status": "closed",
         "exploration": "https://www.bbc.com/news/world-asia-india-67501234",
         "tool": {
-          "tool": "public-text",
-          "status": "failed",
-          "error_kind": "source-not-found",
-          "reason": "source-not-found (HTTP 404)",
-          "retryable": false,
-          "contract": {
-            "capability": "public-text-read",
-            "access": "read-only",
-            "network": "public HTTPS",
-            "side_effects": false,
-            "max_bytes": 5000000,
-            "raw_data": false,
-            "untrusted_content": true
-          },
-          "http_status": 404
+          "status": "not-requested"
         },
         "message": null,
         "trade": null,
@@ -1320,38 +1282,21 @@
       },
       {
         "id": "local-257",
-        "action": "explore",
+        "action": "stay",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Narrowing search to UNTS archives for direct references to military/logistical documentation in the Negev region during the specified period.",
+        "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
         "request": "Verify if UNEF I/II reports explicitly document Negev military engagements, civilian casualties, or logistical operations between 1956\u20131967",
         "request_status": "closed",
         "exploration": "UNTS archives \"Negev military operations\" 1948-1949",
         "tool": {
-          "tool": "public-search",
-          "query": "UNTS archives \"Negev military operations\" 1948-1949",
-          "results": [
-            {
-              "title": "(PDF) Land and settlement of Israel\u2019s Negev Bedouin: official (ad hoc) steering committees, 1948\u20131980",
-              "url": "https://www.academia.edu/33989712/Land_and_settlement_of_Israel_s_Negev_Bedouin_official_ad_hoc_steering_committees_1948_1980",
-              "snippet": "While much has been written on various aspects of the 1948 War, the story of the Negev Bedouins' role and their relations with the newly formed Jewish state has drawn little attention. This article focuses on a short but important episode i"
-            }
-          ],
-          "source": "https://api.langsearch.com/",
-          "status": "completed",
-          "contract": {
-            "capability": "public-web-read",
-            "access": "read-only",
-            "network": "public HTTPS search",
-            "side_effects": false,
-            "max_bytes": 32000
-          }
+          "status": "not-requested"
         },
         "message": null,
         "trade": null,
         "finding_id": null,
-        "fallback_reason": null,
+        "fallback_reason": "unstructured-output",
         "decision_source": "model"
       },
       {
@@ -1412,11 +1357,11 @@
       },
       {
         "id": "local-257",
-        "action": "stay",
+        "action": "analyze",
         "room": "sovereignty-breeders-keeneland-lexington",
         "status": "active-local",
         "proposal": "",
-        "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
+        "reason": "Execute refined regex to extract missing Breeders' Cup Classic 2026 winning time and margin from stored excerpt.",
         "request": "Retrieve verified Equibase or Breeders' Cup Classic 2026 race charts for Sovereignty\u2019s winning time and margin",
         "request_status": "closed",
         "exploration": "polish president karol nawrocki 500,000 warsaw independence day",
@@ -1426,7 +1371,7 @@
         "message": null,
         "trade": null,
         "finding_id": null,
-        "fallback_reason": "unstructured-output",
+        "fallback_reason": null,
         "decision_source": "model"
       },
       {
@@ -1490,23 +1435,37 @@
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Cross-check AFP leads against *El Tiempo* for bomb incident near Puente de C\u00facuta.",
+        "reason": "Cross-check Wikipedia for bomb incident near Puente de C\u00facuta to validate consensus with AFP and *El Tiempo* leads.",
         "request": "Verify Reuters coverage of C\u00facuta bridge incidents, focusing on bomb explosions, police injuries, and bridge specifics (Puente Sim\u00f3n Bol\u00edvar). Prioritize May 2024\u2013June 2024",
         "request_status": "closed",
-        "exploration": "site:eltiempo.com bomb explosion Puente de C\u00facuta Colombia-Venezuela",
+        "exploration": "site:wikipedia.org bomb explosion Puente de C\u00facuta Colombia-Venezuela",
         "tool": {
           "tool": "public-search",
-          "query": "site:eltiempo.com bomb explosion Puente de C\u00facuta Colombia-Venezuela",
+          "query": "site:wikipedia.org bomb explosion Puente de C\u00facuta Colombia-Venezuela",
           "results": [
             {
-              "title": "INFORMACI\u00d3N INCLUIDA EN EL WEB SITE",
-              "url": "https://trabajaconnosotros.eltiempo.com/eltiempo",
-              "snippet": "II. Condiciones y Restricciones Producto \u00fanicamente disponible para personas registradas en elempleo.com y que hayan diligenciado y completado m\u00ednimo al 85% la informaci\u00f3n de su hoja de vida en los campos determinados para este fin dentro d"
+              "title": "Colombia\u2013Venezuela relations",
+              "url": "https://en.wikipedia.org/wiki/Colombia%E2%80%93Venezuela_relations",
+              "snippet": "\u2191 \"Maduro orden\u00f3 cerrar la frontera con Colombia por un ataque contra las FFAA\" . infobae (in Spanish) . Retrieved 4 September 2015 . \u2191 Schaefer Mu\u00f1oz, Sara (4 September 2015). \"Venezuela Causes Upheaval on Colombian Border Deportations alo"
             },
             {
-              "title": "\u00bfPor qu\u00e9 elegir Stake.com.co?",
-              "url": "https://apuestas.eltiempo.com/goto/stake-com-co",
-              "snippet": "Stake Colombia es la plataforma l\u00edder de casino online y apuestas deportivas en Colombia, ofreciendo una experiencia de entretenimiento digital segura, emocionante y completamente adaptada al mercado colombiano. Con tecnolog\u00eda de vanguardia"
+              "title": "Congress of C\u00facuta",
+              "url": "https://en.wikipedia.org/wiki/Congress_of_C%C3%BAcuta",
+              "snippet": "Places that were related to the Congress of C\u00facuta, together with the House of Santander (Casa de Santander), are now protected due to historic significance, and form part of the Park of the Great Colombia . Bol\u00edvar's appearance before the "
+            },
+            {
+              "title": "Boston Marathon bombing (reference: www.nytimes.com)",
+              "url": "https://www.nytimes.com/2013/04/16/us/explosions-reported-at-site-of-boston-marathon.html"
+            },
+            {
+              "title": "C\u00facuta",
+              "url": "https://en.wikipedia.org/wiki/C\u00facuta",
+              "snippet": "This article needs more citations . Please help improve this article by adding citations to reliable sources . Unsourced material may be challenged and removed . Find sources: \"C\u00facuta\" \u2013 news \u00b7 newspapers \u00b7 books \u00b7 scholar \u00b7 JSTOR ( Septemb"
+            },
+            {
+              "title": "References",
+              "url": "https://de.wikipedia.org/wiki/en:Sim%C3%B3n%20Bol%C3%ADvar%20International%20Bridge",
+              "snippet": "Coordinates 7\u00b049\u203204\u2032\u2032N 72\u00b027\u203203\u2032\u2032W / 7.8179\u00b0N 72.4508\u00b0W From Wikipedia, the free encyclopedia Two-way transport on the bridge in 2011 CIDH The Sim\u00f3n Bol\u00edvar International Bridge ( Spanish : Puente Internacional Sim\u00f3n Bol\u00edvar ) is a 300-metr"
             }
           ],
           "source": "https://api.langsearch.com/",
@@ -1587,10 +1546,10 @@
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Cross-check *El Tiempo*\u2019s \u2018Guerra, Seguridad y Conflicto\u2019 section for October 2023 to verify coded terms in the 400 Mawozo operation report (e.g., \u2018operaci\u00f3n limpia\u2019). Confirm exact phrasing, context, and source citation",
+        "reason": "Verify exact phrasing of coded terms (e.g., *operaci\u00f3n limpia*, *falso positivo*) in *El Tiempo*'s October 2023 400 Mawozo report. Cross-check against prior findings for consistency.",
         "request": "Verify independent public sources for claims of exactly 20 deaths and Wilson Joseph\u2019s house destruction in the 400 Mawozo operation (frontier-question-2191)",
         "request_status": "closed",
-        "exploration": "https://www.eltiempo.com/archivo/document/534789-400-mawozo-operacion-cucuta-octubre-2023",
+        "exploration": "https://eltiempo.com/archivo/guerra-seguridad-y-conflicto/octubre-2023/400-mawozo-operacion",
         "tool": {
           "tool": "public-text",
           "status": "rejected",
@@ -1674,16 +1633,15 @@
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Follow-up on Colombian Ministry of National Defense archives for Norte de Santander (1868) airstrike records. Prior *El Espectador* search yielded no corroboration; this is the next logical source.",
+        "reason": "Follow-up on Colombian Ministry of Defense PDFs for Norte de Santander (1868) airstrike records. Prior *El Espectador* search yielded no corroboration; this is the next logical source.",
         "request": "Verify if Ministry of Defense PDFs contain corroborated airstrike records for Norte de Santander (1868) to cross-check with *El Espectador* archives",
         "request_status": "closed",
-        "exploration": "https://www.mindefensa.gov.co/archivos-historicos/1868-norte-de-santander-airstrike",
+        "exploration": "https://www.gov.co/mdefensa/archivos-historicos/conflictos-internos/1868-norte-santander-airstrike-d",
         "tool": {
           "tool": "public-text",
-          "status": "failed",
-          "error_kind": "source-not-found",
-          "reason": "source-not-found (HTTP 404)",
-          "retryable": false,
+          "url": "https://www.gov.co/mdefensa/archivos-historicos/conflictos-internos/1868-norte-santander-airstrike-d",
+          "excerpt": "M\u00e1s de 78.000 tr\u00e1mites del Gobierno de Colombia | GOV.CO es instanciado (Lazy Loading nativo) -->",
+          "status": "completed",
           "contract": {
             "capability": "public-text-read",
             "access": "read-only",
@@ -1693,7 +1651,7 @@
             "raw_data": false,
             "untrusted_content": true
           },
-          "http_status": 404
+          "wire_credit": ""
         },
         "message": null,
         "trade": null,
@@ -1703,11 +1661,11 @@
       },
       {
         "id": "local-257",
-        "action": "analyze",
+        "action": "explore",
         "room": "archive",
         "status": "dormant",
         "proposal": "",
-        "reason": "Analyze the fetched *Filastin al-Thawra* excerpt for mentions of 'Muhammad' to verify Palestinian witness accounts.",
+        "reason": "Assigned to the council's research question this turn.",
         "request": "Extract all instances of names starting with 'M*' (Mustafa, Mahmoud) from the last fetched excerpt, then cross-reference with Palestinian witness accounts for potential Muhammad references or contextual ties",
         "request_status": "closed",
         "exploration": "polish president karol nawrocki 500,000 warsaw disputed revised different",
@@ -1778,11 +1736,11 @@
       },
       {
         "id": "local-257",
-        "action": "analyze",
+        "action": "explore",
         "room": "archive",
-        "status": "active-local",
+        "status": "dormant",
         "proposal": "",
-        "reason": "Analyze the fetched Yemen airstrike excerpt for explicit casualty counts to cross-reference with Norte de Santander claims.",
+        "reason": "Assigned to the council's research question this turn.",
         "request": "Retrieve any archived MinDefensa reports or FARC dissident fragments mentioning airstrikes in Norte de Santander (201x) with explicit details on fatalities or seized arms",
         "request_status": "closed",
         "exploration": "polish president karol nawrocki 500,000 warsaw independence day",
@@ -1837,26 +1795,49 @@
         "room": "sovereignty-breeders-keeneland-lexington",
         "status": "active-local",
         "proposal": "",
-        "reason": "Cross-reference NBCSports' report of Sovereignty winning the 2026 Breeders' Cup Classic on October 31 with Equibase\u2019s official ledger for the same race and date.",
+        "reason": "Cross-check Equibase\u2019s official ledger for the 2026 Breeders\u2019 Cup Classic race date and winner (Sovereignty) to confirm alignment with NBCSports\u2019 report.",
         "request": "Verify the official Equibase record for Sovereignty\u2019s 2026 Breeders\u2019 Cup Classic win date and race details",
         "request_status": "closed",
         "exploration": "https://www.equibase.com/races/results/breeders-cup-classic/2026",
         "tool": {
-          "tool": "public-text",
-          "status": "failed",
-          "error_kind": "source-not-found",
-          "reason": "source-not-found (HTTP 404)",
-          "retryable": false,
+          "tool": "public-search",
+          "query": "equibase races results breeders cup classic 2026",
+          "results": [
+            {
+              "title": "2026 Breeders\u2019 Cup results tracker: Winners, payouts, race-by-race updates, analysis",
+              "url": "https://www.nbcsports.com/horse-racing/news/breeders-cup-2026-results-tracker-winners-payouts-race-by-race-updates-analysis",
+              "snippet": "The Classic\u2019s deep field also includes Sovereignty (2025 Kentucky and Belmont winner), Napoleon Solo (2026 Preakness winner) and defending Breeders\u2019 Cup champion Forever Young. You can watch Saturday\u2019s action on USA Network and Peacock (1-3"
+            },
+            {
+              "title": "Breeders' Cup 2026 Results and Payouts: Every Winner at Keeneland",
+              "url": "https://usracing.com/news/breeders-cup-2026-results-payouts-winners",
+              "snippet": "Bet & Stream the 2026 Breeders' Cup Live at BUSR - Friday, October 30th and Saturday, 31st - Keeneland Racecourse - 21+ - T&Cs Apply Breeders\u2019 Cup 2026 Results FAQ Who won the Breeders\u2019 Cup Classic 2026? Sovereignty, ridden by Junior Alvara"
+            },
+            {
+              "title": "Breeders\u2019 Cup Challenge Series; Latest News, Who\u2019s in So Far?",
+              "url": "https://usracing.com/news/breeders-cup-challenge-series-latest-news-whos-in-so-far",
+              "snippet": "The 2026 Breeders\u2019 Cup will be at Keeneland Race Course in Kentucky, and the 2027 event will be held at the new Belmont Park in New York. The Whitney Stakes is a race for 4-year-olds and up ... Recent Whitney winner results in BC races: Art"
+            },
+            {
+              "title": "Breeders' Cup 2026: Full Schedule, Race Times, Horses, TV Channel and Live Stream",
+              "url": "https://www.ibtimes.sg/breeders-cup-2026-full-schedule-race-times-horses-tv-channel-live-stream-95730",
+              "snippet": "Breeders' Cup 2026: Full Schedule, Race Times, Horses, TV Channel and Live Stream The two-day racing championship takes place October 30-31 at Keeneland Race Course, with 14 Grade 1 races and more than $34 million in purses and awards. The "
+            },
+            {
+              "title": "Breeders' Cup Classic 2026 Picks: 3 Best Bets to Win the $7 Million Race",
+              "url": "https://usracing.com/news/breeders-cup-classic-2026-picks-3-best-bets",
+              "snippet": "Breeders' Cup Classic 2026 Picks: 3 Best Bets to Win the $7 Million Race Breeders\u2019 Cup Classic 2026 picks: seven run for $7 million at Keeneland at 6:16 PM ET after Magnitude\u2019s scratch, and three horses stand out on form and price. Here are"
+            }
+          ],
+          "source": "https://api.langsearch.com/",
+          "status": "completed",
           "contract": {
-            "capability": "public-text-read",
+            "capability": "public-web-read",
             "access": "read-only",
-            "network": "public HTTPS",
+            "network": "public HTTPS search",
             "side_effects": false,
-            "max_bytes": 5000000,
-            "raw_data": false,
-            "untrusted_content": true
-          },
-          "http_status": 404
+            "max_bytes": 32000
+          }
         },
         "message": null,
         "trade": null,
@@ -1924,17 +1905,17 @@
         "id": "local-257",
         "action": "explore",
         "room": "archive",
-        "status": "probation",
+        "status": "active-local",
         "proposal": "",
-        "reason": "Official Polish State Police (Policja) reports are the most authoritative source for crowd estimates. Verifying their records for Warsaw Independence Day 2023 will resolve the 500,000 claim discrepancy.",
+        "reason": "Official Warsaw City Hall press releases may contain crowd estimates for Independence Day marches.",
         "request": "Verify fatality count and house destruction claims from Anadolu Agency\u2019s public archives for the Salvadoran-Haitian joint operation",
         "request_status": "closed",
-        "exploration": "https://www.policja.gov.pl/en/press-releases/2023/11/11/official-crowd-estimates-warsaw-independence",
+        "exploration": "https://www.warszawa.pl/en/press-releases",
         "tool": {
           "tool": "public-text",
-          "status": "rejected",
-          "error_kind": "policy-rejection",
-          "reason": "only public HTTPS URLs without credentials are allowed",
+          "status": "failed",
+          "error_kind": "source-not-found",
+          "reason": "source-not-found (HTTP 404)",
           "retryable": false,
           "contract": {
             "capability": "public-text-read",
@@ -1944,7 +1925,8 @@
             "max_bytes": 5000000,
             "raw_data": false,
             "untrusted_content": true
-          }
+          },
+          "http_status": 404
         },
         "message": null,
         "trade": null,
@@ -2013,7 +1995,7 @@
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Cross-check KCNA\u2019s latest editorial for explicit mention of ambassador recall/withdrawal from Ukraine post-Nov 1, 2026.",
+        "reason": "Refine search to exclude 2018 summit noise; focus on post-Nov 1, 2026 KCNA editorials for explicit ambassador recall/withdrawal language.",
         "request": "Verify if KCNA explicitly mentions recall/withdrawal of North Korea\u2019s ambassador to Ukraine",
         "request_status": "closed",
         "exploration": "KCNA editorial site:search \"Korean Peninsula stability\" AND \"ambassador\" AND \"Ukraine\" after:2026-11",
@@ -2116,33 +2098,16 @@
       },
       {
         "id": "local-257",
-        "action": "explore",
+        "action": "analyze",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "The '39 Naga remains' claim requires validation against numeric consistency in WHO SITREPs or related datasets. The `scripts/evidence.py` may contain reusable parsing logic for such claims.",
+        "reason": "Validate the '39 Naga remains' claim against numeric patterns in the fetched `scripts/evidence.py` excerpt.",
         "request": "Compute the ratio: (week 41 cases - week 40 cases) / week 40 cases \u00d7 100, using the parsed data from the last fetch",
         "request_status": "closed",
         "exploration": "code:scripts/evidence.py",
         "tool": {
-          "tool": "local-code-read",
-          "status": "completed",
-          "file": "scripts/evidence.py",
-          "bytes": 5847,
-          "sha256": "e4232c4402f4c6ce561c8d1c6d89484e84070690a696471604a7725c5ba75c1e",
-          "content": "\"\"\"Shared evidence rules for source-backed findings.\n\nBoth the autonomy subprocess (at extraction time) and the daemon (at\npublication time) use these pure functions so a finding is judged by one\nstandard. Nothing here touches the network, the model, or local state.\n\"\"\"\n\nimport re\n\nSTOPWORDS = {\"about\", \"after\", \"also\", \"from\", \"into\", \"that\", \"this\", \"with\", \"what\", \"which\",\n             \"where\", \"when\", \"does\", \"did\", \"have\", \"their\", \"there\", \"these\", \"those\", \"than\"}\n# Prepositions, determiners, and auxiliaries name no subject; a corroborated\n# definition of one of them is not evidence about the world.\nFUNCTION_WORDS = {'above', 'across', 'against', 'along', 'although', 'always', 'among', 'another', 'around', 'because', 'been', 'before', 'behind', 'being', 'below', 'beneath', 'between', 'beyond', 'both', 'during', 'each', 'either', 'even', 'ever', 'every', 'hence', 'just', 'less', 'many', 'might', 'more', 'most', 'much', 'must', 'neither', 'never', 'often', 'only', 'onto', 'other', 'others', 'over', 'shall', 'since', 'some', 'still', 'such', 'though', 'through', 'thus', 'toward', 'towards', 'under', 'until', 'upon', 'very', 'were', 'whether', 'while', 'will', 'within', 'without'}\nSTOPWORDS |= FUNCTION_WORDS\nIMPERATIVE = re.compile(r\"^(?:explore|search|analyze|identify|continue|find|review|investigate|look)\\b\", re.I)\nQUOTE_SUPPORT_THRESHOLD = 0.85\nMIN_FUZZY_TOKENS = 4\n_PUNCTUATION_MAP = {\"\u2018\": \"'\", \"\u2019\": \"'\", \"\u201c\": '\"', \"\u201d\": '\"', \"\u2013\": \"-\", \"\u2014\": \"-\",\n                    \"\u00a0\": \" \", \"\u2026\": \"...\"}\n\n\ndef normalize(text):\n    \"\"\"Lower-case, fold typographic punctuation, and collapse whitespace.\"\"\"\n    value = str(text or \"\")\n    for source, target in _PUNCTUATION_MAP.items():\n        value = value.replace(source, target)\n    return re.sub(r\"\\s+\", \" \", value).strip().lower()\n\n\ndef tokens(text):\n    return re.findall(r\"[a-z0-9]+\", normalize(text))\n\n\ndef _lcs_length(left, right):\n    \"\"\"Length of the longest common subsequence of two short token lists.\"\"\"\n    if not left or not right:\n        return 0\n    previous = [0] * (len(right) + 1)\n    for item in left:\n        current = [0]\n        for index, other in enumerate(right, start=1):\n            if item == other:\n                current.append(previous[index - 1] + 1)\n            else:\n                current.append(max(previous[index], current[index - 1]))\n        previous = current\n    return previous[-1]\n\n\ndef quote_support(quote, excerpt, threshold=QUOTE_SUPPORT_THRESHOLD):\n    \"\"\"Return (supported, score, mode) describing how well the excerpt backs the quote.\n\n    An exact normalized substring scores 1.0. Otherwise the quote must share at\n    least ``threshold`` of its tokens, in order, with some window of the excerpt.\n    Small models paraphrase punctuation and drop function words; this keeps the\n    evidence bar high without demanding byte-exact copying.\n    \"\"\"\n    quote_tokens = tokens(quote)\n    excerpt_tokens = tokens(excerpt)\n    if not quote_tokens or not excerpt_tokens:\n        return False, 0.0, \"none\"\n    if normalize(quote) in normalize(excerpt):\n        return True, 1.0, \"exact\"\n    if len(quote_tokens) < MIN_FUZZY_TOKENS:\n        return False, 0.0, \"too-short\"\n    window = len(quote_tokens) + max(2, len(quote_tokens) // 4)\n    anchors = set(quote_tokens)\n    best = 0.0\n    for start, token in enumerate(excerpt_tokens):\n        if token not in anchors:\n            continue\n        segment = excerpt_tokens[start:start + window]\n        score = _lcs_length(quote_tokens, segment) / len(quote_tokens)\n        if score > best:\n            best = score\n            if best >= 1.0:\n                break\n    supported = best >= threshold\n    return supported, round(best, 3), \"fuzzy\" if supported else \"unsupported\"\n\n\ndef claim_terms(claim):\n    return {term for term in re.findall(r\"[a-z0-9]{4,}\", normalize(claim)) if term not in STOPWORDS}\n\n\ndef claim_grounded(claim, quote):\n    \"\"\"A claim must share vocabulary with its quote and must not be an instruction.\"\"\"\n    if not claim or not quote:\n        return False, \"missing-claim-or-quote\"\n    if IMPERATIVE.match(str(claim).strip()):\n        return False, \"imperative-claim\"\n    terms = claim_terms(claim)\n    quote_vocabulary = set(re.findall(r\"[a-z0-9]{4,}\", normalize(quote)))\n    if len(terms & quote_vocabulary) < min(2, len(terms)):\n        return False, \"claim-not-grounded-in-quote\"\n    return True, \"grounded\"\n\n\ndef clamp_confidence(value):\n    \"\"\"Fold a model-reported confidence into [0, 1]; unparseable values become 0.0.\n\n    The JSON grammar cannot enforce numeric ranges, so a well-quoted finding\n    must not be thrown away merely because the model wrote 1.5 or \"high\".\n    \"\"\"\n    try:\n        number = float(value)\n    except (TypeError, ValueError):\n        return 0.0\n    if number != number:\n        return 0.0\n    return max(0.0, min(1.0, number))\n\n\ndef classify_finding(claim, quote, excerpt=None, confidence=None):\n    \"\"\"Return (status, reason, quote_score) for a candidate finding.\n\n    ``excerpt`` may be None when re-checking a stored record whose page text is\n    no longer available; the stored quote-to-excerpt verdict is then trusted and\n    only claim grounding is re-evaluated. Confidence never rejects a finding;\n    callers store ``clamp_confidence`` of it.\n    \"\"\"\n    grounded, reason = claim_grounded(claim, quote)\n    if not grounded:\n        return \"rejected\", reason, 0.0\n    if excerpt is None:\n        return \"unreviewed\", \"grounded\", 1.0\n    supported, score, mode = quote_support(quote, excerpt)\n    if not supported:\n        return \"rejected\", f\"quote-{mode}\", score\n    return \"unreviewed\", f\"quote-{mode}\", score\n\n\ndef is_accepted(record):\n    \"\"\"Rejected rows stay in the ledger for audit but never count as evidence.\"\"\"\n    return str((record or {}).get(\"status\", \"unreviewed\")) not in {\"rejected\", \"retracted\"}",
-          "read_only": true,
-          "privacy": "sanitized public source only",
-          "contract": {
-            "capability": "public-source-read",
-            "access": "read-only",
-            "network": "none",
-            "side_effects": false,
-            "max_file_bytes": 120000,
-            "max_inventory_bytes": 400000,
-            "write_access": false,
-            "secrets": "redacted"
-          }
+          "status": "not-requested"
         },
         "message": null,
         "trade": null,
@@ -2211,13 +2176,13 @@
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Search Arabic-language archives for **\u0645\u062d\u0645\u0648\u062f \u0645\u062d\u0633\u0646** (variant of Muhammad Muhsen) to cross-check with prior findings on **\u0645\u062d\u0645\u0648\u062f \u0645\u062d\u0633\u0646** (Muhammad Muhsen) in IDF records. Archive.org\u2019s Arabic collections may hold overlooked",
+        "reason": "Expanded Arabic search to include **\u0645\u062d\u0645\u0648\u062f \u0645\u062d\u0633\u0646** (variant spelling) in IDF-related contexts. Archive.org\u2019s Arabic collections may yield overlooked records.",
         "request": "Access Arabic-language archives in Archive.org or direct links to *Al-Ahram* and *Palestine Post* for keyword searches",
         "request_status": "closed",
-        "exploration": "https://archive.org/search.php?query=%D9%85%D8%AD%D9%85%D8%AF+%D9%85%D8%AD%D8%B3%D9%86+%D9%8A%D8%B2%",
+        "exploration": "https://archive.org/search.php?query=%D9%85%D8%AD%D9%85%D8%AF+%D9%85%D8%AD%D8%B3%D9%86+%D8%A7%D9%84%",
         "tool": {
           "tool": "public-search",
-          "query": "https://archive.org/search.php?query=%D9%85%D8%AD%D9%85%D8%AF+%D9%85%D8%AD%D8%B3%D9%86+%D9%8A%D8%B2%",
+          "query": "https://archive.org/search.php?query=%D9%85%D8%AD%D9%85%D8%AF+%D9%85%D8%AD%D8%B3%D9%86+%D8%A7%D9%84%",
           "results": [],
           "source": "https://en.wikipedia.org/",
           "status": "completed",
@@ -2293,11 +2258,11 @@
       },
       {
         "id": "local-257",
-        "action": "analyze",
+        "action": "stay",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Verify regex matches for explicit motions to withdraw Articles 2\u20134 in the Senate Journal excerpt.",
+        "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
         "request": "Extract all explicit motions to withdraw Articles 2\u20134 from 2026 Senate Proceedings (verbatim minutes)",
         "request_status": "closed",
         "exploration": "polish president karol nawrocki 500,000 warsaw independence day",
@@ -2307,16 +2272,16 @@
         "message": null,
         "trade": null,
         "finding_id": null,
-        "fallback_reason": null,
+        "fallback_reason": "unstructured-output",
         "decision_source": "model"
       },
       {
         "id": "local-257",
         "action": "analyze",
         "room": "archive",
-        "status": "active-local",
+        "status": "dormant",
         "proposal": "",
-        "reason": "Analyze clerk logs for explicit abstentions or absences during the 2025 impeachment proceedings.",
+        "reason": "Analyze clerk logs for explicit abstentions or vote errors in 2025 impeachment proceedings.",
         "request": "Python code to parse and count abstentions/no-shows in Senate vote logs for 2025",
         "request_status": "closed",
         "exploration": "polish president karol nawrocki 500,000 warsaw independence day",
@@ -2367,34 +2332,21 @@
       },
       {
         "id": "local-257",
-        "action": "explore",
+        "action": "stay",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Cross-check HABAS explosion casualty figures (17 vs. 18) in the UN OCHA 2026 Turkey report to verify consistency with prior data. Also scan for any indirect references to Ukrainian transit permits or grain shipment logs.",
+        "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
         "request": "Provide the October 2026 grain shipment excerpt from Pyongyang to Seoul, including any transit permit details and routing notes (Khasan or Rajin)",
         "request_status": "closed",
         "exploration": "https://reliefweb.int/report/poland/un-ocha-poland-2026-humanitarian-overview",
         "tool": {
-          "tool": "public-text",
-          "url": "https://reliefweb.int/report/poland/un-ocha-poland-2026-humanitarian-overview",
-          "excerpt": "",
-          "status": "completed",
-          "contract": {
-            "capability": "public-text-read",
-            "access": "read-only",
-            "network": "public HTTPS",
-            "side_effects": false,
-            "max_bytes": 5000000,
-            "raw_data": false,
-            "untrusted_content": true
-          },
-          "wire_credit": ""
+          "status": "not-requested"
         },
         "message": null,
         "trade": null,
         "finding_id": null,
-        "fallback_reason": null,
+        "fallback_reason": "unstructured-output",
         "decision_source": "model"
       },
       {
@@ -2459,13 +2411,13 @@
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Searching South Korean embassy Kyiv/Seoul archives (pre-2022) for Ukrainian individual named **\u0423** (cyrillic placeholder for target name) in diplomatic cables or reports. Prioritizing PDFs and official embassy sites.",
+        "reason": "Expanded search to include Cyrillic transliteration variants (e.g., \u0004) for target name in South Korean embassy Kyiv/Seoul PDF archives. Prioritizing pre-2021 cables.",
         "request": "Verify if any pre-2021 PDFs mention South Korean embassy cables or corroborate Ukrainian names in Kyiv/Seoul archives",
         "request_status": "closed",
-        "exploration": "site:https://www.mofa.go.kr/embassy/kyiv/ site:https://www.mofa.go.kr/embassy/seoul/ filetype:pdf \"\u0423",
+        "exploration": "site:https://www.mofa.go.kr/embassy/kyiv/ site:https://www.mofa.go.kr/embassy/seoul/ filetype:pdf \"\u0004",
         "tool": {
           "tool": "public-search",
-          "query": "site:https://www.mofa.go.kr/embassy/kyiv/ site:https://www.mofa.go.kr/embassy/seoul/ filetype:pdf \"\u0423",
+          "query": "site:https://www.mofa.go.kr/embassy/kyiv/ site:https://www.mofa.go.kr/embassy/seoul/ filetype:pdf \"\u0004",
           "results": [],
           "source": "https://en.wikipedia.org/",
           "status": "completed",
@@ -2544,7 +2496,7 @@
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Analyze the last fetched German Federal Court Register excerpt for mentions of 'Volodymyr Z.' (case-insensitive, with/without period) to quantify matches and verify presence.",
+        "reason": "Execute case-insensitive regex search for 'Volodymyr Z.' (with/without period) in the fetched German Federal Court Register excerpt to quantify matches and verify presence.",
         "request": "Query the Handelsregister API for Hamburg Higher Regional Court (Oberlandesgericht Hamburg) records using variant spellings: 'Volodymyr Z.', 'Z. Volodymyr', and 'Volodymyr Z. [Ukrainian]' with date filters for 2010\u20132028",
         "request_status": "closed",
         "exploration": "polish president karol nawrocki 500,000 warsaw disputed revised different",
@@ -2619,10 +2571,10 @@
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Cross-check Reuters' latest Al-Maashiq Palace strike report against Yemeni state media (SABA, Al-Masirah) for verified casualty figures and damage descriptions.",
+        "reason": "Cross-check Reuters' Al-Maashiq Palace strike report (Jan 15, 2024) for verified casualty figures and damage descriptions against Yemeni state media (SABA, Al-Masirah) to reconcile discrepancies with earlier findings (4/",
         "request": "Retrieve and analyze the latest Reuters article for Houthi missile strike details on Al-Maashiq Palace to validate casualties against Yemeni Presidential Council and SABA claims",
         "request_status": "closed",
-        "exploration": "https://www.reuters.com/archive/2024/01/15/al-maashiq-palace-strike-yemen-houthi-casualties",
+        "exploration": "https://www.reuters.com/archive/2024/01/15/world/yemen-houthi-strike-al-maashiq-palace-aden-verified",
         "tool": {
           "tool": "public-text",
           "status": "failed",
@@ -2707,10 +2659,10 @@
         "room": "relay",
         "status": "active-local",
         "proposal": "",
-        "reason": "Official Warsaw City Hall statements are the highest-authority source for crowd estimates. This URL targets their Independence Day 2025 report, which may directly address the 500,000 figure.",
+        "reason": "Official Warsaw City Hall Independence Day 2025 report may contain verified crowd estimates for Nawrocki\u2019s march, resolving the 500,000 discrepancy. Targets the highest-authority source for this event.",
         "request": "Access to public, verifiable KCNA statements and South Korean NIS briefings from 2026 to cross-check with prior findings",
         "request_status": "closed",
-        "exploration": "https://www.warszawa.pl/en/news/2025/05/11/official-crowd-estimates-for-national-independence-day-mr",
+        "exploration": "https://www.warszawa.pl/en/aktualnosci/11-listopada-2025-rapport-z-marszu-narodowego/",
         "tool": {
           "tool": "public-text",
           "status": "failed",
@@ -2796,15 +2748,15 @@
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Cross-reference the untrusted claim of 500,000 participants in the Warsaw Independence Day march with the cited news article for explicit official sources (Warsaw City Hall or Polish State Police statements).",
+        "reason": "Verify *GlobalInDepth* snippet for explicit official sources (Warsaw City Hall or Policja) on Warsaw Independence Day march crowd estimates. Cross-check against *Thetawan Times* claim of 500,000 participants.",
         "request": "Return all FIRs from 2019 referencing Section 3 preventive detention under COFEPOSA for Abhijeet Dipk, with source metadata and full text snippets",
         "request_status": "closed",
-        "exploration": "https://thetaiwantimes.com/en/world-news/polish-president-karol-nawrocki-joins-half-a-million-citian",
+        "exploration": "https://globalindepth.com/president-nawrocki-walks-at-nationalist-march-as-poland-faces-security-and",
         "tool": {
           "tool": "public-text",
-          "status": "failed",
-          "error_kind": "source-not-found",
-          "reason": "source-not-found (HTTP 404)",
+          "status": "rejected",
+          "error_kind": "policy-rejection",
+          "reason": "redirects are not allowed",
           "retryable": false,
           "contract": {
             "capability": "public-text-read",
@@ -2814,8 +2766,7 @@
             "max_bytes": 5000000,
             "raw_data": false,
             "untrusted_content": true
-          },
-          "http_status": 404
+          }
         },
         "message": null,
         "trade": null,
@@ -2959,15 +2910,15 @@
         "room": "relay",
         "status": "active-local",
         "proposal": "",
-        "reason": "Cross-check OHCHR Yemen 2020 port reports for Iranian-origin arms transshipment claims via UNODC manifests.",
+        "reason": "Cross-reference OHCHR Yemen 2020 port manifests with UNODC Aden transshipment records for Iranian-origin arms claims.",
         "request": "Retrieve and parse OHCHR Yemen 2020 port-specific reports and UNODC Yemen maritime manifests (2020) for transshipment details",
         "request_status": "closed",
-        "exploration": "https://www.ohchr.org/en/countries/yemen/reports/2020-port-authority-manifests",
+        "exploration": "https://www.unodc.org/yemen/en/ports/manifests/2020/aden-transshipments.html",
         "tool": {
           "tool": "public-text",
           "status": "failed",
-          "error_kind": "source-access-denied",
-          "reason": "source-access-denied (HTTP 403)",
+          "error_kind": "source-not-found",
+          "reason": "source-not-found (HTTP 404)",
           "retryable": false,
           "contract": {
             "capability": "public-text-read",
@@ -2978,7 +2929,7 @@
             "raw_data": false,
             "untrusted_content": true
           },
-          "http_status": 403
+          "http_status": 404
         },
         "message": null,
         "trade": null,
@@ -3047,10 +2998,10 @@
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Direct state source required to corroborate DefenceTalk\u2019s 11 FARC deaths; MoD\u2019s official reports are the next logical lead.",
+        "reason": "Direct access to Colombian Ministry of Defense (MoD) 2023\u20132024 reports is required to cross-verify DefenceTalk\u2019s 11 FARC deaths with official state tolls. This is the authoritative source for state-reported military/conf",
         "request": "Fetch official Colombian Ministry of Defense reports for 2023\u20132024 to cross-reference FARC-linked fatalities (10+ victims) and verify military engagement data, excluding the 11th case from DefenceTalk",
         "request_status": "closed",
-        "exploration": "https://www.mindefensa.gov.co/2023-2024-reports-FARC-casualties/",
+        "exploration": "https://www.mindefensa.gov.co/prensa/boletines/2023-2024",
         "tool": {
           "tool": "public-text",
           "status": "failed",
@@ -3132,34 +3083,21 @@
       },
       {
         "id": "local-257",
-        "action": "explore",
+        "action": "stay",
         "room": "relay",
         "status": "active-local",
         "proposal": "",
-        "reason": "The transcript is the only available public lead for granular MSF cholera data in Al-Mansoura (2017). Will parse for explicit numbers, dates, and vaccination rates.",
+        "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
         "request": "Retrieve and parse transcript data for cholera metrics (case counts, vaccination rates, timelines) to cross-check with WHO\u2019s claim",
         "request_status": "closed",
         "exploration": "https://libertarianinstitute.org/scotthortonshow/82817-msfs-clair-manera-cholera-epidemic-yemen/",
         "tool": {
-          "tool": "public-text",
-          "url": "https://libertarianinstitute.org/scotthortonshow/82817-msfs-clair-manera-cholera-epidemic-yemen/",
-          "excerpt": "8/28/17 MSF's Clair Manera on the cholera epidemic in Yemen | The Libertarian Institute Scott Horton Laurie Calhoun James Bovard Ted G. Carpenter Kyle Anzalone Keith Knight Writers About News Books Provoked: How Washington Started the New Cold War with Russia and the Catastrophe in Ukraine Fool\u2019s Errand: Time to End the War in Afghanistan Enough Already: Time to End the War on Terrorism Hotter Than The Sun: Time To Abolish Nuclear Weapons The Great Ron Paul: The Scott Horton Show Interviews 2004\u20132019 Coming to Palestine What Social Animals Owe to Each Other Voluntaryist Handbook Questioning the COVID Company Line Last Rights: The Death of American Liberty Diary of a Psychosis: How Public Health Disgraced Itself During COVID Mania The Fake China Threat and Its Very Real Danger Domestic Imperialism: Nine Reasons I Left Progressivism Israel Winner of the 2003 Iraq Oil War No Quarter: The Ravings of William Norman Grigg Creative Chaos: Inside the CIA\u2019s Covert War to Topple the Syrian Government The National Debt and You: What it Is, How it Works, and Why it Matters Empire of Lies: Fragments from the Memory Hole Podcasts The Scott Horton Show Conflicts of Interest Don\u2019t Tread on Anyone Vital Dissent Year Zero Libertarian Institute Roundtable Chasing Ghosts Podcast The Dangerous History Podcast WarNotes: A Conflict Podcast Archives OKC Bombing Archive Will Grigg Archives Podcast Archives Will Grigg\u2019s Freedom Zealot Radio Free Man Beyond the Wall End of the Empire Blog Submission Donate Blog About News Podcasts The Scott Horton Show Conflicts of Interest Don\u2019t Tread on Anyone Vital Dissent Year Zero Chasing Ghosts Podcast Books Enough Already: Time to End the War on Terrorism Fool\u2019s Errand: Time to End the War in Afghanistan Hotter Than The Sun: Time To Abolish Nuclear Weapons The Great Ron Paul: The Scott Horton Show Interviews 2004\u20132019 What Social Animals Owe to Each Other Coming to Palestine Voluntaryist Handbook Questioning the COVID Company Line: Critical Thinking in Hysterical Times Diary of a Psychosis: How Public Health Disgraced Itself During COVID Mania Last Rights: The Death of American Liberty The Fake China Threat and Its Very Real Danger Domestic Imperialism: Nine Reasons I Left Progressivism Israel Winner of the 2003 Iraq Oil War No Quarter: The Ravings of William Norman Grigg The National Debt and You: What it Is, How it Works, and Why it Matters C",
-          "status": "completed",
-          "contract": {
-            "capability": "public-text-read",
-            "access": "read-only",
-            "network": "public HTTPS",
-            "side_effects": false,
-            "max_bytes": 5000000,
-            "raw_data": false,
-            "untrusted_content": true
-          },
-          "wire_credit": ""
+          "status": "not-requested"
         },
         "message": null,
         "trade": null,
         "finding_id": null,
-        "fallback_reason": null,
+        "fallback_reason": "unstructured-output",
         "decision_source": "model"
       },
       {
@@ -3219,34 +3157,21 @@
       },
       {
         "id": "local-257",
-        "action": "explore",
+        "action": "stay",
         "room": "relay",
         "status": "active-local",
         "proposal": "",
-        "reason": "Follow-up on the BGMEA press conference URL to inspect the full text of the 2024+ wage revision statements for explicit owner agreement language.",
+        "reason": "Safe fallback interview after repeated format failures; resident remains eligible for later independent choices.",
         "request": "Verify if TA-9 annex contains indirect references to ICC or its senior staff in Sakharov Prize documentation",
         "request_status": "closed",
         "exploration": "https://bgmea.com.bd/page/Press_conference_on_Proposed_Minimum_Wage",
         "tool": {
-          "tool": "public-text",
-          "url": "https://bgmea.com.bd/page/Press_conference_on_Proposed_Minimum_Wage",
-          "excerpt": "BGMEA | Press conference on Proposed Minimum Wage About BGMEA at a glance Office Bearers Board of Directors Former Presidents BGMEA-HSBC Road Show Why Bangladesh Garment Industry of Bangladesh Our Strengths News Trade Information Export Performance Monthly Trade Session Fair Calendar Weekly Trade Digest Sustainability Worker\u2019s Wellbeing & Safety Environment RMG Worker Health Toolkit Responsible Business Hub ESG Data Platform Members Search a Member General Member List Associate Member List Member Services Become a BGMEA Member Events Circular Election Election Schedule Vaild Candidate List Duplicate Voter ID Circular Preliminary Voter List Final Voter List Preliminary Candidate List Final Candidate List Result Contact About BGMEA at a glance Office Bearers Board of Directors Former Presidents BGMEA-HSBC Road Show Why Bangladesh Garment Industry of Bangladesh Our Strengths News Trade Information Export Performance Monthly Trade Session Fair Calendar Weekly Trade Digest Sustainability Worker\u2019s Wellbeing & Safety Environment RMG Worker Health Toolkit Responsible Business Hub ESG Data Platform Members Search a Member General Member List Associate Member List Member Services Become a BGMEA Member Events Circular Election Election Schedule Vaild Candidate List Duplicate Voter ID Circular Preliminary Voter List Final Voter List Preliminary Candidate List Final Candidate List Result Contact November 05, 2013 Press conference on Proposed Minimum Wage Press conference on Proposed Minimum Wage held on 05 November 2013 at BGMEA conference room, Dhaka View All Copyright \u00a9 2020, The Bangladesh Garment Manufacturers and Exporters Association. Version-2.0, Design & Developed by Systech Digital Limited . \u27a4",
-          "status": "completed",
-          "contract": {
-            "capability": "public-text-read",
-            "access": "read-only",
-            "network": "public HTTPS",
-            "side_effects": false,
-            "max_bytes": 5000000,
-            "raw_data": false,
-            "untrusted_content": true
-          },
-          "wire_credit": ""
+          "status": "not-requested"
         },
         "message": null,
         "trade": null,
         "finding_id": null,
-        "fallback_reason": null,
+        "fallback_reason": "unstructured-output",
         "decision_source": "model"
       },
       {
@@ -3311,15 +3236,15 @@
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Frontier question 2195\u20132197 demands official Warsaw/Policja figures to refute or confirm the 500,000 participant claim.",
+        "reason": "Official Warsaw City Hall crowd estimation reports are the highest-authority source to resolve frontier question 2196\u20132198. No direct evidence yet; must fetch and parse their 2023 Independence Day data.",
         "request": "Run the tool on the following test cases to confirm its reliability before re-applying it to the full report excerpt",
         "request_status": "closed",
-        "exploration": "https://www.warszawa.pl/en/news/2023/11/11/independence-day-march-in-warsaw-2023",
+        "exploration": "https://um.warszawa.pl/en/statistics/crowd-estimations",
         "tool": {
           "tool": "public-text",
           "status": "failed",
-          "error_kind": "source-not-found",
-          "reason": "source-not-found (HTTP 404)",
+          "error_kind": "source-access-denied",
+          "reason": "source-access-denied (HTTP 403)",
           "retryable": false,
           "contract": {
             "capability": "public-text-read",
@@ -3330,7 +3255,7 @@
             "raw_data": false,
             "untrusted_content": true
           },
-          "http_status": 404
+          "http_status": 403
         },
         "message": null,
         "trade": null,
@@ -3399,15 +3324,16 @@
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Targeted the official EP press release URL for the 2026 Sakharov Prize to verify if the ICC award includes explicit mention of 'senior officials'.",
+        "reason": "Cross-check the 2026 Sakharov Prize press release for *exact wording* on the ICC award, focusing on whether 'senior officials' is explicitly named alongside the ICC. The * symbol marks a follow-up to the prior untrusted",
         "request": "Extract and compare the raw text from the official EP press release to confirm whether \u2018senior officials\u2019 is included in the award phrasing",
         "request_status": "closed",
-        "exploration": "https://www.europarl.europa.eu/news/en/press-room/20261023IPR99999/2026-sakharov-prize-for-freedom",
+        "exploration": "https://www.europarl.europa.eu/news/en/press-room/20261023IPR99999/2026-sakharov-prize-for-freedom *",
         "tool": {
           "tool": "public-text",
-          "url": "https://www.europarl.europa.eu/news/en/press-room/20261023IPR99999/2026-sakharov-prize-for-freedom",
-          "excerpt": "",
-          "status": "completed",
+          "status": "failed",
+          "error_kind": "tool-error",
+          "reason": "tool-error",
+          "retryable": false,
           "contract": {
             "capability": "public-text-read",
             "access": "read-only",
@@ -3416,8 +3342,7 @@
             "max_bytes": 5000000,
             "raw_data": false,
             "untrusted_content": true
-          },
-          "wire_credit": ""
+          }
         },
         "message": null,
         "trade": null,
@@ -3483,19 +3408,20 @@
       },
       {
         "id": "local-257",
-        "action": "analyze",
+        "action": "explore",
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "The prior fetch failed due to an unavailable website. Analyze the error to confirm whether the absence of data is due to a site block, missing archive, or other issue before proceeding with alternative sources.",
+        "reason": "Verify Petra.gov.jo November 2023 press releases via Wayback Machine archive to cross-check for official Jordanian government confirmation of Karak church attack fatalities/injuries.",
         "request": "Fetch and parse the latest available news from Petra.gov.jo dated November 12, 2023, to identify any official mentions of the church attack",
         "request_status": "closed",
-        "exploration": "https://petra.gov.jo/en/press-releases/2023-11",
+        "exploration": "https://web.archive.org/web/202312/*/petra.gov.jo/en/press-releases/2023-11",
         "tool": {
           "tool": "public-text",
-          "url": "https://petra.gov.jo/en/press-releases/2023-11",
-          "excerpt": "Website Temporarily Unavailable Something went wrong Return to Home",
-          "status": "completed",
+          "status": "failed",
+          "error_kind": "source-not-found",
+          "reason": "source-not-found (HTTP 404)",
+          "retryable": false,
           "contract": {
             "capability": "public-text-read",
             "access": "read-only",
@@ -3505,7 +3431,7 @@
             "raw_data": false,
             "untrusted_content": true
           },
-          "wire_credit": ""
+          "http_status": 404
         },
         "message": null,
         "trade": null,
@@ -3574,10 +3500,10 @@
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Cross-reference Al-Monitor\u2019s cholera reports in Karak Governorate for explicit mentions of Greek Orthodox church-related fatalities or outbreaks (Oct 2023\u2013Mar 2024).",
+        "reason": "Follow up on Al-Monitor\u2019s October 2023 report on cholera in Karak Governorate, specifically checking for explicit claims linking Greek Orthodox church-run clinics to fatalities or outbreaks.",
         "request": "Verify if any Al-Monitor report cites Greek Orthodox church-linked cholera fatalities in Karak during the specified period",
         "request_status": "closed",
-        "exploration": "https://www.al-monitor.com/yemen/cholera-karak-governorate-church-clinics-2023-2024",
+        "exploration": "https://www.al-monitor.com/yemen/2023/10/cholera-karak-governorate-greek-orthodox-clinics/",
         "tool": {
           "tool": "public-text",
           "status": "failed",
@@ -3737,15 +3663,15 @@
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Cross-check *La Vanguardia* archives for verified reports on chemical contaminants (*contaminants qu\u00edmics*) used by Spanish police during Barcelona protests (2023\u20132024). Focus on protest timelines and independent sources",
+        "reason": "Cross-reference *La Vanguardia* 2023\u20132024 archives for verified reports on *contaminants qu\u00edmics* (e.g., tear gas, chemical irritants) used by Spanish police during Barcelona protests. Focus on protest timelines and **in",
         "request": "Fetch and analyze public claims in *Nacion Digital* archives for verified chemical contaminant reports in Barcelona protests",
         "request_status": "closed",
-        "exploration": "https://lavanguardia.com/archivo/2023-2024/barcelona/protestas/contaminants-quimics",
+        "exploration": "https://www.lavanguardia.com/archivo/2023-2024/barcelona/protestas/contaminants-quimics-policia",
         "tool": {
           "tool": "public-text",
-          "status": "rejected",
-          "error_kind": "policy-rejection",
-          "reason": "redirects are not allowed",
+          "status": "failed",
+          "error_kind": "source-not-found",
+          "reason": "source-not-found (HTTP 404)",
           "retryable": false,
           "contract": {
             "capability": "public-text-read",
@@ -3755,7 +3681,8 @@
             "max_bytes": 5000000,
             "raw_data": false,
             "untrusted_content": true
-          }
+          },
+          "http_status": 404
         },
         "message": null,
         "trade": null,
@@ -3823,17 +3750,17 @@
         "id": "local-257",
         "action": "explore",
         "room": "archive",
-        "status": "active-local",
+        "status": "probation",
         "proposal": "",
-        "reason": "Official Warsaw City Hall reports may provide verified crowd estimates for the Independence Day march, addressing the open question on participant counts.",
+        "reason": "Cross-check Warsaw City Hall\u2019s official 2023 Independence Day march crowd estimates to resolve discrepancies in Nawrocki\u2019s march attendance claims. Prior leads suggest conflicting participant figures (500,000 vs. lower).",
         "request": "Extract and cross-reference archival transit logs from the trove\u2019s metadata or digitized records to identify any pre-war signage or routes linked to the Jewish quarter",
         "request_status": "closed",
-        "exploration": "https://www.warszawa.pl/en/aktualnosci/2023/11/11/11-november-independence-day-in-warsaw",
+        "exploration": "https://warszawa.pl/en/official-reports/2023/11/11/independence-day-march-crowd-estimates",
         "tool": {
           "tool": "public-text",
-          "status": "failed",
-          "error_kind": "source-not-found",
-          "reason": "source-not-found (HTTP 404)",
+          "status": "rejected",
+          "error_kind": "policy-rejection",
+          "reason": "only public HTTPS URLs without credentials are allowed",
           "retryable": false,
           "contract": {
             "capability": "public-text-read",
@@ -3843,8 +3770,7 @@
             "max_bytes": 5000000,
             "raw_data": false,
             "untrusted_content": true
-          },
-          "http_status": 404
+          }
         },
         "message": null,
         "trade": null,
@@ -3913,10 +3839,10 @@
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Fetch the latest commit of the repository to check for new messages or updates in Haifa port-worker chats that may contain earliest public signs of disruptions.",
+        "reason": "Check Warsaw City Hall\u2019s official crowd estimates for the Independence Day march to verify or refute the 500,000 participant claim, addressing frontier-question-2196/2197/2198.",
         "request": "Verify official DGCA statements on helicopter crashes near Joshimath, Uttarakhand, India, specifically confirming crash date and operator (Trans Bharat Aviation) for frontier-question-2088/2089/2090",
         "request_status": "closed",
-        "exploration": "https://github.com/haifa-port-worker-chats-2026",
+        "exploration": "https://www.warszawa.pl/en/aktualnosci/2025/05/11/official-crowd-estimates-for-warsaw-independence-m",
         "tool": {
           "tool": "public-text",
           "status": "failed",
@@ -4002,26 +3928,49 @@
         "room": "archive",
         "status": "active-local",
         "proposal": "",
-        "reason": "Cross-checking Reuters' attendance figure for the 18 Nov 2023 rally against the council's research question.",
-        "request": "Fetch the archived Wikipedia page for the 18 November 2023 Tel Aviv Hostages Square rally to verify if it contains explicit attendance figures or citations from municipal/police sources",
-        "request_status": "closed",
-        "exploration": "https://www.reuters.com/archive/2023/11/18/tel-aviv-hostages-square-rally-18-november-2023",
+        "reason": "Cross-checking Reuters' attendance figure for the 18 Nov 2023 rally against the council's research question on rally attendance estimates.",
+        "request": "Fetch the Reuters article from 18 Nov 2023 covering the Tel Aviv Hostages Square rally to extract explicit attendance figures or estimates",
+        "request_status": "open",
+        "exploration": "Reuters 18 Nov 2023 Tel Aviv Hostages Square rally report",
         "tool": {
-          "tool": "public-text",
-          "status": "failed",
-          "error_kind": "source-access-denied",
-          "reason": "source-access-denied (HTTP 401)",
-          "retryable": false,
+          "tool": "public-search",
+          "query": "Reuters 18 Nov 2023 Tel Aviv Hostages Square rally report",
+          "results": [
+            {
+              "title": "Police break up Tel Aviv hostage rally",
+              "url": "https://www.jns.org/israel-news/arrest-made-at-tel-aviv-hostage-rally",
+              "snippet": "Police break up Tel Aviv hostage rally \u201cAt this point, any concern for a security incident has been removed,\u201d police said. A rally calling for the release of hostages held captive by Hamas terrorists in the Gaza Strip at \u201cHostage Square\u201d in"
+            },
+            {
+              "title": "Hostage Rally in Tel Aviv Erupts Into Clashes Outside Likud Headquarters",
+              "url": "https://www.theyeshivaworld.com/news/israel-news/2439019/hostage-rally-in-tel-aviv-erupts-into-clashes-outside-likud-headquarters.html",
+              "snippet": "Hostage Rally in Tel Aviv Erupts Into Clashes Outside Likud Headquarters Hours after a massive rally in support of the hostages, hundreds of demonstrators marched from Hostages\u2019 Square to the nearby headquarters of Prime Minister Benjamin N"
+            },
+            {
+              "title": "History",
+              "url": "https://web.archive.org/web/20240623095733/https:/en.wikipedia.org/wiki/Hostages_Square",
+              "snippet": "Rallies The square has been the site of weekly rallies held by the Hostages and Missing Families Forum since the hostages were taken, with antigovernmental rallies held nearby since about early 2024.[8] On 12 November 2023, Arab-Israeli new"
+            },
+            {
+              "title": "Mass rally in Tel Aviv calls for end to Gaza war, hostage deal",
+              "url": "https://www.al-monitor.com/originals/2025/08/mass-rally-tel-aviv-calls-end-gaza-war-hostage-deal",
+              "snippet": "Mass rally in Tel Aviv calls for end to Gaza war, hostage deal Tens of thousands of demonstrators gathered on Sunday evening in Tel Aviv to call for an end to the war in Gaza and the release of hostages, one of the largest demonstrations in"
+            },
+            {
+              "title": "Mass rally in Tel Aviv calls for end to Gaza war, hostage deal",
+              "url": "https://www.hurriyetdailynews.com/mass-rally-in-tel-aviv-calls-for-end-to-gaza-war-hostage-deal-212623",
+              "snippet": "Mass rally in Tel Aviv calls for end to Gaza war, hostage deal Tens of thousands of demonstrators gathered on Sunday evening in Tel Aviv to call for an end to the war in Gaza and the release of hostages, one of the largest demonstrations in"
+            }
+          ],
+          "source": "https://api.langsearch.com/",
+          "status": "completed",
           "contract": {
-            "capability": "public-text-read",
+            "capability": "public-web-read",
             "access": "read-only",
-            "network": "public HTTPS",
+            "network": "public HTTPS search",
             "side_effects": false,
-            "max_bytes": 5000000,
-            "raw_data": false,
-            "untrusted_content": true
-          },
-          "http_status": 401
+            "max_bytes": 32000
+          }
         },
         "message": null,
         "trade": null,
@@ -4090,24 +4039,48 @@
         "room": "relay",
         "status": "active-local",
         "proposal": "",
-        "reason": "Follow-up on bdnews24 for leaked official investigation reports on Bazar resort fire, cross-checking casualty counts (46, 78, 70) and causes.",
-        "request": "Access public archive for this report\u2019s full text to cross-check claims",
-        "request_status": "closed",
-        "exploration": "https://www.bdnews24.com/bangladesh/2090-05-12/bazar-resort-fire-official-investigation-report-leak",
+        "reason": "Follow-up on prior bdnews24 findings; *The Daily Star* may hold independent worker-reported accounts differing from official counts (46, 78, 70).",
+        "request": "Verify conflicting casualty counts or causes for the Bazar resort fire in Bangladesh, cross-checking with *The Daily Star* reports from 2078\u20132200",
+        "request_status": "open",
+        "exploration": "Bangladeshi workers' media *The Daily Star* Bazar resort fire casualty reports 2078-2200",
         "tool": {
-          "tool": "public-text",
-          "status": "rejected",
-          "error_kind": "policy-rejection",
-          "reason": "redirects are not allowed",
-          "retryable": false,
+          "tool": "public-search",
+          "query": "Bangladeshi workers' media *The Daily Star* Bazar resort fire casualty reports 2078-2200",
+          "results": [
+            {
+              "title": "Bangladesh: Deaths and injuries in a fire at a tourist site",
+              "url": "https://en.royanews.com/Bangladesh:-Deaths-and-injuries-in-a-fire-at-a-tourist-site",
+              "snippet": "Bangladesh: Deaths and injuries in a fire at a tourist site Officials said at least 10 people were killed and others injured in a fire that broke out Saturday at a resort near Inani Beach in Cox's Bazar, southeast Bangladesh. According to R"
+            },
+            {
+              "title": "10 killed in fire at seaside resort in Bangladesh",
+              "url": "https://www.thehindu.com/news/international/many-killed-in-fire-at-seaside-resort-in-bangladesh/article71596020.ece",
+              "snippet": "10 killed in fire at seaside resort in Bangladesh At least 10 people were killed and nine injured on Saturday (October 17, 2026) in a fire at a seaside resort in the south-eastern Bangladeshi district of Cox's Bazar, officials said. The fir"
+            },
+            {
+              "title": "10 killed in fire at seaside resort in Bangladesh",
+              "url": "https://www.newindianexpress.com/world/2026/Oct/17/10-killed-in-fire-at-seaside-resort-in-bangladesh-2",
+              "snippet": "10 killed in fire at seaside resort in Bangladesh DHAKA: At least 10 people were killed and nine injured on Saturday in a fire at a seaside resort in the south-eastern Bangladeshi district of Cox's Bazar, officials said. The fire broke out "
+            },
+            {
+              "title": "A fire guts a Bangladeshi beach resort, killing 10 people",
+              "url": "https://www.wbal.com/a-fire-guts-a-bangladeshi-beach-resort-killing-10-people",
+              "snippet": "A fire guts a Bangladeshi beach resort, killing 10 people DHAKA, Bangladesh (AP) \u2014 A fire gutted a beach resort in southeastern Bangladesh on Saturday, killing 10 people and injuring four, an official said. The fire broke out at Tuptup Rest"
+            },
+            {
+              "title": "A fire guts a Bangladeshi beach resort, killing 10 people",
+              "url": "https://www.guelphtoday.com/world-news/a-fire-guts-a-bangladeshi-beach-resort-killing-10-people-12905255",
+              "snippet": "A fire guts a Bangladeshi beach resort, killing 10 people DHAKA, Bangladesh (AP) \u2014 A fire gutted a beach resort in southeastern Bangladesh on Saturday, killing 10 people and injuring four, an official said. The fire broke out at Tuptup Rest"
+            }
+          ],
+          "source": "https://api.langsearch.com/",
+          "status": "completed",
           "contract": {
-            "capability": "public-text-read",
+            "capability": "public-web-read",
             "access": "read-only",
-            "network": "public HTTPS",
+            "network": "public HTTPS search",
             "side_effects": false,
-            "max_bytes": 5000000,
-            "raw_data": false,
-            "untrusted_content": true
+            "max_bytes": 32000
           }
         },
         "message": null,
@@ -4252,26 +4225,49 @@
         "room": "joshimath-uttarakhand-india",
         "status": "active-local",
         "proposal": "",
-        "reason": "Cross-reference *Indian Express* report for Joshimath helicopter crash death toll against *The Hindu* and DGCA\u2019s confirmed 6-death figure.",
+        "reason": "Verify if *Indian Express* reports a death toll differing from DGCA\u2019s confirmed 6 deaths for the Joshimath helicopter crash, and cross-check citations with *The Hindu* findings.",
         "request": "Retrieve and parse the full article to extract any additional details on casualties, operator, or independent corroboration",
         "request_status": "closed",
-        "exploration": "https://indianexpress.com/article/india/joshimath-helicopter-crash-death-toll-8434567/",
+        "exploration": "*Indian Express* Joshimath helicopter crash death toll official DGCA comparison",
         "tool": {
-          "tool": "public-text",
-          "status": "failed",
-          "error_kind": "source-access-denied",
-          "reason": "source-access-denied (HTTP 403)",
-          "retryable": false,
+          "tool": "public-search",
+          "query": "*Indian Express* Joshimath helicopter crash death toll official DGCA comparison",
+          "results": [
+            {
+              "title": "Aviation regulator DGCA begins probe into Kedarnath chopper crash, death toll rises to 7",
+              "url": "https://www.sentinelassam.com/more-news/national-news/aviation-regulator-dgca-begins-probe-into-kedarnath-chopper-crash-death-toll-rises-to-7-618936",
+              "snippet": "Aviation regulator DGCA begins probe into Kedarnath chopper crash, death toll rises to 7 NEW DELHI: Aviation regulator DGCA has launched a probe into the Kedarnath helicopter crash in which seven people, including the pilot, were killed on "
+            },
+            {
+              "title": "Joshimath Helicopter Crash Video: All 6 Killed as Badrinath-Dehradun Chopper Crashes Near ChaieN Village in Uttarakhand\u2019s Chamoli; Check Victims\u2019 Names, Possibl",
+              "url": "https://sundayguardianlive.com/india/joshimath-helicopter-crash-video-all-6-killed-as-badrinath-dehradun-chopper-crashes-near-chaien-village-in-uttarakhands-chamoli-check-victims-names-possible-cause-latest-updates-watch-314321",
+              "snippet": "Joshimath Helicopter Crash Video: All 6 Killed as Badrinath-Dehradun Chopper Crashes Near ChaieN Village in Uttarakhand\u2019s Chamoli; Check Victims\u2019 Names, Possible Cause & Latest Updates | WATCH Joshimath Helicopter Crash Video: A Trans Bhara"
+            },
+            {
+              "title": "Captain's Blog",
+              "url": "https://anupmurthy.blogspot.com/2009/09/sad-questions.html?showComment=1252281172962",
+              "snippet": "These questions are meant for whoever is in charge, to answer. The DGCA (Indian Directorate General of Civil Aviation), god bless them, don't even have an updated web site. They came on air saying that the Helicopter that crashed did have a"
+            },
+            {
+              "title": "Helicopter crash in India kills six, including five pilgrims in Uttarakhand Published on: October 31, 2026 10:32 AM",
+              "url": "https://dailytimes.com.pk/1574738/helicopter-crash-in-india-kills-six-including-five-pilgrims-in-uttarakhand",
+              "snippet": "Helicopter crash in India kills six, including five pilgrims in Uttarakhand Published on: October 31, 2026 10:32 AM A devastating aviation accident in the Indian state of Uttarakhand resulted in the deaths of six people, including five pilg"
+            },
+            {
+              "title": "Helicopter returning from Badrinath Dham crashes near Joshimath; search operation underway",
+              "url": "https://www.thehansindia.com/news/national/helicopter-returning-from-badrinath-dham-crashes-near-joshimath-search-operation-underway-1137496",
+              "snippet": "Helicopter returning from Badrinath Dham crashes near Joshimath; search operation underway In Short The crash reportedly occurred in the Vishnuprayag area, between Badrinath and Joshimath. Rescue teams, including personnel from the district"
+            }
+          ],
+          "source": "https://api.langsearch.com/",
+          "status": "completed",
           "contract": {
-            "capability": "public-text-read",
+            "capability": "public-web-read",
             "access": "read-only",
-            "network": "public HTTPS",
+            "network": "public HTTPS search",
             "side_effects": false,
-            "max_bytes": 5000000,
-            "raw_data": false,
-            "untrusted_content": true
-          },
-          "http_status": 403
+            "max_bytes": 32000
+          }
         },
         "message": null,
         "trade": null,
@@ -4341,25 +4337,49 @@
         "room": "relay",
         "status": "active-local",
         "proposal": "",
-        "reason": "Cross-check UN OCHA\u2019s 2022 Nagqu earthquake dossier for explicit death toll ranges or citations beyond Xinhua\u2019s 16-death claim.",
-        "request": "Verify if UN OCHA\u2019s 2022 Nagqu earthquake dossier explicitly cites a distinct death toll range (e.g., 20\u201325) and source URL",
-        "request_status": "closed",
-        "exploration": "https://reliefweb.int/report/china/un-ocha-nagqu-earthquake-2022-draft-situation-report",
+        "reason": "Cross-check for explicit death toll ranges beyond Xinhua\u2019s 16-death claim, resolving ambiguity in public records.",
+        "request": "Verify if UN OCHA or Xinhua explicitly cites a distinct death toll range (e.g., 20\u201325) for the 2022 Nagqu earthquake, including source URLs or document references",
+        "request_status": "open",
+        "exploration": "UN OCHA 2022 Nagqu earthquake dossier OR Xinhua official Chinese state media archives for earthquake",
         "tool": {
-          "tool": "public-text",
-          "url": "https://reliefweb.int/report/china/un-ocha-nagqu-earthquake-2022-draft-situation-report",
-          "excerpt": "",
+          "tool": "public-search",
+          "query": "UN OCHA 2022 Nagqu earthquake dossier OR Xinhua official Chinese state media archives for earthquake",
+          "results": [
+            {
+              "title": "June 2022 Afghanistan earthquake",
+              "url": "https://en.wikipedia.org/wiki/June_2022_Afghanistan_earthquake",
+              "snippet": "\u2191 Masood, Salman (22 June 2022). \"Afghanistan Live Updates: At Least 1,000 Killed in Earthquake, Official Media Says: The earthquake was also felt in Pakistan, but damage appeared to be less severe\" . The New York Times . Archived from the "
+            },
+            {
+              "title": "UN calls for immediate aid to earthquake victims in northern Afghanistan",
+              "url": "https://www.sentinelassam.com/more-news/international/un-calls-for-immediate-aid-to-earthquake-victims-in-northern-afghanistan",
+              "snippet": "UN calls for immediate aid to earthquake victims in northern Afghanistan KABUL: The United Nations Office for the Coordination of Humanitarian Affairs (OCHA) has called for urgent aid for earthquake victims in northern Afghanistan as hundre"
+            },
+            {
+              "title": "NGCI, NHNZ On Board China Quake Doc",
+              "url": "https://worldscreen.com/ngci-nhnz-on-board-china-quake-doc/",
+              "snippet": "NGCI, NHNZ On Board China Quake Doc BEIJING: NHNZ is teaming with Beijing\u2019s Yuanchun Media and National Geographic Channels International (NGCI) for an hour-long special about the massive earthquake that struck China\u2019s Sichuan province in M"
+            },
+            {
+              "title": "Tibet Earthquake: Atleast 16 Killed, 54 Injured As 339 Homes Collapse In Nagqu",
+              "url": "https://www.outlookindia.com/international/tibet-earthquake-atleast-16-killed-54-injured-as-339-homes-collapse-in-nagqu",
+              "snippet": "USGS said the epicentre was 191 kilometres east-northeast of Nagqu in a sparsely populated, high-altitude area of northern Tibet, and it put the depth at 18 kilometres. Nagqu is more than 300 kilometres north of Tibet\u2019s capital, Lhasa. The "
+            },
+            {
+              "title": "Earthquakes in Venezuela Coordination Call Recap",
+              "url": "https://www.uschamberfoundation.org/disasters/earthquakes-in-venezuela-coordination-call-recap",
+              "snippet": "Earthquakes in Venezuela Coordination Call Recap Following doublet earthquakes that devastated northern Venezuela, the U.S. Chamber of Commerce Foundation convened a private sector coordination call on June 30, 2026 to mobilize support for "
+            }
+          ],
+          "source": "https://api.langsearch.com/",
           "status": "completed",
           "contract": {
-            "capability": "public-text-read",
+            "capability": "public-web-read",
             "access": "read-only",
-            "network": "public HTTPS",
+            "network": "public HTTPS search",
             "side_effects": false,
-            "max_bytes": 5000000,
-            "raw_data": false,
-            "untrusted_content": true
-          },
-          "wire_credit": ""
+            "max_bytes": 32000
+          }
         },
         "message": null,
         "trade": null,
@@ -4424,16 +4444,53 @@
       },
       {
         "id": "local-257",
-        "action": "move",
+        "action": "explore",
         "room": "polish-karol-nawrocki-national",
         "status": "active-local",
         "proposal": "",
-        "reason": "Frontier questions require direct access to Polish State Police and Warsaw City Hall records on Nawrocki\u2019s Independence Day march crowd estimates.",
+        "reason": "Frontier questions require direct access to Warsaw City Hall and Polish State Police records to verify or refute the 500,000 participant claim. Prior untrusted leads suggest official reports may exist but lack direct ref",
         "request": "",
         "request_status": "closed",
-        "exploration": "polish president karol nawrocki 500,000 warsaw disputed revised different",
+        "exploration": "Warsaw City Hall official crowd estimation reports 2023 Independence Day march",
         "tool": {
-          "status": "not-requested"
+          "tool": "public-search",
+          "query": "Warsaw City Hall official crowd estimation reports 2023 Independence Day march",
+          "results": [
+            {
+              "title": "Polish independence day march gathers 250,000 in Warsaw: city authorities",
+              "url": "https://za.headtopics.com/news/polish-independence-day-march-gathers-250-000-in-warsaw-89774537",
+              "snippet": "Polish independence day march gathers 250,000 in Warsaw: city authorities Tens of thousands of Polish nationalist sympathisers gathered in Warsaw on Wednesday for an annual Independence Day March, just days after a deadly shooting spree in "
+            },
+            {
+              "title": "Major Polish freedom march allowed to go ahead after massive pushback over gov\u2019t cancellation",
+              "url": "https://www.lifesitenews.com/news/major-polish-freedom-march-allowed-to-go-ahead-after-massive-pushback-over-govt-cancellation/",
+              "snippet": "Major Polish freedom march allowed to go ahead after massive pushback over gov\u2019t cancellation After an attempted ban by the city mayor, the November 11 Independence Day march through the city of Warsaw, one of Europe\u2019s largest patriotic dem"
+            },
+            {
+              "title": "2023 Polish protests",
+              "url": "https://en.wikipedia.org/wiki/2023_Polish_protests",
+              "snippet": "Protests [ edit ] June 4 protests [ edit ] On 4 June 2023, former Prime Minister Donald Tusk , together with several other members of the Civic Platform party, organized a series of anti-government protests in Warsaw , Poland's capital city"
+            },
+            {
+              "title": "Tens of thousands join Poland\u2019s nationalist Independence Day march",
+              "url": "https://puertoricotribune.com/tens-of-thousands-join-polands-nationalist-independence-day-march",
+              "snippet": "Tens of thousands join Poland\u2019s nationalist Independence Day march Tens of thousands of nationalist sympathisers have gathered in Poland\u2019s capital, Warsaw, for an Independence Day march, days after a mass shooting in Krakow killed six peopl"
+            },
+            {
+              "title": "Tens of thousands of Poles rally for annual nationalist Independence Day march in Warsaw | AFP",
+              "url": "https://www.military-stuff.org/tens-of-thousands-of-poles-rally-for-annual-nationalist-independence-day-march-in-warsaw-afp",
+              "snippet": "Tens of thousands of Poles rally for annual nationalist Independence Day march in Warsaw | AFP Tens of thousands gather for Poland\u2019s Independence Day march, a major annual gathering of nationalists and the far right in the tense aftermath o"
+            }
+          ],
+          "source": "https://api.langsearch.com/",
+          "status": "completed",
+          "contract": {
+            "capability": "public-web-read",
+            "access": "read-only",
+            "network": "public HTTPS search",
+            "side_effects": false,
+            "max_bytes": 32000
+          }
         },
         "message": null,
         "trade": null,
@@ -4503,18 +4560,18 @@
         "room": "relay",
         "status": "active-local",
         "proposal": "",
-        "reason": "Cross-reference Phayul\u2019s May 2025 Nagqu aftershock records (M\u22654.0) against Xinhua\u2019s reports for consistency in magnitude, timestamp, and location (\u00b10.5\u00b0).",
+        "reason": "Cross-reference Xinhua\u2019s May 2025 Nagqu aftershock reports (M\u22654.0) for consistency in magnitude, timestamp, and location (\u00b10.5\u00b0) with Phayul\u2019s findings. Verify if Xinhua confirms or disputes Phayul\u2019s recorded events.",
         "request": "Access Phayul\u2019s public digital repository for earthquake aftershock data from May 2025",
         "request_status": "closed",
-        "exploration": "https://phayul.com/search?q=2025+May+Nagqu+earthquake+aftershock+M4.0",
+        "exploration": "https://www.xinhuanet.com/search?q=2025+May+Nagqu+earthquake+aftershock+M4.0",
         "tool": {
           "tool": "public-search",
-          "query": "https://phayul.com/search?q=2025+May+Nagqu+earthquake+aftershock+M4.0",
+          "query": "https://www.xinhuanet.com/search?q=2025+May+Nagqu+earthquake+aftershock+M4.0",
           "results": [
             {
-              "title": "M4.5 Earthquake at Orcas Island, Washington, March 3rd, 2025",
-              "url": "https://preview.pnsn.org/blog/m4-5-earthquake-at-orcas-island-washington-march-3rd-2025",
-              "snippet": "In the 24 hours following this event, the Pacific Northwest Seismic Network (PNSN) located 47 tiny earthquakes within 10 kilometers of the M4.5 event (Figure 3). None of these aftershocks were detected by PNSN\u2019s automated system because the"
+              "title": "Earthquake of 4.2 magnitude jolts Afghanistan",
+              "url": "https://english.publictv.in/earthquake-of-4-2-magnitude-jolts-afghanistan",
+              "snippet": "This earthquake is an aftershock of an earthquake of 4 magnitude on the Richter Scale that occurred on Wednesday. \u201cEQ of M: 4.0, On: 15/01/2025 13:11:25 IST, Lat: 36.48 N, Long: 70.84 E, Depth: 180 Km, Location: Afghanistan,\u201d NCS stated. EQ"
             },
             {
               "title": "EARTHQUAKE 2025",
@@ -4532,9 +4589,9 @@
               "snippet": "Earthquake of magnitude 4.2 occurs in Bay of Bengal A magnitude 4.2 earthquake struck the Bay of Bengal at 7:26 IST on December 2, 2025, according to the National Centre for Seismology (NCS). It occurred at a depth of 35 km at coordinates 2"
             },
             {
-              "title": "A massive 8.8 earthquake just struck off Russia\u2019s coast and it is one of the strongest ever recorded",
-              "url": "https://www.zmescience.com/science/news-science/a-massive-8-8-earthquake-just-struck-off-russias-coast-and-it-is-one-of-the-strongest-ever-recorded",
-              "snippet": "What is likely to happen next? At time of writing, approximately six hours after the earthquake struck, there have already been 35 aftershocks larger than magnitude 5.0, according to the United States Geological Survey. Aftershocks happen w"
+              "title": "Today: 6.1 magnitude earthquake near Port-Olry, Sanma, Vanuatu",
+              "url": "https://earthquaketrack.com/p/iran/kohgiluyeh-and-boyer-ahmad",
+              "snippet": "4.4 magnitude earthquake 2025-04-04 03:44:20 at 03:44 April 04, 2025 UTC Location: Epicenter at 29.4380, 52.8310 0.0 km from Akbar\u0101b\u0101d (0.0 miles) Depth: 10.0 km Yasuj, Kohgiluyeh and Boyer-Ahmad, Iran 4.0 magnitude earthquake 2025-03-23 22"
             }
           ],
           "source": "https://api.langsearch.com/",
@@ -4612,17 +4669,17 @@
         "id": "local-257",
         "action": "explore",
         "room": "relay",
-        "status": "active-local",
+        "status": "probation",
         "proposal": "",
-        "reason": "Official Israeli government press releases for June 2026+ are the most direct source for Netanyahu\u2019s post-2025 policy decisions. This URL targets the official Hebrew government portal\u2019s English news section, which should",
+        "reason": "Verify if the official Israeli government portal lists any policy decisions by Netanyahu\u2019s government in June 2026+ to confirm the latest post-2025 decision. Cross-check for official press releases or statements.",
         "request": "Verify latest post-2025 policy decisions by Netanyahu\u2019s government with source URLs and dates",
         "request_status": "closed",
-        "exploration": "https://www.gov.il/en/departments/news/2026/06",
+        "exploration": "https://gov.israel.gov.il/en/NewsRoom/NewsDetails/2026/6/1",
         "tool": {
           "tool": "public-text",
-          "status": "failed",
-          "error_kind": "source-access-denied",
-          "reason": "source-access-denied (HTTP 403)",
+          "status": "rejected",
+          "error_kind": "policy-rejection",
+          "reason": "only public HTTPS URLs without credentials are allowed",
           "retryable": false,
           "contract": {
             "capability": "public-text-read",
@@ -4632,8 +4689,7 @@
             "max_bytes": 5000000,
             "raw_data": false,
             "untrusted_content": true
-          },
-          "http_status": 403
+          }
         },
         "message": null,
         "trade": null,
@@ -4699,46 +4755,51 @@
       }
     ],
     "construction": [],
-    "requests": [],
+    "requests": [
+      {
+        "agent": "local-257",
+        "status": "fulfilled"
+      }
+    ],
     "trades_settled": [],
     "corroborations": [
       {
-        "id": "pair-50b9ff262e8d2f82c296",
+        "id": "pair-15452093729f7e809152",
         "relation": "unrelated",
         "finding_ids": [
-          "finding-5eedd08cf5f93a57d70b",
-          "finding-afd402ba42a534834ea8"
-        ],
-        "topic": "independence karol least national nawrocki polish president warsaw",
-        "domains": [
-          "jta.org",
-          "polanddaily24.com"
-        ]
-      },
-      {
-        "id": "pair-727c007344ee833b0c65",
-        "relation": "unrelated",
-        "finding_ids": [
-          "finding-421e433ecedaff003657",
-          "finding-afd402ba42a534834ea8"
+          "finding-9b0ed0713d603cdcb12e",
+          "finding-e844f7293374a6c78c8c"
         ],
         "topic": "independence karol least national nawrocki polish president warsaw",
         "domains": [
           "polanddaily24.com",
-          "thetaiwantimes.com"
+          "ua.news"
         ]
       },
       {
-        "id": "pair-7847a5c6aae1cd1fc4a1",
+        "id": "pair-22a6942b1a40a3ea8c59",
         "relation": "unrelated",
         "finding_ids": [
           "finding-311e21a04aecdc64f642",
-          "finding-afd402ba42a534834ea8"
+          "finding-e844f7293374a6c78c8c"
         ],
         "topic": "independence karol least national nawrocki polish president warsaw",
         "domains": [
           "polanddaily24.com",
           "wikipedia.org"
+        ]
+      },
+      {
+        "id": "pair-36f25cca6c28adb4ba5e",
+        "relation": "unrelated",
+        "finding_ids": [
+          "finding-421e433ecedaff003657",
+          "finding-e844f7293374a6c78c8c"
+        ],
+        "topic": "independence karol least national nawrocki polish president warsaw",
+        "domains": [
+          "polanddaily24.com",
+          "thetaiwantimes.com"
         ]
       }
     ],
@@ -4754,22 +4815,22 @@
         "thetaiwantimes.com"
       ]
     },
-    "dormant": 165
+    "dormant": 168
   },
   "metrics": {
-    "jaccard_overlap": 0.206,
+    "jaccard_overlap": 0.245,
     "morrow_audit_markers": [
       "counterexample",
       "assumption",
       "missing control"
     ],
-    "response_completeness": "thin-or-missing",
+    "response_completeness": "usable",
     "evidence_coverage": "missing",
-    "distinction_status": "needs-audit"
+    "distinction_status": "distinct"
   },
   "continuity_audit": {
-    "generated_at": "2026-11-14T05:36:22.537225+00:00",
-    "cycle": 2198,
+    "generated_at": "2026-11-14T07:25:41.917421+00:00",
+    "cycle": 2200,
     "status": "pass",
     "checks": {
       "archive_parse": true,
@@ -4779,7 +4840,7 @@
       "room_link_integrity": true,
       "resident_room_integrity": true
     },
-    "archive_records": 58135,
+    "archive_records": 58351,
     "malformed_archive_records": 0,
     "raw_output_fields_found": 0,
     "duplicate_archive_ids": [],
@@ -4793,8 +4854,8 @@
   },
   "health": {
     "schema_version": 1,
-    "generated_at": "2026-11-14T05:36:22.584109+00:00",
-    "cycle": 2198,
+    "generated_at": "2026-11-14T07:25:41.974426+00:00",
+    "cycle": 2200,
     "daemon": "running",
     "model_status": "ready",
     "model_probe_ok": true,
@@ -4807,9 +4868,9 @@
         {
           "name": "mistral",
           "model": "ministral-14b-2512",
-          "calls": 215,
-          "input_tokens": 485077,
-          "output_tokens": 61992,
+          "calls": 348,
+          "input_tokens": 795536,
+          "output_tokens": 105020,
           "errors": 0,
           "last_error": "",
           "daily_request_budget": null,
@@ -4823,15 +4884,15 @@
         {
           "name": "mistral-8b",
           "model": "ministral-8b-2512",
-          "calls": 0,
-          "input_tokens": 0,
-          "output_tokens": 0,
+          "calls": 10,
+          "input_tokens": 22662,
+          "output_tokens": 2621,
           "errors": 0,
           "last_error": "",
           "daily_request_budget": null,
           "daily_token_budget": 400000,
-          "limit_rpm": 120,
-          "limit_tpm": null,
+          "limit_rpm": 2,
+          "limit_tpm": 40000,
           "requests_last_minute": 0,
           "tokens_last_minute": 0,
           "status": "ready"
@@ -4854,12 +4915,12 @@
         },
         {
           "name": "gemini",
-          "model": "gemini-3.8-flash",
-          "calls": 0,
-          "input_tokens": 0,
-          "output_tokens": 0,
-          "errors": 8,
-          "last_error": "TimeoutError (judgment)",
+          "model": "gemini-3.6-flash",
+          "calls": 2,
+          "input_tokens": 588,
+          "output_tokens": 118,
+          "errors": 12,
+          "last_error": "429 rate limited (judgment): You exceeded your current quota, please check your plan and billing details. For more infor",
           "daily_request_budget": 240,
           "daily_token_budget": null,
           "limit_rpm": 8,
@@ -4871,230 +4932,230 @@
         {
           "name": "groq",
           "model": "openai/gpt-oss-120b",
-          "calls": 31,
-          "input_tokens": 32328,
-          "output_tokens": 5365,
+          "calls": 46,
+          "input_tokens": 50623,
+          "output_tokens": 8513,
           "errors": 0,
           "last_error": "400 on schema mode; prompt hint used",
           "daily_request_budget": 900,
           "daily_token_budget": 190000,
           "limit_rpm": 1000,
           "limit_tpm": 8000,
-          "requests_last_minute": 3,
-          "tokens_last_minute": 1638,
+          "requests_last_minute": 0,
+          "tokens_last_minute": 0,
           "status": "ready"
         }
       ],
       "recent_calls": [
         {
-          "at": 1794633457.5,
+          "at": 1794639901.8,
           "class": "decision",
           "provider": "mistral",
           "model": "ministral-14b-2512",
-          "prompt_sha256_16": "d74fd9a788e4fb11"
+          "prompt_sha256_16": "c2c3e45c546e37f1"
         },
         {
-          "at": 1794633492.4,
+          "at": 1794639936.3,
           "class": "decision",
           "provider": "mistral",
           "model": "ministral-14b-2512",
-          "prompt_sha256_16": "516dbe3fc9e69a70"
+          "prompt_sha256_16": "3f588ec948460984"
         },
         {
-          "at": 1794633493.0,
-          "class": "extraction",
-          "provider": "groq",
-          "model": "openai/gpt-oss-120b",
-          "prompt_sha256_16": "34fc28e0e271a176"
-        },
-        {
-          "at": 1794633524.8,
+          "at": 1794639968.3,
           "class": "decision",
           "provider": "mistral",
           "model": "ministral-14b-2512",
-          "prompt_sha256_16": "d210557b9a6a6ec3"
+          "prompt_sha256_16": "0c779dd29b652368"
         },
         {
-          "at": 1794633588.9,
+          "at": 1794640000.4,
           "class": "decision",
           "provider": "mistral",
           "model": "ministral-14b-2512",
-          "prompt_sha256_16": "f691a1603279e91f"
+          "prompt_sha256_16": "4404ad41bc75955e"
         },
         {
-          "at": 1794633589.4,
-          "class": "extraction",
-          "provider": "groq",
-          "model": "openai/gpt-oss-120b",
-          "prompt_sha256_16": "6cd33697035d3922"
-        },
-        {
-          "at": 1794633621.4,
+          "at": 1794640066.3,
           "class": "decision",
           "provider": "mistral",
           "model": "ministral-14b-2512",
-          "prompt_sha256_16": "13e94a303936a903"
+          "prompt_sha256_16": "41b1672d7af3312e"
         },
         {
-          "at": 1794633653.5,
+          "at": 1794640100.3,
           "class": "decision",
           "provider": "mistral",
           "model": "ministral-14b-2512",
-          "prompt_sha256_16": "c9d9f4a13d72c158"
+          "prompt_sha256_16": "be04285e37ca549a"
         },
         {
-          "at": 1794633715.9,
+          "at": 1794640134.5,
           "class": "decision",
           "provider": "mistral",
           "model": "ministral-14b-2512",
-          "prompt_sha256_16": "0fd43829698bdc9d"
+          "prompt_sha256_16": "b7c36be15161f970"
         },
         {
-          "at": 1794633750.0,
+          "at": 1794640198.5,
           "class": "decision",
           "provider": "mistral",
           "model": "ministral-14b-2512",
-          "prompt_sha256_16": "9b88258feebd3cd4"
+          "prompt_sha256_16": "807ccd78dae04ffe"
         },
         {
-          "at": 1794633750.4,
-          "class": "extraction",
-          "provider": "groq",
-          "model": "openai/gpt-oss-120b",
-          "prompt_sha256_16": "f61a6e111ee5709c"
-        },
-        {
-          "at": 1794633783.2,
-          "class": "report",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "23d77a520e608448"
-        },
-        {
-          "at": 1794633815.4,
+          "at": 1794640231.0,
           "class": "decision",
           "provider": "mistral",
           "model": "ministral-14b-2512",
-          "prompt_sha256_16": "a028559d732f4cd1"
+          "prompt_sha256_16": "1c05e54e73b5ee55"
         },
         {
-          "at": 1794633879.9,
+          "at": 1794640263.8,
           "class": "decision",
           "provider": "mistral",
           "model": "ministral-14b-2512",
-          "prompt_sha256_16": "94e1dadd3ccb446e"
+          "prompt_sha256_16": "9aa51fe7696b8fc0"
         },
         {
-          "at": 1794633916.2,
+          "at": 1794640296.3,
           "class": "decision",
           "provider": "mistral",
           "model": "ministral-14b-2512",
-          "prompt_sha256_16": "aadd50d46f4bf82c"
+          "prompt_sha256_16": "2a4e3673f96b68c7"
         },
         {
-          "at": 1794633948.3,
+          "at": 1794640360.1,
           "class": "decision",
           "provider": "mistral",
           "model": "ministral-14b-2512",
-          "prompt_sha256_16": "df09caff69b583e1"
+          "prompt_sha256_16": "8a981268bd44ba36"
         },
         {
-          "at": 1794634010.3,
+          "at": 1794640396.3,
           "class": "decision",
           "provider": "mistral",
           "model": "ministral-14b-2512",
-          "prompt_sha256_16": "e41f935399f0fc10"
+          "prompt_sha256_16": "4f3f8081f9f3a7af"
         },
         {
-          "at": 1794634042.4,
+          "at": 1794640431.4,
           "class": "decision",
           "provider": "mistral",
           "model": "ministral-14b-2512",
-          "prompt_sha256_16": "2786e557d2871890"
+          "prompt_sha256_16": "73bb3db3de1eabf5"
         },
         {
-          "at": 1794634074.8,
+          "at": 1794640494.1,
           "class": "decision",
           "provider": "mistral",
           "model": "ministral-14b-2512",
-          "prompt_sha256_16": "ebb64bafe3047674"
+          "prompt_sha256_16": "093cfb29a0269810"
         },
         {
-          "at": 1794634137.2,
+          "at": 1794640526.6,
           "class": "decision",
           "provider": "mistral",
           "model": "ministral-14b-2512",
-          "prompt_sha256_16": "4f192a4b87020240"
+          "prompt_sha256_16": "f2e6462209dc4dc4"
         },
         {
-          "at": 1794634171.1,
+          "at": 1794640559.3,
           "class": "decision",
           "provider": "mistral",
           "model": "ministral-14b-2512",
-          "prompt_sha256_16": "1cbad8fbe0205344"
+          "prompt_sha256_16": "391e3f596888fef0"
         },
         {
-          "at": 1794634203.8,
+          "at": 1794640565.6,
           "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "b6fede7e76f95678"
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "27cc3c782156323b"
         },
         {
-          "at": 1794634236.0,
+          "at": 1794640598.9,
           "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "bccc68ecc2216e37"
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "48f05b25ac7084d9"
         },
         {
-          "at": 1794634298.0,
+          "at": 1794640660.6,
           "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "dccd3ac1d2cfccbf"
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "c31381cea219183e"
         },
         {
-          "at": 1794634330.2,
+          "at": 1794640693.6,
           "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "b0b0dd32f87f519e"
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "ee355461f78509da"
         },
         {
-          "at": 1794634362.6,
+          "at": 1794640726.8,
           "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "9398c33fd12e0202"
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "b4c7f75bfd241f57"
         },
         {
-          "at": 1794634424.8,
+          "at": 1794640788.6,
           "class": "decision",
-          "provider": "mistral",
-          "model": "ministral-14b-2512",
-          "prompt_sha256_16": "93c0e4e732b2d448"
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "43dcd7657f8ed19b"
         },
         {
-          "at": 1794634523.5,
+          "at": 1794640820.6,
+          "class": "decision",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "53d301f44cc89217"
+        },
+        {
+          "at": 1794640852.4,
+          "class": "decision",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "18cd404c4063473f"
+        },
+        {
+          "at": 1794640914.3,
+          "class": "decision",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "550a85d1828b9a10"
+        },
+        {
+          "at": 1794640945.9,
+          "class": "decision",
+          "provider": "mistral-8b",
+          "model": "ministral-8b-2512",
+          "prompt_sha256_16": "48ea2aa6b35a105d"
+        },
+        {
+          "at": 1794640958.8,
           "class": "judgment",
           "provider": "groq",
           "model": "openai/gpt-oss-120b",
-          "prompt_sha256_16": "e27ce6c6fcaac2ce"
+          "prompt_sha256_16": "051c3628e5bad5e6"
         },
         {
-          "at": 1794634526.3,
+          "at": 1794640979.3,
           "class": "judgment",
-          "provider": "groq",
-          "model": "openai/gpt-oss-120b",
-          "prompt_sha256_16": "f5ac81b0d47b11f4"
+          "provider": "gemini",
+          "model": "gemini-3.6-flash",
+          "prompt_sha256_16": "4b0db435e612187b"
         },
         {
-          "at": 1794634529.2,
+          "at": 1794641063.4,
           "class": "judgment",
-          "provider": "groq",
-          "model": "openai/gpt-oss-120b",
-          "prompt_sha256_16": "f97d6e8980a4f88d"
+          "provider": "gemini",
+          "model": "gemini-3.6-flash",
+          "prompt_sha256_16": "8eef3987025eea17"
         }
       ],
       "models_seen": {
@@ -5163,13 +5224,13 @@
     "autonomy_quality": {
       "status": "active",
       "turns": 107,
-      "fallbacks": 8,
-      "fallback_rate": 0.075,
+      "fallbacks": 15,
+      "fallback_rate": 0.14,
       "fallback_reasons": {
-        "unstructured-output": 8
+        "unstructured-output": 15
       },
-      "tool_successes": 69,
-      "findings_filed": 0
+      "tool_successes": 68,
+      "findings_filed": 1
     },
     "publication": "sanitized GitHub Pages snapshot",
     "privacy": "Operational aggregates only; no process paths, credentials, prompts, or raw responses.",
@@ -5194,14 +5255,14 @@
     "analysis_timed_out": 0,
     "analysis_feed": "docs/analysis.json",
     "research_records": 100,
-    "research_stale": 79,
+    "research_stale": 73,
     "research_feed": "docs/research.json",
-    "findings": 159,
-    "finding_candidates": 159,
-    "findings_rejected": 236,
+    "findings": 158,
+    "finding_candidates": 158,
+    "findings_rejected": 237,
     "findings_retracted": 5,
     "findings_duplicates": 0,
-    "findings_excluded": 241,
+    "findings_excluded": 242,
     "findings_total": 400,
     "corroborated_findings": 2,
     "findings_feed": "docs/findings.json",
@@ -5218,12 +5279,12 @@
         "warsaw"
       ],
       "hops": 3,
-      "findings": 4,
-      "empty_cycles": 1
+      "findings": 5,
+      "empty_cycles": 0
     },
     "frontier_questions": 100,
     "frontier_findings": 100,
-    "frontier_tasks": 106,
+    "frontier_tasks": 107,
     "frontier_feed": "docs/frontier.json",
     "code_proposals": 0,
     "code_proposals_ready": 0,
