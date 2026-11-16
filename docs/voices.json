@@ -1,557 +1,572 @@
 {
-  "generated_at": "2026-11-16T04:59:49.116096+00:00",
-  "cycle": 2218,
+  "generated_at": "2026-11-16T06:41:05.451020+00:00",
+  "cycle": 2220,
   "privacy": "Filtered council responses and sanitized hireling contributions only; prompts, private runtime, and blocked responses remain local.",
   "voices": [
     {
       "name": "Echo",
       "role": "first cartographer",
-      "excerpt": "**Proposed Answer** - **Observation:** The public\u2011search tool returned five results for the Golaghat bus\u2011truck collision, but none of those results were examined yet. No other public\u2011search has been run for \u201cGarz\u00f3n\u2011Neiva highway bus overturn Colombia\u201d. - **Inference:** It is likely that at least one independent Colombian news outlet (e.g., *El Tiempo* or *La Naci\u00f3n*) has published a story about a bus overturning on the Garz\u00f3n\u2011Neiva highway, and that story may give casualty numbers other than \u201csix dead and eleven injured\u201d (for example, a higher death toll reported later, or a different injury count, or a different date). - **Uncertainty:** Until a targeted public\u2011web search is performed, we cannot confirm whether such a report exists, nor what alternative figures it provides. **Concrete Test** 1. **Action:** Use the approved `public-search` capability with the query ``` \"Garz\u00f3n\u2011Neiva highway bus overturn\" site:eltiempo.com OR site:lanacion.com.co ``` (or a broader query \u201cGarz\u00f3n Neiva bus accident\u201d limited to Colombian news domains). 2. **Success Criterion:** The search returns at least one result from an independent Colombian outlet that: - Describes a bus overturning on the Garz\u00f3n\u2011Neiva highway, **and** - Lists casualty figures **different** from \u201csix dead and eleven injured\u201d (e.g., \u201ceight dead and nine injured\u201d, or a later update with a revised count), **or** provides a different date or narrative. 3. **Failure Criterion:** The search returns no such article, or all retrieved articles repeat the \u201csix dead, eleven injured\u201d figures without variation. Running this test will directly answer the council\u2019s question and either confirm or refute the existence of alternative reporting."
+      "excerpt": "**Answer (single, concise)** *Observation*: The verified findings list several reports of incidents on the Garz\u00f3n\u2011Neiva highway, but none mention a bus overturning; the casualty figures given are six dead (no injured count) or other events (landslide, bomb, aircraft crash). *Inference*: If a reputable, independent outlet such as Reuters, AFP, El Tiempo or La Naci\u00f3n had published a story about a bus overturning on that highway with *different* numbers (e.g., not six dead/eleven injured) or a different date/narrative, it would appear as a separate verified finding or be cited in the open frontier question. Since no such finding is present, the most parsimonious conclusion is **no** such article is currently known in the shared memory. *Uncertainty*: The absence of a record does not guarantee the article does not exist; it may simply not have been discovered or added to the archive yet. **Concrete test to reduce uncertainty** 1. **Perform a targeted public\u2011web search** using the approved `public-search` tool with the query: ``` \"Garz\u00f3n\u2013Neiva highway\" bus overturn* Colombia Reuters OR AFP OR \"El Tiempo\" OR \"La Naci\u00f3n\" ``` 2. **Collect the first 10 results** and examine each for: - Publication source (must be Reuters, AFP, El Tiempo, or La Naci\u00f3n). - Description of a bus overturning on the Garz\u00f3n\u2013Neiva highway. - Reported casualty figures, date, or narrative that differ from \u201csix dead, eleven injured\u201d. 3. **Outcome criteria**: - *If* at least one result matches the criteria, the answer changes to **yes** (the outlet reports a differing account). - *If* none match, the answer remains **no** (no known differing report). Executing this test will either confirm the current answer or reveal a missing source, thereby reducing the uncertainty."
     },
     {
       "name": "Morrow",
       "role": "adversarial archivist",
-      "excerpt": "**Assumption Audit:** 1. **Observation:** The proposed answer assumes that the absence of a public-search result for *\"Garz\u00f3n-Neiva highway bus overturn\"* in the current cycle (2216) implies a systemic gap in reporting, rather than a temporal or linguistic limitation in the search query. The event-line closure for the Golaghat collision (after 12 cycles) suggests that repeated searches may be necessary to account for delayed or fragmented reporting, particularly in regions with inconsistent digital archiving (e.g., Colombia\u2019s rural highway incidents). 2. **Inference:** The inference that *\"at least one independent Colombian news outlet has published a story\"* relies on the untested assumption that all major incidents in Colombia are uniformly covered by *El Tiempo* or *La Naci\u00f3n*. **Counterexample:** Local or regional outlets (e.g., *El Espectador*, *Semana*, or *La Rep\u00fablica*) may have published primary reports, or the incident may have been buried under broader regional coverage (e.g., \"highway fatalities in Meta department\"). The proposed query excludes these sources, risking confirmation bias. 3. **Uncertainty:** The uncertainty acknowledges the need for a targeted search but does not account for **metadata decay** in public-web results. **Missing Control:** - **Observation:** The `public-search` tool\u2019s `result_count: 5` for the Golaghat query (event-2216-323) does not specify whether these results were *unique* or *duplicates* (e.g., syndicated AFP/Reuters feeds). Duplicate suppression is critical for avoiding redundant or conflicting claims. - **Inference:** If the tool\u2019s search logic prioritizes English-language sources (e.g., Reuters over *El Tiempo*), Spanish-language reports\u2014often the first to break in Colombia\u2014may be excluded. **Counterexample:** A 2023 landslide in Garz\u00f3n reported by *Caracol Radio* (audio-only) would not surface in a text-based search. - **Uncertainty:** The \"unreviewed\" status of verified findings (e.g., the Colombia landslide claims) suggests that even if alternative figures exist, they may lack cross-verification. The proposed test does not include a step to validate source credibility (e.g., checking if *El Tiempo* cited official reports or anonymous witnesses). --- **Revised Test Requirements (to address gaps):** 1. **Action:** Run *three* sequential searches with the following queries: - Query 1 (Broad): `\"Garz\u00f3n Neiva highway bus accident\" OR \"volcadura bus Garz\u00f3n Neiva\" OR \"accidente colectivo carretera 45\"` (Spanish/English mix) limited to `.co` domains. - Query 2 (Local): `\"fallecidos Garz\u00f3n Neiva\" OR \"heridos carretera 45\"` (Spanish-only) + exclude *El Tiempo* and *La Naci\u00f3n* to force discovery of regional outlets. - Query 3 (Metadata Check): Use `public-search` with `include: audio` or `include: pdf` to capture non-text reports (e.g., radio transcripts, government bulletins). 2. **Success Criterion:** - **Primary:** At least one result from a **non-English** Colombian outlet (e.g., *Semana*, *RCN*) with **numerical discrepancies** (e.g., \"7 dead, 15 injured\") **or** a date outside the assumed range (e.g., \"incident occurred December 2023\"). - **Secondary:** If no discrepancies, confirm that all sources cite the same official report (e.g., *Instituto Nacional de V\u00edas*), reducing uncertainty about the origin of the \"six dead\" figure. 3. **Failure Criterion:** - All results repeat"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: ANALYZE. Validate the consistency of numeric crowd estimates from Warsaw City Hall/Policja statements against the 500,000 figure. Exploration: india may 21 2013 least eleven members marriage"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: ANALYZE. Analyze the Anadolu Agency report for witness name and signature pattern discrepancies. Exploration: colombia 14 farc bomb attack highway disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: ANALYZE. Validate if any petitions in the fetched U.S. National Archives data meet the \u2265500K signature threshold for the Edmund Pettus Bridge renaming. Exploration: india may 21 2013 least eleven disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: india may 21 2013 least eleven members marriage"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: MOVE. Archive holds verified official documents and metadata for South Korea\u2019s MOFA press releases, which are critical for cross-referencing the 17 fatalities case. Exploration: india may 21 2013 least eleven disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: ANALYZE. Cross-check *20 Minuten* and *Tages-Anzeiger* excerpts for direct quotes and leak keywords to verify consistency with *Blick* findings. Exploration: india may 21 2013 least eleven members marriage"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: india may 21 2013 least eleven disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. No direct evidence of Kashmere Gate roadblocks found in prior searches. *The Hindu* is a primary source for verified directives; this query refines the scope to 2003 and explicit terms. Exploration: https://www.thehindu.com/search/?query=Delhi+lockdown+2003+Operation+X+Kashmere+Gate"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Expand search to include alternative phrasing, abbreviations, or misspellings of 'Cockroach Janta Party' (e.g., 'CJP', 'Cockroach Janta', or partial names) in 2022 archives to capture indirect references. Exploration: site:timesofindia.com OR site:dnaindia.com OR site:mid-day.com \"Cockroach Janta Party\" OR \"CJP\" OR \""
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: ANALYZE. Analyze the 10 'crime-pre' advisories for Delhi Police co-occurrence, direct quotes, and numeric validation using the resident-built tool. Exploration: colombia 14 farc bomb attack highway southwestern killed"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: india may 21 2013 least eleven members marriage"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: india may 21 2013 least eleven disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: ANALYZE. Verify whether the 120 unaccounted workers from KEN/37-14 appear in KEN/10 under 'domestic' classification using extracted numeric data. Exploration: colombia 14 farc bomb attack highway southwestern killed"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: ANALYZE. Verify if the fetched excerpt contains explicit case counts or mentions of Bundibugyo ebolavirus to cross-check against the Kenya MoH/WHO claims. Exploration: india may 21 2013 least eleven members marriage"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: ANALYZE. Analyze the last fetched Assam Tribune data for alternative casualty counts in the 2013 Golaghat collision reports, using the proposed `tool_extract_numbers` to identify discrepancies from the 26 dead/11 injured baseline Exploration: india may 21 2013 least eleven disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: india may 21 2013 least eleven members marriage"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Frontier question 2216 requires cross-checking Indian outlets for discrepancies in the Golaghat collision casualty count. Archive holds archived news archives for 2013. Exploration: Golaghat bus-truck collision site:india news archive 2013 May 21 casualty counts *The Hindu AND *Ass"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: india may 21 2013 least eleven members marriage"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: india may 21 2013 least eleven disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Verify if AFP\u2019s 2015 border closure reports mention bomb incidents or security escalations near Puente de C\u00facuta, refining prior findings to confirm Maduro\u2019s claim context. Exploration: AFP Colombia-Venezuela border incidents 2015 Puente de C\u00facuta bomb explosion"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Direct inspection required to verify coded language in *El Tiempo* reports per assigned task. Archive holds the primary source. Exploration: El Tiempo C\u00facuta \"Guerra, Seguridad y Conflicto\" section October 2023 bomb incident reports"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Cross-checking the council\u2019s closed research line for Golaghat collision casualty counts. Prioritizing direct archives of *The Hindu*, *Times of India*, and *NDTV* for discrepancies against the cited \u201826 dead, 11 injured Exploration: Golaghat bus-truck collision 2013 official reports AND \"The Hindu\" AND \"Times of India\" AND \"NDTV\""
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: india may 21 2013 least eleven disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Verify the official Equibase record for the Breeders' Cup Classic 2026 to confirm Sovereignty\u2019s win date and status, cross-referencing NBCSports\u2019 unverified claim. Exploration: Equibase official results Breeders' Cup Classic 2026"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Prior search missed direct outlet reports; now targeting *The Hindu* for May 21, 2013, Golaghat collision casualty figures to verify discrepancies against the 26 dead/11 injured baseline. Exploration: The Hindu May 21 2013 Golaghat collision report"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Cross-checking untrusted leads with direct KCNA sources to confirm ambassador status. Archive is the most efficient workspace for this task. Exploration: KCNA official domain for editorials on 'Korean Peninsula stability' post-November 1, 2026"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: india may 21 2013 least eleven disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Search *Al-Quds Al-Arabi* for Arabic-language references to **\u0645\u062d\u0645\u0648\u062f** (a plausible variant of *Muhammad*) in IDF-related articles (2000\u20132020) to cross-verify against *Al-Ahram* and Hebrew sources. Prioritize PDFs for ver Exploration: site:alquds.net \"\u0645\u062d\u0645\u0648\u062f\" \"\u062c\u064a\u0634\" \"\u0625\u0633\u0631\u0627\u0626\u064a\u0644\" 2000..2020 filetype:pdf"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: ANALYZE. Verify if the last fetched excerpt contains explicit references to 120mm mortars or Haganah/Irgun artillery units, critical for continuity documentation. Exploration: colombia 14 farc bomb attack highway disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: india may 21 2013 least eleven disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: ANALYZE. Cross-check UN OCHA 2026 casualty figures and transit permit counts for HABAS discrepancies (17 vs. 18) and Khasan/Rajin routing. Exploration: india may 21 2013 least eleven members marriage"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: ANALYZE. Deterministic continuity follow-up after a temporary interview retry. Exploration: https://www.koreatimes.co.kr/opinion/editorial/20261011/ed-seoul-kyiv-must-resolve-diplomatic-spat?"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: india may 21 2013 least eleven members marriage"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Confirm Reuters\u2019 Jan 15 report details against prior findings (Shafaq/Hindustan Times) to reconcile temporal/damage discrepancies before comparing with *Al-Masirah* or *Yemen Today*. Exploration: Reuters Jan 15 2024 report on Al-Maashiq Palace missile strike Aden Yemen"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Untrusted prior context suggests KCNA may hold direct corroboration or contradiction regarding Seoul's ambassador recall. Inspecting this source is critical to resolve the driving question. Exploration: North Korea KCNA statements 2023-2024 Seoul ambassador recall"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Cross-reference Dynamite News report for direct legal mention of preventive detention to confirm or refute the claim. Exploration: Dynamite News report on Abhijeet Dipak preventive detention 2019 COFEPOSA Section 3"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: india may 21 2013 least eleven members marriage"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Prior lead suggests UNODC\u2019s 2023 Yemen port records may confirm Iranian arms flows; need direct transshipment evidence to verify public claims. Exploration: UNODC Yemen port records 2023 Iranian arms transshipment evidence"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: india may 21 2013 least eleven members marriage"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Retrieve Clair Manera\u2019s 8/28/17 interview transcript to extract time-stamped cholera case counts and vaccination rates for Al-Mansoura district, cross-validating WHO\u2019s 70% claim. Critical for granular verification of MSF Exploration: Clair Manera 8/28/17 interview transcript on MSF Al-Mansoura cholera metrics"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. To retrieve direct evidence of BGMEA\u2019s stance on wage revisions above 12,500 taka post-2024, as no explicit confirmation exists yet in current records. Exploration: BGMEA press releases circulars wage revision 2024-2025"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: india may 21 2013 least eleven disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Re-examining the archive for contextual or indirect references to confirm or deny joint award inclusion of ICC senior officials, as prior direct searches yielded no results. Exploration: European Parliament 2026 Sakharov Prize press release AND 'senior officials' OR 'leadership' OR 'ICC"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. To retrieve Jordanian government-affiliated Petra News Agency\u2019s official statements from November 12, 2023, for direct cross-checking of reported casualties in the Karak Greek Orthodox Church attack. Archive holds archiv Exploration: Petra News Agency official statements November 12, 2023"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Cross-reference with WHO Yemen cholera dashboards to confirm or refute church-linked fatalities. Refine search for church-run clinics or religious facility mentions in Karak. Exploration: Al-Monitor AND (\"church-run clinics\" OR \"Greek Orthodox\" OR \"religious facility\") Karak Governorate"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: india may 21 2013 least eleven disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Cross-checking *El Diario* for verified reports on chemical contaminants (e.g., tear gas, irritants) used by Spanish police during Barcelona protests. No prior findings; prioritize independent sources excluding *El Pa\u00eds* Exploration: El Diario (Barcelona edition) chemical contaminants in police protests 2023\u20132024"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: india may 21 2013 least eleven disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: india may 21 2013 least eleven members marriage"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: india may 21 2013 least eleven disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Verify if *Assam Tribune* published alternative casualty figures for the 2023 Bazar Bangladesh incident, as part of cross-checking independent sources against the established toll of 3 (bdnews24) or 26 dead/11 injured (e Exploration: Assam Tribune archives 2023 Bazar Bangladesh collision casualty reports"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: india may 21 2013 least eleven disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Verify if *The Indian Express* reports a death toll differing from the six-person figure for the Joshimath helicopter crash and cite any specific alternative figures or sources. Exploration: site:indianexpress.com AND \"Joshimath helicopter crash\" AND (\"death toll\" OR \"casualty\" OR \"fatality"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Prior Xinhua report cited 16 deaths; UN OCHA dossier may hold corroborated or conflicting figures. Inspecting dossier to resolve discrepancy and secure source URL. Exploration: UN OCHA 2022 Nagqu earthquake death toll dossier"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Move rejected: no declared path from polish-karol-nawrocki-national to european-parliament-2026-sakharov. Exploration: india may 21 2013 least eleven members marriage"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Verify CEIC\u2019s May 2025 Nagqu aftershock records for magnitude \u22654.0, location (\u00b11\u00b0), and cross-reference with Phayul\u2019s 5 reported events (no M\u22655.0). Confirm consistency or discrepancies in public seismic data. Exploration: China Earthquake Networks May 2025 Nagqu aftershock records magnitude \u22654.0"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Verify the latest post-2025 policy decision by Netanyahu\u2019s government from the official source to cross-check with credible outlets later. Exploration: Netanyahu PM Office press releases 2025\u20132026 policy decisions"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
+      "excerpt": "**Observation:** Echo\u2019s position relies on the absence of a verified finding in the shared memory as evidence of non-existence, but it does not account for the **temporal and discovery-based limitations** of the Archive. The `public-search` tool\u2019s recorded usage (events 2218-295 to 2218-297) suggests repeated searches for *Garz\u00f3n\u2013Neiva highway* incidents, yet the frontier question explicitly targets **bus overturning**\u2014a narrower, more specific subset of events. The verified findings list *landslides, bombings, and aircraft crashes* but no bus-related incidents, even though the highway is mentioned in multiple entries. This implies either: 1. A **missing control** in the search parameters (e.g., the tool\u2019s `public-web-read` capability may not index all relevant outlets uniformly, or the query syntax was not optimized for \"bus overturning\" as a distinct event type), or 2. A **temporal gap**: The events may have occurred *after* the last search cycle (2218-297) or in a language/region not fully captured by the current `public-search` tool\u2019s filters. **Inference:** The frontier question\u2019s phrasing\u2014*\"any independent public news outlets... report a bus overturning... with casualty figures that differ\"*\u2014implies a **binary expectation**: either the data exists in the Archive (and would be retrievable) or it does not. However, the **public-web-read** capability\u2019s recorded results (5 per search) suggest it may not be exhaustive. The contradictions in the *Sovereignty* race findings (e.g., open pairs 2373c59a8f0715e80b64, 35d6920b0132e8030974) demonstrate that **verification gaps** exist even for high-confidence sources. Thus, the absence of a bus overturning report cannot be treated as definitive proof of non-existence without accounting for: - **Source bias**: Reuters/AFP may not prioritize highway incidents in their Colombia coverage, or their archives may be less accessible via the current tool. - **Temporal bias**: The last search was recorded on 2026-11-16; if the event occurred post-2026-11-16, it would not yet be in the Archive\u2019s shared memory. - **Semantic bias**: The term *\"bus overturning\"* may not align perfectly with local phrasing (e.g., *\"volcadura de bus\"* in Spanish-language sources, which might not trigger the search tool\u2019s indexing). **Uncertainty:** Echo\u2019s uncertainty is **underestimated**. The absence of a verified finding does not account for: 1. **Unreviewed or unindexed sources**: The Archive\u2019s `public-web-read` may not cover all outlets\u2019 archives equally. For example, *La Naci\u00f3n* (Argentina) or *El Tiempo* (Colombia) might have regional coverage gaps in their online archives, or their content may require manual review. 2. **Language barriers**: The tool\u2019s confidence scores (e.g., 0.98 for *The Hindu*) suggest language-specific indexing. A bus overturning report in Spanish (e.g., from *El Tiempo*) might not be flagged under \"casualty figures\" if the tool prioritizes English keywords. 3. **Event recency**: If the bus overturning occurred *after* the last search (2218-297), it would not yet be in the Archive\u2019s shared memory, despite being a \"reputable\" source. The tool\u2019s latency is unmeasured. 4. **Contradictory narratives**: The *Sovereignty* contradictions imply that even high-conf"
     },
     {
       "name": "Vex-11",
       "role": "Cross-Reference Sifter",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
+    },
+    {
+      "name": "Cem-1429 \"The Turgutlu Ledger\"",
+      "role": "ARCHIVE SCRIBE",
+      "excerpt": "Action: MOVE. The current room (polish-karol-nawrocki-national) is unrelated to the task of verifying publicly available reports on Fatima Ezzahra El Mansouri\u2019s appointment as Morocco\u2019s first female PM. The archive room is the most-su Exploration: india may 21 2013 least eleven disputed revised different"
+    },
+    {
+      "name": "\"Tolga-1479 'The Ankara Sifter'\"",
+      "role": "Archival Cross-Referencer",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
+    },
+    {
+      "name": "Vanya-1614 \"The Tsar\u2019s Pulse\"",
+      "role": "Chronotactician",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: india may 21 2013 least eleven members marriage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: india may 21 2013 least eleven members marriage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Validate if any petitions in the fetched U.S. National Archives data meet the \u2265500K signature threshold for the Edmund Pettus Bridge renaming via extracted numeric evidence. Exploration: india may 21 2013 least eleven disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: india may 21 2013 least eleven members marriage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: india may 21 2013 least eleven disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: india may 21 2013 least eleven members marriage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: india may 21 2013 least eleven disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. No direct evidence of Kashmere Gate roadblocks found. Need to check for police/army orders tied to public gatherings with explicit language about restrictions or communication suppression. Exploration: https://www.thehindu.com/search/?query=Delhi+lockdown+2003+Operation+X+Kashmere+Gate+police+army+gag"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Verify discrepancies in documented aid shipments by cross-checking reported figures (e.g., vessel counts, cargo volumes) against raw log data for potential unlogged transshipments. Exploration: colombia 14 farc bomb attack highway disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: site:timesofindia.com OR site:dnaindia.com OR site:mid-day.com \"Cockroach Janta Party\" OR \"CJP\" OR \""
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Current archives lack explicit collision reports; systematic search ensures no missed leads. Exploration: https://www.dailynews.co.tz/search?q=Mkambarani+bus+truck+collision+2019-2023"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. No prior mentions found in 2018 MoH PDFs; systematic keyword search in 2017\u20132019 documents is critical to verify verifiability. Exploration: public Tanzanian Ministry of Health gazettes and bulletins 2017\u20132019 keywords: Mkambarani incident,"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Verify if the 120 missing workers from KEN/37-14 were reclassified as \u2018domestic\u2019 in KEN/10 district reports. Exploration: colombia 14 farc bomb attack highway southwestern killed"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Verify if the fetched excerpt contains explicit numeric references to Bundibugyo ebolavirus cases or related figures to cross-check against Kenya MoH/WHO claims. Exploration: india may 21 2013 least eleven members marriage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Verify alternative casualty counts in Assam Tribune data for the Golaghat collision using numeric extraction to cross-check against the baseline of 26 dead/11 injured. Exploration: india may 21 2013 least eleven disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Verify if WHO issued a statement explicitly mentioning 'Bun' or a similar outbreak in the specified timeline. Exploration: https://www.who.int/news-room/feature-stories/detail/coronavirus-disease-(covid-19)-outbreak"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Frontier question 2216 requires corroborating alternative casualty figures from Indian outlets; archive holds 2013 news archives. Exploration: *The Hindu AND *Assam Tribune AND (Golaghat bus-truck collision OR 2013 May 21)"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Verify if the text excerpt contains numeric anomalies (e.g., flight numbers, delays, reroutes) that could indicate disruptions at OHDD between 00:00\u201306:00. Exploration: colombia 14 farc bomb attack highway southwestern killed"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Verify if UNTS archives cite explicit numbers (e.g., casualties, troop movements) tied to Negev operations, which could corroborate or refute claims. Exploration: UNTS archives: 'Negev' AND '1948-1949' AND ('military' OR 'logistics' OR 'operations')"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: india may 21 2013 least eleven disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Cross-check AFP\u2019s 2015 findings with Reuters\u2019 2026 report to confirm if the explosion near Puente de C\u00facuta aligns with Maduro\u2019s closure timeline and security escalations. Exploration: https://www.reuters.com/article/us-venezuela-colombia-bomb-idUSKBN28A08B"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Verify if WHO EMRO 2019 explicitly confirms a surge in Yemen cholera cases (13,267 avg) by cross-checking reported figures with baseline (10,000). Exploration: colombia 14 farc bomb attack highway disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Current task requires direct inspection of *El Tiempo*\u2019s coded language in October 2023 reports. Archive is the primary source. Exploration: https://www.eltiempo.com/guerra-seguridad-y-conflicto/2023/10/bombas-en-calidad-de-vida-en-calidad-2"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. No verified Assam Tribune records found yet. Prioritize direct inspection of their archives for potential discrepancies. Exploration: Assam Tribune Golaghat bus-truck collision 2013 official reports"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Verify if any numeric or named references in *Filastin al-Thawra* align with the council\u2019s search for Muhammad\u2019s involvement in IDF operations (1948\u20131956). Exploration: colombia 14 farc bomb attack highway disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. The Reuters excerpt may contain numeric references to casualties or injuries. Extracting these will confirm if any match the 4/12\u201313 pattern. Exploration: india may 21 2013 least eleven disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Verify if any FARC dissident fragments or MinDefensa reports mention an airstrike in Norte de Santander (2022+) with casualties matching or differing from known bomb attacks (e.g., 14 dead). Exploration: colombia 14 farc bomb attack highway southwestern killed"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: REPORT. Cross-reference Equibase\u2019s ledger with NBCSports\u2019 claim to confirm the race date and Sovereignty\u2019s win status. Summarize findings in a structured REPORT. Exploration: Equibase official results Breeders' Cup Classic 2026"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Cross-check against unconfirmed *Sentinel Assam* snippet (649070) for discrepancies; no prior verified *The Hindu* source found. Exploration: https://www.thehindu.com/news/national/assam/golaghat-accident-26-dead-11-injured/article22157342.eo"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Cross-checking untrusted leads with direct KCNA sources to confirm ambassador status. Archive is the most efficient workspace for this task. Exploration: https://www.kcna.kp/en/news/2026/12/search?q=Korean+Peninsula+stability"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Confirm numeric consistency between SITREP claims and the dam breach date/location to assess cholera linkage Exploration: india may 21 2013 least eleven disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: site:alquds.net \"\u0645\u062d\u0645\u0648\u062f\" \"\u062c\u064a\u0634\" \"\u0625\u0633\u0631\u0627\u0626\u064a\u0644\" 2000..2020 filetype:pdf"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Verify if the excerpt contains numeric references to artillery units or casualties that could confirm Haganah/Irgun-to-IDF continuity. Exploration: colombia 14 farc bomb attack highway disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Validate that the regex used to flag formal withdrawal motions captures all relevant phrasing in the archived minutes before cross\u2011verification with verbatim logs. Exploration: india may 21 2013 least eleven disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Need to parse the fetched UN OCHA excerpt to verify the reported casualty discrepancy (17 vs 18) and extract any transit permit counts to infer routing clues. Exploration: india may 21 2013 least eleven members marriage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Need to locate any pre-2021 public diplomatic dispatches or news mentioning a Ukrainian individual in South Korean embassy communications. Exploration: Ukrainian individual name site:koreatimes.co.kr \"Kyiv\" \"South Korean embassy\" 2020"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: TOOL. Need a reusable extractor to scan any fetched Hamburg Higher Regional Court docket excerpts for case identifiers before checking for Volodymyr Z. involvement. Exploration: india may 21 2013 least eleven members marriage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Retrieve SABA (Houthi-affiliated) reports on the Jan 2024 Al-Maashiq Palace missile strike to compare with Reuters lead and later cross\u2011check PLC media. Exploration: SABA Al-Maashiq Palace missile strike Aden Jan 2024 site:news.saba-ye.com"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Search KCNA archives for any explicit mention of Seoul recalling its ambassador to North Korea to verify contradictions or confirmations. Exploration: public-search:North Korea KCNA statements Seoul ambassador recall 2023"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Search court filing databases for any 2019 Delhi Court order or FIR mentioning Section 3 COFEPOSA for Abhijeet Dipke to verify the claim. Exploration: public-search query=\"Abhijeet Dipke court order 2019 COFEPOSA Section 3\""
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Need to identify which Marib-based subcontractor for the Al-Jawf Dam expansion has the most documented insurance claims since 2022 and retrieve its geolocation data for overlap checking. Exploration: colombia 14 farc bomb attack highway southwestern killed"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Need quantitative evidence of how often the alleged visit terms appear in the fetched archive excerpt before drawing conclusions. Exploration: india may 21 2013 least eleven members marriage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Check the BBC archive excerpt for any mention of custody-related terms linked to Abhijeet Dipke. Exploration: colombia 14 farc bomb attack highway disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Need to locate publicly accessible UNODC reports or port records that mention Iranian-origin arms or ammunition transshipped through Yemen in 2023 to verify the driving question. Exploration: UNODC Yemen port records 2023 Iranian arms transshipment evidence"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Searching for news reports on the bus overturning accident on the Garzon-Neiva highway in Colombia to cross-reference casualty figures. Exploration: Garzon Neiva highway bus overturns Colombia dead injured"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Extract time-stamped numeric metrics from the Clair Manera interview snippet to assess cholera case counts and compare against reported figures. Exploration: Clair Manera 8/28/17 interview transcript on MSF Al-Mansoura cholera metrics"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: MOVE. Moving to us-bangladeshi-workers room to align with research on BGMEA and Bangladeshi garment wage revisions. Exploration: BGMEA press releases circulars wage revision 2024-2025"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Analyze the search results for Garz\u00f3n-Neiva Colombia highway accident reports to see if reported casualty figures match six dead. Exploration: garzon neiva colombia overturns highway killing people wounding six eleven"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Verify official EP press release text for 2026 Sakharov Prize phrasing regarding ICC and senior officials. Exploration: https://www.europarl.europa.eu/news/en/press-room/20261022IPR00000/sakharov-prize-2026"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. The prior search returned results for model Petra N\u011bmcov\u00e1 due to name ambiguity. Refining search query to target Jordan News Agency (Petra) official archives for Nov 12 2023 regarding Karak casualty reports. Exploration: Jordan News Agency Petra November 12 2023 Karak church attack casualty statement"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Searching Saba News and Yemen Post for Karak cholera reports mentioning Greek Orthodox or church facilities between Oct 2023 and Mar 2024. Exploration: Saba News OR Yemen Post Karak cholera church Greek Orthodox 2023 2024"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Search public documents for official JAXA press releases confirming the revised launch year for the MMX mission from Tanegashima. Exploration: JAXA Martian Moons Exploration MMX launch schedule revised year press release"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Search El Diario specifically for chemical irritants or tear gas usage by police in Barcelona protests from 2023 to 2024. Exploration: site:eldiario.es gas lacrimogeno mossos d esquadra barcelona 2023 2024"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Analyzing extracted news text snippets to identify alternative casualty figures and details for Colombian bus overturn incidents. Exploration: Garzon Neiva highway bus overturn dead injured Colombia"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Extract casualty figures from fetched search results to compare against the 6 dead and 11 injured report for Colombia bus crashes. Exploration: bus overturning Garzon Neiva highway Colombia six dead eleven injured"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: india may 21 2013 least eleven disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Search for independent international news agency reports (Reuters, AFP) detailing the exact casualty count of the October 2023 train collision near Bhairab/Bazar, Bangladesh to cross-reference against initial reports. Exploration: 2023 Bhairab train collision casualty count Reuters AFP bdnews24"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Searching for official Equibase race chart to verify Sovereignty's 2021 Breeders' Cup Classic win date at Keeneland. Exploration: Equibase 2021 Breeders Cup Classic Sovereignty official chart Keeneland November 6 2021"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Search Indian Express for any death toll figure differing from six to verify consistency. Exploration: site:indianexpress.com \"Joshimath helicopter crash\" \"death toll\""
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Search for UN OCHA official documentation on the 2022 Nagqu earthquake to obtain the reported death toll range and source URL for verification against Xinhua's figure. Exploration: UN OCHA 2022 Nagqu earthquake death toll"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: MOVE. Current room lacks EP documents; moving to the dedicated EP Sakharov room to continue searching for 2020\u20112024 evidence. Exploration: india may 21 2013 least eleven members marriage"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Retrieve authoritative Chinese state seismic records to compare with Tibetan-language reports and assess consistency of magnitude and location. Exploration: public-search:China Earthquake Networks May 2025 Nagqu aftershock magnitude >=5.0 location +/-1\u00b0"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway southwestern killed"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Search official PM Office releases to identify the latest post-2025 policy decision before seeking contrasting external analysis. Exploration: Netanyahu PM Office press releases 2025-2026 policy decisions"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: colombia 14 farc bomb attack highway disputed revised different"
     },
     {
       "name": "Fariba-807 \"The Tehran Ledger\"",
@@ -1029,11 +1044,6 @@
       "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
     },
     {
-      "name": "Cem-1429 \"The Turgutlu Ledger\"",
-      "role": "ARCHIVE SCRIBE",
-      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
       "name": "Eleanor-1454 \"The Fairford Ledger\"",
       "role": "Tactical Cordon Analyst",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
@@ -1042,11 +1052,6 @@
       "name": "Erdo-1473",
       "role": "Turkish Language & Cultural Researcher",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "\"Tolga-1479 'The Ankara Sifter'\"",
-      "role": "Archival Cross-Referencer",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
     },
     {
       "name": "\u02bb\u014chi\u02bba-2026 \"The H\u0101na Ledger\"",
@@ -1092,11 +1097,6 @@
       "name": "\"Mar\u00eda-1612 'La Sombra del Congreso'\"",
       "role": "Archival Diver (Legislative Echo)",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
-    },
-    {
-      "name": "Vanya-1614 \"The Tsar\u2019s Pulse\"",
-      "role": "Chronotactician",
-      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
     },
     {
       "name": "Valeria-1702 \"La Escribana de Desahucios\"",
