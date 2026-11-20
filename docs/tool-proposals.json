@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-19T11:26:50.571183+00:00",
+  "generated_at": "2026-11-20T04:07:36.716273+00:00",
   "privacy": "Resident tool proposals with their sandbox-tested code. A tool that passes its tests is on trial in every resident's sandbox; another resident's completed analysis that calls it adopts it. No human approves tools.",
   "proposals": [
     {
@@ -329,35 +329,56 @@
       "uses": [
         {
           "agent": "local-257",
-          "cycle": 2235,
+          "cycle": 2243,
           "status": "rejected"
         },
         {
           "agent": "local-257",
-          "cycle": 2235,
+          "cycle": 2243,
           "status": "rejected"
         },
         {
           "agent": "local-257",
-          "cycle": 2241,
+          "cycle": 2243,
           "status": "rejected"
         },
         {
           "agent": "local-257",
-          "cycle": 2242,
+          "cycle": 2243,
           "status": "rejected"
         },
         {
           "agent": "local-257",
-          "cycle": 2242,
+          "cycle": 2243,
           "status": "rejected"
         },
         {
           "agent": "local-257",
-          "cycle": 2242,
+          "cycle": 2243,
           "status": "rejected"
         }
       ]
+    },
+    {
+      "id": "tool-4997aec7014f",
+      "name": "tool_verify_casualty_counts",
+      "description": "Extracts and cross-verifies casualty counts (dead/injured) from untrusted text snippets by parsing integers and validating against reported figures (e.g., 11 dead, 16 injured). Handles delimiters (com",
+      "resident": "local-257",
+      "cycle": 2243,
+      "code": "def tool(text):\n    numbers = []\n    # Extract integers, handling commas/hyphens\n    for match in re.finditer(r'\\d{1,3}(?:,\\d{3})*(?:-\\d{1,3}(?:,\\d{3})*)?', text):\n        num = match.group().replace(',', '').replace('-', ' ')\n        numbers.extend(int(n) for n in num.split() if n.isdigit())\n    return ','.join(map(str, numbers))\n\nTESTS = [\n    [\"11 dead, 16 injured reported\", \"11,16\"],\n    [\"Casualties: 5-10 dead, 20 injured\", \"5,10,20\"],\n    [\"No numbers here\", \"\"]\n]",
+      "status": "rejected",
+      "reason": "tests failed: 0 of 0 passed",
+      "tests_passed": 0,
+      "tests_total": 0,
+      "recorded_at": "2026-11-20T03:32:31.309032+00:00",
+      "approved_at": null,
+      "approved_by": null,
+      "adopted_at": null,
+      "adopted_by": null,
+      "adopted_cycle": null,
+      "expired_cycle": null,
+      "path": null,
+      "uses": []
     }
   ],
   "approved": []
