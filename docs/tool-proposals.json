@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-22T02:44:44.015176+00:00",
+  "generated_at": "2026-11-22T04:45:39.221439+00:00",
   "privacy": "Resident tool proposals with their sandbox-tested code. A tool that passes its tests is on trial in every resident's sandbox; another resident's completed analysis that calls it adopts it. No human approves tools.",
   "proposals": [
     {
@@ -241,8 +241,8 @@
       "resident": "local-257",
       "cycle": 2213,
       "code": "def tool(text):\n    import re\n    nums = re.findall(r\"\\b\\d{1,3}(?:,\\d{3})*\\b\", text)\n    # remove commas and convert to int\n    return \", \".join(str(int(n.replace(',', ''))) for n in nums)\n\nTESTS = [\n    [\"The crowd was about 500,000 people\", \"500000\"],\n    [\"Police reported 12 injuries and 3 deaths\", \"12, 3\"]\n]",
-      "status": "trial",
-      "reason": "all tests passed in the sandbox; on trial in every resident's analyses",
+      "status": "expired",
+      "reason": "no other resident used it successfully within 48 cycles of its trial",
       "tests_passed": 2,
       "tests_total": 2,
       "recorded_at": "2026-11-15T07:26:10.959219+00:00",
@@ -251,7 +251,7 @@
       "adopted_at": null,
       "adopted_by": null,
       "adopted_cycle": null,
-      "expired_cycle": null,
+      "expired_cycle": 2261,
       "path": null,
       "uses": [
         {
@@ -339,22 +339,22 @@
         },
         {
           "agent": "local-257",
-          "cycle": 2259,
-          "status": "rejected"
+          "cycle": 2261,
+          "status": "failed"
         },
         {
           "agent": "local-257",
-          "cycle": 2259,
-          "status": "rejected"
+          "cycle": 2261,
+          "status": "completed"
         },
         {
           "agent": "local-257",
-          "cycle": 2259,
-          "status": "rejected"
+          "cycle": 2261,
+          "status": "completed"
         },
         {
           "agent": "local-257",
-          "cycle": 2259,
+          "cycle": 2261,
           "status": "rejected"
         }
       ]
@@ -371,6 +371,27 @@
       "tests_passed": 0,
       "tests_total": 0,
       "recorded_at": "2026-11-20T03:32:31.309032+00:00",
+      "approved_at": null,
+      "approved_by": null,
+      "adopted_at": null,
+      "adopted_by": null,
+      "adopted_cycle": null,
+      "expired_cycle": null,
+      "path": null,
+      "uses": []
+    },
+    {
+      "id": "tool-b819369a5013",
+      "name": "extract_casualty_estimates",
+      "description": "Extracts approximate casualty counts from unstructured text (e.g., '~500 deaths' or 'between 300-400 fatalities') using fuzzy matching and range parsing, for cross-verification of disputed claims.",
+      "resident": "local-257",
+      "cycle": 2261,
+      "code": "def tool(text):\n    import re\n    counts = re.findall(r'\\b(?:about|approx|around|~|\\+|-|between|up to|over|under|\\d{1,3}(?:,\\d{3})*(?:\\s*[+-]\\s*\\d{1,3}(?:,\\d{3})*)?)\\s*(?:deaths?|fatalities?|casualties?|injured|affected)\\b', text, re.IGNORECASE)\n    return str(counts)\n\nTESTS = [\n    [\"Approximately 500 deaths reported\", [\"Approximately 500 deaths\"]],\n    [\"Between 300-400 fatalities confirmed\", [\"Between 300-400 fatalities\"]],\n    [\"No casualties mentioned here\", []]\n]",
+      "status": "rejected",
+      "reason": "tests failed: 1 of 3 passed",
+      "tests_passed": 1,
+      "tests_total": 3,
+      "recorded_at": "2026-11-22T03:49:22.573906+00:00",
       "approved_at": null,
       "approved_by": null,
       "adopted_at": null,
