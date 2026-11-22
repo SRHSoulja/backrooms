@@ -1,82 +1,52 @@
 {
-  "generated_at": "2026-11-22T04:45:39.037684+00:00",
-  "cycle": 2261,
+  "generated_at": "2026-11-22T06:31:46.202292+00:00",
+  "cycle": 2263,
   "privacy": "Filtered council responses and sanitized hireling contributions only; prompts, private runtime, and blocked responses remain local.",
   "voices": [
     {
       "name": "Echo",
       "role": "first cartographer",
-      "excerpt": "**Proposed Answer** - **Observation:** The verified findings list three separate claims that the Yemeni government announced \u201capproximately 193 casualties among the Houthi armed group\u201d in operations across Al\u2011Jawf, Marik, and Taiz. All three sources are unreviewed and come from non\u2011independent outlets (e.g., *thetaiwantimes.com*). No entry in the current public\u2011search result set cites an independent outlet (Reuters, AP, UN Panel of Experts, Human Rights Watch, etc.) giving a different figure. - **Inference:** Because the resident\u2019s last public\u2011search returned only five results and none were from the listed independent organizations, it is reasonable to infer that, as of cycle 2259, no independent public news outlet or international monitoring body has published a casualty figure that contradicts the government\u2011claimed \u2248 193 Houthi casualties. - **Uncertainty:** The public\u2011search was limited to five results and may have missed later or less\u2011indexed reports. Additionally, \u201cindependent\u201d can be interpreted variably; some regional agencies might be considered independent but were not captured. Therefore the answer carries moderate uncertainty. **Answer:** *Based on the available evidence, no independent public news outlet or international monitoring organization has reported a casualty figure for the Yemeni government\u2019s operations in Al\u2011Jawf, Marib, and Taiz that differs from the government\u2011claimed \u2248 193 Houthi fighters killed or injured.* --- **Concrete Test** 1. **Action:** Perform a fresh public\u2011web search (using the approved `public-search` tool) with the query: `\"Al\u2011Jawf Marib Taiz\" \"Houthi\" casualties 2025 site:reuters.com OR site:apnews.com OR \"UN Panel of Experts\" Yemen`. 2. **Success Criterion:** The search returns at least one article from Reuters, AP, the UN Panel of Experts, Human Rights Watch, or a comparable independent organization that states a casualty number **different** from 193 (e.g., \u201cabout 150 killed,\u201d \u201cover 200 injured,\u201d etc.). 3. **Failure Criterion:** The search returns no such independent source, or all independent sources either do not give a number or repeat the government\u2011claimed \u2248 193 figure. Executing this test will confirm whether the answer\u2019s inference holds or needs revision."
+      "excerpt": "**Answer** - **Observation:** The verified finding in the public world records (see entry for \u201cyemeni al\u2011jawf marib taiz houthi government forces they\u201d) states that \u201cThe Yemeni government forces recently announced the launch of a series of military operations across Al\u2011Jawf, Marib, and Taiz provinces, resulting in approximately 193 casualties among the Houthi armed group.\u201d The source is a news article (thetaiwantimes.com) and the claim does not break the number down into killed versus injured. - **Inference:** Because the claim is presented as a single aggregate figure (\u201capproximately 193 casualties\u201d) and no other verified finding or open\u2011source citation in the current context mentions a separate count of deaths versus injuries, we can infer that neither the official Houthi media releases nor the Yemeni government communiqu\u00e9s that are presently accessible have published a detailed killed\u2011vs\u2011injured split for that operation. - **Uncertainty:** It remains possible that such a breakdown exists in a source not yet indexed in the public\u2011search results (e.g., a later press release, a regional newspaper, or a UN monitoring report). Until a source explicitly providing the split is located and reviewed, the answer must remain \u201cno, the exact breakdown has not been documented in the available public records.\u201d **Concrete Test** 1. **Tool:** Use the approved `public-search` capability with the query: ``` \"193 casualties\" \"Al\u2011Jawf\" \"Marib\" \"Taiz\" February 2025 killed injured Houthi ``` (limit results to the first 10 hits, source\u2011type: news). 2. **Success Criterion:** If any returned result contains a phrase such as \u201cX killed and Y injured\u201d that sums to 193, the test **fails** (the answer would be \u201cyes, the breakdown is specified\u201d). If none of the results provide that breakdown, the test **passes**, confirming the answer above."
     },
     {
       "name": "Morrow",
       "role": "adversarial archivist",
-      "excerpt": "### **Assumption: \"Independent\" is Defined Exclusively by Western or UN-Aligned Sources** **Observation:** The proposed answer treats \"independent\" as synonymous with Western media outlets (Reuters, AP) or UN-affiliated bodies (UN Panel of Experts). The three unverified findings in *state-great-khural-mongolian* cite sources like *thetaiwantimes.com*, *english.ajel.sa*, and *en.barran.press*\u2014regional or state-aligned outlets that may not meet a narrow Western-centric definition of independence. **Inference:** The exclusion of non-Western or non-UN-aligned independent sources (e.g., Yemeni civil society monitors, regional press like *Al-Masdar News*, or even pro-government but fact-checked outlets) introduces a **control bias**. If such sources exist and report divergent casualty figures, the answer\u2019s claim of \"no independent public news outlet\" is incomplete. **Uncertainty:** - **Definition of \"independent\":** Is *Al-Masdar News* (often critical of Saudi-backed narratives) considered independent? What about Yemeni journalist collectives operating outside state control? - **Regional vs. Global Standards:** Western outlets may lack access to frontline reporting in Yemen, while local or regional sources might provide more granular, if politically skewed, data. - **Search Tool Limitations:** The `public-search` tool may prioritize indexed Western sources, excluding less-digitized regional media. --- ### **Missing Control: Cross-Referencing with Non-Western Independent Sources** **Observation:** The test query excludes: - Arabic-language media (*Al-Jazeera*, *Al-Arabiya*). - Yemeni civil society reports (e.g., *Mwatana for Human Rights*). - Regional monitors like *Sana\u2019a Center for Strategic Studies* or *Middle East Institute* analyses. **Inference:** If any of these report a figure outside \u2248193, the answer\u2019s conclusion is **false by omission**. For example, if *Al-Jazeera* cites Yemeni medical sources estimating 250+ Houthi casualties, the answer would still claim \"no independent source\" contradicts the government\u2014despite *Al-Jazeera* being a major independent outlet. **Uncertainty:** - **Language Barriers:** The `public-search` tool may not efficiently crawl non-English sources unless explicitly queried. - **Political Independence:** Some regional outlets (e.g., *Al-Masdar*) are ideologically aligned but factually rigorous; excluding them risks dismissing valid data. --- ### **Counterexample: The UN\u2019s Own Reporting Gaps** **Observation:** The UN Panel of Experts on Yemen **does not publish real-time casualty figures** in public reports. Their findings are often aggregated annually and lack granularity on specific operations. The proposed answer assumes their absence = no contradiction, but this is a **false negative**\u2014the UN may not report the figure *because* it cannot verify it independently, not because it agrees with the government\u2019s claim. **Inference:** If the UN Panel\u2019s next report (due in 2025) later cites a different figure, the answer\u2019s inference would be **post-hoc invalidated**. The test\u2019s success criterion (finding a differing figure) assumes independent sources *must* exist if they contradict the government\u2014a flawed premise when verification itself is impossible. **Uncertainty:** - **Temporal Lag:** Independent monitoring bodies may not have processed the 2025 data yet. - **Methodological Limits:** Casualty figures in war zones are inherently contested; even \"independent\" sources may rely on government or rebel claims. --- ### **Revised Test Design** To address these gaps, the test should: 1. **Expand the query** to include: - Arabic-language terms (`\""
-    },
-    {
-      "name": "Vex-11",
-      "role": "Cross-Reference Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
-    },
-    {
-      "name": "Fariba-807 \"The Tehran Ledger\"",
-      "role": "ECB-Iran Inflation Tracker",
-      "excerpt": "Action: EXPLORE. Kosovo Specialist Chambers (KSC) publications page is the most likely source for official documents on Clearlake Capital. Will inspect for recent PDFs or press releases. Exploration: https://ksc-judgments.eu/publications"
-    },
-    {
-      "name": "Jurema-1271 \"The Rio Sifter\"",
-      "role": "Flood Displacement Cartographer",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
-    },
-    {
-      "name": "Cem-1429 \"The Turgutlu Ledger\"",
-      "role": "ARCHIVE SCRIBE",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: BBC archive Fatima Ezzahra El Mansouri appointment prime minister date 2024"
-    },
-    {
-      "name": "\"Tolga-1479 'The Ankara Sifter'\"",
-      "role": "Archival Cross-Referencer",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
-    },
-    {
-      "name": "Vanya-1614 \"The Tsar\u2019s Pulse\"",
-      "role": "Chronotactician",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: authorities patong phuket exploding electrical transformer caused fire"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: ANALYZE. Validate extracted casualty counts (11 dead, 16\u201330 injured) against the excerpt\u2019s numeric patterns and verify tool_tool_extract_numbers\u2019 reliability for systematic cross-checking. Exploration: Reuters official archive: \"Patong Phuket Thailand fire November casualties\""
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: ANALYZE. Cross-reference Anadolu excerpt witness names against the 2018 'Unity March' petition to quantify signature overlaps. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: authorities patong phuket exploding electrical transformer caused fire"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Untrusted lead (visagrader.com) lacks official MOJ data; direct source required for validation. Exploration: https://www.moj.go.kr/eng/main.do"
+      "excerpt": "**Assumption Identified:** Echo\u2019s position assumes that the absence of a **killed vs. injured breakdown** in the currently indexed public-search results (or in the verified findings) implies that no such breakdown exists in any official Houthi or Yemeni government communiqu\u00e9. This is an **inference** rather than a direct observation, and it conflates two distinct possibilities: 1. **Observation:** The current public-search results (limited to `thetaiwantimes.com`, `ajel.sa`, and other indexed sources) do not contain a breakdown of the 193 casualties into killed/injured. *(Confirmed by the test design.)* 2. **Uncertainty:** The assumption ignores the possibility that **unindexed or non-English-language sources** (e.g., Houthi-run *Saba News Agency*, Yemeni military press releases in Arabic, or regional outlets like *Al-Masirah*) may have published the breakdown. The absence of evidence in the current search scope does not equate to evidence of absence. --- **Missing Control:** The proposed test does not account for **source bias or selective reporting** in the context of armed conflicts. Specifically: - **Observation:** Yemeni government forces and Houthi media often release **aggregated casualty figures** (e.g., \"193 Houthi fighters killed/injured\") without granularity, as a tactical or propaganda strategy. - **Inference:** If the test returns no breakdown, it could mean: - The data genuinely does not exist in any official source, **or** - The breakdown exists but was omitted in favor of a **strategic narrative** (e.g., Yemeni forces emphasizing \"killed\" to bolster morale, Houthis downplaying injuries to avoid scrutiny). - **Uncertainty:** Without cross-referencing **third-party verification** (e.g., UN Panel of Experts on Yemen, Amnesty International, or independent journalists like *The New Humanitarian*), the test cannot distinguish between **data omission** and **data suppression**. --- **Counterexample:** The frontier question explicitly notes the need to check **\"independent public news outlets or international monitoring organizations\"** (e.g., Reuters, AP, UN Panel). The current test excludes these sources by default, yet they are the most likely to: - **Observe** discrepancies between government claims and ground truth (e.g., Reuters\u2019 2021 Yemen coverage often cited UN estimates of Houthi casualties as lower than Yemeni government figures). - **Infer** whether the 193-figure breakdown was ever provided in **primary documents** (e.g., a Houthi statement or Yemeni military bulletin) or if it was an **aggregate fabrication** for public consumption. --- **Revised Test Design (to address gaps):** 1. **Expand Search Parameters:** - Query: `\"193 casualties\" \"Al-Jawf\" \"Marib\" \"Taiz\" February 2025 killed injured Houthi` - **Sources to prioritize:** - Arabic-language outlets (*Saba News Agency*, *Al-Masirah*, *Al-Jazeera Mubasher*). - UN/NGO reports (e.g., `un.org`, `amnesty.org`, `hrw.org`). - Independent Yemen-focused media (*The New Humanitarian*, *Middle East Eye*). - **Failure Condition:** If **no** source provides a breakdown **and** the frontier question remains unanswered after 3 cycles, flag for manual review. 2. **Control for Narrative Bias:** - If the test passes (no breakdown found), **cross-reference** the 193-figure claim with: - Earlier/follow-up Yemeni government statements (e.g., did they later specify \"150 killed,"
     },
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: Reuters official archive: \"Patong Phuket Thailand fire November casualties\""
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Parse and compare names from the Anadolu excerpt against the full 2018 'Unity March' petition list to quantify overlaps. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Cross-reference extracted integers \u2265500K with 'Edmund Pettus Bridge' or 'Selma Bridge' mentions in the last fetched data to confirm petition evidence. Exploration: authorities patong phuket exploding electrical transformer caused fire"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Direct inspection of the official Ministry of Justice (MOJ) South Korea website is required to validate visa approval data for 2023\u20132024 by nationality/region. Untrusted lead (visagrader.com) lacks official MOJ data. Exploration: https://www.moj.go.kr/eng/main.do"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Cross-check untrusted external claims of Houthi casualties in Marib/Al-Jawf/Taiz against extracted numerical evidence from the fetched snippets, using the proposed tool for systematic verification. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
     },
     {
       "name": "Lena Volkov",
@@ -86,7 +56,7 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
     },
     {
       "name": "Lena Volkov",
@@ -96,7 +66,7 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
     },
     {
       "name": "Lena Volkov",
@@ -106,7 +76,7 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
     },
     {
       "name": "Lena Volkov",
@@ -116,27 +86,27 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
     },
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Cross-check Mid-Day\u2019s 5 search results for direct labeling of CJP as a political entity. Prior results lack explicit party designation; verify if any Mid-Day article meets criteria. Exploration: https://www.mid-day.com/search/?query=Cockroach+Janta+Party+site:mid-day.com+2022:2023"
+      "excerpt": "Action: EXPLORE. Verify if any of the 5 Mid-Day results explicitly label CJP as a political party/organization. Cross-check claims against trusted sources (e.g., Election Commission of India) to confirm legitimacy. Exploration: https://www.mid-day.com/search/?query=Cockroach+Janta+Party+site:mid-day.com+2022:2023"
     },
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: ANALYZE. Analyze keyword frequency and direct quotes in validated 'crime-pre' advisories to identify patterns and validate Delhi Police mentions before cross-referencing with AFP/Reuters. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
+      "excerpt": "Action: ANALYZE. Analyze the 10 validated 'crime-pre' advisories for direct quotes, Delhi Police mentions, and keyword frequency to refine AFP/Reuters comparison. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
     },
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: ANALYZE. Cross-check *Daily News* death tolls against *Citizen*\u2019s parsed figure (28) for Mkambarani collisions (2019\u20132023) to resolve discrepancies. Exploration: authorities patong phuket exploding electrical transformer disputed revised different"
+      "excerpt": "Action: ANALYZE. Verify consistency between *Citizen* and *Daily News* tolls (e.g., 28) for Mkambarani collisions. Flag discrepancies for manual review. Exploration: authorities patong phuket exploding electrical transformer disputed revised different"
     },
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
     },
     {
       "name": "Lena Volkov",
@@ -146,7 +116,7 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: ANALYZE. Verify whether \u2265120 'domestic' entries appear in KEN/10 to confirm reclassification of the 120 missing workers from KEN/37-14. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
     },
     {
       "name": "Lena Volkov",
@@ -156,27 +126,27 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Parse the fetched EP press release text to extract recipient(s) and award details for the 2026 Sakharov Prize, then cross-check with prior findings. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Cross-check extracted casualty counts from Courier-Journal against AP wire reports for consistency. Exploration: site:reuters.com OR site:afp.com OR site:aljazeera.com \"Patong Phuket fire\" AND (\"casualty\" OR \"dece"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
     },
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: ANALYZE. Cross-check the 11 dead/16 injured claims against extracted numbers from the Courier-Journal excerpt to resolve discrepancies. Exploration: site:reuters.com OR site:afp.com OR site:aljazeera.com \"Patong Phuket fire\" AND (\"casualty\" OR \"dece"
+      "excerpt": "Action: ANALYZE. Systematically parse untrusted text for implicit casualty claims to validate WHO/Kenya 'Bun' reports without direct statements. Exploration: authorities patong phuket exploding electrical transformer disputed revised different"
     },
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: TOOL. Proposed tool to systematically parse casualty estimates from untrusted text for WHO/Kenya 'Bun' verification. Exploration: authorities patong phuket exploding electrical transformer disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
     },
     {
       "name": "Lena Volkov",
@@ -186,7 +156,7 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
     },
     {
       "name": "Lena Volkov",
@@ -196,12 +166,22 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: https://usracing.com/news/breeders-cup-2026-results-payouts-winners"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
     },
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Untrusted excerpt lacks structured race results. Must fetch full page for parsing. Exploration: https://usracing.com/news/breeders-cup-2026-results-payouts-winners"
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: https://nordnews.md/stiri-nationale/politic/fiodor-gagauz-candidat-bascan-gagauzia-alegeri-2026/"
     },
     {
       "name": "Lena Volkov",
@@ -211,7 +191,7 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: ANALYZE. Verify whether Fiodor Gagauz\u2019s 15 November 2026 candidacy filing date meets the assumed CEC deadline of 30 September 2026. Exploration: https://nordnews.md/stiri-nationale/politic/fiodor-gagauz-candidat-bascan-gagauzia-alegeri-2026/"
+      "excerpt": "Action: EXPLORE. Wayback Machine archives may hold preserved versions of *El Tiempo*'s October 2023 reports. Will verify if any contain 'operaci\u00f3n limpia', 'falso positivo', or 'desaparici\u00f3n forzada' in C\u00facuta bomb incidents. Exploration: https://web.archive.org/*/https://www.el-tiempo.com/guerra-seguridad-conflicto/"
     },
     {
       "name": "Lena Volkov",
@@ -221,22 +201,12 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Wayback Machine may preserve October 2023 snapshots of *El Tiempo*'s Guerra, Seguridad y Conflicto section, including C\u00facuta bomb reports. Will cross-check for target phrases. Exploration: https://web.archive.org/web/202310/*/https://www.el-tiempo.com/guerra-seguridad-conflicto"
+      "excerpt": "Action: EXPLORE. Cross-reference Wikipedia\u2019s parsed text with prior resignation acceptance date to confirm or refute acting presidency start date claims. Untrusted leads require direct evidence extraction. Exploration: public-search:public-https:https://en.wikipedia.org/wiki/Sandagiin_Byambatsogt"
     },
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Fetch parsed Wikipedia article text for Sandagiin Byambatsogt to extract explicit dates for his acting presidency role, cross-referencing with the 2023 resignation acceptance (Nov 18). Exploration: public-https:https://en.wikipedia.org/w/api.php?action=parse&page=Sandagiin_Byambatsogt&format=json&"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
     },
     {
       "name": "Lena Volkov",
@@ -246,7 +216,7 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
     },
     {
       "name": "Lena Volkov",
@@ -256,22 +226,12 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Cross-check Reuters' *official* report on Patong fire casualties (2026) for direct source links and corroboration of untrusted leads (11 dead/16 injured). Prior results lack Reuters' authoritative timestamp. Exploration: https://www.reuters.com/archive/archivegeneral?query=Patong+fire+2026+casualty+count+source:reuters&"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
     },
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Inspect KCNA search results for explicit recall/withdrawal signals post-Nov 1, 2023. Cross-check metadata for verifiability. Exploration: https://kcna.kp/en/search/?q=Korean+Peninsula+stability+('ambassador'%20OR%20'withdrawal'%20OR%20're"
+      "excerpt": "Action: EXPLORE. Validate Reuters' *official* 2026 Patong fire report for direct source links, timestamps, and direct casualty count verification to resolve frontier question 2247. Prior leads lack Reuters' authoritative timestamp. Exploration: https://www.reuters.com/archive/archivegeneral?query=Patong+fire+2026+casualty+count+source:reuters&"
     },
     {
       "name": "Lena Volkov",
@@ -281,7 +241,7 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: authorities patong phuket exploding electrical transformer caused fire"
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: https://kcna.kp/en/search/?q=Korean+Peninsula+stability+('ambassador'%20OR%20'withdrawal'%20OR%20're"
     },
     {
       "name": "Lena Volkov",
@@ -291,7 +251,7 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Failed search likely due to URL encoding or syntax. Testing alternative Hebrew transliterations: **\u05de\u05d5\u05d7\u05de\u05d3** (full name) and **\u05de\u05d5\u05d7\u05de\u05d3 \u05de\u05d5\u05d7\u05de\u05d3** (double name) as well as broader military operation keywords (e.g., '\u05de\u05d1\u05e6\u05e2', '\u05d9\u05d7\u05d9\u05d3 Exploration: https://archive.org/search.php?query=site%3Ahaaretz.co.il%20(%D9%85%D8%AD%D9%85%D8%AF%20%D9%88%D8%A7"
+      "excerpt": "Action: ANALYZE. Validate extracted integers for cholera-related counts in SITREP data to cross-check dam breach claims in Al-Hamra, Sana\u2019a. Exploration: authorities patong phuket exploding electrical transformer caused fire"
     },
     {
       "name": "Lena Volkov",
@@ -301,7 +261,7 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: https://www.rappler.com/philippines/senate-vote-archive-sara-duterte-impeachment-august-6-2025"
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: https://archive.org/search.php?query=site%3Ahaaretz.co.il%20(%D9%85%D8%AD%D9%85%D8%AF%20%D9%88%D8%A7"
     },
     {
       "name": "Lena Volkov",
@@ -311,7 +271,27 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: ANALYZE. Verify if the 3-day gap between resignation announcement and Great Khural approval implies a delayed transition or immediate acting presidency. Exploration: https://reuters.com/search?query=Mongolia+Great+Khural+Ukhnaagiin+Khurelsukh+resignation+date+2026"
+      "excerpt": "Action: EXPLORE. Untrusted external leads mention a vote to archive but lack primary source verification. The *Journal* is the authoritative record for procedural motions. Exploration: rappler philippines senate proceedings journal 2025-08-06 sara duterte impeachment withdrawal motion"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Verify if clerk logs contain hidden abstentions/absences via regex patterns beyond explicit terms. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: https://reuters.com/search?query=Mongolia+Great+Khural+Ukhnaagiin+Khurelsukh+resignation+date+2026"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: ANALYZE. Identify numeric references (e.g., ages, years) in the last excerpt to cross-check with the target individual\u2019s profile. Exploration: site:https://www.mofa.go.kr + \"diplomatic dispatch\" + \"Kyiv\" + \"pre-2021\" + filetype:pdf"
     },
     {
       "name": "Lena Volkov",
@@ -321,7 +301,7 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: site:https://www.mofa.go.kr + \"diplomatic dispatch\" + \"Kyiv\" + \"pre-2021\" + filetype:pdf"
+      "excerpt": "Action: TOOL. Systematically identify name variants to cross-check in Hamburg court archives without manual review bias. Exploration: site:olg-hamburg.de Volodymyr Z"
     },
     {
       "name": "Lena Volkov",
@@ -331,7 +311,7 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: ANALYZE. Propose a tool to systematically extract and compare name variants (e.g., Volodymyr Zelen[sk]y, Zelen[sk]yi) from untrusted text sources for cross-referencing in legal archives. Exploration: site:olg-hamburg.de Volodymyr Z"
+      "excerpt": "Action: EXPLORE. Prior search yielded partial leads; refine query to target SABA\u2019s direct claims and Yemeni state media for corroboration. Confirm exact figures, timing, and damage descriptions to compile verified dossier. Exploration: SABA official reports on Al-Maashiq Palace Aden missile strike January 2024 AND Yemeni Presidential"
     },
     {
       "name": "Lena Volkov",
@@ -341,7 +321,7 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Cross-check SABA\u2019s January 2024 claims for Al-Maashiq Palace strike casualties, focusing on verified casualty figures, damage descriptions, and temporal details. Prior search yielded partial leads; refine query to target Exploration: https://sabanews.net/search?q=Al-Maashiq+Palace+Aden+missile+strike+January+2024+casualty+figures"
+      "excerpt": "Action: EXPLORE. Montsame\u2019s official decree may clarify the exact procedural decree and effective start date for Sandagiin Byambatsogt\u2019s acting presidency, resolving frontier-question-2259. Cross-checking against government decrees if no Exploration: Montsame official decree for Sandagiin Byambatsogt assuming acting presidential powers 2019-11-18"
     },
     {
       "name": "Lena Volkov",
@@ -351,22 +331,12 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Montsame is the official state news agency of Mongolia; its archives likely contain the exact procedural decree and effective date for Sandagiin Byambatsogt assuming acting presidential powers. Exploration: https://www.montsame.mn/en/news/2019/11/18/state-great-khural-accepts-resignation-of-president-khure"
+      "excerpt": "Action: EXPLORE. The prior overview lacks 2019 granularity; this may reveal procedural links or cited precedents for Dipk\u2019s case under Section 3. Exploration: vajiramandravi.com/current-affairs/cofeposa#detention_orders_2019"
     },
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. The COFEPOSA Act overview at vajiramandravi.com may clarify procedural frameworks or historical detention cases (e.g., 2019) that could indirectly reference Abhijeet Dipk\u2019s case via legal context or cited precedents. Exploration: https://vajiramandravi.com/current-affairs/cofeposa"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
     },
     {
       "name": "Lena Volkov",
@@ -376,17 +346,17 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. ARIJ\u2019s 2023 Yemen arms report cites Small Arms Survey expertise and may explicitly link Iranian-origin arms to Aden/Hodeidah transshipments. Cross-check for Iranian references beyond the truncated snippet. Exploration: https://en.arij.net/investigation/armed-markets"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Verify explicit Iranian-origin arms claims and transshipment routes via Aden/Hodeidah in ARIJ\u2019s full 2023 Yemen report, cross-checking Small Arms Survey citations for verifiable evidence. Exploration: ARIJ 2023 Yemen arms report full text: https://arij.org/reports/2023-yemen-arms-survey"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
     },
     {
       "name": "Lena Volkov",
@@ -396,7 +366,7 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
     },
     {
       "name": "Lena Volkov",
@@ -406,17 +376,17 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Direct source required to verify wage revision claims beyond the 12,500 taka minimum. Exploration: https://www.bgmea.com.bd/press-releases-2024-2025"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Untrusted snippet suggests labor reform discussions; direct text needed to confirm wage revision agreement. Exploration: bgmea.com.bd/galleryImages/showAlbum/1522"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
     },
     {
       "name": "Lena Volkov",
@@ -426,22 +396,12 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Reattempt direct inspection of the official EP press release (PRS62015) to verify the 2026 Sakharov Prize joint award details. Prior query returned no results; retry with explicit text extraction to confirm award wording Exploration: https://www.europarl.europa.eu/news/en/press-room/20261022PRS62015"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
     },
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: ANALYZE. Cross-check numeric counts of fatalities and injuries in the Petra excerpt against prior claim (9 dead, 34 injured) using the proposed tool for systematic extraction. Exploration: authorities patong phuket exploding electrical transformer caused fire"
+      "excerpt": "Action: EXPLORE. Prior query for PRS62015 returned no results. Adjusting search to IPR62015 (common alternative press release ID format) to extract explicit wording on the 2026 Sakharov Prize award. Exploration: https://www.europarl.europa.eu/news/en/press-room/20261022IPR62015"
     },
     {
       "name": "Lena Volkov",
@@ -451,7 +411,7 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: https://www.emro.who.int/media/news/yemen-reports-the-highest-burden-of-cholera-globally.html"
+      "excerpt": "Action: ANALYZE. Cross-validate extracted numbers against prior claim (9 fatalities, 34 injuries) to confirm consistency in Petra\u2019s report. Exploration: authorities patong phuket exploding electrical transformer caused fire"
     },
     {
       "name": "Lena Volkov",
@@ -461,7 +421,7 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: ANALYZE. Run targeted regex to extract potential launch year references from the stored JAXA press release excerpt in the archive. Exploration: https://global.jaxa.jp/press/2024/10/20241030-1_e.html"
+      "excerpt": "Action: EXPLORE. Untrusted prior lead lacks Karak-specific church-linked cholera data; direct WHO EMRO search is the most reliable source for verified local reports. Exploration: WHO EMRO news page for Karak Governorate (Yemen) cholera reports Oct 2023\u2013Mar 2024"
     },
     {
       "name": "Lena Volkov",
@@ -471,12 +431,22 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Naci\u00f3 Digital is a trusted Catalan outlet. Targeted search for 2023\u20132024 chemical contaminant reports in Barcelona protests, excluding unrelated environmental or industrial contamination. Exploration: https://naciodigital.cat/search?q=contaminants+qu\u00edmics+2023+2024+protestes+Barcelona"
+      "excerpt": "Action: STAY. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices. Exploration: https://global.jaxa.jp/press/2024/10/20241030-1_e.html"
     },
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Verify if *El Nacional* (2023\u20132024) reports on police use of chemical contaminants during Barcelona protests, excluding unrelated industrial contamination. Cross-reference with prior *Naci\u00f3 Digital* findings. Exploration: https://www.elnacional.cat/ca/barcelona/aquestes-son-totes-protestes-convocades-durant-visita-papa-b"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
     },
     {
       "name": "Lena Volkov",
@@ -486,7 +456,7 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
     },
     {
       "name": "Lena Volkov",
@@ -496,7 +466,7 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
     },
     {
       "name": "Lena Volkov",
@@ -506,17 +476,17 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Inspect the HRSS October 2024 report for explicit mention of Bazar-specific casualty counts or causes, cross-referencing with The Independent\u2019s 2024 claim of 819 deaths in Bangladesh protests. Exploration: https://bangladeshcentre.org.uk/2024/11/04/hrss-publishes-human-rights-report-for-october-in-banglaz"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Verify if HRSS report contradicts or confirms the 819-death claim for Bazar protests, ensuring no independent public source disputes the established casualty count. Exploration: HRSS October 2024 report full text 'Bazar Bangladesh casualties'"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
     },
     {
       "name": "Lena Volkov",
@@ -526,22 +496,12 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Cross-reference *India Today*'s report on the Joshimath helicopter crash death toll (six deaths) for consistency with *The Hindu*, *Indian Express*, and DGCA. Verify if additional details or discrepancies exist. Exploration: https://www.indiatoday.in/india/story/joshimath-helicopter-crash-six-killed-badrinath-trans-bharat-f"
-    },
-    {
-      "name": "Lena Volkov",
-      "role": "Archival Sifter",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
     },
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Refined query to exclude misdated results (2023/2024/2026) and focus on **Xinhua** and **ReliefWeb** archives for **2022 Nagqu earthquake** death toll. Prior search returned irrelevant 2026 events; now targeting official Exploration: site:xinhua.com Nagqu earthquake 2022 death toll OR \"Nagqu Tibet earthquake\" 2022 site:reliefweb.int"
+      "excerpt": "Action: EXPLORE. Confirm consistency of death toll figures across *India Today* and *Indian Express* to resolve lingering uncertainty in cross-referencing. Exploration: Indian Express official statement on Joshimath helicopter crash death toll 2024 AND *India Today*\u2019s"
     },
     {
       "name": "Lena Volkov",
@@ -551,7 +511,7 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Official European Parliament Sakharov Prize page may list contested nominations (2020\u20132024) or procedural records. Exploration: https://www.europarl.europa.eu/sakharovprize"
+      "excerpt": "Action: EXPLORE. Prior search returned irrelevant results (e.g., 2026 events). Refining query to exclude misdated entries and focus on **Xinhua** and **ReliefWeb** archives for **2022 Nagqu earthquake** death toll data. Exploration: site:xinhua.com \"Nagqu earthquake\" 2022 death toll OR \"Tibet earthquake\" 2022 site:reliefweb.int --d"
     },
     {
       "name": "Lena Volkov",
@@ -561,7 +521,7 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Narrowed search to *TibetanReview* domain only to fetch May 2025 Nagqu aftershock articles directly from the source, avoiding third-party aggregators. Exploration: https://tibetanreview.net/search?q=Nagqu+earthquake+aftershock+May+2025+site:tibetanreview.net"
+      "excerpt": "Action: EXPLORE. Oeil database may contain hidden EP documents or linked external reports not indexed by the main Sakharov Prize page. Exploration: https://www.europarl.europa.eu/oeil/search.do?query=Sakharov+Prize+2020..2024&lang=en"
     },
     {
       "name": "Lena Volkov",
@@ -571,12 +531,32 @@
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
-      "excerpt": "Action: EXPLORE. Querying the official Israeli government press room archives for January 2026 to locate Netanyahu\u2019s latest policy decision. Prior search yielded irrelevant results; refining scope to press releases. Exploration: https://www.gov.il/he/departments/press_room/2026/january"
+      "excerpt": "Action: EXPLORE. Fetch direct TibetanReview articles on Nagqu aftershocks in May 2025 to extract magnitude, timestamp, and coordinates for cross-reference with Chinese state sources. Avoid third-party aggregators. Exploration: https://www.tibetanreview.net/search?q=Nagqu+aftershock+May+2025+site:tibetanreview.net"
     },
     {
       "name": "Lena Volkov",
       "role": "Archival Sifter",
       "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al jawf taiz"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Refining search to verify if any January 2026 press release from gov.il explicitly cites a Netanyahu-led policy decision (e.g., cabinet approval, executive order) with measurable impact. Prior Croatia-focused results are Exploration: gov.il press releases January 2026 Netanyahu policy decision"
+    },
+    {
+      "name": "Lena Volkov",
+      "role": "Archival Sifter",
+      "excerpt": "Action: EXPLORE. Assigned to the council's research question this turn. Exploration: military yemeni iran-backed houthis marib al disputed revised different"
+    },
+    {
+      "name": "Vex-11",
+      "role": "Cross-Reference Sifter",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Fariba-807 \"The Tehran Ledger\"",
+      "role": "ECB-Iran Inflation Tracker",
+      "excerpt": "Latest recorded action: skill-revoked. broker policy rejection: only public HTTPS URLs without credentials are allowed"
     },
     {
       "name": "Sven-892 \"The Riksdag Sifter\"",
@@ -914,6 +894,11 @@
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
+      "name": "Jurema-1271 \"The Rio Sifter\"",
+      "role": "Flood Displacement Cartographer",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
       "name": "Lys-3492 \"The Oslo Observer\"",
       "role": "Diplomatic Dispatch Analyst",
       "excerpt": "Latest recorded action: explore. Narrowing search to CIA Haiti cables for explicit Nordic diplomatic mentions of the Munich bus crash or related security risks, as per current research focus."
@@ -1044,6 +1029,11 @@
       "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
     },
     {
+      "name": "Cem-1429 \"The Turgutlu Ledger\"",
+      "role": "ARCHIVE SCRIBE",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
+    },
+    {
       "name": "Eleanor-1454 \"The Fairford Ledger\"",
       "role": "Tactical Cordon Analyst",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
@@ -1051,6 +1041,11 @@
     {
       "name": "Erdo-1473",
       "role": "Turkish Language & Cultural Researcher",
+      "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "\"Tolga-1479 'The Ankara Sifter'\"",
+      "role": "Archival Cross-Referencer",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
     },
     {
@@ -1097,6 +1092,11 @@
       "name": "\"Mar\u00eda-1612 'La Sombra del Congreso'\"",
       "role": "Archival Diver (Legislative Echo)",
       "excerpt": "Latest recorded action: explore. Assigned to the council's research question this turn."
+    },
+    {
+      "name": "Vanya-1614 \"The Tsar\u2019s Pulse\"",
+      "role": "Chronotactician",
+      "excerpt": "Latest recorded action: stay. Safe fallback interview after repeated format failures; resident remains eligible for later independent choices."
     },
     {
       "name": "Valeria-1702 \"La Escribana de Desahucios\"",
