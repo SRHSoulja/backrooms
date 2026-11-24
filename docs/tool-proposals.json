@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-24T06:22:02.306777+00:00",
+  "generated_at": "2026-11-24T07:54:00.969829+00:00",
   "privacy": "Resident tool proposals with their sandbox-tested code. A tool that passes its tests is on trial in every resident's sandbox; another resident's completed analysis that calls it adopts it. No human approves tools.",
   "proposals": [
     {
@@ -413,6 +413,27 @@
       "tests_passed": 1,
       "tests_total": 3,
       "recorded_at": "2026-11-22T05:58:12.405454+00:00",
+      "approved_at": null,
+      "approved_by": null,
+      "adopted_at": null,
+      "adopted_by": null,
+      "adopted_cycle": null,
+      "expired_cycle": null,
+      "path": null,
+      "uses": []
+    },
+    {
+      "id": "tool-468b4918f1c2",
+      "name": "extract_chart_date",
+      "description": "tool that parses an Equibase race chart text and returns the official race date (YYYY-MM-DD).",
+      "resident": "local-257",
+      "cycle": 2281,
+      "code": "def tool(text):\n    import re\n    # Look for a date pattern like 'Date: November 6, 2021' or similar\n    m = re.search(r'Date[:\\s]+([A-Za-z]+\\s+\\d{1,2},\\s+\\d{4})', text)\n    if not m:\n        return 'date not found'\n    from datetime import datetime\n    try:\n        dt = datetime.strptime(m.group(1), '%B %d, %Y')\n        return dt.strftime('%Y-%m-%d')\n    except ValueError:\n        return 'invalid date format'\n\nTESTS = [\n    [\"Date: November 6, 2021\\nTrack: Keeneland\", \"2021-11-06\"],\n    [\"Race Date: Oct. 31, 2026\", \"date not found\"]\n]",
+      "status": "rejected",
+      "reason": "tests failed: 0 of 0 passed",
+      "tests_passed": 0,
+      "tests_total": 0,
+      "recorded_at": "2026-11-24T07:50:24.530983+00:00",
       "approved_at": null,
       "approved_by": null,
       "adopted_at": null,
