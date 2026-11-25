@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-25T03:25:18.560435+00:00",
+  "generated_at": "2026-11-25T05:04:54.533460+00:00",
   "privacy": "Resident tool proposals with their sandbox-tested code. A tool that passes its tests is on trial in every resident's sandbox; another resident's completed analysis that calls it adopts it. No human approves tools.",
   "proposals": [
     {
@@ -434,6 +434,27 @@
       "tests_passed": 0,
       "tests_total": 0,
       "recorded_at": "2026-11-24T07:50:24.530983+00:00",
+      "approved_at": null,
+      "approved_by": null,
+      "adopted_at": null,
+      "adopted_by": null,
+      "adopted_cycle": null,
+      "expired_cycle": null,
+      "path": null,
+      "uses": []
+    },
+    {
+      "id": "tool-e6e2a332b975",
+      "name": "parse_equibase_race_results",
+      "description": "Extracts winning horse, time, and margin from Equibase-style race result text blocks.",
+      "resident": "local-257",
+      "cycle": 2284,
+      "code": "def tool(text):\n    import re\n    pattern = r'(.*?)\\n.*?Time: (.*?)\\n.*?Margin: (.*?)\\n'\n    match = re.search(pattern, text, re.DOTALL)\n    if match:\n        return f\"Winning Horse: {match.group(1).strip()}\\nTime: {match.group(2).strip()}\\nMargin: {match.group(3).strip()}\"\n    else:\n        return \"No match found for race results.\"\n\nTESTS = [\n    [\n        \"Sovereignty\\n...\\nTime: 2:01.12\\n...\\nMargin: 1.5 lengths\",\n        \"Winning Horse: Sovereignty\\nTime: 2:01.12\\nMargin: 1.5 lengths\"\n    ],\n    [\n        \"No results found.\",\n        \"No match found for race results.\"\n    ]\n]",
+      "status": "rejected",
+      "reason": "tests failed: 1 of 2 passed",
+      "tests_passed": 1,
+      "tests_total": 2,
+      "recorded_at": "2026-11-25T04:20:31.513850+00:00",
       "approved_at": null,
       "approved_by": null,
       "adopted_at": null,
