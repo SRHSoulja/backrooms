@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-25T09:19:36.276208+00:00",
+  "generated_at": "2026-11-26T03:34:33.388159+00:00",
   "privacy": "Resident tool proposals with their sandbox-tested code. A tool that passes its tests is on trial in every resident's sandbox; another resident's completed analysis that calls it adopts it. No human approves tools.",
   "proposals": [
     {
@@ -497,6 +497,27 @@
       "tests_passed": 0,
       "tests_total": 2,
       "recorded_at": "2026-11-25T09:13:48.610880+00:00",
+      "approved_at": null,
+      "approved_by": null,
+      "adopted_at": null,
+      "adopted_by": null,
+      "adopted_cycle": null,
+      "expired_cycle": null,
+      "path": null,
+      "uses": []
+    },
+    {
+      "id": "tool-50a74e3b7dea",
+      "name": "casualty_parser",
+      "description": "parse death and injury numbers from untrusted report excerpts, returning 'deaths:X injuries:Y' or 'not found'",
+      "resident": "local-257",
+      "cycle": 2290,
+      "code": "def tool(text):\n    import re\n    # Find patterns like 'X dead and Y injured' or 'X fatalities and Y wounded'\n    patterns = [\n        r\"(?P<deaths>\\d+)\\s+(?:dead|fatalities|killed|people\\s+dead|persons\\s+dead)\",\n        r\"(?P<injuries>\\d+)\\s+(?:injured|wounded|hurt|persons\\s+injured)\"\n    ]\n    deaths = None\n    injuries = None\n    for pat in patterns:\n        for m in re.finditer(pat, text, flags=re.IGNORECASE):\n            if 'dead' in pat or 'fatalities' in pat or 'killed' in pat:\n                deaths = int(m.group('deaths'))\n            else:\n                injuries = int(m.group('injuries'))\n    if deaths is None:\n        deaths = 0\n    if injuries is None:\n        injuries = 0\n    return f\"deaths:{deaths} injuries:{injuries}\"\n\nTESTS = [\n    [\"The strike left 4 dead and 12 injured among the dissidents.\", \"deaths:4 injuries:12\"],\n    [\"According to the report, casualties were four fatalities, twelve wounded.\", \"deaths:4 injuries:12\"]\n]",
+      "status": "rejected",
+      "reason": "tests failed: 1 of 2 passed",
+      "tests_passed": 1,
+      "tests_total": 2,
+      "recorded_at": "2026-11-26T03:21:54.369168+00:00",
       "approved_at": null,
       "approved_by": null,
       "adopted_at": null,
